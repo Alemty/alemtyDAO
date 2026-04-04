@@ -1,0 +1,686 @@
+[
+  {
+    "title": "Acreditación de Lugar de Trabajo Moderno 2019",
+    "badgeImg": "../alemty.eth/assets/data/modernworkplace2019.png",
+    "issuer": "Microsoft",
+    "url": "https://productionezwebstorage.blob.core.windows.net/certificates/1663177_34564_CERTIFICATION_10595.pdf?sv=2020-08-04&st=2022-02-03T00%3A23%3A12Z&se=2052-02-03T00%3A23%3A12Z&sr=b&sp=r&sig=zCzDo4gcQ9fha3JjY%2FstBlY%2F61FP7pbAz9DRZHceWoI%3D",
+    "year": null,
+    "category": "MKT",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Acreditación de Xbox 2019",
+    "badgeImg": "../alemty.eth/assets/data/xboxacc2019.png",
+    "issuer": "Microsoft",
+    "url": "https://productionezwebstorage.blob.core.windows.net/certificates/1663177_34568_CERTIFICATION_10334.pdf?sv=2020-08-04&st=2022-02-03T00%3A24%3A56Z&se=2052-02-03T00%3A24%3A56Z&sr=b&sp=r&sig=dx7QcEoD5g7UmdEi5CfeyL9aU0%2FhHVlf4FqrMDlTq%2BE%3D",
+    "year": null,
+    "category": "🎮",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Acreditación de Office 2019",
+    "badgeImg": "../alemty.eth/assets/data/officeacc2019.png",
+    "issuer": "Microsoft",
+    "url": "https://productionezwebstorage.blob.core.windows.net/certificates/1663177_34565_CERTIFICATION_10344.pdf?sv=2020-08-04&st=2022-02-03T00%3A25%3A15Z&se=2052-02-03T00%3A25%3A15Z&sr=b&sp=r&sig=C%2FmMQBeDVBoomiPJ1F8DTKfUrwUd6vVDqfkAenEnMlE%3D",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Acreditación de Windows 2019",
+    "badgeImg": "../alemty.eth/assets/data/windowsacc2019.png",
+    "issuer": "Microsoft",
+    "url": "https://productionezwebstorage.blob.core.windows.net/certificates/1663177_34567_CERTIFICATION_10349.pdf?sv=2020-08-04&st=2022-02-03T00%3A25%3A45Z&se=2052-02-03T00%3A25%3A45Z&sr=b&sp=r&sig=kAaLjOxzwYSfXVN7ZGM1cw%2B1GzqzReLMcaIk%2BIBAL94%3D",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Misión de Introducción a Windows",
+    "badgeImg": "../alemty.eth/assets/data/windowsintro2019.png",
+    "issuer": "Microsoft",
+    "url": "https://productionezwebstorage.blob.core.windows.net/certificates/1663177_34569_LP_10801.pdf?sv=2020-08-04&st=2022-02-03T00%3A26%3A15Z&se=2052-02-03T00%3A26%3A15Z&sr=b&sp=r&sig=xZzep0FWBM8ljJvZPm7%2BiC75uXfwx4VaxrkzpxMYoew%3D",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Misión de Introducción a Office",
+    "badgeImg": "../alemty.eth/assets/data/officeintro2019.png",
+    "issuer": "Microsoft",
+    "url": "https://productionezwebstorage.blob.core.windows.net/certificates/1663177_34571_LP_10806.pdf?sv=2020-08-04&st=2022-02-03T00%3A26%3A49Z&se=2052-02-03T00%3A26%3A49Z&sr=b&sp=r&sig=i1l%2BTYGI4sCBnY7C%2FVv7848%2FeiW77%2B3kenK%2BF1gA9zs%3D",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Misión de Introducción a Windows Server 2019",
+    "badgeImg": "../alemty.eth/assets/data/windowsserverintro2019.png",
+    "issuer": "Microsoft",
+    "url": "https://productionezwebstorage.blob.core.windows.net/certificates/1663177_46119_LP_12783.pdf?sv=2020-08-04&st=2022-02-03T00%3A27%3A13Z&se=2052-02-03T00%3A27%3A13Z&sr=b&sp=r&sig=sfNvcThehoRdf5HBoa9I00RZVxydI0hLqMti7Bw9pTc%3D",
+    "year": 2020,
+    "category": "☁️",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Microsoft 365 Acreditación 2020",
+    "badgeImg": "../alemty.eth/assets/data/microsoft365acc2020.png",
+    "issuer": "Microsoft",
+    "url": "https://productionezwebstorage.blob.core.windows.net/certificates/1663177_45574_CERTIFICATION_11280.pdf?sv=2020-08-04&st=2022-02-03T00%3A27%3A28Z&se=2052-02-03T00%3A27%3A28Z&sr=b&sp=r&sig=J%2F3zgoaZykBGdgNi6safSCD54fpoCBOSqzLpkEKnRCo%3D",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Misión de Introducción a Surface",
+    "badgeImg": "../alemty.eth/assets/data/surfaceintro2019.png",
+    "issuer": "Microsoft",
+    "url": "https://productionezwebstorage.blob.core.windows.net/certificates/1663177_34572_LP_10792.pdf?sv=2020-08-04&st=2022-02-03T00%3A27%3A55Z&se=2052-02-03T00%3A27%3A55Z&sr=b&sp=r&sig=t2BLhVqCKTBd7ekFTWDlvr9RzhV87p6066XYZBCZbN8%3D",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Acreditación de Xbox 2020",
+    "badgeImg": "../alemty.eth/assets/data/xboxacc2020.png",
+    "issuer": "Microsoft",
+    "url": "https://productionezwebstorage.blob.core.windows.net/certificates/1663177_56520_CERTIFICATION_12231.pdf?sv=2020-08-04&st=2022-02-03T00%3A28%3A30Z&se=2052-02-03T00%3A28%3A30Z&sr=b&sp=r&sig=R6YJmUuP3J%2Ft8gJyLCWpUw0D6KygUbLOfkr%2B8cq3BIY%3D",
+    "year": null,
+    "category": "🎮",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Misión de Introducción al Lugar de Trabajo Moderno",
+    "badgeImg": "../alemty.eth/assets/data/modernworkplacemis.png",
+    "issuer": "Microsoft",
+    "url": "https://productionezwebstorage.blob.core.windows.net/certificates/1663177_34570_LP_10805.pdf?sv=2020-08-04&st=2022-02-03T00%3A30%3A21Z&se=2052-02-03T00%3A30%3A21Z&sr=b&sp=r&sig=%2BkGLyItzYOwbTlQc5OgQc2yG0elMRVXnKYe0dyqoTJU%3D",
+    "year": null,
+    "category": "MKT",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Photoshop",
+    "issuer": "Platzi",
+    "url": "https://platzi.com/p/Alemty/curso/1230-photoshop-basico/diploma/detalle/",
+    "year": null,
+    "category": "Design",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Creación de Filtros Faciales con Spark Augmented Reality",
+    "issuer": "Platzi",
+    "url": "https://platzi.com/p/Alemty/curso/2647-filtros-spark-ar/diploma/detalle/",
+    "year": null,
+    "category": "Design",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Bitcoin y Blockchain",
+    "issuer": "Platzi",
+    "url": "https://platzi.com/p/Alemty/curso/2451-course/diploma/detalle/",
+    "year": null,
+    "category": "Web 3.0",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Gestión de Criptoactivos",
+    "issuer": "Platzi",
+    "url": "https://platzi.com/p/Alemty/curso/2617-course/diploma/detalle/",
+    "year": null,
+    "category": "Web 3.0",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Fundamentos de Ingeniería de Software",
+    "issuer": "Platzi",
+    "url": "https://platzi.com/p/Alemty/curso/1098-course/diploma/detalle/",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Prework: Configuración de Entorno de Desarrollo en Linux",
+    "issuer": "Platzi",
+    "url": "https://platzi.com/p/Alemty/curso/2383-course/diploma/detalle/",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Curso de Pensamiento Lógico: Algoritmos y Diagramas de Flujo",
+    "issuer": "Platzi",
+    "url": "https://platzi.com/p/Alemty/curso/3221-pensamiento-logico/diploma/detalle/",
+    "year": null,
+    "category": "IA",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Computadores e Informática",
+    "issuer": "Platzi",
+    "url": "https://platzi.com/p/Alemty/curso/2793-computacion-basica/diploma/detalle/",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Fundamentos de IA para Data y Machine Learning",
+    "issuer": "Platzi",
+    "url": "https://platzi.com/p/Alemty/curso/6935-ai/diploma/detalle/",
+    "year": null,
+    "category": "IA",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Prompt Engineering con ChatGPT",
+    "issuer": "Platzi",
+    "url": "https://platzi.com/p/Alemty/curso/7296-chatgpt/diploma/detalle/",
+    "year": null,
+    "category": "IA",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Capacitación en Línea para Empresas",
+    "issuer": "Platzi",
+    "url": "https://platzi.com/p/Alemty/curso/8030-capacitacion-en-linea/diploma/detalle/",
+    "year": null,
+    "category": "MKT",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Modelado 3D usando Blender",
+    "issuer": "Platzi",
+    "url": "https://platzi.com/p/Alemty/curso/2789-blender/diploma/detalle/",
+    "year": null,
+    "category": "Design",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Introducción al Marketing Digital",
+    "issuer": "Platzi",
+    "url": "https://platzi.com/p/Alemty/curso/2890-introduccion-marketing/diploma/detalle/",
+    "year": null,
+    "category": "MKT",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Fundamentos de Ethereum",
+    "issuer": "Platzi",
+    "url": "https://platzi.com/p/Alemty/curso/7891-ethereum-ecosistema/diploma/detalle/",
+    "year": null,
+    "category": "Web 3.0",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Ruta de Marketing Digital",
+    "issuer": "Platzi",
+    "url": "https://platzi.com/p/Alemty/curso/2636-marketing-path/diploma/detalle/",
+    "year": null,
+    "category": "MKT",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Xbox 2026",
+    "badgeImg": "../alemty.eth/assets/data/xbox2026.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/27a051fb-4506-4de8-b609-85279b7431bc",
+    "year": null,
+    "category": "🎮",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Microsoft 365 2026",
+    "badgeImg": "../alemty.eth/assets/data/microsoft3652026.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/16a1e2a8-cfd1-4a10-a8cf-b6c9921700cf",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Windows 2026",
+    "badgeImg": "../alemty.eth/assets/data/windows2026.png",
+   "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/de9fb654-cc59-468a-ab49-26bb23ba62ab",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Certificación de Copilot IA",
+    "badgeImg": "../alemty.eth/assets/data/copilotia.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/55efa5fe-ac10-4292-8e37-8f792ab6a806",
+    "year": null,
+    "category": "IA",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "RISE Market Manager",
+    "badgeImg": "../alemty.eth/assets/data/rise.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/af18507c-fb11-4780-b9e4-7c791ace5661",
+    "year": null,
+    "category": "💼",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Acreditación Comercial Copilot+ PC",
+    "badgeImg": "../alemty.eth/assets/data/copilotpluspc.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/cad0e8c5-abe9-4dd3-9f60-505dfebd06ed",
+    "year": null,
+    "category": "IA",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Introducción a la Inteligencia Artificial",
+    "issuer": "Platzi",
+    "url": "https://platzi.com/p/Alemty/curso/11157-introduccion-ai/diploma/detalle/",
+    "year": null,
+    "category": "IA",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Copilot 2025",
+    "badgeImg": "../alemty.eth/assets/data/copilot2025.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/1ffbea01-50e2-44ac-91d8-647fa968d33d",
+    "year": null,
+    "category": "IA",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Microsoft Education 2023",
+    "badgeImg": "../alemty.eth/assets/data/microsofteducation2023.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/ef39b784-1b63-468b-8f25-8b144f4680b2",
+    "year": null,
+    "category": "🎓",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Modern Endpoints",
+    "badgeImg": "../alemty.eth/assets/data/modernendpoints.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/07c47dd1-840f-4b89-b913-02e226e331d2",
+    "year": null,
+    "category": "☁️",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Xbox 2025",
+    "badgeImg": "../alemty.eth/assets/data/xbox2025.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/3353fdc6-eecb-4d65-82cd-e42cae04a15f",
+    "year": null,
+    "category": "🎮",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Copilot+ PC",
+    "badgeImg": "../alemty.eth/assets/data/copilotplus.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/1dbcd8b0-1afa-4e82-a022-f9e391df02a3",
+    "year": null,
+    "category": "IA",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Microsoft 365 2024",
+    "badgeImg": "../alemty.eth/assets/data/microsoft3652024.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/9df6903f-b0f7-4860-867d-cec6358f8b9b",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Surface 2024",
+    "badgeImg": "../alemty.eth/assets/data/surface2024.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/8b0a751e-1071-43a9-9508-191e4c8d6341",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Xbox 2024",
+    "badgeImg": "../alemty.eth/assets/data/xbox2024.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/42fbde5c-b429-46bf-b653-ad49c4ad34e1",
+    "year": null,
+    "category": "🎮",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Ingeniero de Experiencias",
+    "badgeImg": "../alemty.eth/assets/data/ingenieroexperiencias.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/c3bfe2f6-a3a8-479c-9b40-a7bb305ce2b3",
+    "year": null,
+    "category": "MKT",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Introducción a la Venta Comercial",
+    "badgeImg": "../alemty.eth/assets/data/introventascomercial.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/3fc67a34-8893-43c4-acff-ecd82fd76de6",
+    "year": null,
+    "category": "MKT",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Office 2021 Home & Business 2024",
+    "badgeImg": "../alemty.eth/assets/data/office2021homeandbusiness2024.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/1417a12c-a8c0-40bb-a454-39cb46e07eed",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Surface 2023",
+    "badgeImg": "../alemty.eth/assets/data/surfaceep2023.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/67a3c9ae-82ae-42fc-847b-e8bf3871f3b1",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Microsoft 365 Acreditación 2024",
+    "badgeImg": "../alemty.eth/assets/data/microsoft365ep2024.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/7c2cc561-6c32-4409-965f-5df5a8143240",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Windows 11 Home 2024",
+    "badgeImg": "../alemty.eth/assets/data/windows11homeacc2024.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/932ff659-fe99-4ddd-9be5-ad1e75562794",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Windows 11 Pro 2022",
+    "badgeImg": "../alemty.eth/assets/data/windows11proacc2022.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/98bb3c95-ea38-4ec6-b0a8-e8a7e18f05a2",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "RISE Master Trainer",
+    "badgeImg": "../alemty.eth/assets/data/rise.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/d487b91c-f02f-494f-8677-180d1593c6a3",
+    "year": null,
+    "category": "💼",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "RISE Product Advisor",
+    "badgeImg": "../alemty.eth/assets/data/rise.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/5734db1a-e078-41cb-9d18-a5ce4fdd85d0",
+    "year": null,
+    "category": "💼",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "RISE Virtual Product Advisor",
+    "badgeImg": "../alemty.eth/assets/data/rise.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/97dc0760-a2fc-46c2-9b90-cdac946a8db6",
+    "year": null,
+    "category": "💼",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Xbox 2023",
+    "badgeImg": "../alemty.eth/assets/data/xboxacc2023.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/d7e33ca7-1eb0-4983-821e-a5c9cf8aebd1",
+    "year": null,
+    "category": "🎮",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Acreditación Surface 2023",
+    "badgeImg": "../alemty.eth/assets/data/surfaceacc2023.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/08ee8f2d-146d-4878-af76-93c873594d84",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Azure Stack HCI 2021",
+    "badgeImg": "../alemty.eth/assets/data/azurestackhci2021.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/d6e06a71-6eaf-4f56-92b6-003b8e01d332",
+    "year": null,
+    "category": "☁️",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Microsoft Education 2022",
+    "badgeImg": "../alemty.eth/assets/data/microsofteducation2022.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/17e4748d-5abd-4797-9655-96de48eb18c4",
+    "year": null,
+    "category": "🎓",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Windows 11 Pro 2021",
+    "badgeImg": "../alemty.eth/assets/data/windows11proacc2021.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/bb5265d9-d1aa-4f32-abeb-f0ee29717edf",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Windows Server 2022",
+    "badgeImg": "../alemty.eth/assets/data/windowsserver2022.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/725dbe01-f3c6-477a-ba44-3feebec87737",
+    "year": null,
+    "category": "☁️",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Xbox 2023",
+    "badgeImg": "../alemty.eth/assets/data/xboxep2023.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/7f322c85-a7dc-49c6-b8bd-df904f5bb1e7",
+    "year": null,
+    "category": "🎮",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Microsoft 365 2022",
+    "badgeImg": "../alemty.eth/assets/data/microsoft365nacc2022.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/b3b256e1-c23f-488c-b927-0b6134d2bf31",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Windows 11 Home 2023",
+    "badgeImg": "../alemty.eth/assets/data/windows11homeacc2023.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/f9626b6d-bb7c-4227-8f9e-81f159c3fad6",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Empoderar a Todos 2023",
+    "badgeImg": "../alemty.eth/assets/data/empoderar.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/321fcfaf-3af9-41cc-b181-e93991addc58",
+    "year": null,
+    "category": "MKT",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Acreditación de Surface 2021",
+    "badgeImg": "../alemty.eth/assets/data/surfaceacc2021.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/61a9baf9-5c01-418b-b8fd-5b7615965ee4",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Xbox 2021",
+    "badgeImg": "../alemty.eth/assets/data/xboxacc2021.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/37945566-b945-40e7-8c41-ed03d70fd60a",
+    "year": null,
+    "category": "🎮",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Windows 2021",
+    "badgeImg": "../alemty.eth/assets/data/windowsacc2021.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/7237cde6-4571-4d8b-bc2c-00e7b03444f4",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Microsoft 365 2021",
+    "badgeImg": "../alemty.eth/assets/data/microsoft365nacc2021.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/2b39f4a9-607f-485a-9958-e2dd199d238a",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Acreditación de Surface 2020",
+    "badgeImg": "../alemty.eth/assets/data/surfaceacc2020.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/4ff78984-734b-4cc2-b69a-d2c60b7197ab",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Microsoft 365 2020",
+    "badgeImg": "../alemty.eth/assets/data/microsoft365nacc2020.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/8927dfd2-0ef2-42a6-88c1-905282c66bf3",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Lugar de Trabajo Moderno 2020",
+    "badgeImg": "../alemty.eth/assets/data/modernworkplace2020.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/c83ab495-bf8c-445e-90dc-95774e89a52a",
+    "year": null,
+    "category": "MKT",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Acreditación de Surface 2019",
+    "badgeImg": "../alemty.eth/assets/data/surfaceacc2019.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/15a1752a-0adb-48d2-90d5-a239aec12882",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  },
+  {
+    "title": "Windows 2020",
+    "badgeImg": "../alemty.eth/assets/data/windowsacc2020.png",
+    "issuer": "Microsoft",
+    "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/ac7da297-84b1-47a9-ba66-6765719b7b4b",
+    "year": null,
+    "category": "TI",
+    "score": 5,
+    "pinned": false
+  }
+]
