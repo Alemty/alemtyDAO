@@ -1,0 +1,27 @@
+{
+  "name": "alemtydao",
+  "version": "1.0.0",
+  "description": "**alemty.eth** es una **Organización Autónoma Descentralizada (DAO)** orientada a la **identidad digital**, la **experimentación Web3**, la **economía programable** y la **investigación en IA y sistemas complejos**.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Alemty/alemtyDAO.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Alemty/alemtyDAO/issues"
+  },
+  "homepage": "https://github.com/Alemty/alemtyDAO#readme",
+  "dependencies": {
+    "siwe": "^3.0.0"
+  }
+}
