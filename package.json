@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/Alemty/alemtyDAO#readme",
   "dependencies": {
+    "buffer": "^6.0.3",
     "siwe": "^3.0.0"
   }
 }
