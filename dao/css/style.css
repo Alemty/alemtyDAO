@@ -1,0 +1,791 @@
+
+/* =====================================================
+   DAO Comunidad · estilo Reddit/Taringa con UI tipo DEX
+   (fondo vivo root + cards glass + chips + modales)
+   ===================================================== */
+
+/* Root + fondo vivo (igual al patrón que ya te funciona) */
+.dao-root{
+  background: var(--bg);
+  min-height: 100vh;
+  position: relative;
+}
+.dao-bg{
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(600px 400px at 20% 0%, rgba(0,255,213,.15), transparent 60%),
+    radial-gradient(500px 300px at 80% 20%, rgba(0,163,255,.12), transparent 60%),
+    var(--bg);
+  pointer-events: none;
+}
+.container{
+  background: transparent !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* Cards glass */
+.card{
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.04);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  box-shadow:
+    0 18px 60px rgba(0,0,0,.38),
+    0 0 0 1px rgba(0,255,213,.10) inset;
+  position: relative;
+}
+.card.clickable{ cursor:pointer; transition: transform .2s ease, box-shadow .2s ease; }
+.card.clickable:hover{
+  transform: translateY(-2px);
+  box-shadow:
+    0 22px 70px rgba(0,0,0,.45),
+    0 0 0 1px rgba(0,255,213,.18) inset;
+}
+
+/* ======================
+   Tabs (chips) tipo DEX
+   ====================== */
+.dao-tabs{
+  margin-top: 12px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.dao-tab{
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  font-weight: 900;
+  font-size: 12px;
+  cursor: pointer;
+  line-height: 1;
+}
+.dao-tab:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px rgba(0,255,213,.22), 0 0 18px rgba(0,255,213,.12);
+}
+.dao-tab.active{
+  border: 0;
+  color: #08101a;
+  background: linear-gradient(135deg,var(--primary),var(--accent));
+  box-shadow: 0 12px 26px rgba(0,255,213,.25);
+}
+
+/* Panel superior como en DEX */
+.dao-panel{ margin-top:16px; padding:14px; }
+.dao-panel-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.dao-panel-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+/* Botones (mejor contraste dark/light) */
+.btn{
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  font-weight: 950;
+  cursor:pointer;
+}
+.btn:hover{
+  box-shadow: 0 0 0 1px rgba(0,255,213,.20), 0 0 18px rgba(0,255,213,.12);
+  transform: translateY(-1px);
+}
+.btn.primary{
+  border:0;
+  color:#08101a;
+  background: linear-gradient(135deg,var(--primary),var(--accent));
+}
+html.light .btn{
+  background: rgba(0,0,0,.06);
+  border-color: rgba(0,0,0,.12);
+  color:#08101a;
+}
+
+/* ======================
+   Carousel (top 5)
+   ====================== */
+.carousel{
+  margin-top: 12px;
+  display:grid;
+  grid-template-columns: 44px 1fr 44px;
+  gap: 10px;
+  align-items:center;
+}
+.car-btn{
+  width:44px;height:44px;
+  border-radius:16px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  font-weight: 1000;
+  cursor:pointer;
+}
+.car-btn:hover{ box-shadow: 0 0 0 1px rgba(0,255,213,.20), 0 0 18px rgba(0,255,213,.12); }
+
+.car-viewport{
+  overflow:hidden;
+  border-radius:18px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.03);
+}
+.car-track{
+  display:flex;
+  gap:10px;
+  padding:10px;
+  transform: translateX(0px);
+  transition: transform .25s ease;
+  will-change: transform;
+}
+.car-card{
+  min-width: min(520px, 86vw);
+  border-radius:18px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  padding:12px;
+  cursor:pointer;
+}
+.car-card:hover{ box-shadow: 0 0 0 1px rgba(0,255,213,.18) inset; }
+.car-title{ font-weight: 1000; margin: 2px 0 6px; }
+.car-meta{ font-size:12px; opacity:.75; }
+.car-snippet{ margin-top:6px; opacity:.9; white-space:normal; }
+.car-kpis{ margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
+
+.car-dots{
+  display:flex;
+  gap:6px;
+  justify-content:center;
+  margin-top:10px;
+}
+.dot{
+  width:8px; height:8px; border-radius:99px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.10);
+  opacity:.65;
+}
+.dot.active{
+  opacity:1;
+  background: linear-gradient(135deg,var(--primary),var(--accent));
+  border:0;
+}
+
+
+/* ======================
+   Crear post + último post (con jerarquía)
+   ====================== */
+.form{ margin-top:10px; display:flex; flex-direction:column; gap:10px; }
+.form .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+input, textarea, select{
+  width:100%;
+  border-radius:14px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+  padding: 10px 12px;
+  outline:none;
+}
+textarea{ resize: vertical; }
+input:focus, textarea:focus, select:focus{
+  box-shadow: 0 0 0 4px rgba(0,255,213,.10);
+  border-color: rgba(0,255,213,.35);
+}
+
+/* ====== Post raíz (nivel 0) ====== */
+.post-root .latest-title{
+  font-weight: 1000;
+  font-size: 1.15rem;
+  margin-top: 10px;
+  letter-spacing: -0.01em;
+}
+.post-root .latest-snippet{
+  margin-top: 6px;
+  font-size: .95rem;
+  line-height: 1.55;
+  opacity: .86;
+}
+.post-root .latest-kpis{
+  margin-top: 12px;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+/* Pills base (mantienes tu identidad) */
+.pill{
+  border-radius:999px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  padding:6px 10px;
+  font-size:12px;
+  font-weight:900;
+}
+
+/* ====== Comentarios preview ====== */
+.comment-preview{ margin-top: 8px; }
+
+/* Nivel 1: Comentario */
+.comment.comment-l1{
+  margin-top: 12px;
+  padding-left: 12px;
+  border-left: 2px solid rgba(255,255,255,.12);
+  font-size: .90rem;
+}
+.comment.comment-l1 .comment-head{
+  font-size: .80rem;
+  opacity: .82;
+  display:flex;
+  gap:8px;
+  align-items:baseline;
+}
+.comment.comment-l1 p{
+  margin: 4px 0 0;
+  line-height: 1.45;
+  opacity: .92;
+}
+
+/* Nivel 2: Respuesta (más pequeña y más tenue) */
+.comment.comment-l2{
+  margin-top: 8px;
+  margin-left: 14px;
+  padding-left: 10px;
+  border-left: 1px dashed rgba(255,255,255,.10);
+  font-size: .82rem;
+  opacity: .86;
+}
+.comment.comment-l2 .comment-head{
+  font-size: .76rem;
+  opacity: .78;
+}
+.comment.comment-l2 p{
+  margin: 2px 0 0;
+  line-height: 1.40;
+  opacity: .90;
+}
+
+/* Acciones bajan de jerarquía en respuestas */
+.comment.comment-l1 .pill{ font-size: .75rem; opacity: .88; }
+.comment.comment-l2 .pill{ font-size: .70rem; opacity: .75; }
+
+
+/* ======================
+   Feed tipo Reddit
+   ====================== */
+.dao-feed-head{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.dao-feed-tools{ display:flex; gap:8px; align-items:center; }
+#search{ min-width: 220px; }
+
+.feed{
+  margin-top:12px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.post{
+  display:grid;
+  grid-template-columns: 56px 1fr;
+  gap:12px;
+  padding:12px;
+  border-radius:18px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.03);
+}
+.vote{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+}
+.vbtn{
+  width:40px;height:40px;
+  border-radius:16px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  cursor:pointer;
+  font-weight:1000;
+}
+.vnum{ font-weight:1000; opacity:.9; }
+.post-body{ cursor:pointer; }
+.post-title{ font-weight:1000; margin:0 0 6px; }
+.post-meta{ font-size:12px; opacity:.75; }
+.post-snippet{ opacity:.92; white-space:pre-wrap; margin-top:6px; }
+.post-tags{ margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
+.tag{
+  border-radius:999px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.05);
+  padding:6px 10px;
+  font-size:12px;
+  font-weight:900;
+  opacity:.9;
+}
+
+/* ======================
+   Mini grids (Top 4) 2x2
+   ====================== */
+.mini-grid{
+  margin-top: 12px;
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap:10px;
+}
+.mini{
+  border-radius:18px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  padding:12px;
+  cursor:pointer;
+}
+.mini:hover{ box-shadow: 0 0 0 1px rgba(0,255,213,.16) inset; }
+.mini .t{ font-weight:1000; }
+.mini .m{ font-size:12px; opacity:.75; margin-top:4px; }
+.mini .k{ margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
+
+/* Modal body padding (por si acaso) */
+.modal-body{ padding:16px; }
+
+/* Responsive */
+@media (max-width: 720px){
+  .carousel{ grid-template-columns: 40px 1fr 40px; }
+  .car-btn{ width:40px;height:40px; }
+  #search{ min-width: 180px; }
+}
+
+/* =========================================
+   BOTONES ACTIVOS: Backrooms / Temas
+   ========================================= */
+
+.dao-panel-actions .btn{
+  position: relative;
+  border-radius: 999px;
+  font-weight: 950;
+  padding: 10px 14px;
+  transition: all .25s ease;
+}
+
+/* Estado encendido */
+.dao-panel-actions .btn.glow{
+  border: 0;
+  color: #08101a;
+  background: linear-gradient(
+    135deg,
+    var(--primary),
+    var(--accent)
+  );
+  box-shadow:
+    0 0 0 1px rgba(0,255,213,.35),
+    0 10px 30px rgba(0,255,213,.35),
+    0 0 40px rgba(0,163,255,.25);
+}
+
+/* Efecto aura */
+.dao-panel-actions .btn.glow::after{
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  background:
+    radial-gradient(
+      60% 60% at 50% 50%,
+      rgba(0,255,213,.35),
+      transparent 70%
+    );
+  opacity: .7;
+  filter: blur(12px);
+  pointer-events: none;
+}
+
+/* Hover */
+.dao-panel-actions .btn.glow:hover{
+  transform: translateY(-1px) scale(1.02);
+  box-shadow:
+    0 0 0 1px rgba(0,255,213,.45),
+    0 16px 40px rgba(0,255,213,.45),
+    0 0 60px rgba(0,163,255,.35);
+}
+
+/* ===== Light theme ===== */
+html.light .dao-panel-actions .btn.glow{
+  color: #ffffff;
+  background: linear-gradient(
+    135deg,
+    #0db9a6,
+    #0aa0ff
+  );
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.12),
+    0 10px 24px rgba(0,163,255,.25);
+}
+
+/* =====================================================
+   DAO · LIGHT THEME – Apple / VisionOS style
+   ===================================================== */
+
+html.light{
+  /* Fondo general (NO blanco puro) */
+  --bg: #f4f6f7;
+
+  /* Panel base */
+  --panel: rgba(255,255,255,.72);
+
+  /* Bordes muy suaves */
+  --border: rgba(0,0,0,.06);
+
+  /* Texto */
+  --text: #0e1a18;
+  --muted: rgba(14,26,24,.55);
+
+  /* Acentos esmeralda */
+  --primary: #2fd8b3;
+  --accent: #4fe6c1;
+}
+
+/* =========================
+   CARDS DAO (light)
+   ========================= */
+html.light .card{
+  background: rgba(255,255,255,.72);
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+  border: 1px solid rgba(0,0,0,.06);
+
+  box-shadow:
+    0 8px 30px rgba(0,0,0,.08),
+    0 0 0 1px rgba(255,255,255,.55) inset;
+}
+
+/* Cards clickeables: elevación suave */
+html.light .card.clickable:hover{
+  box-shadow:
+    0 14px 40px rgba(0,0,0,.12),
+    0 0 0 1px rgba(255,255,255,.65) inset;
+}
+
+/* =========================
+   PANEL SUPERIOR DAO
+   ========================= */
+html.light .dao-panel{
+  background: rgba(255,255,255,.78);
+}
+
+/* =========================
+   BOTONES DAO
+   ========================= */
+html.light .dao-panel-actions .btn{
+  background: rgba(255,255,255,.65);
+  border: 1px solid rgba(0,0,0,.06);
+  color: #0e1a18;
+
+  box-shadow:
+    0 4px 14px rgba(0,0,0,.08),
+    0 0 0 1px rgba(255,255,255,.55) inset;
+}
+
+/* Botones encendidos (Backrooms / Temas) */
+html.light .dao-panel-actions .btn.glow{
+  background: linear-gradient(135deg,#2fd8b3,#4fe6c1);
+  color: #05312a;
+
+  box-shadow:
+    0 8px 22px rgba(47,216,179,.35),
+    0 0 0 1px rgba(255,255,255,.75) inset;
+}
+
+/* =========================
+   TABS DAO
+   ========================= */
+html.light .dao-tab{
+  background: rgba(255,255,255,.65);
+  border: 1px solid rgba(0,0,0,.06);
+  color: rgba(14,26,24,.75);
+}
+
+html.light .dao-tab.active{
+  background: linear-gradient(135deg,#2fd8b3,#4fe6c1);
+  color: #05312a;
+  box-shadow:
+    0 8px 22px rgba(47,216,179,.35);
+}
+
+/* =========================
+   FEED / POSTS
+   ========================= */
+html.light .post,
+html.light .mini,
+html.light .car-card{
+  background: rgba(255,255,255,.68);
+  border: 1px solid rgba(0,0,0,.06);
+
+  box-shadow:
+    0 6px 18px rgba(0,0,0,.08);
+}
+
+/* =========================
+   MODAL (alineado a Apple)
+   ========================= */
+html.light .modal-card{
+  background: rgba(255,255,255,.82);
+  backdrop-filter: blur(22px) saturate(120%);
+  -webkit-backdrop-filter: blur(22px) saturate(120%);
+  box-shadow:
+    0 24px 60px rgba(0,0,0,.18);
+}
+
+/* =====================================================
+   DAO · GLASS MÁS TRANSPARENTE (Apple-like)
+   ===================================================== */
+
+/* Cards y ventanas principales */
+html.light .card,
+html.light .post,
+html.light .mini,
+html.light .car-card,
+html.light .dao-panel{
+  background: rgba(255,255,255,.58); /* antes ~.72 */
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+
+  border: 1px solid rgba(255,255,255,.45);
+
+  box-shadow:
+    0 10px 28px rgba(0,0,0,.10),
+    0 0 0 1px rgba(255,255,255,.55) inset;
+}
+
+/* Cards muy cercanas entre sí: menos sombra */
+html.light .card + .card,
+html.light .post + .post{
+  box-shadow:
+    0 6px 18px rgba(0,0,0,.08),
+    0 0 0 1px rgba(255,255,255,.6) inset;
+}
+
+
+/* =====================================================
+   DAO · POST CARDS – GLASS ESMERALDA PROFESIONAL
+   (Light theme, Apple-like)
+   ===================================================== */
+
+/* ===== Estado base ===== */
+html.light .post,
+html.light .mini,
+html.light .car-card{
+  background:
+    linear-gradient(
+      180deg,
+      rgba(47, 216, 179, 0.045),  /* esmeralda ambiental */
+      rgba(255,255,255, 0.60)
+    );
+
+  backdrop-filter: blur(22px) saturate(135%);
+  -webkit-backdrop-filter: blur(22px) saturate(135%);
+
+  border: 1px solid rgba(47,216,179,0.10);
+
+  box-shadow:
+    0 6px 20px rgba(0,0,0,0.08),           /* elevación base */
+    0 0 0 1px rgba(255,255,255,0.55) inset;
+
+  transition:
+    transform .22s cubic-bezier(.22,.61,.36,1),
+    box-shadow .22s cubic-bezier(.22,.61,.36,1),
+    background .22s ease;
+}
+
+/* ===== Hover (selección suave, no dura) ===== */
+html.light .post:hover,
+html.light .mini:hover,
+html.light .car-card:hover{
+  transform: translateY(-1.5px);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(47, 216, 179, 0.075), /* apenas más luz */
+      rgba(255,255,255, 0.62)
+    );
+
+  box-shadow:
+    0 10px 28px rgba(0,0,0,0.10),          /* sombra neutra */
+    0 0 0 1px rgba(255,255,255,0.65) inset,
+    0 6px 18px rgba(47,216,179,0.16);      /* halo esmeralda suave */
+}
+
+
+
+/* =====================================================
+   DAO · ACTION BUTTONS
+   Likes / Comments / Points
+   Light + Dark theme (Apple-like glass)
+   ===================================================== */
+
+/* =========================
+   BASE (ambos temas)
+   ========================= */
+.pill.like,
+.pill.comment,
+.pill.points,
+.vbtn.like,
+.vbtn.comment,
+.vbtn.points{
+  border-radius: 999px;
+  font-weight: 900;
+  transition:
+    background .18s ease,
+    box-shadow .18s ease,
+    transform .18s ease,
+    color .18s ease;
+}
+
+/* =====================================================
+   LIGHT THEME
+   ===================================================== */
+
+/* 💚 LIKE – esmeralda suave */
+html.light .pill.like,
+html.light .vbtn.like{
+  background: rgba(47,216,179,0.12);
+  color: rgba(14,60,50,0.85);
+  border: 1px solid rgba(47,216,179,0.22);
+}
+
+/* 💬 COMMENT – azul claro */
+html.light .pill.comment,
+html.light .vbtn.comment{
+  background: rgba(64,163,255,0.10);
+  color: rgba(20,40,80,0.85);
+  border: 1px solid rgba(64,163,255,0.22);
+}
+
+/* ✨ POINTS – dorado suave */
+html.light .pill.points,
+html.light .vbtn.points{
+  background: rgba(255,205,120,0.14);
+  color: rgba(90,60,10,0.85);
+  border: 1px solid rgba(255,205,120,0.28);
+}
+
+/* Hover light: más luz, no más color */
+html.light .pill.like:hover,
+html.light .vbtn.like:hover{
+  box-shadow:
+    0 6px 16px rgba(47,216,179,0.24),
+    0 0 0 1px rgba(255,255,255,0.6) inset;
+}
+
+html.light .pill.comment:hover,
+html.light .vbtn.comment:hover{
+  box-shadow:
+    0 6px 16px rgba(64,163,255,0.24),
+    0 0 0 1px rgba(255,255,255,0.6) inset;
+}
+
+html.light .pill.points:hover,
+html.light .vbtn.points:hover{
+  box-shadow:
+    0 6px 16px rgba(255,205,120,0.26),
+    0 0 0 1px rgba(255,255,255,0.6) inset;
+}
+
+/* Active light */
+html.light .pill.like.active,
+html.light .vbtn.like.active{
+  background: rgba(47,216,179,0.20);
+}
+
+html.light .pill.comment.active,
+html.light .vbtn.comment.active{
+  background: rgba(64,163,255,0.18);
+}
+
+html.light .pill.points.active,
+html.light .vbtn.points.active{
+  background: rgba(255,205,120,0.22);
+}
+
+/* =====================================================
+   DARK THEME
+   ===================================================== */
+
+/* ❤️ LIKE – ROJO (pedido explícito) */
+html:not(.light) .pill.like,
+html:not(.light) .vbtn.like{
+  background: rgba(255,70,90,0.18);
+  color: rgba(255,220,225,0.95);
+  border: 1px solid rgba(255,70,90,0.35);
+}
+
+/* 💬 COMMENT – azul frío */
+html:not(.light) .pill.comment,
+html:not(.light) .vbtn.comment{
+  background: rgba(90,160,255,0.18);
+  color: rgba(210,225,255,0.95);
+  border: 1px solid rgba(90,160,255,0.35);
+}
+
+/* ✨ POINTS – ámbar suave */
+html:not(.light) .pill.points,
+html:not(.light) .vbtn.points{
+  background: rgba(255,190,90,0.20);
+  color: rgba(255,235,200,0.95);
+  border: 1px solid rgba(255,190,90,0.35);
+}
+
+/* Hover dark: glow suave (no neón) */
+html:not(.light) .pill.like:hover,
+html:not(.light) .vbtn.like:hover{
+  box-shadow:
+    0 0 18px rgba(255,70,90,0.35),
+    0 0 0 1px rgba(255,255,255,0.08) inset;
+}
+
+html:not(.light) .pill.comment:hover,
+html:not(.light) .vbtn.comment:hover{
+  box-shadow:
+    0 0 18px rgba(90,160,255,0.35),
+    0 0 0 1px rgba(255,255,255,0.08) inset;
+}
+
+html:not(.light) .pill.points:hover,
+html:not(.light) .vbtn.points:hover{
+  box-shadow:
+    0 0 18px rgba(255,190,90,0.38),
+    0 0 0 1px rgba(255,255,255,0.08) inset;
+}
+
+/* Active dark */
+html:not(.light) .pill.like.active,
+html:not(.light) .vbtn.like.active{
+  background: rgba(255,70,90,0.30);
+}
+
+html:not(.light) .pill.comment.active,
+html:not(.light) .vbtn.comment.active{
+  background: rgba(90,160,255,0.28);
+}
+
+html:not(.light) .pill.points.active,
+html:not(.light) .vbtn.points.active{
+  background: rgba(255,190,90,0.32);
+}
