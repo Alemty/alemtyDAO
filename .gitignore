@@ -1,0 +1,5 @@
+# Node
+node_modules/
+
+# Local / temp
+_dump/
