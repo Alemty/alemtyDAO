@@ -23,6 +23,7 @@
   "homepage": "https://github.com/Alemty/alemtyDAO#readme",
   "dependencies": {
     "buffer": "^6.0.3",
+    "ethers": "^6.16.0",
     "siwe": "^3.0.0"
   }
 }

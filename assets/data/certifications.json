@@ -111,42 +111,47 @@
   },
   {
     "title": "Photoshop",
+    "badgeImg": "../alemty.eth/assets/data/photoshop.png",
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/1230-photoshop-basico/diploma/detalle/",
     "year": null,
-    "category": "Design",
+    "category": "🎨",
     "score": 5,
     "pinned": false
   },
   {
-    "title": "Creación de Filtros Faciales con Spark Augmented Reality",
+    "title": "Spark Augmented Reality",
+    "badgeImg": "../alemty.eth/assets/data/sparkar.png",
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/2647-filtros-spark-ar/diploma/detalle/",
     "year": null,
-    "category": "Design",
+    "category": "🎨",
     "score": 5,
     "pinned": false
   },
   {
     "title": "Bitcoin y Blockchain",
+    "badgeImg": "../alemty.eth/assets/data/bitcoin.png",
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/2451-course/diploma/detalle/",
     "year": null,
-    "category": "Web 3.0",
+    "category": "🪙",
     "score": 5,
     "pinned": false
   },
   {
     "title": "Gestión de Criptoactivos",
+    "badgeImg": "../alemty.eth/assets/data/metamask.png",
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/2617-course/diploma/detalle/",
     "year": null,
-    "category": "Web 3.0",
+    "category": "🪙",
     "score": 5,
     "pinned": false
   },
   {
     "title": "Fundamentos de Ingeniería de Software",
+    "badgeImg": "../alemty.eth/assets/data/ingsoftware.png",
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/1098-course/diploma/detalle/",
     "year": null,
@@ -155,7 +160,8 @@
     "pinned": false
   },
   {
-    "title": "Prework: Configuración de Entorno de Desarrollo en Linux",
+    "title": "Entorno de Desarrollo en Linux",
+    "badgeImg": "../alemty.eth/assets/data/linux.png",
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/2383-course/diploma/detalle/",
     "year": null,
@@ -164,7 +170,8 @@
     "pinned": false
   },
   {
-    "title": "Curso de Pensamiento Lógico: Algoritmos y Diagramas de Flujo",
+    "title": "Algoritmos y Diagramas de Flujo",
+    "badgeImg": "../alemty.eth/assets/data/algoritmos.png",
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/3221-pensamiento-logico/diploma/detalle/",
     "year": null,
@@ -174,6 +181,7 @@
   },
   {
     "title": "Computadores e Informática",
+    "badgeImg": "../alemty.eth/assets/data/computacion.png",
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/2793-computacion-basica/diploma/detalle/",
     "year": null,
@@ -183,6 +191,7 @@
   },
   {
     "title": "Fundamentos de IA para Data y Machine Learning",
+    "badgeImg": "../alemty.eth/assets/data/datayml.png",
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/6935-ai/diploma/detalle/",
     "year": null,
@@ -192,6 +201,7 @@
   },
   {
     "title": "Prompt Engineering con ChatGPT",
+    "badgeImg": "../alemty.eth/assets/data/chatgpt.png",
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/7296-chatgpt/diploma/detalle/",
     "year": null,
@@ -201,6 +211,7 @@
   },
   {
     "title": "Capacitación en Línea para Empresas",
+    "badgeImg": "../alemty.eth/assets/data/capacitacion.png",
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/8030-capacitacion-en-linea/diploma/detalle/",
     "year": null,
@@ -210,15 +221,17 @@
   },
   {
     "title": "Modelado 3D usando Blender",
+    "badgeImg": "../alemty.eth/assets/data/blender.png",
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/2789-blender/diploma/detalle/",
     "year": null,
-    "category": "Design",
+    "category": "🎨",
     "score": 5,
     "pinned": false
   },
   {
     "title": "Introducción al Marketing Digital",
+    "badgeImg": "../alemty.eth/assets/data/marketing.png",
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/2890-introduccion-marketing/diploma/detalle/",
     "year": null,
@@ -228,15 +241,17 @@
   },
   {
     "title": "Fundamentos de Ethereum",
+    "badgeImg": "../alemty.eth/assets/data/ethereum.png",
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/7891-ethereum-ecosistema/diploma/detalle/",
     "year": null,
-    "category": "Web 3.0",
+    "category": "🪙",
     "score": 5,
     "pinned": false
   },
   {
     "title": "Ruta de Marketing Digital",
+    "badgeImg": "../alemty.eth/assets/data/rutamkt.png",
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/2636-marketing-path/diploma/detalle/",
     "year": null,
@@ -306,6 +321,7 @@
   },
   {
     "title": "Introducción a la Inteligencia Artificial",
+    "badgeImg": "../alemty.eth/assets/data/fundamentosia.png",
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/11157-introduccion-ai/diploma/detalle/",
     "year": null,

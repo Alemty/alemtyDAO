@@ -80,6 +80,7 @@ function normAssetPath(path,defaultDir="/assets/data/"){
   return s;
 }
 
+
 async function loadCreds(drawer){
   const poapEl=drawer.querySelector("#poapStrip");
   const tabsEl=drawer.querySelector("#certTabs");
@@ -87,8 +88,15 @@ async function loadCreds(drawer){
   const detailEl=drawer.querySelector("#certDetail");
   if(!poapEl||!tabsEl||!stripEl||!detailEl) return;
 
-
-
+  // ✅ Shuffle local (solo se usa dentro de loadCreds)
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
   /* ✅ assets ahora vive en raíz */
   const poapUrls=[
     "/assets/poap/poaps.v3.json",
@@ -103,15 +111,24 @@ async function loadCreds(drawer){
 
 const poaps=await fetchFirstJson(poapUrls);
   if(poaps && Array.isArray(poaps) && poaps.length){
-    const base=poaps.map(p=>{
-      const title=esc(p.title||"POAP");
-      const href=(p.hasUrl&&p.url)?p.url:"#";
-      const dis=href==="#"?` aria-disabled="true" tabindex="-1"`:"";
-      const img=esc(p.img||"");
-      return `<a class="poap" href="${esc(href)}" target="_blank" rel="noopener noreferrer"${dis}><img src="${img}" alt="${title}" loading="lazy"><span class="label">${title}</span></a>`;
-    });
-    const filled=repeatToMin(base,Math.max(12,base.length*3)).join("");
-    poapEl.innerHTML=`<div class="poap-row" id="poapRow"><div class="poap-marquee"><div class="poap-track">${filled}</div><div class="poap-track" aria-hidden="true">${filled}</div></div></div>`;
+    
+const base = poaps.map(p => {
+  const title = esc(p.title ?? "POAP");
+  const href = (p.hasUrl && p.url) ? p.url : "#";
+  const dis  = href === "#" ? ` aria-disabled="true" tabindex="-1"` : "";
+  const img  = esc(p.img ?? "");
+  return `<a class="poap" href="${esc(href)}" target="_blank" rel="noopener noreferrer"${dis}>
+            <img src="${img}" alt="${title}" loading="lazy">
+            <span class="label">${title}</span>
+          </a>`;
+});
+
+// ✅ aquí la aleatoriedad
+const baseShuffled = shuffle(base);
+
+// ✅ luego repites para el carrusel infinito
+const filled = repeatToMin(baseShuffled, Math.max(12, baseShuffled.length * 3)).join("");
+poapEl.innerHTML=`<div class="poap-row" id="poapRow"><div class="poap-marquee"><div class="poap-track">${filled}</div><div class="poap-track" aria-hidden="true">${filled}</div></div></div>`;
     const poapRow=poapEl.querySelector("#poapRow");
     if(poapRow){poapRow.style.setProperty("--poap-duration","36s");pauseOnHold(poapRow);}
   }else{
@@ -332,6 +349,7 @@ document.body.appendChild(bottomNav);
 const drawerBackdrop=el("div",{class:"drawer-backdrop",id:"drawerBackdrop"});
 const drawer=el("aside",{class:"drawer",id:"drawer","aria-hidden":"true"});
 
+
 drawer.innerHTML = `
   <div class="drawer-head">
     <strong class="code">Menú</strong>
@@ -364,7 +382,8 @@ drawer.innerHTML = `
 
           <div class="did-row">
             <span class="k">SIWE</span>
-            <!-- ✅ antes decía SOON, ahora placeholder honesto -->
+            <!-- ⛔ NO tocar este texto desde HTML -->
+            <!-- ✅ Se actualiza dinámicamente vía JS + localStorage -->
             <span class="v code" id="siweStatus">DID ⚠️</span>
           </div>
 
@@ -373,8 +392,9 @@ drawer.innerHTML = `
         <div class="did-actions">
           <button class="drawer-link" id="connectBtn" type="button">🦊 Conectar MetaMask</button>
           <button class="drawer-link" id="disconnectBtn" type="button">⛔ Desconectar</button>
+          
 
-          <!-- ✅ nuevo: botón para disparar flujo SIWE -->
+          <!-- Dispara el flujo SIWE -->
           <button class="drawer-link" id="siweBtn" type="button">✅ Verificar SIWE</button>
         </div>
 
@@ -411,7 +431,9 @@ drawer.innerHTML = `
 
         <div class="cert-detail" id="certDetail">
           <div class="t">Selecciona una acreditación</div>
-          <div class="m small muted">Al pulsar una medalla verás el detalle aquí.</div>
+          <div class="m small muted">
+            Al pulsar una medalla verás el detalle aquí.
+          </div>
         </div>
 
       </div>
@@ -419,6 +441,99 @@ drawer.innerHTML = `
 
   </div>
 `;
+
+document.body.append(drawerBackdrop, drawer);
+
+
+drawer.querySelector("#siweBtn")?.addEventListener("click", async () => {
+  console.log("🔐 SIWE: click");
+
+  try {
+    const address = getDid();
+    console.log("👛 DID:", address);
+
+    if (!address) {
+      alert("Conecta tu wallet primero");
+      return;
+    }
+
+    const API = "https://alemtydao-siwe.alejandrogtzz93.workers.dev";
+
+    // 1. Nonce
+    console.log("➡️ solicitando nonce");
+    const nonceRes = await fetch(`${API}/nonce`);
+    const nonceJson = await nonceRes.json();
+    console.log("✅ nonce:", nonceJson);
+
+    const nonce = nonceJson.nonce;
+    if (!nonce) throw new Error("Nonce inválido");
+
+    // 2. Mensaje SIWE
+    const message = [
+      "alemty.eth wants you to sign in with your Ethereum account:",
+      address,
+      "",
+      "Sign in with Ethereum to AlemtyDAO.",
+      "",
+      `URI: ${location.origin}`,
+      "Version: 1",
+      "Chain ID: 8453",
+      `Nonce: ${nonce}`,
+      `Issued At: ${new Date().toISOString()}`
+    ].join("\n");
+
+    console.log("📝 SIWE message:\n", message);
+
+    // 3. Firma
+    console.log("✍️ solicitando firma");
+    const signature = await window.ethereum.request({
+      method: "personal_sign",
+      params: [message, address]
+    });
+    console.log("✅ firma:", signature);
+
+    // 4. Verify
+    console.log("➡️ verificando en backend");
+    const verifyRes = await fetch(`${API}/verify`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ message, signature })
+    });
+
+    const result = await verifyRes.json();
+    console.log("✅ verify result:", result);
+
+    if (result?.ok === true) {
+      localStorage.setItem("alemty.siwe", "ok");
+      updateSiweStatus();
+      alert("✅ SIWE verificado correctamente");
+    } else {
+      alert("❌ SIWE rechazado por backend");
+    }
+
+  } catch (err) {
+    console.error("💥 SIWE ERROR:", err);
+    alert("❌ Error durante SIWE (ver consola)");
+  }
+});
+
+
+
+// 🔌 Botón: Desconectar wallet
+drawer.querySelector("#disconnectBtn")?.addEventListener("click", () => {
+  // 1. Desconecta la wallet (DID)
+  clearDid();
+
+  // 2. Borra estado SIWE
+  localStorage.removeItem("alemty.siwe");
+
+  // 3. Actualiza UI
+  updateSiweStatus();
+  syncDid();
+});
+
+
+
 document.getElementById("drawerBackdrop")?.remove();
 document.getElementById("drawer")?.remove();
 document.body.append(drawerBackdrop,drawer);
@@ -478,6 +593,16 @@ function syncDid(){
     updateSiweStatus();
   }
 }
+
+function updateSiweStatus() {
+  const el = document.getElementById("siweStatus");
+  if (!el) return;
+
+  const ok = localStorage.getItem("alemty.siwe") === "ok";
+  el.textContent = ok ? "SIWE ✅" : "DID ⚠️";
+}
+
+
 drawer.querySelector("#connectBtn")?.addEventListener("click",async()=>{try{await connectDid();}catch{}syncDid();});
 drawer.querySelector("#disconnectBtn")?.addEventListener("click",()=>{clearDid();syncDid();});
 window.addEventListener("did:changed",syncDid);
@@ -487,6 +612,8 @@ syncDid();
 
 
 loadCreds(drawer);
+
+
 
 /* Perfil modal (tokens por color en balances) */
 const profileModal=el("div",{class:"modal",id:"profileModal","aria-hidden":"true"});
