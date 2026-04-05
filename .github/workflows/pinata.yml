@@ -1,0 +1,96 @@
+
+name: Upload site to IPFS (Pinata)
+
+on:
+  workflow_dispatch:
+  check_run:
+    types: [completed]
+
+jobs:
+  pinata:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.check_run.conclusion == 'success' &&
+        contains(github.event.check_run.name, 'Cloudflare Pages')
+      )
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 1️⃣ Preparar SOLO el sitio (root frontend)
+      - name: Prepare site folder
+        run: |
+          set -euo pipefail
+          rm -rf ipfs
+          mkdir ipfs
+
+          cp index.html ipfs/
+          [ -d css ] && cp -R css ipfs/
+          [ -d js ] && cp -R js ipfs/
+          [ -d assets ] && cp -R assets ipfs/
+          [ -d ar ] && cp -R ar ipfs/
+
+          echo "Files prepared:"
+          find ipfs -type f
+
+      # 2️⃣ Build stamp (CID siempre nuevo)
+      - name: Add build stamp
+        run: |
+          {
+            echo "repo=alemtyDAO"
+            echo "site=alemty.eth"
+            echo "sha=${GITHUB_SHA}"
+            echo "run=${GITHUB_RUN_NUMBER}"
+            echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } > ipfs/build.txt
+
+      # 3️⃣ Upload folder to Pinata
+      - name: Upload folder to Pinata
+        env:
+          PINATA_JWT: ${{ secrets.PINATA_JWT }}
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm i form-data recursive-fs base-path-converter got@14 >/dev/null 2>&1
+
+          node --input-type=module <<'NODE'
+          import fs from "fs";
+          import FormData from "form-data";
+          import rfs from "recursive-fs";
+          import basePathConverter from "base-path-converter";
+          import got from "got";
+
+          const jwt = process.env.PINATA_JWT;
+          if (!jwt) throw new Error("Missing PINATA_JWT");
+
+          const src = "ipfs";
+          const { files } = await rfs.read(src);
+
+          const name = `alemty.eth-${new Date().toISOString().slice(0,10)}-${process.env.GITHUB_RUN_NUMBER}`;
+
+          const data = new FormData();
+          for (const file of files) {
+            data.append("file", fs.createReadStream(file), {
+              filepath: basePathConverter(src, file),
+            });
+          }
+
+          data.append("pinataMetadata", JSON.stringify({ name }));
+          data.append("pinataOptions", JSON.stringify({ cidVersion: 1 }));
+
+          const res = await got("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${jwt}` },
+            body: data,
+          }).json();
+
+          console.log("✅ CID:", res.IpfsHash);
+          console.log("🌐 https://gateway.pinata.cloud/ipfs/" + res.IpfsHash + "/");
+          NODE
