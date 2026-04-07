@@ -20,26 +20,26 @@ jobs:
         with:
           node-version: 20
 
-      # ✅ Subir TODO el frontend tal como vive en el repo
-      # Esto preserva rutas absolutas (/shared, /dao, /css, etc.)
-      - name: Prepare site folder (FULL SITE)
+      # ✅ Copia TODO el sitio de forma segura (sin copiar ipfs dentro de ipfs)
+      - name: Prepare site folder (FULL SITE, SAFE)
         run: |
           set -euo pipefail
+
           rm -rf ipfs
           mkdir ipfs
 
-          # Copiar todo el proyecto
-          cp -R . ipfs
+          shopt -s dotglob
 
-          # Quitar cosas que NO deben ir a IPFS
-          rm -rf ipfs/.git
-          rm -rf ipfs/.github
-          rm -rf ipfs/node_modules || true
+          for item in *; do
+            if [ "$item" != "ipfs" ] && [ "$item" != ".git" ] && [ "$item" != ".github" ]; then
+              cp -R "$item" ipfs/
+            fi
+          done
 
-          echo "Files prepared for IPFS:"
+          echo "✅ Files prepared for IPFS:"
           find ipfs -type f | wc -l
 
-      # 📌 Build stamp (fuerza CID nuevo por deploy)
+      # 📌 Build stamp (fuerza CID nuevo en cada deploy)
       - name: Add build stamp
         run: |
           {
@@ -50,7 +50,7 @@ jobs:
             echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           } > ipfs/build.txt
 
-      # 🚀 Upload a Pinata
+      # 🚀 Upload completo a Pinata
       - name: Upload folder to Pinata
         env:
           PINATA_JWT: ${{ secrets.PINATA_JWT }}
