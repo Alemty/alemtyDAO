@@ -789,3 +789,27 @@ html:not(.light) .pill.points.active,
 html:not(.light) .vbtn.points.active{
   background: rgba(255,190,90,0.32);
 }
+
+/* =========================
+   FIX: asegurar interacciones
+   ========================= */
+
+/* Las pills SIEMPRE deben recibir clicks */
+.pill {
+  position: relative;
+  z-index: 5;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* El cuerpo del post no debe interceptar clicks */
+.post-body {
+  pointer-events: none;
+}
+
+/* Pero los elementos interactivos dentro sí */
+.post-body .pill,
+.post-body a,
+.post-body button {
+  pointer-events: auto;
+}

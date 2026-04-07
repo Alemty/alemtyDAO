@@ -66,6 +66,7 @@ function esc(s){
 }
 
 
+
 /* =========================
    Modal
 ========================= */
@@ -75,16 +76,240 @@ function openModal(){
   m.classList.add('open');
   m.setAttribute('aria-hidden','false');
 }
+
 function closeModal(){
   const m = document.getElementById('daoModal');
   if(!m) return;
   m.classList.remove('open');
   m.setAttribute('aria-hidden','true');
 }
-/* cierre global ok */
-document.addEventListener('click', (e)=>{
-  if(e.target.closest('[data-close]')) closeModal();
+
+
+
+
+/* =========================
+   Delegación GLOBAL de clicks
+========================= */
+document.addEventListener('click', async (e) => {
+
+  // =========================
+  // Cerrar modal
+  // =========================
+  if (e.target.closest('[data-close]')) {
+    closeModal();
+    return;
+  }
+
+  // =========================
+  // LIKE (botones data-like)
+  // =========================
+  const like = e.target.closest('[data-like]');
+  if (like) {
+    const postId = like.getAttribute('data-like');
+    const userId = getUserId();
+    const actions = loadActions();
+    const entry = getActionEntry(actions, userId, postId);
+
+    if (entry.liked) return;
+
+    const ok = await reactSafe(postId, 'like');
+    entry.liked = true;
+    saveActions(actions);
+
+    if (!ok) {
+      mutatePost(postId, p => ({
+        ...p,
+        likes: (p.likes || 0) + 1
+      }));
+    }
+
+    renderAll();
+    await openPostModal(postId);
+    return;
+  }
+
+  // =========================
+  // POINTS (data-point)
+  // =========================
+  const point = e.target.closest('[data-point]');
+  if (point) {
+    const postId = point.getAttribute('data-point');
+    const userId = getUserId();
+    const actions = loadActions();
+    const entry = getActionEntry(actions, userId, postId);
+
+    if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
+
+    const ok = await reactSafe(postId, 'points');
+    entry.pointsGiven += 1;
+    saveActions(actions);
+
+    if (!ok) {
+      mutatePost(postId, p => ({
+        ...p,
+        points: (p.points || 0) + 1
+      }));
+    }
+
+    renderAll();
+    await openPostModal(postId);
+    return;
+  }
+
+  // =========================
+  // PILLs: like / points / comment
+  // =========================
+  const pill = e.target.closest('.pill[data-action]');
+  if (pill) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const action = pill.dataset.action;
+    let postId = pill.dataset.postId;
+
+    if (!postId) {
+      const latestCard = document.getElementById('latestCard');
+      postId = latestCard?.dataset.openPost;
+    }
+    if (!postId) return;
+
+    const userId = getUserId();
+
+    if (userId === 'visitor') {
+      if (action === 'comment') {
+        await openPostModal(postId);
+      }
+      return;
+    }
+
+    const actions = loadActions();
+    const entry = getActionEntry(actions, userId, postId);
+
+    if (action === 'like') {
+      if (entry.liked) return;
+
+      const ok = await reactSafe(postId, 'like');
+      entry.liked = true;
+      saveActions(actions);
+
+      if (!ok) {
+        mutatePost(postId, p => ({
+          ...p,
+          likes: (p.likes || 0) + 1
+        }));
+      }
+
+      renderAll();
+      return;
+    }
+
+    if (action === 'points') {
+      if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
+
+      const ok = await reactSafe(postId, 'points');
+      entry.pointsGiven += 1;
+      saveActions(actions);
+
+      if (!ok) {
+        mutatePost(postId, p => ({
+          ...p,
+          points: (p.points || 0) + 1
+        }));
+      }
+
+      renderAll();
+      return;
+    }
+
+    if (action === 'comment') {
+      await openPostModal(postId);
+      return;
+    }
+  }
+
+  // =========================
+  // Abrir post
+  // =========================
+  const openPost = e.target.closest('[data-open-post]');
+  if (openPost) {
+    const id = openPost.dataset.openPost;
+    if (id) {
+      await openPostModal(id);
+    }
+    return;
+  }
+
+  // =========================
+  // SHARE
+  // =========================
+  const share = e.target.closest('[data-share]');
+  if (share) {
+    await copyLink(share.getAttribute('data-share'));
+    return;
+  }
+
+  // =========================
+  // SEND comment
+  // =========================
+  const send = e.target.closest('[data-send]');
+  if (send) {
+    const id = send.getAttribute('data-send');
+    const text = (document.getElementById('commentText')?.value || '').trim();
+    if (text.length < 2) return;
+
+    mutatePost(id, p => ({
+      ...p,
+      comments: [...(p.comments || []), { ts: now(), text }]
+    }));
+
+    await openPostModal(id);
+    renderAll();
+    return;
+  }
+
+  // =========================
+  // ADD ROOM
+  // =========================
+  if (e.target.id === 'addRoom') {
+    const name = prompt('Nombre de la sala/backroom:');
+    if (!name) return;
+
+    const rooms = loadJSON(ROOMS_KEY, []);
+    rooms.unshift(name.trim());
+    saveJSON(ROOMS_KEY, rooms);
+    openRoomsModal();
+    return;
+  }
+
+  // =========================
+  // ADD TOPIC
+  // =========================
+  if (e.target.id === 'addTopic') {
+    const name = prompt('Nombre del tema:');
+    if (!name) return;
+
+    const topics = loadJSON(TOPICS_KEY, DEFAULT_TOPICS);
+    topics.unshift(name.trim());
+    saveJSON(TOPICS_KEY, topics);
+    openTopicsModal();
+    return;
+  }
+
+  // =========================
+  // PICK TOPIC
+  // =========================
+  const pick = e.target.closest('[data-topic-pick]');
+  if (pick) {
+    const t = pick.getAttribute('data-topic-pick');
+    const sel = document.querySelector('#postTopic');
+    if (sel) sel.value = t;
+    closeModal();
+    return;
+  }
 });
+
+
+
 
 
 
@@ -305,6 +530,7 @@ function renderCarousel(posts){
 // =========================
 const ACTIONS_KEY = 'alemty.dao.actions.v1';
 const LIKE_MAX_PER_POST = 1;      // ❤️ máximo 1 por usuario/post
+console.log('USER ID:', getUserId());  //BORRAR CUANDO CONECTES SIWE, aquí es donde verás el DID real en consola//
 const POINTS_MAX_PER_POST = 10;   // ⭐ máximo 10 por usuario/post
 
 function getUserId(){
@@ -645,310 +871,127 @@ function openTopicsModal(){
 ========================= */
 seedIfEmpty();
 
+
+// =========================
+// Wire-up estático del DAO
+// (tabs, search, publish, carrusel)
+// =========================
 const daoMain = document.querySelector('main.container');
-if(!daoMain){
+
+if (!daoMain) {
   // Si no encuentra el contenedor, igual renderizamos por si acaso
   renderAll();
+
 } else {
+  // Render inicial
   renderAll();
 
+  // =========================
   // Tabs
-  daoMain.querySelectorAll('.dao-tab').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
+  // =========================
+  daoMain.querySelectorAll('.dao-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
       activeView = btn.dataset.view;
-      daoMain.querySelectorAll('.dao-tab').forEach(b=>{
+
+      daoMain.querySelectorAll('.dao-tab').forEach(b => {
         const on = b === btn;
         b.classList.toggle('active', on);
         b.setAttribute('aria-selected', on ? 'true' : 'false');
       });
+
       carIndex = 0;
       renderAll();
     });
   });
 
+  // =========================
   // Backrooms / Topics
-  daoMain.querySelector('#openRooms')?.addEventListener('click', openRoomsModal);
-  daoMain.querySelector('#openTopics')?.addEventListener('click', openTopicsModal);
+  // =========================
+  daoMain.querySelector('#openRooms')
+    ?.addEventListener('click', openRoomsModal);
 
-  // Carousel controls
-  daoMain.querySelector('#carPrev')?.addEventListener('click', ()=>{
-    carIndex = Math.max(0, carIndex-1);
-    renderAll();
-  });
-  daoMain.querySelector('#carNext')?.addEventListener('click', ()=>{
-    carIndex = carIndex + 1;
-    renderAll();
-  });
-  daoMain.querySelector('#carDots')?.addEventListener('click', (e)=>{
-    const d = e.target.closest('[data-dot]');
-    if(!d) return;
-    carIndex = Number(d.dataset.dot||0);
-    renderAll();
-  });
+  daoMain.querySelector('#openTopics')
+    ?.addEventListener('click', openTopicsModal);
 
-  // Search
-  daoMain.querySelector('#search')?.addEventListener('input', ()=> renderAll());
-  daoMain.querySelector('#clearSearch')?.addEventListener('click', ()=>{
-    daoMain.querySelector('#search').value = '';
-    renderAll();
-  });
-
-  // Crear post
-  daoMain.querySelector('#publishPost')?.addEventListener('click', ()=>{
-    const title = (daoMain.querySelector('#postTitle').value||'').trim();
-    const body  = (daoMain.querySelector('#postBody').value||'').trim();
-    const topic = (daoMain.querySelector('#postTopic').value||'').trim();
-    const status = daoMain.querySelector('#publishStatus');
-
-    if(title.length < 3 || body.length < 10){
-      status.textContent = 'Completa título (3+) y cuerpo (10+).';
-      return;
-    }
-
-    const posts = loadJSON(DB_KEY, []);
-    posts.unshift({ id: uid(), title, body, topic, ts: now(), likes:0, points:0, comments:[] });
-    saveJSON(DB_KEY, posts);
-
-    daoMain.querySelector('#postTitle').value = '';
-    daoMain.querySelector('#postBody').value = '';
-    status.textContent = 'Publicado.';
-    carIndex = 0;
-    renderAll();
-  });
-
-  // Click handler interno (open post / like / points / share / comment / add room/topic / pick topic)
-  daoMain.addEventListener('click', async (e)=>{
-    
-
-
-
-// =========================
-// Pills: like / points / comment (visitor = lectura)
-// =========================
-const pill = e.target.closest('.pill[data-action]');
-if (pill) {
-  e.preventDefault();
-  e.stopPropagation();
-
-  const action = pill.dataset.action;
-  let postId = pill.dataset.postId;
-
-  // fallback: latestCard si viene vacío
-  if (!postId) {
-    const latestCard = document.getElementById('latestCard');
-    postId = latestCard?.dataset.openPost;
-  }
-  if (!postId) return;
-
-  const userId = getUserId();
-
-  // ✅ VISITOR: lectura (sí puede abrir post/comentarios)
-  if (userId === 'visitor') {
-    if (action === 'comment') {
-      openPostModal(postId);
-      return;
-    }
-    // like/points bloqueados
-    // UX: muestra hint (elige una)
-    // 1) alert simple:
-    // alert('Conecta tu wallet (☰) para participar.');
-    //
-    // 2) abre el modal de Backrooms/Temas como CTA (si te gusta):
-    // openRoomsModal();
-    //
-    // 3) o abre Temas:
-    // openTopicsModal();
-    return;
-  }
-
-  // ✅ Usuario conectado: aplica límites
-  const actions = loadActions();
-  const entry = getActionEntry(actions, userId, postId);
-
-  
-
-if (action === 'like') {
-  if (entry.liked) return;
-
-  const ok = await reactSafe(postId, "like");
-
-  entry.liked = true;
-  saveActions(actions);
-
-  if (!ok) {
-    mutatePost(postId, p => ({ ...p, likes: (p.likes || 0) + 1 }));
-  }
-
-  renderAll();
-  return;
-}
-
-if (action === 'points') {
-  if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
-
-  const ok = await reactSafe(postId, "points");
-
-  entry.pointsGiven += 1;
-  saveActions(actions);
-
-  if (!ok) {
-    mutatePost(postId, p => ({ ...p, points: (p.points || 0) + 1 }));
-  }
-
-  renderAll();
-  return;
-}
-
-if (action === 'comment') {
-  await openPostModal(postId);
-  return;
-}
-
-
-}
-
-
-
-
-    
-const openPost = e.target.closest('[data-open-post]');
-if (openPost) {
-  const id = openPost.getAttribute('data-open-post') || openPost.dataset.openPost;
-  if (id) await openPostModal(id);
-  return;
-}
-
-
-    
-
-const like = e.target.closest('[data-like]');
-if (like) {
-  const postId = like.getAttribute('data-like');
-  const userId = getUserId();
-  const actions = loadActions();
-  const entry = getActionEntry(actions, userId, postId);
-
-  if (entry.liked) return;
-
-  const ok = await reactSafe(postId, "like");
-
-  entry.liked = true;
-  saveActions(actions);
-
-  if (!ok) {
-    mutatePost(postId, p => ({ ...p, likes: (p.likes || 0) + 1 }));
-  }
-
-  renderAll();
-  await openPostModal(postId);
-  return;
-}
-
-
-
-    
-
-const point = e.target.closest('[data-point]');
-if (point) {
-  const postId = point.getAttribute('data-point');
-  const userId = getUserId();
-  const actions = loadActions();
-  const entry = getActionEntry(actions, userId, postId);
-
-  if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
-
-  const ok = await reactSafe(postId, "points");
-
-  entry.pointsGiven += 1;
-  saveActions(actions);
-
-  if (!ok) {
-    mutatePost(postId, p => ({ ...p, points: Math.max(0, (p.points || 0) + 1) }));
-  }
-
-  renderAll();
-  await openPostModal(postId);
-  return;
-}
-
-
-
-    const share = e.target.closest('[data-share]');
-    if(share){
-      await copyLink(share.getAttribute('data-share'));
-      return;
-    }
-
-    const send = e.target.closest('[data-send]');
-    if(send){
-      const id = send.getAttribute('data-send');
-      const text = (document.getElementById('commentText')?.value||'').trim();
-      if(text.length < 2) return;
-      mutatePost(id, p => ({...p, comments: [...(p.comments||[]), { ts: now(), text }]}));
-      openPostModal(id);
+  // =========================
+  // Carrusel
+  // =========================
+  daoMain.querySelector('#carPrev')
+    ?.addEventListener('click', () => {
+      carIndex = Math.max(0, carIndex - 1);
       renderAll();
-      return;
-    }
+    });
 
-    if(e.target.id === 'addRoom'){
-      const name = prompt('Nombre de la sala/backroom:');
-      if(!name) return;
-      const rooms = loadJSON(ROOMS_KEY, []);
-      rooms.unshift(name.trim());
-      saveJSON(ROOMS_KEY, rooms);
-      openRoomsModal();
-      return;
-    }
+  daoMain.querySelector('#carNext')
+    ?.addEventListener('click', () => {
+      carIndex += 1;
+      renderAll();
+    });
 
-    if(e.target.id === 'addTopic'){
-      const name = prompt('Nombre del tema:');
-      if(!name) return;
-      const topics = loadJSON(TOPICS_KEY, DEFAULT_TOPICS);
-      topics.unshift(name.trim());
-      saveJSON(TOPICS_KEY, topics);
-      openTopicsModal();
-      return;
-    }
+  daoMain.querySelector('#carDots')
+    ?.addEventListener('click', (e) => {
+      const d = e.target.closest('[data-dot]');
+      if (!d) return;
+      carIndex = Number(d.dataset.dot || 0);
+      renderAll();
+    });
 
-    const pick = e.target.closest('[data-topic-pick]');
-    if(pick){
-      const t = pick.getAttribute('data-topic-pick');
-      const sel = daoMain.querySelector('#postTopic');
-      if(sel) sel.value = t;
-      closeModal();
-    }
-  });
+  // =========================
+  // Search
+  // =========================
+  daoMain.querySelector('#search')
+    ?.addEventListener('input', () => renderAll());
+
+  daoMain.querySelector('#clearSearch')
+    ?.addEventListener('click', () => {
+      const s = daoMain.querySelector('#search');
+      if (s) s.value = '';
+      renderAll();
+    });
+
+  // =========================
+  // Crear post (demo local)
+  // =========================
+  daoMain.querySelector('#publishPost')
+    ?.addEventListener('click', () => {
+
+      const title = (daoMain.querySelector('#postTitle')?.value || '').trim();
+      const body  = (daoMain.querySelector('#postBody')?.value || '').trim();
+      const topic = (daoMain.querySelector('#postTopic')?.value || '').trim();
+      const status = daoMain.querySelector('#publishStatus');
+
+      if (title.length < 3 || body.length < 10) {
+        if (status) {
+          status.textContent = 'Completa título (3+) y cuerpo (10+).';
+        }
+        return;
+      }
+
+      const posts = loadJSON(DB_KEY, []);
+      posts.unshift({
+        id: uid(),
+        title,
+        body,
+        topic,
+        ts: now(),
+        likes: 0,
+        points: 0,
+        comments: []
+      });
+
+      saveJSON(DB_KEY, posts);
+
+      const t = daoMain.querySelector('#postTitle');
+      const b = daoMain.querySelector('#postBody');
+      if (t) t.value = '';
+      if (b) b.value = '';
+
+      if (status) status.textContent = 'Publicado.';
+      carIndex = 0;
+      renderAll();
+    });
+
 }
 
-/* =========================================
-   Marcar Backrooms / Temas como activos
-   ========================================= */
-
-const btnRooms  = document.getElementById('openRooms');
-const btnTopics = document.getElementById('openTopics');
-
-/* Siempre encendidos */
-btnRooms?.classList.add('glow');
-btnTopics?.classList.add('glow');
-
-/* Opcional: alternar glow según modal abierto */
-function setActiveGlow(type){
-  btnRooms?.classList.toggle('glow', type === 'rooms');
-  btnTopics?.classList.toggle('glow', type === 'topics');
-}
-
-/* Si quieres que al abrir el modal se destaque uno */
-const _openRooms = openRoomsModal;
-const _openTopics = openTopicsModal;
-
-window.openRoomsModal = function(){
-  setActiveGlow('rooms');
-  _openRooms();
-};
-
-window.openTopicsModal = function(){
-  setActiveGlow('topics');
-  _openTopics();
-};
 
 
