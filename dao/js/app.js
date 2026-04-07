@@ -62,11 +62,23 @@ document.addEventListener('click', (e)=>{
   if(e.target.closest('[data-close]')) closeModal();
 });
 
+
+async function getPostsSafe() {
+  try {
+    const posts = await API.getPosts();
+    if (Array.isArray(posts)) return posts;
+  } catch (e) {
+    console.warn("API offline, usando localStorage");
+  }
+  return loadJSON(DB_KEY, []); // fallback
+}
+
+
 /* =========================
    Seed demo
 ========================= */
-function seedIfEmpty(){
-  const posts = loadJSON(DB_KEY, []);
+async function seedIfEmpty(){
+  const posts = await getPostsSafe();
   if(posts.length) return;
 
   const seed = [
@@ -852,3 +864,15 @@ window.openTopicsModal = function(){
   setActiveGlow('topics');
   _openTopics();
 };
+
+const API = {
+  async getPosts() {
+    return fetch("/api/posts").then(r => r.json());
+  },
+  async react(postId, type) {
+    return fetch(`/api/posts/${postId}/react`, {
+      method: "POST",
+      body: JSON.stringify({ type })
+    });
+  }
+}
