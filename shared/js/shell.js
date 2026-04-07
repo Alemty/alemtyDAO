@@ -500,16 +500,30 @@ drawer.querySelector("#siweBtn")?.addEventListener("click", async () => {
       body: JSON.stringify({ message, signature })
     });
 
-    const result = await verifyRes.json();
-    console.log("✅ verify result:", result);
+    
+const result = await verifyRes.json();
+console.log("✅ verify result:", result);
 
-    if (result?.ok === true) {
-      localStorage.setItem("alemty.siwe", "ok");
-      updateSiweStatus();
-      alert("✅ SIWE verificado correctamente");
-    } else {
-      alert("❌ SIWE rechazado por backend");
-    }
+if (result?.ok === true) {
+  // ✅ Marca SIWE ok
+  localStorage.setItem("alemty.siwe", "ok");
+
+  // ✅ Guarda el DID/address para que el DAO deje de ser visitor
+  if (result.address) {
+    localStorage.setItem("alemty.did", result.address);
+    // (opcional) compat legacy
+    localStorage.setItem("did", result.address);
+  }
+
+  // ✅ Refresca UI del drawer
+  updateSiweStatus();
+  syncDid(); // <- ya existe en tu shell.js
+
+  alert("✅ SIWE verificado correctamente");
+} else {
+  alert("❌ SIWE rechazado por backend");
+}
+
 
   } catch (err) {
     console.error("💥 SIWE ERROR:", err);
@@ -594,13 +608,17 @@ function syncDid(){
   }
 }
 
+
 function updateSiweStatus() {
   const el = document.getElementById("siweStatus");
   if (!el) return;
 
-  const ok = localStorage.getItem("alemty.siwe") === "ok";
-  el.textContent = ok ? "SIWE ✅" : "DID ⚠️";
+  const siweOk = localStorage.getItem("alemty.siwe") === "ok";
+  const did = localStorage.getItem("alemty.did") || localStorage.getItem("did");
+
+  el.textContent = (siweOk && did) ? "SIWE ✅" : "DID ⚠️";
 }
+
 
 
 drawer.querySelector("#connectBtn")?.addEventListener("click",async()=>{try{await connectDid();}catch{}syncDid();});
