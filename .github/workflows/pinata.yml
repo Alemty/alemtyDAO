@@ -73,7 +73,7 @@ jobs:
 
           const data = new FormData();
           for (const file of files) {
-            dataappend("file", fs.createReadStream(file), {
+            data.append("file", fs.createReadStream(file), {
               filepath: basePathConverter(src, file),
             });
           }
