@@ -1,28 +1,27 @@
-
-# alemty.eth — DAO v0.02
+# alemty.eth — DAO v0.03
 
 **alemty.eth** es una **Organización Autónoma Descentralizada (DAO)** orientada a la **identidad digital**, la **experimentación Web3**, la **economía programable** y la **investigación en IA y sistemas complejos**.
 
-Este repositorio contiene el **frontend público y auditable** de la DAO, diseñado para funcionar sobre **ENS + IPFS**, sin dependencias centralizadas.
+Este repositorio contiene el **frontend público y auditable** de la DAO, diseñado para operar sobre **ENS + IPFS**, con autenticación **Sign‑In With Ethereum (SIWE)** y sin dependencias centralizadas permanentes.
 
 ---
 
 ## 🌐 Estado del proyecto
 
-- **Versión:** `v0.02`
+- **Versión:** `v0.03`
 - **Estado:** Activo / En desarrollo
-- **Arquitectura:** Frontend estático + ENS + IPFS
+- **Arquitectura:** Frontend estático + ENS + IPFS + Workers
 - **Modelo:** Open‑source, modular y evolutivo
 
-> Esta versión consolida la arquitectura base: identidad, shell compartido, navegación, credenciales y módulos independientes (DAO, DEX, IA).
+> Esta versión consolida la identidad descentralizada (SIWE), el shell compartido, la navegación modular y el flujo de publicación continua a IPFS (Pinata).
 
 ---
 
-## 🧭 Estructura general
+## 🧭 Arquitectura general
 
-La DAO está organizada como un **hub único**, servido desde un solo CID IPFS, con módulos accesibles por rutas.
+La DAO está organizada como un **hub único**, servido desde **un solo CID IPFS**, con módulos accesibles por rutas absolutas.
 
-``
+```text
 /
 ├─ index.html        → Identidad (ID)
 ├─ assets/           → Datos públicos, PDFs, medallas, POAPs
@@ -32,144 +31,100 @@ La DAO está organizada como un **hub único**, servido desde un solo CID IPFS, 
 ├─ ia/               → Módulo IA
 ├─ token/            → Tokenomics
 └─ settings/         → Configuración visual
+```
 
 Todos los módulos comparten:
-- `topbar`
-- `navbar`
-- `drawer`
-- tema claro/oscuro
-- identidad ENS/DID
+
+- topbar
+- navbar
+- drawer
+- tema claro / oscuro
+- identidad ENS / DID
+- sesión SIWE por origen
 
 ---
 
 ## 🧩 Módulos
 
-### 🪪 Identidad (ID)
-- Página principal (`/`)
+### 🪪 Identidad (ID) — `/`
+
 - Identidad ENS
 - Perfil público
-- Credenciales (POAPs y Acreditaciones)
+- Credenciales (POAPs y acreditaciones)
 - Documento base: **La Simulación del Dragón**
 
-### 🏛️ DAO (`/dao/`)
-- Gobernanza (en progreso)
-- Espacio de coordinación
-- Decisiones y propuestas (futuro)
+### 🏛️ DAO — `/dao/`
 
-### 🔁 DEX (`/dex/`)
+- Espacio de coordinación
+- Interacciones sociales (likes / puntos locales)
+- Base para gobernanza futura
+
+### 🔁 DEX — `/dex/`
+
 - Dashboard
 - Swap
 - Stake
-- Vote (pools y emisiones)
-- Bribes  
-> *La lógica on‑chain se integrará progresivamente.*
+- Vote
+- Bribes
 
-### 🤖 IA (`/ia/`)
+> La lógica on‑chain se integrará progresivamente.
+
+### 🤖 IA — `/ia/`
+
 - Agentes
 - Simulaciones
 - Automatización
 - Investigación aplicada
 
-### 🪙 Token (`/token/`)
+### 🪙 Token — `/token/`
+
 - Tokenomics
 - Emisiones
 - Economía interna
 
 ---
 
-## 🔗 ENS, IPFS y subdominios
+## 🔐 Identidad y autenticación (SIWE)
 
-Actualmente el proyecto funciona con:
-- **Un solo CID IPFS**
-- **Rutas absolutas** (`/dao/`, `/dex/`, etc.)
+El proyecto implementa **Sign‑In With Ethereum (EIP‑4361)**.
 
-Los subdominios ENS (`dao.alemty.eth`, `dex.alemty.eth`, etc.) **aún no están minteados**, pero la arquitectura ya está preparada para que, cuando existan, entren directamente a su módulo correspondiente **sin rehacer el frontend**.
+### Flujo
 
----
+1. El usuario firma un mensaje SIWE desde el frontend.
+2. Un Worker stateless verifica dominio, chain ID, firma y nonce anti‑replay.
+3. El frontend guarda el DID en `localStorage` por origen.
 
-## 📁 Assets y datos
+### Notas importantes
 
-Todo el contenido público vive en:
-
-/assets/
-├─ data/
-│  ├─ certifications.json
-│  └─ documentos (PDF)
-├─ poap/
-└─ img/
-
-
-Ejemplo:
-- Libro / manifiesto
-- Medallas de acreditación
-- Datos declarativos
+- La sesión vive en el navegador.
+- No se comparte sesión entre dominios o subdominios.
+- El backend no guarda estado ni llaves privadas.
 
 ---
 
-## 🔓 Open‑source y gobernanza
+## 🔗 ENS, IPFS y dominios
 
-Este repositorio es **open‑source por diseño**.
-
-### ✅ Qué es público
-- Frontend
-- UI
-- Lógica de navegación
-- Datos declarativos
-
-### ❌ Qué NO vive aquí
-- Llaves privadas
-- Seeds
-- Credenciales sensibles
-- Lógica on‑chain crítica
-
-> Todo lo que define reglas visibles debe ser auditable.  
-> Todo lo que da poder real vive fuera del repo.
+- Un solo CID IPFS
+- Rutas absolutas (`/dao`, `/dex`, `/ia`)
+- ENS resuelve al CID
 
 ---
 
-## 🛠️ Desarrollo local
+## 📦 Publicación continua a IPFS (Pinata)
 
-Este proyecto es **100% frontend estático**.
+El repositorio incluye un workflow de GitHub Actions que:
 
-Puedes servirlo con cualquier servidor local:
+- Se ejecuta en cada `git push` a `main`
+- Publica el frontend completo en IPFS vía Pinata
+- Genera un CID nuevo por build
 
-```bash
-npx serve .
-# o
-python -m http.server
+---
 
-No requiere build, node_modules ni backend.
+## 📜 Licencia
 
-📜 Licencia
-Este proyecto se publica bajo licencia MIT
-(sujeta a cambios si la DAO lo decide en gobernanza futura).
+MIT
 
-📚 Filosofía
+---
 
-ENS define identidad.
-IPFS define disponibilidad.
-El frontend define la experiencia.
-
-alemty.eth no es un producto cerrado,
-es un sistema vivo.
-
-🚧 Roadmap (alto nivel)
-
-v0.02 — Arquitectura base ✅
-v0.03 — Integración on‑chain inicial
-v0.04 — Gobernanza activa
-v0.05 — Agentes IA operativos
-
-
-🤝 Contribuir
-Las contribuciones son bienvenidas:
-
-UI / UX
-Documentación
-Modularización
-Investigación
-
-Antes de proponer cambios estructurales, revisa el README y la filosofía del proyecto.
-
-alemty.eth
+**alemty.eth**  
 Identidad · DAO · Economía · IA · Web3
