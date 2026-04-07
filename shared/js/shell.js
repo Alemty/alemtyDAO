@@ -324,7 +324,7 @@ topbar.classList.add("topbar");
 navbar.classList.add("navbar");
 
 const topInner=el("div",{class:"topbar-inner"});
-const brand=el("a",{class:"brand-link",href:"../alemty.eth/index.html","aria-label":"Ir a ID"},`<span class="brand">alemty<span class="dot">.</span><span class="eth">eth</span></span>`);
+const brand=el("a",{class:"brand-link",href: "/","aria-label":"Ir a ID"},`<span class="brand">alemty<span class="dot">.</span><span class="eth">eth</span></span>`);
 const icons=el("div",{class:"iconbar"});
 const themeBtn=el("button",{class:"icon-btn",id:"themeBtn",type:"button","aria-label":"Tema"},"🌘");
 const profileBtn=el("button",{class:"icon-btn",id:"profileBtn",type:"button","aria-label":"Perfil"},"🧙🏻");
