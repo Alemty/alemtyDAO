@@ -2,22 +2,36 @@
 import { verifyMessage } from "ethers";
 
 /**
- * CORS: permitir SOLO tu frontend.
+ * ✅ ORÍGENES PERMITIDOS (CORS)
+ * - Cloudflare Pages (prod + preview)
+ * - ENS gateways
+ * - Dev local
+ *
+ * NOTA:
+ * - Las rutas (/dao, /dex, etc.) NO afectan el origin
+ * - localStorage y CORS funcionan por ORIGIN, no por path
  */
-
 const ALLOWED_ORIGINS = new Set([
-  // ✅ Producción (Pages)
+  // ✅ Cloudflare Pages (prod y previews)
   "https://alemtydao.pages.dev",
+  "https://c45b9928.alemtydao.pages.dev",
 
-  // ✅ ENS / gateways
-  "https://alemty.eth",
+  // ✅ ENS gateways (web3)
   "https://alemty.eth.limo",
 
   // ✅ Desarrollo local
   "http://127.0.0.1:5500",
-  "http://localhost:5500"
+  "http://localhost:5500",
 ]);
 
+/**
+ * ✅ Dominios permitidos dentro del MENSAJE SIWE
+ * (campo "domain" de EIP‑4361)
+ */
+const SIWE_ALLOWED_DOMAINS = new Set([
+  "alemty.eth",
+  "alemty.eth.limo",
+]);
 
 function getCorsHeaders(origin, requestHeaders = "") {
   if (!origin) return {};
@@ -52,26 +66,23 @@ function makeAlphanumericNonce(length = 24) {
 }
 
 /**
- * Parser mínimo SIWE (EIP-4361) sin dependencias ABNF.
- * Extrae domain, address, uri, version, chainId, nonce, issuedAt.
+ * ✅ Parser mínimo SIWE (EIP‑4361)
+ * Extrae campos críticos sin dependencias ABNF
  */
 function parseSiweMessage(message) {
-  // Normaliza saltos
   const m = String(message).replace(/\r\n/g, "\n").trim();
-
   const lines = m.split("\n");
 
-  // 0: "<domain> wants you to sign in with your Ethereum account:"
   const header = lines[0] || "";
-  const headerMatch = header.match(/^(.+?) wants you to sign in with your Ethereum account:$/);
+  const headerMatch = header.match(
+    /^(.+?) wants you to sign in with your Ethereum account:$/
+  );
   if (!headerMatch) return null;
   const domain = headerMatch[1].trim();
 
-  // 1: "<address>"
   const address = (lines[1] || "").trim();
   if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return null;
 
-  // Campos tipo "Key: value"
   const fields = {};
   for (const line of lines) {
     const idx = line.indexOf(":");
@@ -94,23 +105,30 @@ function parseSiweMessage(message) {
   const chainId = Number(chainIdStr);
   if (!Number.isFinite(chainId)) return null;
 
-  // Nonce mínimo 8 alfanumérico (tu backend genera alfanumérico fuerte)
   if (!/^[A-Za-z0-9]{8,}$/.test(nonce)) return null;
-
-  // issuedAt ISO-ish (validación ligera)
   if (!/^\d{4}-\d{2}-\d{2}T/.test(issuedAt)) return null;
 
-  return { domain, address, uri, version, chainId, nonce, issuedAt, normalized: m };
+  return {
+    domain,
+    address,
+    chainId,
+    nonce,
+    issuedAt,
+    normalized: m,
+  };
 }
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const origin = request.headers.get("Origin");
-    const acrh = request.headers.get("Access-Control-Request-Headers") || "";
+    const acrh =
+      request.headers.get("Access-Control-Request-Headers") || "";
     const cors = getCorsHeaders(origin, acrh);
 
-    // ✅ Preflight CORS
+    /* =========================
+       ✅ CORS preflight
+       ========================= */
     if (request.method === "OPTIONS") {
       const allowed = cors["Access-Control-Allow-Origin"];
       return new Response(null, {
@@ -119,82 +137,134 @@ export default {
       });
     }
 
-    // ✅ NONCE
+    /* =========================
+       ✅ NONCE
+       ========================= */
     if (url.pathname === "/nonce" && request.method === "GET") {
       if (!env.SIWE_NONCES) {
-        return json({ ok: false, error: "KV binding missing: SIWE_NONCES" }, 500, cors);
+        return json(
+          { ok: false, error: "KV binding missing: SIWE_NONCES" },
+          500,
+          cors
+        );
       }
 
       const nonce = makeAlphanumericNonce(24);
       const ttlSeconds = 600;
 
-      await env.SIWE_NONCES.put(`nonce:${nonce}`, "1", { expirationTtl: ttlSeconds });
+      await env.SIWE_NONCES.put(`nonce:${nonce}`, "1", {
+        expirationTtl: ttlSeconds,
+      });
+
       return json({ ok: true, nonce, ttlSeconds }, 200, cors);
     }
 
-    // ✅ VERIFY
+    /* =========================
+       ✅ VERIFY SIWE
+       ========================= */
     if (url.pathname === "/verify" && request.method === "POST") {
       if (!env.SIWE_NONCES) {
-        return json({ ok: false, error: "KV binding missing: SIWE_NONCES" }, 500, cors);
+        return json(
+          { ok: false, error: "KV binding missing: SIWE_NONCES" },
+          500,
+          cors
+        );
       }
 
       let body;
       try {
         body = await request.json();
       } catch {
-        return json({ ok: false, error: "Invalid JSON body" }, 400, cors);
+        return json(
+          { ok: false, error: "Invalid JSON body" },
+          400,
+          cors
+        );
       }
 
       const { message, signature } = body || {};
       if (!message || !signature) {
-        return json({ ok: false, error: "Missing message or signature" }, 400, cors);
+        return json(
+          { ok: false, error: "Missing message or signature" },
+          400,
+          cors
+        );
       }
 
       const parsed = parseSiweMessage(message);
       if (!parsed) {
-        return json({ ok: false, error: "Invalid SIWE message" }, 400, cors);
+        return json(
+          { ok: false, error: "Invalid SIWE message" },
+          400,
+          cors
+        );
       }
 
-      // ✅ Dominio esperado (como tu política actual)
-      if (parsed.domain !== "alemty.eth") {
-        return json({ ok: false, error: "Domain mismatch" }, 400, cors);
+      /* ✅ Dominio SIWE permitido */
+      if (!SIWE_ALLOWED_DOMAINS.has(parsed.domain)) {
+        return json(
+          { ok: false, error: "SIWE domain not allowed" },
+          400,
+          cors
+        );
       }
 
-      // ✅ Chain allowlist (tu misma política)
+      /* ✅ Chain allowlist */
       if (![1, 8453].includes(parsed.chainId)) {
-        return json({ ok: false, error: "Unsupported chain" }, 400, cors);
+        return json(
+          { ok: false, error: "Unsupported chain" },
+          400,
+          cors
+        );
       }
 
-      // ✅ Anti-replay nonce
+      /* ✅ Nonce anti‑replay */
       const key = `nonce:${parsed.nonce}`;
       const exists = await env.SIWE_NONCES.get(key);
       if (!exists) {
-        return json({ ok: false, error: "Nonce not found or already used" }, 401, cors);
+        return json(
+          { ok: false, error: "Nonce not found or already used" },
+          401,
+          cors
+        );
       }
 
-      // ✅ Verificar firma sobre el MENSAJE EXACTO
       let recovered;
       try {
         recovered = verifyMessage(parsed.normalized, signature);
       } catch {
-        return json({ ok: false, error: "Invalid signature" }, 401, cors);
+        return json(
+          { ok: false, error: "Invalid signature" },
+          401,
+          cors
+        );
       }
 
       if (recovered.toLowerCase() !== parsed.address.toLowerCase()) {
-        return json({ ok: false, error: "Signature does not match address" }, 401, cors);
+        return json(
+          { ok: false, error: "Signature mismatch" },
+          401,
+          cors
+        );
       }
 
-      // ✅ Invalidar nonce (anti-replay)
+      /* ✅ Invalidate nonce */
       await env.SIWE_NONCES.delete(key);
 
       return json(
-        { ok: true, address: parsed.address, chainId: parsed.chainId },
+        {
+          ok: true,
+          address: parsed.address,
+          chainId: parsed.chainId,
+        },
         200,
         cors
       );
     }
 
-    return new Response("Not found", { status: 404, headers: cors });
+    return new Response("Not found", {
+      status: 404,
+      headers: cors,
+    });
   },
 };
-
