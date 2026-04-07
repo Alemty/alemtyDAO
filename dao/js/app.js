@@ -487,8 +487,8 @@ function renderPanel(){
   document.getElementById('panelDesc').textContent = PANEL_MODEL[activeView].desc;
 }
 
-function renderAll(){
-  const posts = loadJSON(DB_KEY, []);
+async function renderAll(){
+  const posts = await getPostsSafe();
   renderTopicsSelect();
   renderPanel();
   renderCarousel(posts);
