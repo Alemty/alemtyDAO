@@ -12,17 +12,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout del repo
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2️⃣ Node.js
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # 3️⃣ Preparar SOLO el sitio frontend
       - name: Prepare site folder
         run: |
           set -euo pipefail
@@ -30,16 +27,13 @@ jobs:
           mkdir ipfs
 
           cp index.html ipfs/
-
           [ -d css ] && cp -R css ipfs/
           [ -d js ] && cp -R js ipfs/
           [ -d assets ] && cp -R assets ipfs/
           [ -d ar ] && cp -R ar ipfs/
 
-          echo "Files prepared:"
           find ipfs -type f
 
-      # 4️⃣ Build stamp (CID siempre nuevo)
       - name: Add build stamp
         run: |
           {
@@ -50,7 +44,6 @@ jobs:
             echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           } > ipfs/build.txt
 
-      # 5️⃣ Upload a Pinata (IPFS)
       - name: Upload folder to Pinata
         env:
           PINATA_JWT: ${{ secrets.PINATA_JWT }}
@@ -66,14 +59,10 @@ jobs:
           import got from "got";
 
           const jwt = process.env.PINATA_JWT;
-          if (!jwt) {
-            throw new Error("❌ Missing PINATA_JWT secret");
-          }
+          if (!jwt) throw new Error("Missing PINATA_JWT");
 
           const src = "ipfs";
           const { files } = await rfs.read(src);
-
-          const name = `alemty.eth-${new Date().toISOString().slice(0,10)}-${process.env.GITHUB_RUN_NUMBER}`;
 
           const data = new FormData();
           for (const file of files) {
@@ -82,21 +71,15 @@ jobs:
             });
           }
 
-          data.append("pinataMetadata", JSON.stringify({ name }));
+          data.append("pinataMetadata", JSON.stringify({ name: "alemty.eth" }));
           data.append("pinataOptions", JSON.stringify({ cidVersion: 1 }));
 
-          const res = await got(
-            "https://api.pinata.cloud/pinning/pinFileToIPFS",
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${jwt}`,
-              },
-              body: data,
-            }
-          ).json();
+          const res = await got("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${jwt}` },
+            body: data,
+          }).json();
 
-          console.log("✅ CID:", res.IpfsHash);
-          console.log("🌐 https://gateway.pinata.cloud/ipfs/" + res.IpfsHash + "/");
+          console.log("CID:", res.IpfsHash);
           NODE
 
