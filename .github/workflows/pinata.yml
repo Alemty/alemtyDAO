@@ -20,20 +20,26 @@ jobs:
         with:
           node-version: 20
 
-      - name: Prepare site folder
+      # ✅ Subir TODO el frontend tal como vive en el repo
+      # Esto preserva rutas absolutas (/shared, /dao, /css, etc.)
+      - name: Prepare site folder (FULL SITE)
         run: |
           set -euo pipefail
           rm -rf ipfs
           mkdir ipfs
 
-          cp index.html ipfs/
-          [ -d css ] && cp -R css ipfs/
-          [ -d js ] && cp -R js ipfs/
-          [ -d assets ] && cp -R assets ipfs/
-          [ -d ar ] && cp -R ar ipfs/
+          # Copiar todo el proyecto
+          cp -R . ipfs
 
-          find ipfs -type f
+          # Quitar cosas que NO deben ir a IPFS
+          rm -rf ipfs/.git
+          rm -rf ipfs/.github
+          rm -rf ipfs/node_modules || true
 
+          echo "Files prepared for IPFS:"
+          find ipfs -type f | wc -l
+
+      # 📌 Build stamp (fuerza CID nuevo por deploy)
       - name: Add build stamp
         run: |
           {
@@ -44,6 +50,7 @@ jobs:
             echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           } > ipfs/build.txt
 
+      # 🚀 Upload a Pinata
       - name: Upload folder to Pinata
         env:
           PINATA_JWT: ${{ secrets.PINATA_JWT }}
@@ -66,7 +73,7 @@ jobs:
 
           const data = new FormData();
           for (const file of files) {
-            data.append("file", fs.createReadStream(file), {
+            dataappend("file", fs.createReadStream(file), {
               filepath: basePathConverter(src, file),
             });
           }
@@ -74,12 +81,16 @@ jobs:
           data.append("pinataMetadata", JSON.stringify({ name: "alemty.eth" }));
           data.append("pinataOptions", JSON.stringify({ cidVersion: 1 }));
 
-          const res = await got("https://api.pinata.cloud/pinning/pinFileToIPFS", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${jwt}` },
-            body: data,
-          }).json();
+          const res = await got(
+            "https://api.pinata.cloud/pinning/pinFileToIPFS",
+            {
+              method: "POST",
+              headers: { Authorization: `Bearer ${jwt}` },
+              body: data,
+            }
+          ).json();
 
-          console.log("CID:", res.IpfsHash);
+          console.log("✅ CID:", res.IpfsHash);
+          console.log("🌐 https://gateway.pinata.cloud/ipfs/" + res.IpfsHash + "/");
           NODE
 
