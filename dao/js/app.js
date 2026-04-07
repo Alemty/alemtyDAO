@@ -2,6 +2,24 @@
 import { mountShell } from '/shared/js/shell.js';
 mountShell();
 
+const API = {
+  async getPosts() {
+    const r = await fetch("/api/posts", { cache: "no-store" });
+    if (!r.ok) throw new Error("getPosts failed");
+    return r.json();
+  },
+  async react(postId, type) {
+    const r = await fetch(`/api/posts/${postId}/react`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ type })
+    });
+    if (!r.ok) throw new Error("react failed");
+    return r.json().catch(() => ({}));
+  }
+};
+
+
 /* =========================
    DB local (demo)
 ========================= */
@@ -36,11 +54,17 @@ function fmt(ts){
   const d = new Date(ts);
   return d.toLocaleString('es-MX', { year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit' });
 }
+
 function esc(s){
-  return String(s ?? '').replace(/[&<>"']/g, m => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[m]));
+  return String(s ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
 }
+
 
 /* =========================
    Modal
@@ -63,14 +87,37 @@ document.addEventListener('click', (e)=>{
 });
 
 
+
 async function getPostsSafe() {
+  const local = loadJSON(DB_KEY, []); // siempre disponible
+
   try {
     const posts = await API.getPosts();
+    // Si API trae posts reales, úsala.
+    if (Array.isArray(posts) && posts.length > 0) return posts;
+
+    // Si API responde pero vacío, mantén demo local si existe.
+    if (Array.isArray(posts) && posts.length === 0 && local.length > 0) return local;
+
+    // Si ambos están vacíos, devuelve vacío.
     if (Array.isArray(posts)) return posts;
   } catch (e) {
     console.warn("API offline, usando localStorage");
   }
-  return loadJSON(DB_KEY, []); // fallback
+
+  return local;
+}
+
+
+
+async function reactSafe(postId, type) {
+  try {
+    await API.react(postId, type);
+    return true; // backend aceptó
+  } catch (e) {
+    console.warn("API react offline, usando mutación local:", type);
+    return false; // fallback local
+  }
 }
 
 
@@ -429,7 +476,6 @@ function renderMiniGrid(elId, posts){
   `).join('');
 }
 
-
 function renderFeed(posts){
   const feed = document.getElementById('feed');
   if(!feed) return;
@@ -482,6 +528,8 @@ function renderFeed(posts){
   `).join('');
 }
 
+let POSTS_CACHE = [];
+
 function renderPanel(){
   document.getElementById('panelTitle').textContent = PANEL_MODEL[activeView].title;
   document.getElementById('panelDesc').textContent = PANEL_MODEL[activeView].desc;
@@ -489,6 +537,7 @@ function renderPanel(){
 
 async function renderAll(){
   const posts = await getPostsSafe();
+  POSTS_CACHE = posts;
   renderTopicsSelect();
   renderPanel();
   renderCarousel(posts);
@@ -503,8 +552,9 @@ async function renderAll(){
 /* =========================
    Post modal
 ========================= */
-function openPostModal(postId){
-  const posts = loadJSON(DB_KEY, []);
+
+async function openPostModal(postId){
+  const posts = POSTS_CACHE.length ? POSTS_CACHE : await getPostsSafe();
   const p = posts.find(x => x.id === postId);
   if(!p) return;
 
@@ -715,41 +765,62 @@ if (pill) {
   const actions = loadActions();
   const entry = getActionEntry(actions, userId, postId);
 
-  if (action === 'like') {
-    if (entry.liked) return;
-    entry.liked = true;
+  
+
+if (action === 'like') {
+  if (entry.liked) return;
+
+  const ok = await reactSafe(postId, "like");
+
+  entry.liked = true;
+  saveActions(actions);
+
+  if (!ok) {
     mutatePost(postId, p => ({ ...p, likes: (p.likes || 0) + 1 }));
-    saveActions(actions);
-    renderAll();
-    return;
   }
 
-  if (action === 'points') {
-    if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
-    entry.pointsGiven += 1;
+  renderAll();
+  return;
+}
+
+if (action === 'points') {
+  if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
+
+  const ok = await reactSafe(postId, "points");
+
+  entry.pointsGiven += 1;
+  saveActions(actions);
+
+  if (!ok) {
     mutatePost(postId, p => ({ ...p, points: (p.points || 0) + 1 }));
-    saveActions(actions);
-    renderAll();
-    return;
   }
 
-  if (action === 'comment') {
-    openPostModal(postId);
-    return;
-  }
+  renderAll();
+  return;
+}
+
+if (action === 'comment') {
+  await openPostModal(postId);
+  return;
+}
+
+
 }
 
 
 
 
-    const openPost = e.target.closest('[data-open-post]');
-    if(openPost){
-      const id = openPost.getAttribute('data-open-post') || openPost.dataset.openPost;
-      if(id) openPostModal(id);
-      return;
-    }
+    
+const openPost = e.target.closest('[data-open-post]');
+if (openPost) {
+  const id = openPost.getAttribute('data-open-post') || openPost.dataset.openPost;
+  if (id) await openPostModal(id);
+  return;
+}
+
 
     
+
 const like = e.target.closest('[data-like]');
 if (like) {
   const postId = like.getAttribute('data-like');
@@ -757,18 +828,26 @@ if (like) {
   const actions = loadActions();
   const entry = getActionEntry(actions, userId, postId);
 
-  if (entry.liked) return; // ❤️ max 1
-  entry.liked = true;
+  if (entry.liked) return;
 
-  mutatePost(postId, p => ({ ...p, likes: (p.likes || 0) + 1 }));
+  const ok = await reactSafe(postId, "like");
+
+  entry.liked = true;
   saveActions(actions);
+
+  if (!ok) {
+    mutatePost(postId, p => ({ ...p, likes: (p.likes || 0) + 1 }));
+  }
+
   renderAll();
-  openPostModal(postId); // refresca modal con valores nuevos
+  await openPostModal(postId);
   return;
 }
 
 
+
     
+
 const point = e.target.closest('[data-point]');
 if (point) {
   const postId = point.getAttribute('data-point');
@@ -776,15 +855,22 @@ if (point) {
   const actions = loadActions();
   const entry = getActionEntry(actions, userId, postId);
 
-  if (entry.pointsGiven >= POINTS_MAX_PER_POST) return; // ⭐ max 10
-  entry.pointsGiven += 1;
+  if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
 
-  mutatePost(postId, p => ({ ...p, points: Math.max(0, (p.points || 0) + 1) }));
+  const ok = await reactSafe(postId, "points");
+
+  entry.pointsGiven += 1;
   saveActions(actions);
+
+  if (!ok) {
+    mutatePost(postId, p => ({ ...p, points: Math.max(0, (p.points || 0) + 1) }));
+  }
+
   renderAll();
-  openPostModal(postId);
+  await openPostModal(postId);
   return;
 }
+
 
 
     const share = e.target.closest('[data-share]');
@@ -865,14 +951,4 @@ window.openTopicsModal = function(){
   _openTopics();
 };
 
-const API = {
-  async getPosts() {
-    return fetch("/api/posts").then(r => r.json());
-  },
-  async react(postId, type) {
-    return fetch(`/api/posts/${postId}/react`, {
-      method: "POST",
-      body: JSON.stringify({ type })
-    });
-  }
-}
+
