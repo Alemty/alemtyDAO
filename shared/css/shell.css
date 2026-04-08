@@ -1277,3 +1277,10 @@ html.light .modal .profile-fixed{
     overflow-x: hidden;
   }
 }
+
+@media (max-width: 640px){
+  .pf-balances > div{
+    align-items: flex-start;
+    padding: 8px 10px;
+  }
+}
