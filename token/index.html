@@ -1,0 +1,160 @@
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=0.7, maximum-scale=1, user-scalable=yes">
+  <title>token.alemty.eth · Token</title>
+
+  <!-- CSS GLOBAL -->
+  <link rel="stylesheet" href="/settings/theme.css">
+  <link rel="stylesheet" href="/shared/css/module.css">
+  <link rel="stylesheet" href="/shared/css/shell.css">
+
+  <!-- TOKEN CSS -->
+  <link rel="stylesheet" href="/token/css/style.css">
+
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
+</head>
+
+<body class="token-root">
+
+  <header id="topbar"></header>
+  <nav id="navbar"></nav>
+
+  <div class="token-bg"></div>
+
+  <main class="container">
+
+    <!-- TOKENOMICS (NO MODAL) -->
+    <section class="card">
+      <div class="h1">Tokenomics</div>
+      <p class="muted">
+        Arquitectura económica y reglas formales del ecosistema alemty.
+      </p>
+      <p class="small muted">
+        Emisión controlada · Gobernanza · Coordinación a largo plazo.
+      </p>
+    </section>
+
+    <!-- DISTRIBUCIÓN (CLICKABLE) -->
+    <section class="card clickable" style="margin-top:16px;" data-open="distribution">
+      <div class="h2">Distribución planeada de ALEM</div>
+      <p class="small muted">
+        Asignación estructural máxima del suministro y reglas de emisión.
+      </p>
+
+      <div class="distribution-wrap">
+
+        <!-- Donut pequeño -->
+        <svg class="donut donut-sm" viewBox="0 0 42 42">
+          <circle cx="21" cy="21" r="15.915" class="donut-bg"/>
+          <circle cx="21" cy="21" r="15.915" class="donut-slice community"
+                  stroke-dasharray="50 50" stroke-dashoffset="0"/>
+          <circle cx="21" cy="21" r="15.915" class="donut-slice reserve"
+                  stroke-dasharray="20 80" stroke-dashoffset="-50"/>
+          <circle cx="21" cy="21" r="15.915" class="donut-slice team"
+                  stroke-dasharray="15 85" stroke-dashoffset="-70"/>
+          <circle cx="21" cy="21" r="15.915" class="donut-slice dao"
+                  stroke-dasharray="10 90" stroke-dashoffset="-85"/>
+          <circle cx="21" cy="21" r="15.915" class="donut-slice growth"
+                  stroke-dasharray="5 95" stroke-dashoffset="-95"/>
+        </svg>
+
+        <div class="distribution-side">
+          <div class="emission-bar">
+            <div class="slice community" style="width:50%"></div>
+            <div class="slice reserve" style="width:20%"></div>
+            <div class="slice team" style="width:15%"></div>
+            <div class="slice dao" style="width:10%"></div>
+            <div class="slice growth" style="width:5%"></div>
+          </div>
+
+          <div class="legend">
+            <span><i class="dot community"></i>Comunidad · 50%</span>
+            <span><i class="dot reserve"></i>Reserva · 20%</span>
+            <span><i class="dot team"></i>Equipo · 15%</span>
+            <span><i class="dot dao"></i>DAO · 10%</span>
+            <span><i class="dot growth"></i>Growth · 5%</span>
+          </div>
+
+          <div class="small muted tap-hint">
+            Toca para ver reglas completas de emisión.
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TOKENS -->
+    <section class="grid" style="margin-top:16px;">
+      <div class="col-6">
+        <div class="card clickable" data-open="aura">
+          <div class="h2">AURA</div>
+          <p class="small muted">Utilidad interna y señal social.</p>
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="card clickable" data-open="alem">
+          <div class="h2">ALEM</div>
+          <p class="small muted">Token económico del ecosistema.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid" style="margin-top:16px;">
+      <div class="col-6">
+        <div class="card clickable" data-open="pools">
+          <div class="h2">Pools</div>
+          <p class="small muted">Conversión AURA ↔ ALEM.</p>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="card clickable" data-open="governance">
+          <div class="h2">Gobernanza</div>
+          <p class="small muted">Ritmo de emisión y reglas monetarias.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="small muted" style="margin-top:24px;">
+      Token · alemty.eth
+    </footer>
+
+    <div class="bottom-safe-space"></div>
+  </main>
+
+  <!-- MODALES -->
+  <div class="modal" id="tokenModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close="tokenModal"></div>
+    <div class="modal-card profile-card">
+      <div class="modal-headbar">
+        <strong id="tokenModalTitle">Detalle</strong>
+        <button class="icon-btn" data-close="tokenModal">✕</button>
+      </div>
+      <div class="modal-body" id="tokenModalBody"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="distributionModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close="distributionModal"></div>
+    <div class="modal-card profile-card">
+      <div class="modal-headbar">
+        <strong id="distributionModalTitle"></strong>
+        <button class="icon-btn" data-close="distributionModal">✕</button>
+      </div>
+      <div class="modal-body" id="distributionModalBody"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/token/js/app.js"></script>
+</body>
+</html>
+
+
+

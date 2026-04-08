@@ -1214,3 +1214,91 @@ body{
 .modal{
   max-width: calc(100vw - 0px);
 }
+
+/* =========================================
+   FIX: eliminar sombras internas en modal de perfil
+   (especialmente en tema claro)
+========================================= */
+
+/* Quitar profundidad a paneles internos del perfil */
+.modal .profile-left,
+.modal .profile-right,
+.modal .profile-content,
+.modal .profile-fixed{
+  box-shadow: none !important;
+}
+
+/* Mantener solo un borde suave para separar secciones */
+.modal .profile-left,
+.modal .profile-right,
+.modal .profile-content,
+.modal .profile-fixed{
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.04);
+}
+
+/* Ajuste específico para tema claro */
+html.light .modal .profile-left,
+html.light .modal .profile-right,
+html.light .modal .profile-content,
+html.light .modal .profile-fixed{
+  background: rgba(255,255,255,.72);
+}
+
+/* =========================================
+   MOBILE FIX: ventanas internas deslizables
+   (perfil modal)
+========================================= */
+
+@media (max-width: 640px){
+
+  /* El contenido derecho NO debe forzar ancho */
+  .profile-right{
+    overflow-x: hidden;
+  }
+
+  /* Contenedores internos se vuelven scrolleables */
+  .profile-fixed,
+  .profile-content{
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: flex;
+    gap: 10px;
+
+    /* Scroll UX */
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ocultar scrollbar feo */
+  .profile-fixed::-webkit-scrollbar,
+  .profile-content::-webkit-scrollbar{
+    display: none;
+  }
+
+  .profile-fixed{
+    scrollbar-width: none;
+  }
+
+  /* Cada bloque interno se comporta como card */
+  .profile-fixed > *,
+  .profile-content > *{
+    flex: 0 0 auto;
+    min-width: 260px;
+    max-width: 300px;
+
+    scroll-snap-align: start;
+  }
+
+  /* Ajuste especial para balances de coins */
+  .pf-balances{
+    display: flex;
+    gap: 8px;
+    min-width: max-content;
+  }
+
+  .pf-balances > div{
+    min-width: 120px;
+    white-space: nowrap;
+  }
+}
