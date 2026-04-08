@@ -1289,3 +1289,8 @@ html.light .modal .profile-fixed{
   opacity:.35;
   pointer-events:none;
 }
+
+/* Evita animaciones durante el primer paint */
+html:not(.theme-ready) * {
+  transition: none !important;
+}
