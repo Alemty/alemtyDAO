@@ -1073,6 +1073,7 @@ html.light .bottom-btn.active::after{
   filter: blur(14px);
 }
 
+
 /* =========================================
    FIX ENS BRAND: elimina caja del punto "."
    ========================================= */
