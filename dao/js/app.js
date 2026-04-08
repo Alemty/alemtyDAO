@@ -87,105 +87,33 @@ function closeModal(){
 
 
 
+
 /* =========================
-   Delegación GLOBAL de clicks
+   Delegación GLOBAL de clicks (FIX mobile)
 ========================= */
-document.addEventListener('click', async (e) => {
+['click', 'pointerup'].forEach(evt => {
+  document.addEventListener(evt, async (e) => {
 
-  // =========================
-  // Cerrar modal
-  // =========================
-  if (e.target.closest('[data-close]')) {
-    closeModal();
-    return;
-  }
-
-  // =========================
-  // LIKE (botones data-like)
-  // =========================
-  const like = e.target.closest('[data-like]');
-  if (like) {
-    const postId = like.getAttribute('data-like');
-    const userId = getUserId();
-    const actions = loadActions();
-    const entry = getActionEntry(actions, userId, postId);
-
-    if (entry.liked) return;
-
-    const ok = await reactSafe(postId, 'like');
-    entry.liked = true;
-    saveActions(actions);
-
-    if (!ok) {
-      mutatePost(postId, p => ({
-        ...p,
-        likes: (p.likes || 0) + 1
-      }));
-    }
-
-    renderAll();
-    await openPostModal(postId);
-    return;
-  }
-
-  // =========================
-  // POINTS (data-point)
-  // =========================
-  const point = e.target.closest('[data-point]');
-  if (point) {
-    const postId = point.getAttribute('data-point');
-    const userId = getUserId();
-    const actions = loadActions();
-    const entry = getActionEntry(actions, userId, postId);
-
-    if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
-
-    const ok = await reactSafe(postId, 'points');
-    entry.pointsGiven += 1;
-    saveActions(actions);
-
-    if (!ok) {
-      mutatePost(postId, p => ({
-        ...p,
-        points: (p.points || 0) + 1
-      }));
-    }
-
-    renderAll();
-    await openPostModal(postId);
-    return;
-  }
-
-  // =========================
-  // PILLs: like / points / comment
-  // =========================
-  const pill = e.target.closest('.pill[data-action]');
-  if (pill) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const action = pill.dataset.action;
-    let postId = pill.dataset.postId;
-
-    if (!postId) {
-      const latestCard = document.getElementById('latestCard');
-      postId = latestCard?.dataset.openPost;
-    }
-    if (!postId) return;
-
-    const userId = getUserId();
-
-    if (userId === 'visitor') {
-      if (action === 'comment') {
-        await openPostModal(postId);
-      }
+    // =========================
+    // Cerrar modal
+    // =========================
+    if (e.target.closest('[data-close]')) {
+      closeModal();
       return;
     }
 
-    const actions = loadActions();
-    const entry = getActionEntry(actions, userId, postId);
+    // =========================
+    // LIKE (botones data-like)
+    // =========================
+    const like = e.target.closest('[data-like]');
+    if (like) {
+      e.preventDefault();
 
-    if (action === 'like') {
+      const postId = like.getAttribute('data-like');
+      const userId = getUserId();
+      const actions = loadActions();
+      const entry = getActionEntry(actions, userId, postId);
+
       if (entry.liked) return;
 
       const ok = await reactSafe(postId, 'like');
@@ -200,10 +128,22 @@ document.addEventListener('click', async (e) => {
       }
 
       renderAll();
+      await openPostModal(postId);
       return;
     }
 
-    if (action === 'points') {
+    // =========================
+    // POINTS (data-point)
+    // =========================
+    const point = e.target.closest('[data-point]');
+    if (point) {
+      e.preventDefault();
+
+      const postId = point.getAttribute('data-point');
+      const userId = getUserId();
+      const actions = loadActions();
+      const entry = getActionEntry(actions, userId, postId);
+
       if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
 
       const ok = await reactSafe(postId, 'points');
@@ -218,95 +158,165 @@ document.addEventListener('click', async (e) => {
       }
 
       renderAll();
-      return;
-    }
-
-    if (action === 'comment') {
       await openPostModal(postId);
       return;
     }
-  }
 
-  // =========================
-  // Abrir post
-  // =========================
-  const openPost = e.target.closest('[data-open-post]');
-  if (openPost) {
-    const id = openPost.dataset.openPost;
-    if (id) {
-      await openPostModal(id);
+    // =========================
+    // PILLs: like / points / comment
+    // =========================
+    const pill = e.target.closest('.pill[data-action]');
+    if (pill) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const action = pill.dataset.action;
+      let postId = pill.dataset.postId;
+
+      if (!postId) {
+        const latestCard = document.getElementById('latestCard');
+        postId = latestCard?.dataset.openPost;
+      }
+      if (!postId) return;
+
+      const userId = getUserId();
+
+      if (userId === 'visitor') {
+        if (action === 'comment') {
+          await openPostModal(postId);
+        }
+        return;
+      }
+
+      const actions = loadActions();
+      const entry = getActionEntry(actions, userId, postId);
+
+      if (action === 'like') {
+        if (entry.liked) return;
+
+        const ok = await reactSafe(postId, 'like');
+        entry.liked = true;
+        saveActions(actions);
+
+        if (!ok) {
+          mutatePost(postId, p => ({
+            ...p,
+            likes: (p.likes || 0) + 1
+          }));
+        }
+
+        renderAll();
+        return;
+      }
+
+      if (action === 'points') {
+        if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
+
+        const ok = await reactSafe(postId, 'points');
+        entry.pointsGiven += 1;
+        saveActions(actions);
+
+        if (!ok) {
+          mutatePost(postId, p => ({
+            ...p,
+            points: (p.points || 0) + 1
+          }));
+        }
+
+        renderAll();
+        return;
+      }
+
+      if (action === 'comment') {
+        await openPostModal(postId);
+        return;
+      }
     }
-    return;
-  }
 
-  // =========================
-  // SHARE
-  // =========================
-  const share = e.target.closest('[data-share]');
-  if (share) {
-    await copyLink(share.getAttribute('data-share'));
-    return;
-  }
+    // =========================
+    // Abrir post
+    // =========================
+    const openPost = e.target.closest('[data-open-post]');
+    if (openPost) {
+      e.preventDefault();
+      const id = openPost.dataset.openPost;
+      if (id) {
+        await openPostModal(id);
+      }
+      return;
+    }
 
-  // =========================
-  // SEND comment
-  // =========================
-  const send = e.target.closest('[data-send]');
-  if (send) {
-    const id = send.getAttribute('data-send');
-    const text = (document.getElementById('commentText')?.value || '').trim();
-    if (text.length < 2) return;
+    // =========================
+    // SHARE
+    // =========================
+    const share = e.target.closest('[data-share]');
+    if (share) {
+      await copyLink(share.getAttribute('data-share'));
+      return;
+    }
 
-    mutatePost(id, p => ({
-      ...p,
-      comments: [...(p.comments || []), { ts: now(), text }]
-    }));
+    // =========================
+    // SEND comment
+    // =========================
+    const send = e.target.closest('[data-send]');
+    if (send) {
+      const id = send.getAttribute('data-send');
+      const text = (document.getElementById('commentText')?.value || '').trim();
+      if (text.length < 2) return;
 
-    await openPostModal(id);
-    renderAll();
-    return;
-  }
+      mutatePost(id, p => ({
+        ...p,
+        comments: [...(p.comments || []), { ts: now(), text }]
+      }));
 
-  // =========================
-  // ADD ROOM
-  // =========================
-  if (e.target.id === 'addRoom') {
-    const name = prompt('Nombre de la sala/backroom:');
-    if (!name) return;
+      await openPostModal(id);
+      renderAll();
+      return;
+    }
 
-    const rooms = loadJSON(ROOMS_KEY, []);
-    rooms.unshift(name.trim());
-    saveJSON(ROOMS_KEY, rooms);
-    openRoomsModal();
-    return;
-  }
+    // =========================
+    // ADD ROOM
+    // =========================
+    if (e.target.id === 'addRoom') {
+      const name = prompt('Nombre de la sala/backroom:');
+      if (!name) return;
 
-  // =========================
-  // ADD TOPIC
-  // =========================
-  if (e.target.id === 'addTopic') {
-    const name = prompt('Nombre del tema:');
-    if (!name) return;
+      const rooms = loadJSON(ROOMS_KEY, []);
+      rooms.unshift(name.trim());
+      saveJSON(ROOMS_KEY, rooms);
+      openRoomsModal();
+      return;
+    }
 
-    const topics = loadJSON(TOPICS_KEY, DEFAULT_TOPICS);
-    topics.unshift(name.trim());
-    saveJSON(TOPICS_KEY, topics);
-    openTopicsModal();
-    return;
-  }
+    // =========================
+    // ADD TOPIC
+    // =========================
+    if (e.target.id === 'addTopic') {
+      const name = prompt('Nombre del tema:');
+      if (!name) return;
 
-  // =========================
-  // PICK TOPIC
-  // =========================
-  const pick = e.target.closest('[data-topic-pick]');
-  if (pick) {
-    const t = pick.getAttribute('data-topic-pick');
-    const sel = document.querySelector('#postTopic');
-    if (sel) sel.value = t;
-    closeModal();
-    return;
-  }
+      const topics = loadJSON(TOPICS_KEY, DEFAULT_TOPICS);
+      topics.unshift(name.trim());
+      saveJSON(TOPICS_KEY, topics);
+      openTopicsModal();
+      return;
+    }
+
+    // =========================
+    // PICK TOPIC
+    // =========================
+    const pick = e.target.closest('[data-topic-pick]');
+    if (pick) {
+      const t = pick.getAttribute('data-topic-pick');
+      const sel = document.querySelector('#postTopic');
+      if (sel) sel.value = t;
+      closeModal();
+      return;
+    }
+
+  });
 });
+
 
 
 

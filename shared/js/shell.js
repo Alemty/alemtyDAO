@@ -3,14 +3,17 @@ import{loadTheme,toggleTheme,shortAddr}from"./core.js";
 import{connectDid,clearDid,getDid,bindEthereumAccountsChanged,formatDidStatus}from"./wallet.js";
 
 
+
+
 const ROUTES = [
-  { key:"id",    label:"ID",    ico:"🪪", href:"/" },
-  { key:"dao",   label:"DAO",   ico:"🏛️", href:"/dao/" },
+  { key:"id", label:"ID", ico:"🪪", href:"/" },
+  { key:"dao", label:"DAO", ico:"🏛️", href:"/dao/" },
   { key:"token", label:"Token", ico:"🪙", href:"/token/" },
-  { key:"dex",   label:"DEX",   ico:"🔁", href:"/dex/" },
-  { key:"ia",    label:"IA",    ico:"🤖", href:"/ia/" },
-  { key:"ar",    label:"AR",    ico:"🕶️", href:"/ar/" }
+  { key:"dex", label:"DEX", ico:"🔁", href:"#" },
+  { key:"ia", label:"IA", ico:"🤖", href:"#" },
+  { key:"ar", label:"AR", ico:"🕶️", href:"#"}
 ];
+
 
 
 

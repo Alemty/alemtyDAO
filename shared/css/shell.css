@@ -1284,3 +1284,8 @@ html.light .modal .profile-fixed{
     padding: 8px 10px;
   }
 }
+
+.bottom-btn.disabled{
+  opacity:.35;
+  pointer-events:none;
+}
