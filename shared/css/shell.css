@@ -1245,60 +1245,35 @@ html.light .modal .profile-fixed{
   background: rgba(255,255,255,.72);
 }
 
+
 /* =========================================
-   MOBILE FIX: ventanas internas deslizables
-   (perfil modal)
+   MOBILE FIX FINAL:
+   tokens del perfil en grilla 2xN
+   (sin scroll horizontal)
 ========================================= */
 
 @media (max-width: 640px){
 
-  /* El contenido derecho NO debe forzar ancho */
-  .profile-right{
-    overflow-x: hidden;
-  }
-
-  /* Contenedores internos se vuelven scrolleables */
-  .profile-fixed,
-  .profile-content{
-    overflow-x: auto;
-    overflow-y: hidden;
-    display: flex;
-    gap: 10px;
-
-    /* Scroll UX */
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Ocultar scrollbar feo */
-  .profile-fixed::-webkit-scrollbar,
-  .profile-content::-webkit-scrollbar{
-    display: none;
-  }
-
-  .profile-fixed{
-    scrollbar-width: none;
-  }
-
-  /* Cada bloque interno se comporta como card */
-  .profile-fixed > *,
-  .profile-content > *{
-    flex: 0 0 auto;
-    min-width: 260px;
-    max-width: 300px;
-
-    scroll-snap-align: start;
-  }
-
-  /* Ajuste especial para balances de coins */
+  /* Contenedor de balances */
   .pf-balances{
-    display: flex;
-    gap: 8px;
-    min-width: max-content;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px 10px;
+
+    width: 100%;
+    min-width: 0; /* CLAVE: evita overflow */
   }
 
+  /* Cada token */
   .pf-balances > div{
-    min-width: 120px;
-    white-space: nowrap;
+    min-width: 0;
+    width: 100%;
+    white-space: normal;
+    text-align: left;
+  }
+
+  /* Asegura que el bloque padre no desborde */
+  .profile-fixed{
+    overflow-x: hidden;
   }
 }
