@@ -1,0 +1,7 @@
+
+name = "alemtydao"
+main = "worker.js"
+compatibility_date = "2026-04-07"
+
+[assets]
+directory = "."

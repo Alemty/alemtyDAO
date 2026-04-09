@@ -3,3 +3,8 @@ node_modules/
 
 # Local / temp
 _dump/
+
+# Office temp files
+~$*.pptx
+~$*.docx
+~$*.xlsx
