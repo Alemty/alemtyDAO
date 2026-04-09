@@ -1,7 +1,5 @@
 
 name = "alemtydao"
-main = "worker.js"
+main = "src/index.ts"
 compatibility_date = "2026-04-07"
 
-[assets]
-directory = "."

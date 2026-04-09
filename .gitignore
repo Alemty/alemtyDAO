@@ -12,3 +12,4 @@ _dump/
 
 docs/*.pptx
 docs/~$*.pptx
+.wrangler/
