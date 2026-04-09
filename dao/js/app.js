@@ -55,6 +55,51 @@ function fmt(ts){
   return d.toLocaleString('es-MX', { year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit' });
 }
 
+// =========================
+// Comentarios (schema + helpers)
+// =========================
+const UI_KEY = 'alemty.dao.ui.v1'; // guarda UI state (reply target, expand)
+function loadUI(){ return loadJSON(UI_KEY, { replyTo:null, expand:{} }); }
+function saveUI(v){ saveJSON(UI_KEY, v); }
+
+function ensureCommentSchema(c){
+  // migra comentarios viejos {ts,text} -> nuevo
+  if(!c || typeof c !== 'object') return null;
+  return {
+    id: c.id || uid(),
+    ts: c.ts || now(),
+    text: c.text || '',
+    likes: Number(c.likes || 0),
+    points: Number(c.points || 0),
+    replies: Array.isArray(c.replies) ? c.replies.map(r => ({
+      id: r.id || uid(),
+      ts: r.ts || now(),
+      text: r.text || '',
+      likes: Number(r.likes || 0),
+      points: Number(r.points || 0),
+    })) : []
+  };
+}
+
+function ensurePostSchema(p){
+  if(!p || typeof p !== 'object') return p;
+  const comments = Array.isArray(p.comments) ? p.comments.map(ensureCommentSchema).filter(Boolean) : [];
+  return { ...p, comments };
+}
+
+function getPostByIdFromLocal(postId){
+  const posts = loadJSON(DB_KEY, []);
+  const p = posts.find(x => x.id === postId);
+  return p ? ensurePostSchema(p) : null;
+}
+
+// encuentra comentario por id
+function findComment(p, commentId){
+  if(!p || !Array.isArray(p.comments)) return null;
+  return p.comments.find(c => c.id === commentId) || null;
+}
+
+
 function esc(s){
   return String(s ?? '').replace(/[&<>"']/g, ch => ({
     '&': '&amp;',
@@ -95,9 +140,12 @@ let __lastPointerTs = 0;
 // Define qué elementos consideramos "accionables"
 function isActionableTarget(t){
   if(!t || !t.closest) return false;
-  return !!t.closest(
-    '[data-close], [data-like], [data-point], .pill[data-action], [data-open-post], [data-share], [data-send], [data-topic-pick]'
-  );
+return !!t.closest(
+  '[data-close], [data-like], [data-point], .pill[data-action], [data-open-post], [data-share], [data-send], [data-topic-pick], [data-reply-cancel], [data-replies-more], [data-replies-less]'
+);
+
+
+
 }
 
 async function handleGlobalAction(e) {
@@ -110,18 +158,214 @@ async function handleGlobalAction(e) {
     return;
   }
 
-  // =========================
-  // LIKE (botones data-like)
-  // =========================
-  const like = e.target.closest('[data-like]');
-  if (like) {
-    e.preventDefault();
+const cancel = e.target.closest('[data-reply-cancel]');
+if (cancel) {
+  const postId = cancel.getAttribute('data-reply-cancel');
+  const ui = loadUI();
+  ui.replyTo = null;
+  saveUI(ui);
+  await openPostModal(postId);
+  return;
+}
 
-    const postId = like.getAttribute('data-like');
-    const userId = getUserId();
-    const actions = loadActions();
-    const entry = getActionEntry(actions, userId, postId);
+const more = e.target.closest('[data-replies-more]');
+if (more) {
+  const postId = more.getAttribute('data-post-id');
+  const commentId = more.getAttribute('data-replies-more');
+  const ui = loadUI();
+  ui.expand = ui.expand || {};
+  ui.expand[commentId] = true;
+  saveUI(ui);
+  await openPostModal(postId);
+  return;
+}
 
+const less = e.target.closest('[data-replies-less]');
+if (less) {
+  const postId = less.getAttribute('data-post-id');
+  const commentId = less.getAttribute('data-replies-less');
+  const ui = loadUI();
+  ui.expand = ui.expand || {};
+  ui.expand[commentId] = false;
+  saveUI(ui);
+  await openPostModal(postId);
+  return;
+}
+
+  
+// =========================
+// LIKE (botones data-like)
+// =========================
+const like = e.target.closest('[data-like]');
+if (like) {
+  e.preventDefault();
+
+  const postId = like.getAttribute('data-like');
+  const userId = getUserId();
+  const actions = loadActions();
+  const entry = getActionEntry(actions, userId, targetKeyPost(postId));
+
+  // evita doble-like por usuario
+  if (entry.liked) return;
+
+  // 1) Optimistic UI: SIEMPRE muta local para reflejo instantáneo
+  mutatePost(postId, p => ({
+    ...p,
+    likes: (p.likes || 0) + 1
+  }));
+
+  // 2) Ledger: marca que ya dio like
+  entry.liked = true;
+  saveActions(actions);
+
+  // 3) Dispara backend (si falla, ya tienes el cambio local; luego el backend se alinea)
+  try { await reactSafe(postId, 'like'); } catch {}
+
+  // 4) Re-render general + update instantáneo del modal
+  renderAll();
+  updateModalPostCounts(postId);
+
+  return;
+}
+
+
+
+// =========================
+// POINTS (data-point)
+// =========================
+const point = e.target.closest('[data-point]');
+if (point) {
+  e.preventDefault();
+
+  const postId = point.getAttribute('data-point');
+  const userId = getUserId();
+  const actions = loadActions();
+  const entry = getActionEntry(actions, userId, postId);
+
+  // respeta límite por usuario/post
+  if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
+
+  // 1) Optimistic UI: SIEMPRE muta local para reflejo instantáneo
+  mutatePost(postId, p => ({
+    ...p,
+    points: (p.points || 0) + 1
+  }));
+
+  // 2) Ledger: suma puntos dados
+  entry.pointsGiven += 1;
+  saveActions(actions);
+
+  // 3) Dispara backend (si falla, ya tienes el cambio local; luego el backend se alinea)
+  try { await reactSafe(postId, 'points'); } catch {}
+
+  // 4) Re-render general + update instantáneo del modal
+  renderAll();
+  updateModalPostCounts(postId);
+
+  return;
+}
+
+
+  // =========================
+  // PILLs: like / points / comment
+  // =========================
+  
+const pill = e.target.closest('.pill[data-action]');
+if (pill) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  // ✅ define primero
+  const action = pill.dataset.action;
+  let postId = pill.dataset.postId;
+
+  // fallback: si no viene postId (por ejemplo en latestCard)
+  if (!postId) {
+    const latestCard = document.getElementById('latestCard');
+    postId = latestCard?.dataset.openPost;
+  }
+  if (!postId) return;
+
+  // ✅ 1) Acciones nuevas: replies/comentarios
+  if (action === 'c-reply') {
+    const ui = loadUI();
+    ui.replyTo = { postId, commentId: pill.dataset.commentId };
+    saveUI(ui);
+    await openPostModal(postId);
+    return;
+  }
+
+  
+if (action === 'c-like' || action === 'c-points') {
+  const commentId = pill.dataset.commentId;
+  const replyId = pill.dataset.replyId || null;
+
+  const userId = getUserId();
+  const actionsLedger = loadActions();
+
+  const key = replyId
+    ? targetKeyReply(postId, commentId, replyId)
+    : targetKeyComment(postId, commentId);
+
+  const entry = getActionEntry(actionsLedger, userId, key);
+
+  // ✅ límites por DID emisor
+  if (action === 'c-like') {
+    if (entry.liked) return; // 1 like máximo
+    entry.liked = true;
+    saveActions(actionsLedger);
+  } else {
+    if (entry.pointsGiven >= POINTS_MAX_PER_POST) return; // 10 puntos máximo (reusa tu constante)
+    entry.pointsGiven += 1;
+    saveActions(actionsLedger);
+  }
+
+  // ✅ aplica el cambio al post/comentario en localStorage
+  mutatePost(postId, post => {
+    post = ensurePostSchema(post);
+
+    const c = findComment(post, commentId);
+    if (!c) return post;
+
+    // si es reply
+    if (replyId) {
+      const r = (c.replies || []).find(x => x.id === replyId);
+      if (!r) return post;
+
+      if (action === 'c-like') r.likes = (r.likes || 0) + 1;
+      else r.points = (r.points || 0) + 1;
+
+      return post;
+    }
+
+    // comentario raíz
+    if (action === 'c-like') c.likes = (c.likes || 0) + 1;
+    else c.points = (c.points || 0) + 1;
+
+    return post;
+  });
+
+  // refresca modal + feed
+  await openPostModal(postId);
+  renderAll();
+  return;
+}
+
+
+  // ✅ 2) Tus acciones existentes: like/points/comment del POST
+  const userId = getUserId();
+
+  if (userId === 'visitor') {
+    if (action === 'comment') {
+      await openPostModal(postId);
+    }
+    return;
+  }
+
+  const actions = loadActions();
+  const entry = getActionEntry(actions, userId, postId);
+
+  if (action === 'like') {
     if (entry.liked) return;
 
     const ok = await reactSafe(postId, 'like');
@@ -129,33 +373,14 @@ async function handleGlobalAction(e) {
     saveActions(actions);
 
     if (!ok) {
-      mutatePost(postId, p => ({
-        ...p,
-        likes: (p.likes || 0) + 1
-      }));
+      mutatePost(postId, p => ({ ...p, likes: (p.likes || 0) + 1 }));
     }
 
     renderAll();
-
-    // si ya estás dentro del modal, no lo reabras
-    const inModal = !!e.target.closest('#daoModal');
-    if (!inModal) await openPostModal(postId);
-
     return;
   }
 
-  // =========================
-  // POINTS (data-point)
-  // =========================
-  const point = e.target.closest('[data-point]');
-  if (point) {
-    e.preventDefault();
-
-    const postId = point.getAttribute('data-point');
-    const userId = getUserId();
-    const actions = loadActions();
-    const entry = getActionEntry(actions, userId, postId);
-
+  if (action === 'points') {
     if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
 
     const ok = await reactSafe(postId, 'points');
@@ -163,90 +388,19 @@ async function handleGlobalAction(e) {
     saveActions(actions);
 
     if (!ok) {
-      mutatePost(postId, p => ({
-        ...p,
-        points: (p.points || 0) + 1
-      }));
+      mutatePost(postId, p => ({ ...p, points: (p.points || 0) + 1 }));
     }
 
     renderAll();
-
-    const inModal = !!e.target.closest('#daoModal');
-    if (!inModal) await openPostModal(postId);
-
     return;
   }
 
-  // =========================
-  // PILLs: like / points / comment
-  // =========================
-  const pill = e.target.closest('.pill[data-action]');
-  if (pill) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const action = pill.dataset.action;
-    let postId = pill.dataset.postId;
-
-    if (!postId) {
-      const latestCard = document.getElementById('latestCard');
-      postId = latestCard?.dataset.openPost;
-    }
-    if (!postId) return;
-
-    const userId = getUserId();
-
-    if (userId === 'visitor') {
-      if (action === 'comment') {
-        await openPostModal(postId);
-      }
-      return;
-    }
-
-    const actions = loadActions();
-    const entry = getActionEntry(actions, userId, postId);
-
-    if (action === 'like') {
-      if (entry.liked) return;
-
-      const ok = await reactSafe(postId, 'like');
-      entry.liked = true;
-      saveActions(actions);
-
-      if (!ok) {
-        mutatePost(postId, p => ({
-          ...p,
-          likes: (p.likes || 0) + 1
-        }));
-      }
-
-      renderAll();
-      return;
-    }
-
-    if (action === 'points') {
-      if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
-
-      const ok = await reactSafe(postId, 'points');
-      entry.pointsGiven += 1;
-      saveActions(actions);
-
-      if (!ok) {
-        mutatePost(postId, p => ({
-          ...p,
-          points: (p.points || 0) + 1
-        }));
-      }
-
-      renderAll();
-      return;
-    }
-
-    if (action === 'comment') {
-      await openPostModal(postId);
-      return;
-    }
+  if (action === 'comment') {
+    await openPostModal(postId);
+    return;
   }
+}
+
 
   // =========================
   // Abrir post
@@ -272,23 +426,43 @@ async function handleGlobalAction(e) {
   // =========================
   // SEND comment
   // =========================
-  const send = e.target.closest('[data-send]');
-  if (send) {
-    e.preventDefault();
+  
+const send = e.target.closest('[data-send]');
+if (send) {
+  const id = send.getAttribute('data-send');
+  const text = (document.getElementById('commentText')?.value || '').trim();
+  if (text.length < 2) return;
 
-    const id = send.getAttribute('data-send');
-    const text = (document.getElementById('commentText')?.value || '').trim();
-    if (text.length < 2) return;
+  const ui = loadUI();
+  const replying = ui.replyTo && ui.replyTo.postId === id ? ui.replyTo : null;
 
-    mutatePost(id, p => ({
-      ...p,
-      comments: [...(p.comments || []), { ts: now(), text }]
-    }));
+  mutatePost(id, post => {
+    post = ensurePostSchema(post);
 
-    await openPostModal(id);
-    renderAll();
-    return;
+    if (replying) {
+      const c = findComment(post, replying.commentId);
+      if(!c) return post;
+      c.replies = c.replies || [];
+      c.replies.push({ id: uid(), ts: now(), text, likes:0, points:0 });
+      return post;
+    }
+
+    post.comments = post.comments || [];
+    post.comments.push({ id: uid(), ts: now(), text, likes:0, points:0, replies:[] });
+    return post;
+  });
+
+  // si era reply, limpia estado
+  if (replying) {
+    ui.replyTo = null;
+    saveUI(ui);
   }
+
+  await openPostModal(id);
+  renderAll();
+  return;
+}
+
 
   // =========================
   // PICK TOPIC
@@ -568,12 +742,26 @@ function saveActions(actions){
   saveJSON(ACTIONS_KEY, actions);
 }
 
-// ✅ ESTA ES LA FUNCIÓN QUE TE FALTA (y que tu click handler ya está usando)
-function getActionEntry(actions, userId, postId){
-  actions[userId] ||= {};
-  actions[userId][postId] ||= { liked:false, pointsGiven:0 };
-  return actions[userId][postId];
+
+// =========================
+// Ledger por TARGET (post / comment / reply)
+// =========================
+function targetKeyPost(postId){
+  return `p:${postId}`;
 }
+function targetKeyComment(postId, commentId){
+  return `c:${postId}:${commentId}`;
+}
+function targetKeyReply(postId, commentId, replyId){
+  return `r:${postId}:${commentId}:${replyId}`;
+}
+
+function getActionEntry(actions, userId, key){
+  actions[userId] ||= {};
+  actions[userId][key] ||= { liked:false, pointsGiven:0 };
+  return actions[userId][key];
+}
+
 
 
 
@@ -669,24 +857,50 @@ function renderLatest(posts){
 }
 
 
+
 function applyActionState(){
   const userId = getUserId();
   const actions = loadActions();
   const mine = actions[userId] || {};
 
+  // posts (ya lo hacías)
   document.querySelectorAll('.pill[data-action][data-post-id]').forEach(el => {
     const postId = el.dataset.postId;
-    const entry = mine[postId];
+    const act = el.dataset.action;
+
+    if (act === 'like') {
+      const entry = mine[targetKeyPost(postId)];
+      el.classList.toggle('active', !!entry?.liked);
+    }
+
+    if (act === 'points') {
+      const entry = mine[targetKeyPost(postId)];
+      el.classList.toggle('active', (entry?.pointsGiven || 0) >= POINTS_MAX_PER_POST);
+    }
+  });
+
+  // comentarios y replies (nuevo)
+  document.querySelectorAll('.pill[data-action="c-like"], .pill[data-action="c-points"]').forEach(el => {
+    const postId = el.dataset.postId;
+    const commentId = el.dataset.commentId;
+    const replyId = el.dataset.replyId || null;
+    if(!postId || !commentId) return;
+
+    const key = replyId
+      ? targetKeyReply(postId, commentId, replyId)
+      : targetKeyComment(postId, commentId);
+
+    const entry = mine[key];
     if (!entry) return;
 
-    if (el.dataset.action === 'like') {
+    if (el.dataset.action === 'c-like') {
       el.classList.toggle('active', !!entry.liked);
-    }
-    if (el.dataset.action === 'points') {
+    } else {
       el.classList.toggle('active', (entry.pointsGiven || 0) >= POINTS_MAX_PER_POST);
     }
   });
 }
+
 
 
 function renderMiniGrid(elId, posts){
@@ -795,60 +1009,179 @@ async function renderAll(){
 }
 
 
+function renderReplies(comment, postId){
+  const ui = loadUI();
+  const expanded = !!ui.expand?.[comment.id];
+  const replies = (comment.replies || []).slice().reverse(); // newest first
+  const visible = expanded ? replies : replies.slice(0, 2);
+
+  const items = visible.map(r => `
+    <div class="comment comment-l2" data-reply-id="${esc(r.id)}">
+      <div class="comment-head">
+        <span class="muted small">${esc(fmt(r.ts))}</span>
+      </div>
+      <p>${esc(r.text)}</p>
+      <div class="post-tags">
+        <span class="pill like" data-action="c-like" data-post-id="${esc(postId)}" data-comment-id="${esc(comment.id)}" data-reply-id="${esc(r.id)}">
+          ♥️ <span class="count">${r.likes||0}</span>
+        </span>
+        <span class="pill points" data-action="c-points" data-post-id="${esc(postId)}" data-comment-id="${esc(comment.id)}" data-reply-id="${esc(r.id)}">
+          ⭐ <span class="count">${r.points||0}</span>
+        </span>
+      </div>
+    </div>
+  `).join('');
+
+  const moreN = Math.max(0, replies.length - 2);
+  const moreBtn = (!expanded && moreN > 0)
+    ? `<button class="btn" type="button" data-replies-more="${esc(comment.id)}" data-post-id="${esc(postId)}">Ver más (${moreN})</button>`
+    : (expanded && replies.length > 2)
+      ? `<button class="btn" type="button" data-replies-less="${esc(comment.id)}" data-post-id="${esc(postId)}">Ocultar</button>`
+      : '';
+
+  return `
+    <div class="comment-preview">
+      ${items || ''}
+      ${moreBtn ? `<div style="margin-top:8px">${moreBtn}</div>` : ''}
+    </div>
+  `;
+}
+
+function renderComments(post){
+  const comments = (post.comments || []).slice().reverse(); // newest first
+
+  if(!comments.length){
+    return `<p class="small muted">Sin comentarios.</p>`;
+  }
+
+  return comments.map(c => `
+    <div class="comment comment-l1" data-comment-id="${esc(c.id)}">
+      <div class="comment-head">
+        <span class="muted small">${esc(fmt(c.ts))}</span>
+      </div>
+      <p>${esc(c.text)}</p>
+
+      <div class="post-tags">
+        <span class="pill like" data-action="c-like" data-post-id="${esc(post.id)}" data-comment-id="${esc(c.id)}">
+          ♥️ <span class="count">${c.likes||0}</span>
+        </span>
+        <span class="pill points" data-action="c-points" data-post-id="${esc(post.id)}" data-comment-id="${esc(c.id)}">
+          ⭐ <span class="count">${c.points||0}</span>
+        </span>
+        <span class="pill comment" data-action="c-reply" data-post-id="${esc(post.id)}" data-comment-id="${esc(c.id)}">
+          ↩️ Responder
+        </span>
+      </div>
+
+      ${renderReplies(c, post.id)}
+    </div>
+  `).join('');
+}
+
+
+function updateModalPostCounts(postId){
+  const m = document.getElementById('daoModal');
+  if (!m || !m.classList.contains('open')) return;
+
+  // Tomamos el post desde local (porque ahí mutas en fallback)
+  const p = getPostByIdFromLocal(postId);
+  if (!p) return;
+
+  const likeBtn = m.querySelector(`button[data-like="${postId}"] .count`);
+  const pointBtn = m.querySelector(`button[data-point="${postId}"] .count`);
+
+  if (likeBtn) likeBtn.textContent = String(p.likes || 0);
+  if (pointBtn) pointBtn.textContent = String(p.points || 0);
+}
+
+
 /* =========================
    Post modal
 ========================= */
 
+
+let CURRENT_MODAL_POST_ID = null;
+
 async function openPostModal(postId){
   const posts = POSTS_CACHE.length ? POSTS_CACHE : await getPostsSafe();
-  const p = posts.find(x => x.id === postId);
+  const raw = posts.find(x => x.id === postId);
+  const p = ensurePostSchema(raw);
   if(!p) return;
 
+  CURRENT_MODAL_POST_ID = postId;
+
   document.getElementById('daoModalTitle').textContent = 'Post';
-  const comments = (p.comments||[]).slice().reverse().map(c => `
-    <div class="sheet-item">
-      <div class="t">${esc(fmt(c.ts))}</div>
-      <div class="m">${esc(c.text)}</div>
-    </div>
-  `).join('');
+
+  const ui = loadUI();
+  const replyingTo = ui.replyTo && ui.replyTo.postId === postId ? ui.replyTo : null;
 
   document.getElementById('daoModalBody').innerHTML = `
     <div class="sheet-item">
       <div class="t">${esc(p.title)}</div>
-      <div class="m">${esc(p.topic||'Sin tema')} · ${esc(fmt(p.ts))}</div>
-      <div style="margin-top:10px;white-space:pre-wrap;">${esc(p.body||'')}</div>
+      <div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+      <div style="margin-top:10px;white-space:pre-wrap;">${esc(p.body || '')}</div>
+
       <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn" type="button" data-like="${esc(p.id)}">♥️ ${p.likes||0}</button>
-        <button class="btn" type="button" data-point="${esc(p.id)}">⭐ ${p.points||0}</button>
+        <button class="btn" type="button" data-like="${esc(p.id)}">
+          ♥️ <span class="count">${p.likes||0}</span>
+        </button>
+        <button class="btn" type="button" data-point="${esc(p.id)}">
+          ⭐ <span class="count">${p.points||0}</span>
+        </button>
         <button class="btn" type="button" data-share="${esc(p.id)}">🔗 Copiar link</button>
       </div>
     </div>
 
     <div style="margin-top:14px;">
       <div class="h2">Comentarios</div>
-      ${comments || `<p class="small muted">Sin comentarios.</p>`}
+
+      <div id="commentsWrap">
+        ${renderComments(p)}
+      </div>
+
+      ${replyingTo ? `
+        <div class="small muted" style="margin-top:10px;">
+          Respondiendo a comentario… 
+          <button class="btn" type="button" data-reply-cancel="${esc(p.id)}">Cancelar</button>
+        </div>
+      ` : ''}
 
       <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;">
-        <input id="commentText" placeholder="Escribe un comentario…">
-        <button class="btn primary" type="button" data-send="${esc(p.id)}">Enviar</button>
+        <input id="commentText" placeholder="${replyingTo ? 'Escribe una respuesta…' : 'Escribe un comentario…'}">
+        <button class="btn primary" type="button" data-send="${esc(p.id)}">
+          ${replyingTo ? 'Responder' : 'Enviar'}
+        </button>
       </div>
     </div>
   `;
+
   openModal();
 }
+
 
 async function copyLink(id){
   const url = location.href.split('#')[0] + `#post-${id}`;
   try{ await navigator.clipboard.writeText(url); }catch{}
 }
 
+
 function mutatePost(id, fn){
   const posts = loadJSON(DB_KEY, []);
   const idx = posts.findIndex(p => p.id === id);
   if(idx === -1) return;
-  posts[idx] = fn(posts[idx]) || posts[idx];
+
+  const next = fn(ensurePostSchema(posts[idx])) || posts[idx];
+  posts[idx] = next;
+
   saveJSON(DB_KEY, posts);
+
+  // ✅ sincroniza cache para que openPostModal/renderAll usen lo nuevo
+  if (Array.isArray(POSTS_CACHE) && POSTS_CACHE.length) {
+    const cidx = POSTS_CACHE.findIndex(p => p.id === id);
+    if (cidx !== -1) POSTS_CACHE[cidx] = next;
+  }
 }
+
 
 /* =========================
    Rooms / Topics modales
