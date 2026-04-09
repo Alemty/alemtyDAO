@@ -19,17 +19,16 @@ jobs:
         with:
           node-version: 20
 
-      - name: Prepare frontend bundle
+      - name: Prepare frontend bundle (NO assets)
         run: |
           rm -rf ipfs
           mkdir -p ipfs
 
-          # Frontends que SÍ se publican
+          # Frontend SIN assets/ para descartar problemas de peso
           KEEP=(
             index.html
             css
             js
-            assets
             shared
             dao
             token
@@ -44,52 +43,31 @@ jobs:
             fi
           done
 
-          echo "✅ Frontend preparado:"
+          echo "✅ Frontend preparado (sin assets):"
           ls -1 ipfs
 
       - name: Upload frontend to Pinata (IPFS)
         env:
           PINATA_JWT: ${{ secrets.PINATA_JWT }}
         run: |
-          npm init -y >/dev/null
-          npm install got form-data recursive-fs >/dev/null
-
-          node --input-type=module <<'NODE'
-          import fs from "fs";
-          import path from "path";
-          import FormData from "form-data";
-          import rfs from "recursive-fs";
-          import got from "got";
-
-          const jwt = process.env.PINATA_JWT;
           if (!jwt) throw new Error("PINATA_JWT not set");
 
-          // Verificar auth primero
+          // Check auth first
           await got.get("https://api.pinata.cloud/data/testAuthentication", {
             headers: { Authorization: `Bearer ${jwt}` },
           });
 
-          const { files } = await rfs.read("ipfs");
+          const src = "ipfs";
+          const { files } = await rfs.read(src);
 
           const data = new FormData();
 
           for (const file of files) {
-            const rel = path.relative("ipfs", file);
+            data.append("file", fs.createReadStream(file), {
 
-            // Ignorar archivos ocultos por seguridad
-            if (rel.startsWith(".")) continue;
-
-            data.append(
-              "file",
-              fs.createReadStream(file),
-              { filename: rel }
-            );
+              filepath: basePathConverter(src, file),
+            });
           }
-
-          data.append(
-            "pinataOptions",
-            JSON.stringify({ wrapWithDirectory: true })
-          );
 
           const res = await got.post(
             "https://api.pinata.cloud/pinning/pinFileToIPFS",
@@ -104,6 +82,6 @@ jobs:
             }
           ).json();
 
-          console.log("✅ Frontend IPFS CID:", res.IpfsHash);
+          console.log("✅ Frontend IPFS CID (sin assets):", res.IpfsHash);
           NODE
 
