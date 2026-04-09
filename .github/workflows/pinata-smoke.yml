@@ -1,0 +1,59 @@
+
+name: Pinata Smoke Test (1 small file)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  pinata_smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Upload a tiny file to Pinata (stable test)
+        env:
+          PINATA_JWT: ${{ secrets.PINATA_JWT }}
+        run: |
+          npm init -y >/dev/null
+          npm install got form-data >/dev/null
+
+          node --input-type=module <<'NODE'
+          import fs from "fs";
+          import FormData from "form-data";
+          import got from "got";
+
+          const jwt = process.env.PINATA_JWT;
+          if (!jwt) throw new Error("PINATA_JWT not set");
+
+          // 1) Verify auth first (quick fail if JWT is wrong)
+          const auth = await got.get("https://api.pinata.cloud/data/testAuthentication", {
+            headers: { Authorization: `Bearer ${jwt}` },
+          }).json();
+          console.log("✅ Pinata auth OK:", auth);
+
+          // 2) Create a tiny file
+          const filename = "smoke-test.txt";
+          fs.writeFileSync(filename, `Pinata smoke test OK - ${new Date().toISOString()}\n`);
+
+          // 3) Upload as multipart/form-data
+          const data = new FormData();
+          data.append("file", fs.createReadStream(filename), { filename });
+
+          const res = await got.post("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+            headers: {
+              Authorization: `Bearer ${jwt}`,
+              ...data.getHeaders(), // boundary correcto para multipart
+              Accept: "application/json",
+            },
+            body: data,
+          }).json();
+
+          console.log("✅ IPFS CID:", res.IpfsHash);
+          NODE
