@@ -2,6 +2,17 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
+  <!-- ================= THEME INIT ================= -->
+<script>
+(function () {
+  try {
+    const saved = localStorage.getItem('theme');
+    const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+    const theme = saved || (prefersLight ? 'light' : 'dark');
+    if (theme === 'light') document.documentElement.classList.add('light');
+  } catch {}
+})();
+</script>
   <meta name="viewport" content="width=device-width, initial-scale=0.7, maximum-scale=1, user-scalable=yes">
   <title>alemty.eth · ID</title>
 
@@ -131,18 +142,6 @@
   <div class="bottom-safe-space"></div>
 
 </main>
-
-<!-- ================= THEME INIT ================= -->
-<script>
-(function () {
-  try {
-    const saved = localStorage.getItem('theme');
-    const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-    const theme = saved || (prefersLight ? 'light' : 'dark');
-    if (theme === 'light') document.documentElement.classList.add('light');
-  } catch {}
-})();
-</script>
 
 <!-- ================= APP JS ================= -->
 <script type="module" src="/js/app.js"></script>
