@@ -8,3 +8,7 @@ _dump/
 ~$*.pptx
 ~$*.docx
 ~$*.xlsx
+
+
+docs/*.pptx
+docs/~$*.pptx
