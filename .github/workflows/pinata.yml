@@ -1,5 +1,5 @@
 
-name: Upload site to IPFS (Pinata)
+name: Deploy Frontend to IPFS (Pinata)
 
 on:
   push:
@@ -19,14 +19,24 @@ jobs:
         with:
           node-version: 20
 
-      # ✅ Solo copiamos lo que es "sitio" (no todo el repo)
-      - name: Prepare site (only web folders)
+      - name: Prepare frontend bundle
         run: |
           rm -rf ipfs
           mkdir -p ipfs
 
-          # Ajusta esta lista a lo que tú consideras "site"
-          KEEP=(index.html css js assets shared ar dao dex ia token)
+          # Frontends que SÍ se publican
+          KEEP=(
+            index.html
+            css
+            js
+            assets
+            shared
+            dao
+            token
+            ar
+            dex
+            ia
+          )
 
           for item in "${KEEP[@]}"; do
             if [ -e "$item" ]; then
@@ -34,7 +44,10 @@ jobs:
             fi
           done
 
-      - name: Upload to Pinata (IPFS)
+          echo "✅ Frontend preparado:"
+          ls -1 ipfs
+
+      - name: Upload frontend to Pinata (IPFS)
         env:
           PINATA_JWT: ${{ secrets.PINATA_JWT }}
         run: |
@@ -51,72 +64,46 @@ jobs:
           const jwt = process.env.PINATA_JWT;
           if (!jwt) throw new Error("PINATA_JWT not set");
 
-          // ✅ Optional: validar JWT antes de subir
-          try {
-            const authCheck = await got.get("https://api.pinata.cloud/data/testAuthentication", {
-              headers: { Authorization: `Bearer ${jwt}` },
-            }).json();
-            console.log("✅ Pinata auth OK:", authCheck);
-          } catch (e) {
-            console.error("❌ Pinata auth failed. Revisa PINATA_JWT en GitHub Secrets.");
-            throw e;
-          }
+          // Verificar auth primero
+          await got.get("https://api.pinata.cloud/data/testAuthentication", {
+            headers: { Authorization: `Bearer ${jwt}` },
+          });
 
           const { files } = await rfs.read("ipfs");
 
-          // ✅ (extra safety) filtra archivos ocultos y extremadamente grandes
-          const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB por archivo (ajústalo si quieres)
-          const filtered = [];
-
-          for (const f of files) {
-            const rel = path.relative("ipfs", f);
-            if (!rel || rel.startsWith(".")) continue; // ignora dotfiles
-            const stat = fs.statSync(f);
-            if (stat.size > MAX_FILE_BYTES) {
-              console.log(`⚠️ Skipping large file (${(stat.size/1024/1024).toFixed(2)} MB): ${rel}`);
-              continue;
-            }
-            filtered.push(f);
-          }
-
-          if (filtered.length === 0) {
-            throw new Error("No files to upload after filtering. Revisa la lista KEEP y/o el filtro de tamaño.");
-          }
-
           const data = new FormData();
 
-          for (const file of filtered) {
-            data.append("file", fs.createReadStream(file), {
-              // ✅ Pinata soporta rutas tipo carpeta/archivo en filename
-              filename: path.relative("ipfs", file),
-            });
+          for (const file of files) {
+            const rel = path.relative("ipfs", file);
+
+            // Ignorar archivos ocultos por seguridad
+            if (rel.startsWith(".")) continue;
+
+            data.append(
+              "file",
+              fs.createReadStream(file),
+              { filename: rel }
+            );
           }
 
-          // ✅ Requerido para subir carpeta (varios archivos)
-          data.append("pinataOptions", JSON.stringify({ wrapWithDirectory: true }));
+          data.append(
+            "pinataOptions",
+            JSON.stringify({ wrapWithDirectory: true })
+          );
 
-          try {
-            const res = await got.post("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+          const res = await got.post(
+            "https://api.pinata.cloud/pinning/pinFileToIPFS",
+            {
               headers: {
                 Authorization: `Bearer ${jwt}`,
                 ...data.getHeaders(),
                 Accept: "application/json",
               },
               body: data,
-              timeout: { request: 300000 } // 5 min por si tu sitio crece
-            }).json();
-
-            console.log("✅ IPFS CID:", res.IpfsHash);
-          } catch (err) {
-            // ✅ Log de respuesta de Pinata (esto te dirá el motivo real del 400)
-            console.error("❌ Pinata upload failed.");
-            if (err?.response?.body) {
-              console.error("Pinata response body:", err.response.body);
-            } else {
-              console.error(err);
+              timeout: { request: 300000 },
             }
-            throw err;
-          }
-          NODE
+          ).json();
 
+          console.log("✅ Frontend IPFS CID:", res.IpfsHash);
+          NODE
 
