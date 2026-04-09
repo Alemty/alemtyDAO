@@ -84,18 +84,28 @@ function closeModal(){
   m.setAttribute('aria-hidden','true');
 }
 
-
-
-
 /* =========================
-   Delegación GLOBAL de clicks
+   Delegación GLOBAL (sin duplicados en web/móvil)
+   - pointerup + click (dedupe)
+   - evita doble trigger en desktop y mobile
 ========================= */
-document.addEventListener('click', async (e) => {
 
+let __lastPointerTs = 0;
+
+// Define qué elementos consideramos "accionables"
+function isActionableTarget(t){
+  if(!t || !t.closest) return false;
+  return !!t.closest(
+    '[data-close], [data-like], [data-point], .pill[data-action], [data-open-post], [data-share], [data-send], [data-topic-pick]'
+  );
+}
+
+async function handleGlobalAction(e) {
   // =========================
   // Cerrar modal
   // =========================
   if (e.target.closest('[data-close]')) {
+    e.preventDefault?.();
     closeModal();
     return;
   }
@@ -105,6 +115,8 @@ document.addEventListener('click', async (e) => {
   // =========================
   const like = e.target.closest('[data-like]');
   if (like) {
+    e.preventDefault();
+
     const postId = like.getAttribute('data-like');
     const userId = getUserId();
     const actions = loadActions();
@@ -124,7 +136,11 @@ document.addEventListener('click', async (e) => {
     }
 
     renderAll();
-    await openPostModal(postId);
+
+    // si ya estás dentro del modal, no lo reabras
+    const inModal = !!e.target.closest('#daoModal');
+    if (!inModal) await openPostModal(postId);
+
     return;
   }
 
@@ -133,6 +149,8 @@ document.addEventListener('click', async (e) => {
   // =========================
   const point = e.target.closest('[data-point]');
   if (point) {
+    e.preventDefault();
+
     const postId = point.getAttribute('data-point');
     const userId = getUserId();
     const actions = loadActions();
@@ -152,7 +170,10 @@ document.addEventListener('click', async (e) => {
     }
 
     renderAll();
-    await openPostModal(postId);
+
+    const inModal = !!e.target.closest('#daoModal');
+    if (!inModal) await openPostModal(postId);
+
     return;
   }
 
@@ -232,10 +253,9 @@ document.addEventListener('click', async (e) => {
   // =========================
   const openPost = e.target.closest('[data-open-post]');
   if (openPost) {
+    e.preventDefault();
     const id = openPost.dataset.openPost;
-    if (id) {
-      await openPostModal(id);
-    }
+    if (id) await openPostModal(id);
     return;
   }
 
@@ -244,6 +264,7 @@ document.addEventListener('click', async (e) => {
   // =========================
   const share = e.target.closest('[data-share]');
   if (share) {
+    e.preventDefault();
     await copyLink(share.getAttribute('data-share'));
     return;
   }
@@ -253,6 +274,8 @@ document.addEventListener('click', async (e) => {
   // =========================
   const send = e.target.closest('[data-send]');
   if (send) {
+    e.preventDefault();
+
     const id = send.getAttribute('data-send');
     const text = (document.getElementById('commentText')?.value || '').trim();
     if (text.length < 2) return;
@@ -268,48 +291,45 @@ document.addEventListener('click', async (e) => {
   }
 
   // =========================
-  // ADD ROOM
-  // =========================
-  if (e.target.id === 'addRoom') {
-    const name = prompt('Nombre de la sala/backroom:');
-    if (!name) return;
-
-    const rooms = loadJSON(ROOMS_KEY, []);
-    rooms.unshift(name.trim());
-    saveJSON(ROOMS_KEY, rooms);
-    openRoomsModal();
-    return;
-  }
-
-  // =========================
-  // ADD TOPIC
-  // =========================
-  if (e.target.id === 'addTopic') {
-    const name = prompt('Nombre del tema:');
-    if (!name) return;
-
-    const topics = loadJSON(TOPICS_KEY, DEFAULT_TOPICS);
-    topics.unshift(name.trim());
-    saveJSON(TOPICS_KEY, topics);
-    openTopicsModal();
-    return;
-  }
-
-  // =========================
   // PICK TOPIC
   // =========================
   const pick = e.target.closest('[data-topic-pick]');
   if (pick) {
+    e.preventDefault();
     const t = pick.getAttribute('data-topic-pick');
     const sel = document.querySelector('#postTopic');
     if (sel) sel.value = t;
     closeModal();
     return;
   }
+}
+
+/* =========================
+   LISTENERS (la parte que faltaba)
+   - pointerup: maneja mouse/touch
+   - click: fallback + dedupe (evita doble en desktop y mobile)
+========================= */
+
+document.addEventListener('pointerup', async (e) => {
+  // Solo botón primario en mouse
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+  // Solo procesamos si tocó algo accionable (evita bloquear clicks normales)
+  if (!isActionableTarget(e.target)) return;
+
+  __lastPointerTs = Date.now();
+  await handleGlobalAction(e);
+}, { passive: false });
+
+document.addEventListener('click', async (e) => {
+  // Solo procesamos si tocó algo accionable
+  if (!isActionableTarget(e.target)) return;
+
+  // Si hubo pointerup reciente, ignoramos este click para evitar doble ejecución
+  if (Date.now() - __lastPointerTs < 650) return;
+
+  await handleGlobalAction(e);
 });
-
-
-
 
 
 

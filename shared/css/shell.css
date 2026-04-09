@@ -1285,3 +1285,11 @@ html.light .modal .profile-fixed{
     padding: 8px 10px;
   }
 }
+
+.pill, .car-card, .post, .mini {
+  touch-action: manipulation;
+}
+
+html:not(.theme-ready) *{
+  transition: none !important;
+}

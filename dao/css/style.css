@@ -658,158 +658,166 @@ html.light .car-card:hover{
     color .18s ease;
 }
 
-/* =====================================================
-   LIGHT THEME
-   ===================================================== */
-
-/* 💚 LIKE – esmeralda suave */
-html.light .pill.like,
-html.light .vbtn.like{
-  background: rgba(47,216,179,0.12);
-  color: rgba(14,60,50,0.85);
-  border: 1px solid rgba(47,216,179,0.22);
-}
-
-/* 💬 COMMENT – azul claro */
-html.light .pill.comment,
-html.light .vbtn.comment{
-  background: rgba(64,163,255,0.10);
-  color: rgba(20,40,80,0.85);
-  border: 1px solid rgba(64,163,255,0.22);
-}
-
-/* ✨ POINTS – dorado suave */
-html.light .pill.points,
-html.light .vbtn.points{
-  background: rgba(255,205,120,0.14);
-  color: rgba(90,60,10,0.85);
-  border: 1px solid rgba(255,205,120,0.28);
-}
-
-/* Hover light: más luz, no más color */
-html.light .pill.like:hover,
-html.light .vbtn.like:hover{
-  box-shadow:
-    0 6px 16px rgba(47,216,179,0.24),
-    0 0 0 1px rgba(255,255,255,0.6) inset;
-}
-
-html.light .pill.comment:hover,
-html.light .vbtn.comment:hover{
-  box-shadow:
-    0 6px 16px rgba(64,163,255,0.24),
-    0 0 0 1px rgba(255,255,255,0.6) inset;
-}
-
-html.light .pill.points:hover,
-html.light .vbtn.points:hover{
-  box-shadow:
-    0 6px 16px rgba(255,205,120,0.26),
-    0 0 0 1px rgba(255,255,255,0.6) inset;
-}
-
-/* Active light */
-html.light .pill.like.active,
-html.light .vbtn.like.active{
-  background: rgba(47,216,179,0.20);
-}
-
-html.light .pill.comment.active,
-html.light .vbtn.comment.active{
-  background: rgba(64,163,255,0.18);
-}
-
-html.light .pill.points.active,
-html.light .vbtn.points.active{
-  background: rgba(255,205,120,0.22);
-}
 
 /* =====================================================
-   DARK THEME
+   INTERACCIONES (TODO clickeable y tap-friendly)
    ===================================================== */
 
-/* ❤️ LIKE – ROJO (pedido explícito) */
-html:not(.light) .pill.like,
-html:not(.light) .vbtn.like{
-  background: rgba(255,70,90,0.18);
-  color: rgba(255,220,225,0.95);
-  border: 1px solid rgba(255,70,90,0.35);
+/* Tap/click consistente en mobile */
+.pill, .car-card, .post, .mini, .vbtn, .post-body{
+  touch-action: manipulation;
 }
 
-/* 💬 COMMENT – azul frío */
-html:not(.light) .pill.comment,
-html:not(.light) .vbtn.comment{
-  background: rgba(90,160,255,0.18);
-  color: rgba(210,225,255,0.95);
-  border: 1px solid rgba(90,160,255,0.35);
-}
-
-/* ✨ POINTS – ámbar suave */
-html:not(.light) .pill.points,
-html:not(.light) .vbtn.points{
-  background: rgba(255,190,90,0.20);
-  color: rgba(255,235,200,0.95);
-  border: 1px solid rgba(255,190,90,0.35);
-}
-
-/* Hover dark: glow suave (no neón) */
-html:not(.light) .pill.like:hover,
-html:not(.light) .vbtn.like:hover{
-  box-shadow:
-    0 0 18px rgba(255,70,90,0.35),
-    0 0 0 1px rgba(255,255,255,0.08) inset;
-}
-
-html:not(.light) .pill.comment:hover,
-html:not(.light) .vbtn.comment:hover{
-  box-shadow:
-    0 0 18px rgba(90,160,255,0.35),
-    0 0 0 1px rgba(255,255,255,0.08) inset;
-}
-
-html:not(.light) .pill.points:hover,
-html:not(.light) .vbtn.points:hover{
-  box-shadow:
-    0 0 18px rgba(255,190,90,0.38),
-    0 0 0 1px rgba(255,255,255,0.08) inset;
-}
-
-/* Active dark */
-html:not(.light) .pill.like.active,
-html:not(.light) .vbtn.like.active{
-  background: rgba(255,70,90,0.30);
-}
-
-html:not(.light) .pill.comment.active,
-html:not(.light) .vbtn.comment.active{
-  background: rgba(90,160,255,0.28);
-}
-
-html:not(.light) .pill.points.active,
-html:not(.light) .vbtn.points.active{
-  background: rgba(255,190,90,0.32);
-}
-
-/* =========================
-   FIX: asegurar interacciones
-   ========================= */
-
-/* Las pills SIEMPRE deben recibir clicks */
-.pill {
+/* Asegura que los elementos interactivos estén arriba */
+.pill{
   position: relative;
   z-index: 5;
   pointer-events: auto;
   cursor: pointer;
 }
 
-/* El cuerpo del post no debe interceptar clicks */
-.post-body {
-  pointer-events: none;
+/* El post body sí debe recibir tap para abrir modal */
+.post-body{
+  pointer-events: auto;
+  cursor: pointer;
 }
 
-/* Pero los elementos interactivos dentro sí */
-.post-body .pill,
-.post-body a,
-.post-body button {
+/* Botones de voto SIEMPRE clickeables */
+.vbtn{
   pointer-events: auto;
+  cursor: pointer;
 }
+
+/* =====================================================
+   CONGRUENCIA con backend/JS (NO uses .vbtn.like/.points)
+   - Like:  button.vbtn[data-like]   (▲)
+   - Points: button.vbtn[data-point] (✨)
+   - Comment: pill.comment (no hay vbtn para comment en tu HTML)
+   ===================================================== */
+
+/* BASE común (ambos temas) */
+.pill.like,
+.pill.comment,
+.pill.points,
+.vbtn[data-like],
+.vbtn[data-point]{
+  border-radius: 999px;
+  font-weight: 900;
+  transition:
+    background .18s ease,
+    box-shadow .18s ease,
+    transform .18s ease,
+    color .18s ease;
+}
+
+/* =====================================================
+   LIGHT THEME
+   ===================================================== */
+
+/* 💚 LIKE */
+html.light .pill.like,
+html.light .vbtn[data-like]{
+  background: rgba(47,216,179,0.12);
+  color: rgba(14,60,50,0.85);
+  border: 1px solid rgba(47,216,179,0.22);
+}
+
+/* 💬 COMMENT (solo pill) */
+html.light .pill.comment{
+  background: rgba(64,163,255,0.10);
+  color: rgba(20,40,80,0.85);
+  border: 1px solid rgba(64,163,255,0.22);
+}
+
+/* ✨ POINTS */
+html.light .pill.points,
+html.light .vbtn[data-point]{
+  background: rgba(255,205,120,0.14);
+  color: rgba(90,60,10,0.85);
+  border: 1px solid rgba(255,205,120,0.28);
+}
+
+/* Hover light */
+html.light .pill.like:hover,
+html.light .vbtn[data-like]:hover{
+  box-shadow:
+    0 6px 16px rgba(47,216,179,0.24),
+    0 0 0 1px rgba(255,255,255,0.6) inset;
+  transform: translateY(-1px);
+}
+
+html.light .pill.comment:hover{
+  box-shadow:
+    0 6px 16px rgba(64,163,255,0.24),
+    0 0 0 1px rgba(255,255,255,0.6) inset;
+  transform: translateY(-1px);
+}
+
+html.light .pill.points:hover,
+html.light .vbtn[data-point]:hover{
+  box-shadow:
+    0 6px 16px rgba(255,205,120,0.26),
+    0 0 0 1px rgba(255,255,255,0.6) inset;
+  transform: translateY(-1px);
+}
+
+/* Active light (esto se activa desde JS con classList.toggle en pills) */
+html.light .pill.like.active{ background: rgba(47,216,179,0.20); }
+html.light .pill.comment.active{ background: rgba(64,163,255,0.18); }
+html.light .pill.points.active{ background: rgba(255,205,120,0.22); }
+
+/* =====================================================
+   DARK THEME
+   ===================================================== */
+
+/* ❤️ LIKE */
+html:not(.light) .pill.like,
+html:not(.light) .vbtn[data-like]{
+  background: rgba(255,70,90,0.18);
+  color: rgba(255,220,225,0.95);
+  border: 1px solid rgba(255,70,90,0.35);
+}
+
+/* 💬 COMMENT (solo pill) */
+html:not(.light) .pill.comment{
+  background: rgba(90,160,255,0.18);
+  color: rgba(210,225,255,0.95);
+  border: 1px solid rgba(90,160,255,0.35);
+}
+
+/* ✨ POINTS */
+html:not(.light) .pill.points,
+html:not(.light) .vbtn[data-point]{
+  background: rgba(255,190,90,0.20);
+  color: rgba(255,235,200,0.95);
+  border: 1px solid rgba(255,190,90,0.35);
+}
+
+/* Hover dark */
+html:not(.light) .pill.like:hover,
+html:not(.light) .vbtn[data-like]:hover{
+  box-shadow:
+    0 0 18px rgba(255,70,90,0.35),
+    0 0 0 1px rgba(255,255,255,0.08) inset;
+  transform: translateY(-1px);
+}
+
+html:not(.light) .pill.comment:hover{
+  box-shadow:
+    0 0 18px rgba(90,160,255,0.35),
+    0 0 0 1px rgba(255,255,255,0.08) inset;
+  transform: translateY(-1px);
+}
+
+html:not(.light) .pill.points:hover,
+html:not(.light) .vbtn[data-point]:hover{
+  box-shadow:
+    0 0 18px rgba(255,190,90,0.38),
+    0 0 0 1px rgba(255,255,255,0.08) inset;
+  transform: translateY(-1px);
+}
+
+/* Active dark */
+html:not(.light) .pill.like.active{ background: rgba(255,70,90,0.30); }
+html:not(.light) .pill.comment.active{ background: rgba(90,160,255,0.28); }
+html:not(.light) .pill.points.active{ background: rgba(255,190,90,0.32); }
