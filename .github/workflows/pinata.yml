@@ -19,17 +19,16 @@ jobs:
         with:
           node-version: 20
 
-      - name: Prepare frontend bundle
+      - name: Prepare frontend bundle (NO assets)
         run: |
           rm -rf ipfs
           mkdir -p ipfs
 
-          # Frontends que SÍ se publican
+          # Frontend SIN assets/ para descartar problemas de peso
           KEEP=(
             index.html
             css
             js
-            assets
             shared
             dao
             token
@@ -44,7 +43,7 @@ jobs:
             fi
           done
 
-          echo "✅ Frontend preparado:"
+          echo "✅ Frontend preparado (sin assets):"
           ls -1 ipfs
 
       - name: Upload frontend to Pinata (IPFS)
@@ -64,7 +63,7 @@ jobs:
           const jwt = process.env.PINATA_JWT;
           if (!jwt) throw new Error("PINATA_JWT not set");
 
-          // Verificar auth primero
+          // Check auth first
           await got.get("https://api.pinata.cloud/data/testAuthentication", {
             headers: { Authorization: `Bearer ${jwt}` },
           });
@@ -76,7 +75,7 @@ jobs:
           for (const file of files) {
             const rel = path.relative("ipfs", file);
 
-            // Ignorar archivos ocultos por seguridad
+            // Ignore dotfiles
             if (rel.startsWith(".")) continue;
 
             data.append(
@@ -104,6 +103,7 @@ jobs:
             }
           ).json();
 
-          console.log("✅ Frontend IPFS CID:", res.IpfsHash);
+          console.log("✅ Frontend IPFS CID (sin assets):", res.IpfsHash);
           NODE
+
 
