@@ -1,5 +1,3 @@
-
-cat > tsconfig.json <<'EOF'
 {
   "compilerOptions": {
     "target": "ES2022",
@@ -11,4 +9,3 @@ cat > tsconfig.json <<'EOF'
   },
   "include": ["src/**/*.ts"]
 }
-EOF

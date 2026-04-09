@@ -1,16 +1,12 @@
 
-cat > src/router.ts <<'EOF'
 import { healthRoute } from "./routes/health";
 
-export function router(request: Request): Response | null {
+export function router(request: Request) {
   const url = new URL(request.url);
-  const { pathname } = url;
 
-  // Health check
-  if (request.method === "GET" && pathname === "/api/health") {
+  if (request.method === "GET" && url.pathname === "/api/health") {
     return healthRoute();
   }
 
   return null;
 }
-EOF

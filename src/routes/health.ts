@@ -1,6 +1,3 @@
-
-mkdir -p src/routes
-cat > src/routes/health.ts <<'EOF'
 export function healthRoute(): Response {
   return new Response(
     JSON.stringify({
@@ -15,4 +12,3 @@ export function healthRoute(): Response {
     }
   );
 }
-EOF
