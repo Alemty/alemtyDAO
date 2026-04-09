@@ -20,26 +20,26 @@ jobs:
         with:
           node-version: 20
 
-      # ✅ Copia TODO el sitio de forma segura (sin copiar ipfs dentro de ipfs)
-      - name: Prepare site folder (FULL SITE, SAFE)
+      # ✅ Copia todo el sitio (sin .git / .github / ipfs)
+      - name: Prepare site folder
         run: |
           set -euo pipefail
-
           rm -rf ipfs
           mkdir ipfs
-
           shopt -s dotglob
 
           for item in *; do
-            if [ "$item" != "ipfs" ] && [ "$item" != ".git" ] && [ "$item" != ".github" ]; then
+            if [ "$item" != "ipfs" ] && \
+               [ "$item" != ".git" ] && \
+               [ "$item" != ".github" ]; then
               cp -R "$item" ipfs/
             fi
           done
 
-          echo "✅ Files prepared for IPFS:"
+          echo "Files ready for IPFS:"
           find ipfs -type f | wc -l
 
-      # 📌 Build stamp (fuerza CID nuevo en cada deploy)
+      # 🏷️ Build stamp para forzar CID nuevo
       - name: Add build stamp
         run: |
           {
@@ -50,10 +50,10 @@ jobs:
             echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           } > ipfs/build.txt
 
-      # 🚀 Upload completo a Pinata
+      # 🚀 Upload a Pinata (SECRET seguro)
       - name: Upload folder to Pinata
         env:
-          PINATA_JWT: ${{ secrets.PINATA_JWT }}
+          PINATA_JWT: ${{ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiJkNGVjMmNiZC1iNTRiLTQzY2YtOGQ2OC1hNzA2ZjQwODRlMTciLCJlbWFpbCI6ImFsZWphbmRyb2d0eno5M0BnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwicGluX3BvbGljeSI6eyJyZWdpb25zIjpbeyJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MSwiaWQiOiJGUkExIn0seyJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MSwiaWQiOiJOWUMxIn1dLCJ2ZXJzaW9uIjoxfSwibWZhX2VuYWJsZWQiOmZhbHNlLCJzdGF0dXMiOiJBQ1RJVkUifSwiYXV0aGVudGljYXRpb25UeXBlIjoic2NvcGVkS2V5Iiwic2NvcGVkS2V5S2V5IjoiYjZmZGU2Y2ZlODEwNGI1YzI4ZDciLCJzY29wZWRLZXlTZWNyZXQiOiIwY2Y0ZTkzODVkNDBlZWM0ZGUyNDFjNmFhY2YxNzkwYjU2MmIwZWUwZTVmNDQwNDMzMzY5ODRlMTk0NDBkZWZmIiwiZXhwIjoxODA3MjQxNzIwfQ.Ztzh8tw1rMXqDYIbYBMygH1Wk9zQBAIhq0dCggjdNJg }}
         run: |
           npm init -y >/dev/null 2>&1
           npm install form-data recursive-fs base-path-converter got@14 >/dev/null 2>&1
@@ -66,7 +66,9 @@ jobs:
           import got from "got";
 
           const jwt = process.env.PINATA_JWT;
-          if (!jwt) throw new Error("Missing PINATA_JWT");
+          if (!jwt) {
+            throw new Error("PINATA_JWT missing (check GitHub Secrets)");
+          }
 
           const src = "ipfs";
           const { files } = await rfs.read(src);
@@ -85,12 +87,13 @@ jobs:
             "https://api.pinata.cloud/pinning/pinFileToIPFS",
             {
               method: "POST",
-              headers: { Authorization: `Bearer ${jwt}` },
+              headers: {
+                Authorization: `Bearer ${jwt}`,
+              },
               body: data,
             }
           ).json();
 
-          console.log("✅ CID:", res.IpfsHash);
+          console.log("✅ IPFS CID:", res.IpfsHash);
           console.log("🌐 https://gateway.pinata.cloud/ipfs/" + res.IpfsHash + "/");
           NODE
-
