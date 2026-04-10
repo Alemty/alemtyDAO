@@ -19,15 +19,17 @@ jobs:
         with:
           node-version: 20
 
-      - name: Prepare frontend bundle (NO assets)
+      - name: Prepare frontend bundle (WITH assets)
         run: |
           rm -rf ipfs
           mkdir -p ipfs
 
+          # Frontends que SÍ se publican (incluye assets)
           KEEP=(
             index.html
             css
             js
+            assets
             shared
             dao
             token
@@ -42,10 +44,10 @@ jobs:
             fi
           done
 
-          echo "✅ Frontend preparado (sin assets):"
+          echo "✅ Frontend preparado (con assets):"
           ls -1 ipfs
 
-      - name: Upload frontend to Pinata (IPFS)
+      - name: Upload frontend to Pinata (IPFS) - stable (no heredoc)
         env:
           PINATA_JWT: ${{ secrets.PINATA_JWT }}
         run: |
@@ -65,22 +67,31 @@ jobs:
             process.exit(1);
           }
 
-          // Check auth first
+          // 1) Auth check primero (falla rápido si JWT está mal)
           await got.get("https://api.pinata.cloud/data/testAuthentication", {
             headers: { Authorization: `Bearer ${jwt}` },
           });
 
+          // 2) Leer carpeta "ipfs" completa (frontend bundle)
           const src = "ipfs";
           const { files } = await rfs.read(src);
 
+          // 3) Construir multipart/form-data como folder upload
+          // Pinata recomienda mapear archivos y agregarlos como múltiples entradas `file`
+          // preservando estructura con filepath. [1](https://deepwiki.com/cloudflare/cloudflare-rs/3.3.1-workers-routes)
           const data = new FormData();
 
           for (const file of files) {
+            // Ignorar dotfiles ocultos (opcional, pero reduce ruido)
+            const rel = basePathConverter(src, file);
+            if (rel.startsWith(".")) continue;
+
             data.append("file", fs.createReadStream(file), {
-              filepath: basePathConverter(src, file),
+              filepath: rel,
             });
           }
 
+          // 4) Subir a Pinata
           const res = await got.post("https://api.pinata.cloud/pinning/pinFileToIPFS", {
             headers: {
               Authorization: `Bearer ${jwt}`,
@@ -88,10 +99,10 @@ jobs:
               Accept: "application/json",
             },
             body: data,
-            timeout: { request: 300000 },
+            timeout: { request: 300000 }, // 5 min
           }).json();
 
-          console.log("✅ Frontend IPFS CID (sin assets):", res.IpfsHash);
+          console.log("✅ Frontend IPFS CID (con assets):", res.IpfsHash);
           EOF
 
           node pinata_upload.mjs
