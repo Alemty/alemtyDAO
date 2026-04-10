@@ -24,7 +24,6 @@ jobs:
           rm -rf ipfs
           mkdir -p ipfs
 
-          # Frontend SIN assets/ para descartar problemas de peso
           KEEP=(
             index.html
             css
@@ -50,7 +49,21 @@ jobs:
         env:
           PINATA_JWT: ${{ secrets.PINATA_JWT }}
         run: |
-          if (!jwt) throw new Error("PINATA_JWT not set");
+          npm init -y >/dev/null
+          npm install got form-data recursive-fs base-path-converter >/dev/null
+
+          cat > pinata_upload.mjs <<'EOF'
+          import fs from "fs";
+          import FormData from "form-data";
+          import rfs from "recursive-fs";
+          import basePathConverter from "base-path-converter";
+          import got from "got";
+
+          const jwt = process.env.PINATA_JWT;
+          if (!jwt) {
+            console.error("❌ PINATA_JWT not set (GitHub Secret missing or empty)");
+            process.exit(1);
+          }
 
           // Check auth first
           await got.get("https://api.pinata.cloud/data/testAuthentication", {
@@ -64,24 +77,21 @@ jobs:
 
           for (const file of files) {
             data.append("file", fs.createReadStream(file), {
-
               filepath: basePathConverter(src, file),
             });
           }
 
-          const res = await got.post(
-            "https://api.pinata.cloud/pinning/pinFileToIPFS",
-            {
-              headers: {
-                Authorization: `Bearer ${jwt}`,
-                ...data.getHeaders(),
-                Accept: "application/json",
-              },
-              body: data,
-              timeout: { request: 300000 },
-            }
-          ).json();
+          const res = await got.post("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+            headers: {
+              Authorization: `Bearer ${jwt}`,
+              ...data.getHeaders(),
+              Accept: "application/json",
+            },
+            body: data,
+            timeout: { request: 300000 },
+          }).json();
 
           console.log("✅ Frontend IPFS CID (sin assets):", res.IpfsHash);
-          NODE
+          EOF
 
+          node pinata_upload.mjs
