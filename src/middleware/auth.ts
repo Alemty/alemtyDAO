@@ -11,15 +11,34 @@ export const auth = createMiddleware<{ Bindings: Env; Variables: { address: stri
     const match = authHeader.match(/^Bearer\s+(.+)$/i);
     if (!match) return c.json({ error: "Missing Bearer token" }, 401);
 
+    const token = match[1].trim();
+    if (!token) return c.json({ error: "Missing Bearer token" }, 401);
+
     try {
-      const payload = await verifyJwt(match[1], c.env.SESSION_SECRET);
-      if (!payload || payload.aud !== "alemtydao-api" || !payload.sub) {
+      const payload = await verifyJwt(token, c.env.SESSION_SECRET);
+
+      // Opcional debug (descomenta si necesitas inspección rápida)
+      // console.log("JWT payload:", payload);
+
+      // ✅ Validaciones mínimas
+      if (!payload) return c.json({ error: "Invalid token" }, 401);
+
+      // ✅ Alineado con tu SIWE Worker (iss/aud/sub)
+      if (payload.iss !== "alemtydao-siwe") {
+        return c.json({ error: "Invalid token" }, 401);
+      }
+      if (payload.aud !== "alemtydao-api") {
+        return c.json({ error: "Invalid token" }, 401);
+      }
+      if (!payload.sub) {
         return c.json({ error: "Invalid token" }, 401);
       }
 
       c.set("address", String(payload.sub).toLowerCase());
       await next();
-    } catch {
+    } catch (err) {
+      // Opcional debug:
+      // console.error("JWT verify error:", err);
       return c.json({ error: "Invalid token" }, 401);
     }
   }
