@@ -13,3 +13,6 @@ _dump/
 docs/*.pptx
 docs/~$*.pptx
 .wrangler/
+.dev.vars
+
+echo .dev.vars >> .gitignore
