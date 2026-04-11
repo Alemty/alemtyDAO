@@ -1,10 +1,11 @@
 
 name = "alemtydao"
 main = "src/index.ts"
-compatibility_date = "2026-04-10"
+compatibility_date = "2026-04-11"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "alemtydao-db"
 database_id = "bd641541-fbee-4630-b13e-4af7683887fc"
+
 
