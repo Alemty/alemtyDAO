@@ -54,6 +54,88 @@ app.get("/api/health", (c) =>
   })
 );
 
+/**
+ * GET /api/me/stats (protegido)
+ * Métricas del perfil + tokenomics base
+ */
+app.get("/api/me/stats", auth, async (c) => {
+  const address = c.get("address");
+
+  // Conteos personales
+  const posts = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM posts WHERE author = ?"
+  ).bind(address).first();
+
+  const comments = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM comments WHERE author = ?"
+  ).bind(address).first();
+
+  // Reacciones recibidas
+  const pointsReceived = await c.env.DB.prepare(
+    `
+    SELECT COUNT(*) AS n
+    FROM reactions r
+    JOIN posts p ON p.id = r.post_id
+    WHERE p.author = ? AND r.type = 'point'
+    `
+  ).bind(address).first();
+
+  const likesReceived = await c.env.DB.prepare(
+    `
+    SELECT COUNT(*) AS n
+    FROM reactions r
+    JOIN posts p ON p.id = r.post_id
+    WHERE p.author = ? AND r.type = 'like'
+    `
+  ).bind(address).first();
+
+  // Últimos eventos
+  const lastPost = await c.env.DB.prepare(
+    `
+    SELECT id, title, created_at
+    FROM posts
+    WHERE author = ?
+    ORDER BY created_at DESC
+    LIMIT 1
+    `
+  ).bind(address).first();
+
+  const lastComment = await c.env.DB.prepare(
+    `
+    SELECT post_id, body, created_at
+    FROM comments
+    WHERE author = ?
+    ORDER BY created_at DESC
+    LIMIT 1
+    `
+  ).bind(address).first();
+
+  // Tokenomics base
+  const dharma = Number((pointsReceived as any)?.n ?? 0);
+  const aura = dharma;
+
+  return c.json({
+    ok: true,
+    address,
+    activity: {
+      posts: Number((posts as any)?.n ?? 0),
+      comments: Number((comments as any)?.n ?? 0),
+    },
+    received: {
+      pointsReceived: dharma,
+      likesReceived: Number((likesReceived as any)?.n ?? 0),
+    },
+    tokenomics: {
+      dharma,
+      aura,
+    },
+    last: {
+      post: lastPost ?? null,
+      comment: lastComment ?? null,
+    },
+  });
+});
+
 /* =========================
    DEBUG TOKEN (solo dev)
 ========================= */
