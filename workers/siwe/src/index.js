@@ -3,30 +3,17 @@ import { verifyMessage } from "ethers";
 
 /**
  * ✅ ORÍGENES PERMITIDOS (CORS)
- * - Cloudflare Pages (prod + preview)
- * - ENS gateways
- * - Dev local
- *
- * NOTA:
- * - Las rutas (/dao, /dex, etc.) NO afectan el origin
- * - localStorage y CORS funcionan por ORIGIN, no por path
  */
 const ALLOWED_ORIGINS = new Set([
-  // ✅ Cloudflare Pages (prod y previews)
   "https://alemtydao.pages.dev",
   "https://c45b9928.alemtydao.pages.dev",
-
-  // ✅ ENS gateways (web3)
   "https://alemty.eth.limo",
-
-  // ✅ Desarrollo local
   "http://127.0.0.1:5500",
   "http://localhost:5500",
 ]);
 
 /**
  * ✅ Dominios permitidos dentro del MENSAJE SIWE
- * (campo "domain" de EIP‑4361)
  */
 const SIWE_ALLOWED_DOMAINS = new Set([
   "alemty.eth",
@@ -67,7 +54,6 @@ function makeAlphanumericNonce(length = 24) {
 
 /**
  * ✅ Parser mínimo SIWE (EIP‑4361)
- * Extrae campos críticos sin dependencias ABNF
  */
 function parseSiweMessage(message) {
   const m = String(message).replace(/\r\n/g, "\n").trim();
@@ -118,12 +104,45 @@ function parseSiweMessage(message) {
   };
 }
 
+/* =========================================================
+   ✅ JWT (HS256) — para devolver token en /verify
+   (sin dependencias, compatible con Workers)
+========================================================= */
+
+function b64urlEncode(input) {
+  const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+}
+
+async function hmacKey(secret) {
+  return crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+}
+
+async function signJwt(payload, secret) {
+  const header = { alg: "HS256", typ: "JWT" };
+  const h = b64urlEncode(JSON.stringify(header));
+  const p = b64urlEncode(JSON.stringify(payload));
+  const data = `${h}.${p}`;
+
+  const key = await hmacKey(secret);
+  const sigBuf = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
+  const sig = b64urlEncode(new Uint8Array(sigBuf));
+  return `${data}.${sig}`;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const origin = request.headers.get("Origin");
-    const acrh =
-      request.headers.get("Access-Control-Request-Headers") || "";
+    const acrh = request.headers.get("Access-Control-Request-Headers") || "";
     const cors = getCorsHeaders(origin, acrh);
 
     /* =========================
@@ -160,7 +179,7 @@ export default {
     }
 
     /* =========================
-       ✅ VERIFY SIWE
+       ✅ VERIFY SIWE + EMIT JWT
        ========================= */
     if (url.pathname === "/verify" && request.method === "POST") {
       if (!env.SIWE_NONCES) {
@@ -171,15 +190,20 @@ export default {
         );
       }
 
+      // ✅ Necesitamos el secret para firmar token
+      if (!env.SESSION_SECRET) {
+        return json(
+          { ok: false, error: "Missing env var: SESSION_SECRET" },
+          500,
+          cors
+        );
+      }
+
       let body;
       try {
         body = await request.json();
       } catch {
-        return json(
-          { ok: false, error: "Invalid JSON body" },
-          400,
-          cors
-        );
+        return json({ ok: false, error: "Invalid JSON body" }, 400, cors);
       }
 
       const { message, signature } = body || {};
@@ -193,29 +217,17 @@ export default {
 
       const parsed = parseSiweMessage(message);
       if (!parsed) {
-        return json(
-          { ok: false, error: "Invalid SIWE message" },
-          400,
-          cors
-        );
+        return json({ ok: false, error: "Invalid SIWE message" }, 400, cors);
       }
 
       /* ✅ Dominio SIWE permitido */
       if (!SIWE_ALLOWED_DOMAINS.has(parsed.domain)) {
-        return json(
-          { ok: false, error: "SIWE domain not allowed" },
-          400,
-          cors
-        );
+        return json({ ok: false, error: "SIWE domain not allowed" }, 400, cors);
       }
 
       /* ✅ Chain allowlist */
       if (![1, 8453].includes(parsed.chainId)) {
-        return json(
-          { ok: false, error: "Unsupported chain" },
-          400,
-          cors
-        );
+        return json({ ok: false, error: "Unsupported chain" }, 400, cors);
       }
 
       /* ✅ Nonce anti‑replay */
@@ -233,29 +245,38 @@ export default {
       try {
         recovered = verifyMessage(parsed.normalized, signature);
       } catch {
-        return json(
-          { ok: false, error: "Invalid signature" },
-          401,
-          cors
-        );
+        return json({ ok: false, error: "Invalid signature" }, 401, cors);
       }
 
       if (recovered.toLowerCase() !== parsed.address.toLowerCase()) {
-        return json(
-          { ok: false, error: "Signature mismatch" },
-          401,
-          cors
-        );
+        return json({ ok: false, error: "Signature mismatch" }, 401, cors);
       }
 
       /* ✅ Invalidate nonce */
       await env.SIWE_NONCES.delete(key);
 
+      // ✅ Emitir JWT para tu API (aud debe ser "alemtydao-api" como en tu auth.ts)
+      const address = parsed.address.toLowerCase();
+      const now = Math.floor(Date.now() / 1000);
+      const exp = now + 60 * 60; // 1 hora (ajusta si quieres)
+
+      const token = await signJwt(
+        {
+          iss: "alemtydao-siwe",
+          aud: "alemtydao-api",
+          sub: address,
+          iat: now,
+          exp,
+        },
+        env.SESSION_SECRET
+      );
+
       return json(
         {
           ok: true,
-          address: parsed.address,
+          address,
           chainId: parsed.chainId,
+          token, // ✅ AQUÍ ya viene el JWT
         },
         200,
         cors
@@ -268,3 +289,4 @@ export default {
     });
   },
 };
+

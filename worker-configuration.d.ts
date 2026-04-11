@@ -281,6 +281,7 @@ declare namespace WebAssembly {
     function instantiate(module: Module, imports?: Imports): Promise<Instance>;
     function validate(bytes: BufferSource): boolean;
 }
+
 /**
  * The **`ServiceWorkerGlobalScope`** interface of the Service Worker API represents the global execution context of a service worker.
  * Available only in secure contexts.
