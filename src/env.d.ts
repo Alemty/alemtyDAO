@@ -1,8 +1,9 @@
 
-cat > src/env.d.ts <<'EOF'
 /// <reference types="@cloudflare/workers-types" />
+/// <reference path="../worker-configuration.d.ts" />
 
-interface Env {
-  DB: D1Database;
+interface Env extends Cloudflare.Env {
+  SESSION_SECRET: string;
 }
-EOF
+
+
