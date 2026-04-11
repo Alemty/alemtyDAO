@@ -442,8 +442,8 @@ drawer.innerHTML = `
   </div>
 `;
 
-document.body.append(drawerBackdrop, drawer);
 
+document.body.append(drawerBackdrop, drawer);
 
 drawer.querySelector("#siweBtn")?.addEventListener("click", async () => {
   console.log("🔐 SIWE: click");
@@ -459,16 +459,23 @@ drawer.querySelector("#siweBtn")?.addEventListener("click", async () => {
 
     const API = "https://alemtydao-siwe.alejandrogtzz93.workers.dev";
 
-    // 1. Nonce
+    // 1) Nonce
     console.log("➡️ solicitando nonce");
-    const nonceRes = await fetch(`${API}/nonce`);
-    const nonceJson = await nonceRes.json();
+    const nonceRes = await fetch(`${API}/nonce`, { cache: "no-store" });
+    if (!nonceRes.ok) {
+      const t = await nonceRes.text().catch(() => "");
+      console.error("❌ nonceRes not ok:", nonceRes.status, t);
+      alert("❌ Error obteniendo nonce");
+      return;
+    }
+
+    const nonceJson = await nonceRes.json().catch(() => ({}));
     console.log("✅ nonce:", nonceJson);
 
-    const nonce = nonceJson.nonce;
+    const nonce = nonceJson?.nonce;
     if (!nonce) throw new Error("Nonce inválido");
 
-    // 2. Mensaje SIWE
+    // 2) Mensaje SIWE
     const message = [
       "alemty.eth wants you to sign in with your Ethereum account:",
       address,
@@ -484,7 +491,12 @@ drawer.querySelector("#siweBtn")?.addEventListener("click", async () => {
 
     console.log("📝 SIWE message:\n", message);
 
-    // 3. Firma
+    // 3) Firma
+    if (!window.ethereum?.request) {
+      alert("❌ No se detectó proveedor Ethereum (MetaMask)");
+      return;
+    }
+
     console.log("✍️ solicitando firma");
     const signature = await window.ethereum.request({
       method: "personal_sign",
@@ -492,7 +504,7 @@ drawer.querySelector("#siweBtn")?.addEventListener("click", async () => {
     });
     console.log("✅ firma:", signature);
 
-    // 4. Verify
+    // 4) Verify
     console.log("➡️ verificando en backend");
     const verifyRes = await fetch(`${API}/verify`, {
       method: "POST",
@@ -500,36 +512,63 @@ drawer.querySelector("#siweBtn")?.addEventListener("click", async () => {
       body: JSON.stringify({ message, signature })
     });
 
-    
-const result = await verifyRes.json();
-console.log("✅ verify result:", result);
+    if (!verifyRes.ok) {
+      const t = await verifyRes.text().catch(() => "");
+      console.error("❌ verifyRes not ok:", verifyRes.status, t);
+      alert("❌ SIWE rechazado por backend (HTTP error)");
+      // Limpieza defensiva
+      localStorage.removeItem("alemty.siwe");
+      localStorage.removeItem("alemty.jwt");
+      return;
+    }
 
-if (result?.ok === true) {
-  // ✅ Marca SIWE ok
-  localStorage.setItem("alemty.siwe", "ok");
+    const result = await verifyRes.json().catch(() => ({}));
+    console.log("✅ verify result:", result);
 
-  // ✅ Guarda el DID/address para que el DAO deje de ser visitor
-  if (result.address) {
-    localStorage.setItem("alemty.did", result.address);
-    // (opcional) compat legacy
-    localStorage.setItem("did", result.address);
-  }
+    if (result?.ok === true) {
+      // ✅ Marca SIWE ok
+      localStorage.setItem("alemty.siwe", "ok");
 
-  // ✅ Refresca UI del drawer
-  updateSiweStatus();
-  syncDid(); // <- ya existe en tu shell.js
+      // ✅ Guarda DID/address
+      const verifiedAddr = (result.address || address || "").toLowerCase();
+      if (verifiedAddr) {
+        localStorage.setItem("alemty.did", verifiedAddr);
+        localStorage.setItem("did", verifiedAddr); // compat legacy
+      }
 
-  alert("✅ SIWE verificado correctamente");
-} else {
-  alert("❌ SIWE rechazado por backend");
-}
+      // ✅ Guarda JWT (ESTO ES LO QUE TE FALTABA)
+      // Backend ideal: { ok:true, address:"0x...", token:"..." }
+      const token = result.token || result.jwt || result.session || null;
 
+      if (token) {
+        localStorage.setItem("alemty.jwt", token);
+        console.log("✅ JWT guardado en localStorage: alemty.jwt");
+      } else {
+        // Si el backend no lo manda, no habrá /api/me/stats
+        localStorage.removeItem("alemty.jwt");
+        console.warn("⚠️ SIWE ok pero NO vino token. Revisa que /verify devuelva { token }.");
+      }
 
+      // ✅ Refresca UI del drawer
+      if (typeof updateSiweStatus === "function") updateSiweStatus();
+      if (typeof syncDid === "function") syncDid();
+
+      alert("✅ SIWE verificado correctamente");
+    } else {
+      alert("❌ SIWE rechazado por backend");
+      // Limpieza defensiva
+      localStorage.removeItem("alemty.siwe");
+      localStorage.removeItem("alemty.jwt");
+    }
   } catch (err) {
     console.error("💥 SIWE ERROR:", err);
     alert("❌ Error durante SIWE (ver consola)");
+    // Limpieza defensiva
+    localStorage.removeItem("alemty.siwe");
+    localStorage.removeItem("alemty.jwt");
   }
 });
+
 
 
 
@@ -633,61 +672,505 @@ loadCreds(drawer);
 
 
 
-/* Perfil modal (tokens por color en balances) */
-const profileModal=el("div",{class:"modal",id:"profileModal","aria-hidden":"true"});
-profileModal.innerHTML=`<div class="modal-backdrop" id="profileBackdrop"></div><div class="modal-card profile-card"><div class="modal-headbar"><strong>Perfil</strong><button class="icon-btn" id="profileClose" type="button" aria-label="Cerrar">✕</button></div><div class="profile-grid"><aside class="profile-left"><div class="profile-avatar empty" id="pfAvatarBox"><img id="pfAvatar" alt="Avatar"/></div><div class="profile-level"><div class="lvl" id="pfLevel">Nivel —</div><div class="rank" id="pfTitle">—</div></div><div class="profile-addr" id="pfAddr">—</div><div class="profile-slots"><div class="slot"><div class="slot-k">Nivel</div><div class="slot-v" id="slotNivel">—</div></div><div class="slot"><div class="slot-k">Rol</div><div class="slot-v" id="slotRol">—</div></div><div class="slot"><div class="slot-k">veNFT</div><div class="slot-v" id="slotVeNFT">—</div></div><div class="slot"><div class="slot-k">Assets</div><div class="slot-v" id="slotAssets">—</div></div><div class="slot"><div class="slot-k">Agent</div><div class="slot-v" id="slotAgent">—</div></div><div class="slot"><div class="slot-k">Lands</div><div class="slot-v" id="slotLands">—</div></div></div></aside><section class="profile-right"><div class="profile-tabs" id="pfTabs"><button class="tab-btn active" data-tab="perfil">ID</button><button class="tab-btn" data-tab="actividad">User</button><button class="tab-btn" data-tab="dm">DM</button><button class="tab-btn" data-tab="dex">DEX</button><button class="tab-btn" data-tab="tienda">🛒</button></div><div class="profile-fixed"><div class="barbox"><div class="bar-top"><strong>Dharma</strong><span class="small muted" id="pfXpText">0 / 0</span></div><div class="bar-track"><div class="bar-fill dharma" id="pfXpBar" style="width:0%"></div></div></div><div class="barbox"><div class="bar-top"><strong>Karma</strong><span class="small muted" id="pfKarmaText">0</span></div><div class="bar-track"><div class="bar-fill karma" id="pfKarmaBar" style="width:0%"></div></div></div>
-<div class="pf-balances" id="pfBalances">
-<div class="token token-dharma"><span class="ico">🟢</span><span class="lbl">Dharma</span><span class="val" id="pfDharma">—</span></div>
-<div class="token token-aura"><span class="ico">🔵</span><span class="lbl">Aura</span><span class="val" id="pfAura">—</span></div>
-<div class="token token-karma" id="pfKarmaToken"><span class="ico">🔴</span><span class="lbl">Karma</span><span class="val" id="ethVal">—</span></div>
-<div class="token token-alem"><span class="ico">🟡</span><span class="lbl">$ALEM</span><span class="val" id="pfAlem">—</span></div>
-<div class="token token-vealem"><span class="ico">🟠</span><span class="lbl">veALEM</span><span class="val" id="pfVeAlem">—</span></div>
-<div class="small muted hint vealem">        </div></div></div><div class="profile-content" id="pfContent"></div></section></div></div></div>`;
+
+
+/* =========================================================
+   Perfil modal (ESTADO + ACTIVIDAD + barras + slots items)
+========================================================= */
+
+const profileModal = el("div", { class: "modal", id: "profileModal", "aria-hidden": "true" });
+
+profileModal.innerHTML = `
+  <div class="modal-backdrop" id="profileBackdrop"></div>
+  <div class="modal-card profile-card">
+    <div class="modal-headbar">
+      <strong>Perfil</strong>
+      <button class="icon-btn" id="profileClose" type="button" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="profile-grid">
+      <aside class="profile-left">
+        <div class="profile-avatar empty" id="pfAvatarBox">
+          <img id="pfAvatar" alt="Avatar"/>
+        </div>
+
+        <!-- Nivel SOLO arriba -->
+        <div class="profile-level">
+          <div class="lvl" id="pfLevel">Nivel —</div>
+          <div class="rank" id="pfTitle">—</div>
+        </div>
+
+        <div class="profile-addr" id="pfAddr">—</div>
+
+        <!-- Slots = items equipados (NO Aura aquí) -->
+        <div class="profile-slots">
+          <div class="slot" id="slotNivelBox">
+            <div class="slot-k">Item (Nivel)</div>
+            <div class="slot-v" id="slotNivel">—</div>
+          </div>
+          <div class="slot">
+            <div class="slot-k">Rol</div>
+            <div class="slot-v" id="slotRol">—</div>
+          </div>
+          <div class="slot">
+            <div class="slot-k">veNFT</div>
+            <div class="slot-v" id="slotVeNFT">—</div>
+          </div>
+          <div class="slot">
+            <div class="slot-k">Assets</div>
+            <div class="slot-v" id="slotAssets">—</div>
+          </div>
+          <div class="slot">
+            <div class="slot-k">Agent</div>
+            <div class="slot-v" id="slotAgent">—</div>
+          </div>
+          <div class="slot">
+            <div class="slot-k">Lands</div>
+            <div class="slot-v" id="slotLands">—</div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="profile-right">
+        <div class="profile-tabs" id="pfTabs">
+          <button class="tab-btn active" data-tab="estado">ESTADO</button>
+          <button class="tab-btn" data-tab="actividad">User</button>
+          <button class="tab-btn" data-tab="dm">DM</button>
+          <button class="tab-btn" data-tab="dex">DEX</button>
+          <button class="tab-btn" data-tab="tienda">🛒</button>
+        </div>
+
+        <div class="profile-fixed">
+          <div class="barbox">
+            <div class="bar-top">
+              <strong>Dharma</strong>
+              <span class="small muted" id="pfXpText">0</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill dharma" id="pfXpBar" style="width:0%"></div>
+            </div>
+          </div>
+
+          <div class="barbox">
+            <div class="bar-top">
+              <strong>Karma</strong>
+              <span class="small muted" id="pfKarmaText">0</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill karma" id="pfKarmaBar" style="width:0%"></div>
+            </div>
+          </div>
+
+          <!-- Wallet interna (tokens por color) -->
+          <div class="pf-balances" id="pfBalances">
+            <div class="token token-dharma">
+              <span class="ico">🟢</span><span class="lbl">Dharma</span><span class="val" id="pfDharma">—</span>
+            </div>
+            <div class="token token-aura">
+              <span class="ico">🔵</span><span class="lbl">Aura</span><span class="val" id="pfAura">—</span>
+            </div>
+            <div class="token token-karma" id="pfKarmaToken">
+              <span class="ico">🔴</span><span class="lbl">Karma</span><span class="val" id="pfKarmaVal">—</span>
+            </div>
+            <div class="token token-alem">
+              <span class="ico">🟡</span><span class="lbl">$ALEM</span><span class="val" id="pfAlem">—</span>
+            </div>
+            <div class="token token-vealem">
+              <span class="ico">🟠</span><span class="lbl">veALEM</span><span class="val" id="pfVeAlem">—</span>
+            </div>
+            <div class="small muted hint vealem"></div>
+          </div>
+        </div>
+
+        <div class="profile-content" id="pfContent"></div>
+      </section>
+    </div>
+  </div>
+`;
+
 document.getElementById("profileModal")?.remove();
 document.body.appendChild(profileModal);
 
-function syncProfile(){
-  const a=getDid();
-  const addrEl=profileModal.querySelector("#pfAddr");
-  const lvlEl=profileModal.querySelector("#pfLevel");
-  const titleEl=profileModal.querySelector("#pfTitle");
-  const avatarBox=profileModal.querySelector("#pfAvatarBox");
-  const avatarImg=profileModal.querySelector("#pfAvatar");
+/* =========================
+   Cache + utilidades
+========================= */
 
-  addrEl.textContent=a?`${shortAddr(a)} · alemty.eth`:"Conecta tu wallet (☰)";
-  lvlEl.textContent=a?"Nivel 1":"Nivel —";
-  titleEl.textContent=a?"Iniciado":"—";
+let __ME_STATS__ = null;
 
-  const url=a?(localStorage.getItem(`level.nft.avatar.${a.toLowerCase()}`)||""):"";
-  if(!url.trim()){avatarBox.classList.add("empty");avatarImg.removeAttribute("src");}
-  else{avatarBox.classList.remove("empty");avatarImg.src=url;avatarImg.onerror=()=>{avatarBox.classList.add("empty");avatarImg.removeAttribute("src");};}
+// Niveles por Dharma (editable). Dharma define nivel y no baja. [1](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!se04a61d341c348b1a2c3f47cc82f4913)[2](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!s7661d7b6025c4ae48cf1527b37a4260c)
+const LEVELS = [
+  { name: "Novato", need: 0 },
+  { name: "Iniciado", need: 10 },
+  { name: "Plata", need: 25 },
+  { name: "Oro", need: 50 },
+  { name: "Diamante", need: 100 },
+  { name: "Avanzado", need: 200 },
+  { name: "Refinado", need: 400 },
+  { name: "Unico", need: 800 },
+  { name: "Élite", need: 1600 },
+  { name: "Superior", need: 3200 },
+  { name: "Amasterdamo", need: 6400 },
+];
 
-  // barras (placeholder)
-  profileModal.querySelector("#pfXpText").textContent=a?"0 / 100":"0 / 0";
-  profileModal.querySelector("#pfXpBar").style.width=a?"10%":"0%";
-  profileModal.querySelector("#pfKarmaText").textContent="0";
-  profileModal.querySelector("#pfKarmaBar").style.width="0%";
-
-  // tokens (placeholder; aquí luego conectas balances reales)
-  profileModal.querySelector("#pfAura").textContent=a?"0":"—";
-  profileModal.querySelector("#pfAlem").textContent=a?"0":"—";
-  profileModal.querySelector("#pfVeAlem").textContent=a?"0":"—";
-  profileModal.querySelector("#pfDharma").textContent=a?"0":"—";
-
-  // Karma token: si es negativo, marca estado visual
-  const karmaValue=a?0:null; // cambia por tu valor real
-  const karmaValEl=profileModal.querySelector("#ethVal");
-  const karmaToken=profileModal.querySelector("#pfKarmaToken");
-  if(karmaValue===null){karmaValEl.textContent="—";karmaToken.classList.remove("negative");}
-  else{karmaValEl.textContent=String(karmaValue);karmaToken.classList.toggle("negative",karmaValue<0);}
-
-  profileModal.querySelector("#slotNivel").textContent=a?"NFT Nivel":"—";
-  profileModal.querySelector("#slotRol").textContent="—";
-  profileModal.querySelector("#slotVeNFT").textContent="—";
-  profileModal.querySelector("#slotAssets").textContent="—";
-  profileModal.querySelector("#slotAgent").textContent="—";
-  profileModal.querySelector("#slotLands").textContent="—";
+function getLevelByDharma(d) {
+  let current = LEVELS[0];
+  let next = LEVELS[1] || LEVELS[0];
+  for (let i = 0; i < LEVELS.length; i++) {
+    if (d >= LEVELS[i].need) {
+      current = LEVELS[i];
+      next = LEVELS[i + 1] || LEVELS[i];
+    } else break;
+  }
+  return { current, next };
 }
+
+function fmtInt(n) {
+  const x = Number(n || 0);
+  return Number.isFinite(x) ? String(x) : "0";
+}
+
+function nowMs() { return Date.now(); }
+
+function getSessionStartMs(addr) {
+  if (!addr) return 0;
+  const key = `alemty.session.startedAt.${addr.toLowerCase()}`;
+  const raw = localStorage.getItem(key);
+  const n = Number(raw || 0);
+  if (Number.isFinite(n) && n > 0) return n;
+  const t = nowMs();
+  localStorage.setItem(key, String(t));
+  return t;
+}
+
+function formatDuration(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
+}
+
+// Slots items: por ahora se leen de localStorage (equipamiento)
+// Puedes setearlos desde tu UI futura o “drops”.
+function getEquipped(addr, slot) {
+  if (!addr) return "—";
+  const key = `alemty.equip.${addr.toLowerCase()}.${slot}`;
+  return localStorage.getItem(key) || "—";
+}
+
+// Ejemplo: NFT “más alto” (si lo quieres guardar con esta key)
+function getHighestNft(addr) {
+  if (!addr) return "—";
+  const key = `alemty.nft.highest.${addr.toLowerCase()}`;
+  return localStorage.getItem(key) || "—";
+}
+
+async function fetchMeStats() {
+  const token = localStorage.getItem("alemty.jwt") || "";
+  if (!token) return null;
+
+  try {
+    const r = await fetch("/api/me/stats", {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch {
+    return null;
+  }
+}
+
+/* =========================
+   Renders: ESTADO / ACTIVIDAD
+========================= */
+
+function renderEstadoTab() {
+  const c = profileModal.querySelector("#pfContent");
+  if (!c) return;
+
+  const addr = getDid();
+  const s = __ME_STATS__;
+
+  if (!addr) {
+    c.innerHTML = `
+      <div class="pf-box">
+        <div class="h2">Estado</div>
+        <p class="muted">Panel MMORPG. Conecta tu wallet desde ☰ para ver tu progreso.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const startedAt = getSessionStartMs(addr);
+  const connectedFor = formatDuration(nowMs() - startedAt);
+
+  if (!s) {
+    c.innerHTML = `
+      <div class="pf-box">
+        <div class="h2">Estado</div>
+        <p class="muted">Panel MMORPG. Conectaremos tokenomics.js después.</p>
+        <div class="post-tags" style="margin-top:10px">
+          <span class="pill">⏱️ Conectado: <span class="count">${connectedFor}</span></span>
+          <span class="pill">🧙‍♂️ DID: <span class="count">${shortAddr(addr)}</span></span>
+        </div>
+        <p class="small muted" style="margin-top:10px">Tip: si no hay sesión/JWT, /api/me/stats no puede cargar.</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Tokenomics: 1 point recibido = 1 Dharma; Aura 1:1 con Dharma [1](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!se04a61d341c348b1a2c3f47cc82f4913)[2](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!s7661d7b6025c4ae48cf1527b37a4260c)
+  const pointsReceived = s?.received?.pointsReceived ?? 0;
+  const likesReceived = s?.received?.likesReceived ?? 0;
+  const commentsReceived = s?.received?.commentsReceived ?? 0;
+
+  const dharma = s?.tokenomics?.dharma ?? 0;
+  const aura = s?.tokenomics?.aura ?? 0;
+
+  c.innerHTML = `
+    <div class="pf-box">
+      <div class="h2">Estado</div>
+      <p class="muted">Panel MMORPG. Conectaremos tokenomics.js después.</p>
+
+      <div class="post-tags" style="margin-top:10px">
+        <span class="pill">⏱️ Conectado: <span class="count">${connectedFor}</span></span>
+        <span class="pill">🧙‍♂️ DID: <span class="count">${shortAddr(addr)}</span></span>
+      </div>
+
+      <div class="post-tags" style="margin-top:10px">
+        <span class="pill points">⭐ Points recibidos: <span class="count">${fmtInt(pointsReceived)}</span></span>
+        <span class="pill like">♥️ Likes recibidos: <span class="count">${fmtInt(likesReceived)}</span></span>
+        <span class="pill comment">💬 Comentarios recibidos: <span class="count">${fmtInt(commentsReceived)}</span></span>
+      </div>
+
+      <div class="post-tags" style="margin-top:10px">
+        <span class="pill">🟢 Dharma: <span class="count">${fmtInt(dharma)}</span></span>
+        <span class="pill">🔵 Aura (wallet interna): <span class="count">${fmtInt(aura)}</span></span>
+      </div>
+
+      <p class="small muted" style="margin-top:10px">
+        Aura se podrá swapear a futuro por ALEM de gobernanza para stakear.
+      </p>
+    </div>
+  `;
+}
+
+function renderActividadTab() {
+  const c = profileModal.querySelector("#pfContent");
+  if (!c) return;
+
+  const addr = getDid();
+  const s = __ME_STATS__;
+
+  if (!addr) {
+    c.innerHTML = `
+      <div class="pf-box">
+        <div class="h2">Actividad</div>
+        <p class="muted">Conecta tu wallet para ver tu última actividad.</p>
+      </div>
+    `;
+    return;
+  }
+
+  if (!s) {
+    c.innerHTML = `
+      <div class="pf-box">
+        <div class="h2">Actividad</div>
+        <p class="muted">SOON</p>
+        <p class="small muted">Aquí irá: último post, último comentario, últimas reacciones, etc.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const posts = s?.activity?.posts ?? 0;
+  const comments = s?.activity?.comments ?? 0;
+  const likesGiven = s?.given?.likesGiven ?? 0;
+  const pointsGiven = s?.given?.pointsGiven ?? 0;
+
+  // Si luego extiendes /api/me/stats con lastPost/lastComment, aquí lo pintas.
+  const lastPost = s?.last?.post || null;
+  const lastComment = s?.last?.comment || null;
+
+  c.innerHTML = `
+    <div class="pf-box">
+      <div class="h2">Actividad</div>
+      <p class="muted">Resumen tipo foro: lo último que hiciste y tu ritmo.</p>
+
+      <div class="post-tags" style="margin-top:10px">
+        <span class="pill">🧵 Posts: <span class="count">${fmtInt(posts)}</span></span>
+        <span class="pill">✍️ Comentarios: <span class="count">${fmtInt(comments)}</span></span>
+        <span class="pill like">♥️ Likes dados: <span class="count">${fmtInt(likesGiven)}</span></span>
+        <span class="pill points">⭐ Points dados: <span class="count">${fmtInt(pointsGiven)}</span></span>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="h2">Último post</div>
+        <div class="small muted">${lastPost ? `${lastPost.created_at}` : "SOON"}</div>
+        <div style="margin-top:6px">${lastPost ? lastPost.title : "Aquí irá tu último post (título + link)."}</div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="h2">Último comentario</div>
+        <div class="small muted">${lastComment ? `${lastComment.created_at}` : "SOON"}</div>
+        <div style="margin-top:6px">${lastComment ? lastComment.body : "Aquí irá tu último comentario (snippet + link)."}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderTab(tab) {
+  if (tab === "estado") return renderEstadoTab();
+  if (tab === "actividad") return renderActividadTab();
+
+  const c = profileModal.querySelector("#pfContent");
+  if (!c) return;
+
+  if (tab === "dm") {
+    c.innerHTML = `<div class="pf-box"><div class="h2">DM</div><p class="muted">SOON</p></div>`;
+  } else if (tab === "dex") {
+    c.innerHTML = `
+      <div class="pf-box">
+        <div class="h2">DEX</div>
+        <div class="dex-grid">
+          <button class="tab-btn" disabled>Swap</button>
+          <button class="tab-btn" disabled>LP Pools</button>
+          <button class="tab-btn" disabled>Staking</button>
+          <button class="tab-btn" disabled>Vote</button>
+          <button class="tab-btn" disabled>Reclaim Rewards</button>
+          <button class="tab-btn" disabled>Reclaim Bribes</button>
+        </div>
+      </div>
+    `;
+  } else if (tab === "tienda") {
+    c.innerHTML = `<div class="pf-box"><div class="h2">Tienda</div><p class="muted">SOON</p></div>`;
+  }
+}
+
+/* =========================
+   Sync principal (async)
+========================= */
+
+async function syncProfile() {
+  const addr = getDid();
+
+  const addrEl = profileModal.querySelector("#pfAddr");
+  const lvlEl = profileModal.querySelector("#pfLevel");
+  const titleEl = profileModal.querySelector("#pfTitle");
+  const avatarBox = profileModal.querySelector("#pfAvatarBox");
+  const avatarImg = profileModal.querySelector("#pfAvatar");
+
+  addrEl.textContent = addr ? `${shortAddr(addr)} · alemty.eth` : "Conecta tu wallet (☰)";
+
+  // Avatar NFT (si existe)
+  const url = addr ? (localStorage.getItem(`level.nft.avatar.${addr.toLowerCase()}`) || "") : "";
+  if (!url.trim()) {
+    avatarBox.classList.add("empty");
+    avatarImg.removeAttribute("src");
+  } else {
+    avatarBox.classList.remove("empty");
+    avatarImg.src = url;
+    avatarImg.onerror = () => {
+      avatarBox.classList.add("empty");
+      avatarImg.removeAttribute("src");
+    };
+  }
+
+  // Stats reales (si hay sesión)
+  __ME_STATS__ = addr ? await fetchMeStats() : null;
+
+  // Dharma/Aura: derivado de points recibidos en backend [1](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!se04a61d341c348b1a2c3f47cc82f4913)[2](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!s7661d7b6025c4ae48cf1527b37a4260c)
+  const dharma = __ME_STATS__?.tokenomics?.dharma ?? 0;
+  const aura = __ME_STATS__?.tokenomics?.aura ?? 0;
+  const pointsReceived = __ME_STATS__?.received?.pointsReceived ?? 0;
+
+  // Karma placeholder (cuando lo implementes, lo usas para bloquear Dharma) [3](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!s8c541048b999400e8049b03d5d584285)
+  const karmaValue = 0;
+
+  // Nivel por Dharma (piso de rango) [1](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!se04a61d341c348b1a2c3f47cc82f4913)[2](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!s7661d7b6025c4ae48cf1527b37a4260c)
+  const { current, next } = getLevelByDharma(dharma);
+  lvlEl.textContent = addr ? `${current.name} (${dharma} Dharma)` : "Nivel —";
+  titleEl.textContent = addr ? current.name : "—";
+
+  // progreso barra Dharma
+  const progressDen = Math.max(1, next.need - current.need);
+  const progressNum = Math.min(progressDen, Math.max(0, dharma - current.need));
+  const pct = next.need === current.need ? 100 : Math.round((progressNum / progressDen) * 100);
+
+  profileModal.querySelector("#pfXpText").textContent = addr
+    ? `${fmtInt(dharma)} Dharma · +${fmtInt(pointsReceived)} points recibidos`
+    : "0";
+
+  profileModal.querySelector("#pfXpBar").style.width = addr ? `${pct}%` : "0%";
+
+  profileModal.querySelector("#pfKarmaText").textContent = String(karmaValue);
+  profileModal.querySelector("#pfKarmaBar").style.width = karmaValue > 0 ? "30%" : "0%";
+
+  // Wallet interna (tokens)
+  profileModal.querySelector("#pfDharma").textContent = addr ? String(dharma) : "—";
+  profileModal.querySelector("#pfAura").textContent = addr ? String(aura) : "—";
+  profileModal.querySelector("#pfAlem").textContent = addr ? "0" : "—";
+  profileModal.querySelector("#pfVeAlem").textContent = addr ? "0" : "—";
+
+  const karmaValEl = profileModal.querySelector("#pfKarmaVal");
+  const karmaToken = profileModal.querySelector("#pfKarmaToken");
+  if (!addr) {
+    karmaValEl.textContent = "—";
+    karmaToken.classList.remove("negative");
+  } else {
+    karmaValEl.textContent = String(karmaValue);
+    karmaToken.classList.toggle("negative", karmaValue < 0);
+  }
+
+  // Slots items (NO Aura aquí)
+  // Puedes guardar equipamiento en localStorage:
+  // localStorage.setItem(`alemty.equip.${addr}.assets`, "NFT X (Legendary)");
+  const highest = getHighestNft(addr);
+  profileModal.querySelector("#slotNivel").textContent = highest !== "—" ? highest : "—";
+  profileModal.querySelector("#slotRol").textContent = getEquipped(addr, "role");
+  profileModal.querySelector("#slotVeNFT").textContent = getEquipped(addr, "venft");
+  profileModal.querySelector("#slotAssets").textContent = getEquipped(addr, "assets");
+  profileModal.querySelector("#slotAgent").textContent = getEquipped(addr, "agent");
+  profileModal.querySelector("#slotLands").textContent = getEquipped(addr, "lands");
+
+  // Render tab activo
+  const activeBtn = profileModal.querySelector("#pfTabs .tab-btn.active");
+  const activeTab = activeBtn?.getAttribute("data-tab") || "estado";
+  renderTab(activeTab);
+}
+
+/* =========================
+   Listeners del modal
+========================= */
+
+profileModal.querySelector("#profileClose")?.addEventListener("click", () => closeModal("profileModal"));
+profileModal.querySelector("#profileBackdrop")?.addEventListener("click", () => closeModal("profileModal"));
+
+profileModal.querySelectorAll("#pfTabs .tab-btn").forEach((b) =>
+  b.addEventListener("click", async () => {
+    profileModal.querySelectorAll("#pfTabs .tab-btn").forEach((x) => x.classList.remove("active"));
+    b.classList.add("active");
+    await syncProfile();
+  })
+);
+
+// Al abrir el perfil, refresca antes de mostrar
+profileBtn.addEventListener("click", async () => {
+  await syncProfile();
+  openModal("profileModal");
+});
+
+window.addEventListener("did:changed", async () => {
+  await syncProfile();
+});
+
+// Primer render
+syncProfile();
+
+
 
 
 function renderTab(t){
