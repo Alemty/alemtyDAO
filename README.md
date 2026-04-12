@@ -1,88 +1,245 @@
+
 # alemty.eth — DAO v0.4
 
-**alemty.eth** es una **DAO social y económica** sobre **Base (L2 Ethereum)** que separa **mérito (Dharma)**, **utilidad (Aura)**, **deuda (Karma)** y **gobernanza (ALEM/veSTAKE)**.Este repositorio contiene el **frontend estático (ENS/IPFS)** y el **backend persistente (Workers + D1)** para estado compartido del foro.
-
-> **Estado:** v0.4 (backend integrado) · **Fecha:** 2026-04-12 · **No financiero**
-
----
-
-## ✨ ¿Qué incluye v0.4?
-
-### ✅ Frontend (estático)
-- Hub único servido desde un CID IPFS, rutas absolutas (/dao, /dex, /ia, /token).
-- Shell compartido (topbar, drawer, theme).
-- SIWE desde navegador.
-
-### ✅ Backend (estado compartido)
-- **Worker SIWE** (stateless): nonce KV + verificación firma + emite JWT.
-- **Worker API** (persistente): Hono + D1 para posts, comments, reactions, stats.
+**Estado:** Activo / En desarrollo  
+**Enfoque:** Identidad · Coordinación · Economía sostenible · Gobernanza auditable  
+**Principio rector:** *El mérito no se compra. El valor circula. El poder se bloquea.*
 
 ---
 
-## 🔐 Autenticación (SIWE → JWT)
+## ¿Qué es alemty?
 
-1) El usuario firma mensaje SIWE (EIP‑4361) en el frontend.
-2) **SIWE Worker** valida: domain/chain/nonce/firma.
-3) Emite **JWT** y el frontend lo guarda en `localStorage`.
-4) El frontend envía `Authorization: Bearer <JWT>` a la **API**.
+alemty es una **plataforma de identidad, coordinación y economía social** diseñada para construir sistemas humanos sostenibles a largo plazo.  
+No es un token, no es solo una DAO, no es un foro, no es un DEX.
 
-**Secrets:** se usa `JWT_SECRET` en ambos workers (SIWE firma, API verifica).
+Es un **sistema completo** que comienza con la identidad individual y evoluciona, por capas, hasta convertirse en una **consultora espacial y tecnológica**, capaz de analizar, coordinar y ejecutar proyectos complejos de forma auditable.
 
----
-
-## 🗄️ Backend API (Hono + D1)
-
-### Endpoints principales
-- `GET /api/health`
-- `GET /api/posts`
-- `GET /api/posts/:id`
-- `POST /api/posts` (auth)
-- `POST /api/posts/:id/react` (auth) — `like|point` (acepta `points` como alias)
-- `POST /api/posts/:id/comments` (auth)
-- `GET /api/me/stats` (auth)
-- `GET /api/stats`
-- `GET /api/ranking/week` · `GET /api/ranking/month`
-
-### D1 (tablas)
-- `users`, `posts`, `comments`, `reactions` (+ unique index por post/address/type).
+alemty nace como respuesta directa a los errores estructurales de Web3:
+- especulación sin utilidad,
+- reputación comprable,
+- gobernanza capturada por capital,
+- sistemas opacos,
+- y modelos “pay to win” que destruyen comunidades.
 
 ---
 
-## 🧩 Estructura del repo
+## La evolución del sistema (visión completa)
 
-- `/` ID & shell
-- `/shared/` UI y lógica compartida
-- `/dao/` foro
-- `/dex/` DEX (fases)
-- `/token/` tokenomics
-- `/workers/siwe/` worker SIWE (nonce + verify)
-- `/src/` API worker (Hono)
-- `/docs/` documentación canónica
+alemty **no salta etapas**. Evoluciona de forma orgánica:
 
----
+1. **ID / DID**  
+   Tu identidad es tu wallet. No hay correos, contraseñas ni intermediarios.  
+   Eres soberano desde el inicio.
 
-## 🚀 Deploy
+2. **DAO (Foro social)**  
+   Interacción humana real: publicaciones, comentarios, likes, puntos, salas temáticas.  
+   Aquí se genera el mérito social.
 
-### Worker SIWE
-- `workers/siwe/wrangler.toml` (KV: SIWE_NONCES)
-- secret: `JWT_SECRET`
+3. **DeFi (economía programable)**  
+   La economía aparece como consecuencia de la interacción, no al revés.
 
-### Worker API
-- `wrangler.toml` (D1: DB)
-- secret: `JWT_SECRET`
+4. **DEX (ejecución económica)**  
+   Intercambio, staking y gobernanza económica por fases, sin dependencia temprana de liquidez externa.
 
----
+5. **IA (asistencia operativa)**  
+   Agentes que analizan, resumen, simulan escenarios y ayudan a tomar decisiones.  
+   **La IA no gobierna**, solo asiste.
 
-## 📚 Documentación
+6. **AR (web espacial)**  
+   Visualización espacial de información, jerarquías, flujos y proyectos complejos.
 
-- `docs/TOKENOMICS_RULEBOOK.md` (canónico)
-- `docs/BACKEND.md` (API + D1)
-- `docs/ARCHITECTURE.md` (capas)
-- `docs/OPERATIONS.md`, `docs/ROADMAP.md`
+7. **Resultado final: Consultora Espacial**  
+   Un sistema capaz de ofrecer análisis, simulaciones, coordinación, reporting y ejecución verificable para proyectos reales.
 
 ---
 
-## 📜 Licencia
-MIT
+## ¿Por qué alemty es diferente?
+
+La mayoría de proyectos Web3 fallan porque **mezclan cosas que no deben mezclarse**:
+- mérito con dinero,
+- poder con liquidez,
+- reputación con especulación.
+
+alemty separa claramente **cuatro funciones fundamentales**:
+
+1. Mérito  
+2. Valor  
+3. Poder  
+4. Deuda  
+
+Cada una tiene su propio mecanismo. Ninguna puede sustituir a otra.
+
+---
+
+## Los 4 componentes clave del sistema
+
+alemty utiliza **3 tokens funcionales y 1 antitoken**.  
+Cada uno tiene un propósito único y no intercambiable.
+
+### 1. Dharma (DS / DC) — Mérito / Experiencia
+- **No transferible**
+- Representa tu historial real de participación y reconocimiento.
+
+**DS (Dharma Social):**
+- Se obtiene cuando otros reconocen tu aporte (likes, puntos).
+- Es permanente.
+
+**DC (Dharma Condicional):**
+- Se obtiene por compromisos temporales (staking/locks).
+- Tiene límites para evitar comprar niveles.
+
+👉 El mérito **no se compra**.
+
+---
+
+### 2. Karma — Deuda social (Antitoken)
+- Aparece cuando rompes compromisos o violas reglas.
+- **No se paga con dinero, tokens ni swaps**.
+- Solo se paga con mérito social futuro.
+
+👉 El sistema recuerda.
+
+---
+
+### 3. Aura — Token de utilidad interna
+- Es el **gas social** del ecosistema.
+- Se usa para publicar, impulsar contenido, crear salas y acceder a funciones avanzadas.
+- Se genera **solo a partir de Dharma Social**.
+- Tiene decay controlado para evitar inflación infinita.
+- **No está diseñado para especulación externa**.
+
+👉 Aura habilita participación, no riqueza.
+
+---
+
+### 4. ALEM — Token de gobernanza
+- Representa coordinación y dirección.
+- No otorga dividendos.
+- El poder no es instantáneo: se obtiene mediante **bloqueo temporal**.
+
+👉 Gobernanza sin plutocracia.
+
+---
+
+## Earn & Play — No Pay to Win
+
+En alemty **no se gana pagando**.  
+Se gana participando, aprendiendo y aportando.
+
+### ¿Cómo se gana?
+
+- Recibir likes → mérito
+- Recibir puntos → mérito
+- Aportar ideas útiles
+- Participar de forma constante
+
+### ¿Qué NO funciona?
+
+- Comprar estatus
+- Comprar poder político
+- Comprar reputación
+
+alemty está diseñado para:
+- aprender jugando,
+- crecer aportando,
+- progresar sin especulación.
+
+---
+
+## Sistema de niveles y nobleza
+
+alemty introduce un sistema de **progresión visible** inspirado en MMORPGs:
+
+- Los niveles reflejan mérito acumulado.
+- La nobleza es **un rol**, no una propiedad.
+- El estatus se mantiene solo si el compromiso continúa.
+- El poder se quema si se abandona.
+
+👉 No hay aristocracias permanentes.
+
+---
+
+## Arquitectura del sistema
+
+alemty está diseñado con **responsabilidad única por capa**:
+
+- Identidad  
+- Interacción social  
+- Estado económico  
+- Gobernanza  
+- Ejecución económica  
+- IA  
+- Visualización espacial  
+
+Esto permite:
+- auditar cada parte,
+- escalar sin romper el sistema,
+- y reemplazar módulos sin colapsar el todo.
+
+---
+
+## Backend v0.4 (confianza técnica)
+
+v0.4 introduce persistencia real sin sacrificar auditabilidad:
+
+- Frontend estático
+- Backend con identidad criptográfica
+- Escrituras autenticadas
+- Estado determinista
+- Datos verificables
+
+👉 El sistema funciona hoy, no es solo teoría.
+
+---
+
+## Documentación y código auditable
+
+alemty se apoya en tres pilares de confianza:
+
+1. **Reglas claras y documentadas**
+2. **Código legible y auditable**
+3. **Economía con propósito real**
+
+Nada depende de promesas, todo depende de reglas visibles.
+
+---
+
+## Propósito final
+
+alemty no busca hype.  
+Busca **coordinar talento humano a escala**.
+
+Cuando el sistema madura, se convierte en una **consultora espacial**:
+- análisis profundo,
+- simulación,
+- coordinación,
+- ejecución verificable.
+
+Una herramienta para resolver problemas reales, no para vender narrativas vacías.
+
+---
+
+## Licencia
+
+MIT, salvo que se indique lo contrario en archivos específicos.
+
+---
+
+## Disclaimer
+
+alemty:
+- no representa equity,
+- no promete retornos,
+- no es un instrumento financiero,
+- es un experimento social, económico y tecnológico.
+
+Participar es una decisión personal y responsable.
+
+---
+
+### TL;DR
+
+**alemty es identidad soberana + mérito real + economía útil + poder bloqueado + aprendizaje continuo, evolucionando hacia una consultora espacial auditable y sostenible.**
+
 
 **alemty.eth** · Identidad · DAO · Economía · IA · Web3
