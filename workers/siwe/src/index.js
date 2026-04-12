@@ -191,9 +191,10 @@ export default {
       }
 
       // ✅ Necesitamos el secret para firmar token
-      if (!env.SESSION_SECRET) {
+      // (cambiado a JWT_SECRET)
+      if (!env.JWT_SECRET) {
         return json(
-          { ok: false, error: "Missing env var: SESSION_SECRET" },
+          { ok: false, error: "Missing env var: JWT_SECRET" },
           500,
           cors
         );
@@ -255,10 +256,10 @@ export default {
       /* ✅ Invalidate nonce */
       await env.SIWE_NONCES.delete(key);
 
-      // ✅ Emitir JWT para tu API (aud debe ser "alemtydao-api" como en tu auth.ts)
+      // ✅ Emitir JWT para tu API
       const address = parsed.address.toLowerCase();
       const now = Math.floor(Date.now() / 1000);
-      const exp = now + 60 * 60; // 1 hora (ajusta si quieres)
+      const exp = now + 60 * 60;
 
       const token = await signJwt(
         {
@@ -268,7 +269,7 @@ export default {
           iat: now,
           exp,
         },
-        env.SESSION_SECRET
+        env.JWT_SECRET // ✅ cambiado a JWT_SECRET
       );
 
       return json(
@@ -276,7 +277,7 @@ export default {
           ok: true,
           address,
           chainId: parsed.chainId,
-          token, // ✅ AQUÍ ya viene el JWT
+          token,
         },
         200,
         cors

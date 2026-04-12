@@ -1,130 +1,88 @@
-# alemty.eth — DAO v0.03
+# alemty.eth — DAO v0.4
 
-**alemty.eth** es una **Organización Autónoma Descentralizada (DAO)** orientada a la **identidad digital**, la **experimentación Web3**, la **economía programable** y la **investigación en IA y sistemas complejos**.
+**alemty.eth** es una **DAO social y económica** sobre **Base (L2 Ethereum)** que separa **mérito (Dharma)**, **utilidad (Aura)**, **deuda (Karma)** y **gobernanza (ALEM/veSTAKE)**.Este repositorio contiene el **frontend estático (ENS/IPFS)** y el **backend persistente (Workers + D1)** para estado compartido del foro.
 
-Este repositorio contiene el **frontend público y auditable** de la DAO, diseñado para operar sobre **ENS + IPFS**, con autenticación **Sign‑In With Ethereum (SIWE)** y sin dependencias centralizadas permanentes.
-
----
-
-## 🌐 Estado del proyecto
-
-- **Versión:** `v0.03`
-- **Estado:** Activo / En desarrollo
-- **Arquitectura:** Frontend estático + ENS + IPFS + Workers
-- **Modelo:** Open‑source, modular y evolutivo
-
-> Esta versión consolida la identidad descentralizada (SIWE), el shell compartido, la navegación modular y el flujo de publicación continua a IPFS (Pinata).
+> **Estado:** v0.4 (backend integrado) · **Fecha:** 2026-04-12 · **No financiero**
 
 ---
 
-## 🧭 Arquitectura general
+## ✨ ¿Qué incluye v0.4?
 
-La DAO está organizada como un **hub único**, servido desde **un solo CID IPFS**, con módulos accesibles por rutas absolutas.
+### ✅ Frontend (estático)
+- Hub único servido desde un CID IPFS, rutas absolutas (/dao, /dex, /ia, /token).
+- Shell compartido (topbar, drawer, theme).
+- SIWE desde navegador.
 
-```text
-/
-├─ index.html        → Identidad (ID)
-├─ assets/           → Datos públicos, PDFs, medallas, POAPs
-├─ shared/           → Shell, UI y lógica compartida
-├─ dao/              → Módulo DAO
-├─ dex/              → Módulo DEX
-├─ ia/               → Módulo IA
-├─ token/            → Tokenomics
-└─ settings/         → Configuración visual
-```
-
-Todos los módulos comparten:
-
-- topbar
-- navbar
-- drawer
-- tema claro / oscuro
-- identidad ENS / DID
-- sesión SIWE por origen
+### ✅ Backend (estado compartido)
+- **Worker SIWE** (stateless): nonce KV + verificación firma + emite JWT.
+- **Worker API** (persistente): Hono + D1 para posts, comments, reactions, stats.
 
 ---
 
-## 🧩 Módulos
+## 🔐 Autenticación (SIWE → JWT)
 
-### 🪪 Identidad (ID) — `/`
+1) El usuario firma mensaje SIWE (EIP‑4361) en el frontend.
+2) **SIWE Worker** valida: domain/chain/nonce/firma.
+3) Emite **JWT** y el frontend lo guarda en `localStorage`.
+4) El frontend envía `Authorization: Bearer <JWT>` a la **API**.
 
-- Identidad ENS
-- Perfil público
-- Credenciales (POAPs y acreditaciones)
-- Documento base: **La Simulación del Dragón**
-
-### 🏛️ DAO — `/dao/`
-
-- Espacio de coordinación
-- Interacciones sociales (likes / puntos locales)
-- Base para gobernanza futura
-
-### 🔁 DEX — `/dex/`
-
-- Dashboard
-- Swap
-- Stake
-- Vote
-- Bribes
-
-> La lógica on‑chain se integrará progresivamente.
-
-### 🤖 IA — `/ia/`
-
-- Agentes
-- Simulaciones
-- Automatización
-- Investigación aplicada
-
-### 🪙 Token — `/token/`
-
-- Tokenomics
-- Emisiones
-- Economía interna
+**Secrets:** se usa `JWT_SECRET` en ambos workers (SIWE firma, API verifica).
 
 ---
 
-## 🔐 Identidad y autenticación (SIWE)
+## 🗄️ Backend API (Hono + D1)
 
-El proyecto implementa **Sign‑In With Ethereum (EIP‑4361)**.
+### Endpoints principales
+- `GET /api/health`
+- `GET /api/posts`
+- `GET /api/posts/:id`
+- `POST /api/posts` (auth)
+- `POST /api/posts/:id/react` (auth) — `like|point` (acepta `points` como alias)
+- `POST /api/posts/:id/comments` (auth)
+- `GET /api/me/stats` (auth)
+- `GET /api/stats`
+- `GET /api/ranking/week` · `GET /api/ranking/month`
 
-### Flujo
-
-1. El usuario firma un mensaje SIWE desde el frontend.
-2. Un Worker stateless verifica dominio, chain ID, firma y nonce anti‑replay.
-3. El frontend guarda el DID en `localStorage` por origen.
-
-### Notas importantes
-
-- La sesión vive en el navegador.
-- No se comparte sesión entre dominios o subdominios.
-- El backend no guarda estado ni llaves privadas.
-
----
-
-## 🔗 ENS, IPFS y dominios
-
-- Un solo CID IPFS
-- Rutas absolutas (`/dao`, `/dex`, `/ia`)
-- ENS resuelve al CID
+### D1 (tablas)
+- `users`, `posts`, `comments`, `reactions` (+ unique index por post/address/type).
 
 ---
 
-## 📦 Publicación continua a IPFS (Pinata)
+## 🧩 Estructura del repo
 
-El repositorio incluye un workflow de GitHub Actions que:
+- `/` ID & shell
+- `/shared/` UI y lógica compartida
+- `/dao/` foro
+- `/dex/` DEX (fases)
+- `/token/` tokenomics
+- `/workers/siwe/` worker SIWE (nonce + verify)
+- `/src/` API worker (Hono)
+- `/docs/` documentación canónica
 
-- Se ejecuta en cada `git push` a `main`
-- Publica el frontend completo en IPFS vía Pinata
-- Genera un CID nuevo por build
+---
+
+## 🚀 Deploy
+
+### Worker SIWE
+- `workers/siwe/wrangler.toml` (KV: SIWE_NONCES)
+- secret: `JWT_SECRET`
+
+### Worker API
+- `wrangler.toml` (D1: DB)
+- secret: `JWT_SECRET`
+
+---
+
+## 📚 Documentación
+
+- `docs/TOKENOMICS_RULEBOOK.md` (canónico)
+- `docs/BACKEND.md` (API + D1)
+- `docs/ARCHITECTURE.md` (capas)
+- `docs/OPERATIONS.md`, `docs/ROADMAP.md`
 
 ---
 
 ## 📜 Licencia
-
 MIT
 
----
-
-**alemty.eth**  
-Identidad · DAO · Economía · IA · Web3
+**alemty.eth** · Identidad · DAO · Economía · IA · Web3

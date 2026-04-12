@@ -1,30 +1,27 @@
 
 // src/lib/jwt.ts
-type JwtPayload = Record<string, any>;
 
-function toBase64(b64url: string) {
-  const b64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
-  const pad = (4 - (b64.length % 4)) % 4;
-  return b64 + "=".repeat(pad);
+type JwtPayload = {
+  iss?: string;
+  aud?: string;
+  sub?: string;
+  iat?: number;
+  exp?: number;
+  [k: string]: any;
+};
+
+function base64urlEncode(data: Uint8Array) {
+  let str = "";
+  for (const b of data) str += String.fromCharCode(b);
+  return btoa(str).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 }
 
-const b64url = {
-  encode: (input: Uint8Array | string) => {
-    const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
-    let str = "";
-    for (const b of bytes) str += String.fromCharCode(b);
-    return btoa(str).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-  },
-  decodeToBytes: (input: string) => {
-    const bin = atob(toBase64(input));
-    return Uint8Array.from(bin, (c) => c.charCodeAt(0));
-  },
-  decodeJson: <T = any>(input: string): T => {
-    const bytes = b64url.decodeToBytes(input);
-    const text = new TextDecoder().decode(bytes);
-    return JSON.parse(text) as T;
-  },
-};
+function base64urlDecode(str: string) {
+  const pad = "=".repeat((4 - (str.length % 4)) % 4);
+  const base64 = (str + pad).replace(/-/g, "+").replace(/_/g, "/");
+  const bin = atob(base64);
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+}
 
 async function hmacKey(secret: string) {
   return crypto.subtle.importKey(
@@ -38,37 +35,45 @@ async function hmacKey(secret: string) {
 
 export async function signJwt(payload: JwtPayload, secret: string) {
   const header = { alg: "HS256", typ: "JWT" };
-  const h = b64url.encode(JSON.stringify(header));
-  const p = b64url.encode(JSON.stringify(payload));
-  const data = `${h}.${p}`;
+
+  const enc = new TextEncoder();
+  const headerPart = base64urlEncode(enc.encode(JSON.stringify(header)));
+  const payloadPart = base64urlEncode(enc.encode(JSON.stringify(payload)));
+  const data = `${headerPart}.${payloadPart}`;
 
   const key = await hmacKey(secret);
-  const sigBuf = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
-  const sig = b64url.encode(new Uint8Array(sigBuf));
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(data));
+  const signature = base64urlEncode(new Uint8Array(sig));
 
-  return `${data}.${sig}`;
+  return `${data}.${signature}`;
 }
 
-export async function verifyJwt(token: string, secret: string): Promise<JwtPayload | null> {
+export async function verifyJwt(token: string, secret: string): Promise<JwtPayload> {
   const parts = token.split(".");
-  if (parts.length !== 3) return null;
+  if (parts.length !== 3) throw new Error("Invalid token format");
 
-  const [h, p, s] = parts;
-
-  const header = b64url.decodeJson(h);
-  if (header?.alg !== "HS256") return null;
-
-  const data = `${h}.${p}`;
-  const sigBytes = b64url.decodeToBytes(s);
+  const [headerPart, payloadPart, signaturePart] = parts;
+  const data = `${headerPart}.${payloadPart}`;
 
   const key = await hmacKey(secret);
-  const ok = await crypto.subtle.verify("HMAC", key, sigBytes, new TextEncoder().encode(data));
-  if (!ok) return null;
+  const valid = await crypto.subtle.verify(
+    "HMAC",
+    key,
+    base64urlDecode(signaturePart),
+    new TextEncoder().encode(data)
+  );
 
-  const payload = b64url.decodeJson<JwtPayload>(p);
+  if (!valid) throw new Error("Invalid signature");
+
+  const payloadJson = new TextDecoder().decode(base64urlDecode(payloadPart));
+  const payload = JSON.parse(payloadJson) as JwtPayload;
+
   const now = Math.floor(Date.now() / 1000);
-  if (payload?.exp && now > payload.exp) return null;
+  if (payload.exp && now > payload.exp) {
+    throw new Error("Token expired");
+  }
 
   return payload;
 }
+
 

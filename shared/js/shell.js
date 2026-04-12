@@ -852,6 +852,7 @@ function formatDuration(ms) {
   return `${sec}s`;
 }
 
+
 // Slots items: por ahora se leen de localStorage (equipamiento)
 // Puedes setearlos desde tu UI futura o “drops”.
 function getEquipped(addr, slot) {
@@ -867,21 +868,50 @@ function getHighestNft(addr) {
   return localStorage.getItem(key) || "—";
 }
 
+/**
+ * ✅ API base:
+ * - En DEV (LiveServer 127.0.0.1:5500): pega al Worker API en PROD
+ * - En PROD (mismo origin): usa rutas relativas
+ */
+const API_BASE =
+  location.hostname === "127.0.0.1" || location.hostname === "localhost"
+    ? "https://alemtydao.alejandrogtzz93.workers.dev"
+    : "";
+
+/**
+ * ✅ Fetch de métricas personales
+ * Requiere JWT guardado en localStorage("alemty.jwt")
+ */
 async function fetchMeStats() {
   const token = localStorage.getItem("alemty.jwt") || "";
   if (!token) return null;
 
   try {
-    const r = await fetch("/api/me/stats", {
+    const r = await fetch(`${API_BASE}/api/me/stats`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
-    if (!r.ok) return null;
+
+    // Si no hay CORS o hay error, evita romper el render
+    if (!r.ok) {
+      console.warn("fetchMeStats not ok:", r.status);
+      return null;
+    }
+
+    // Evita crash si el backend responde texto en vez de JSON
+    const ct = r.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) {
+      console.warn("fetchMeStats non-json response:", ct);
+      return null;
+    }
+
     return await r.json();
-  } catch {
+  } catch (err) {
+    console.error("fetchMeStats error:", err);
     return null;
   }
 }
+
 
 /* =========================
    Renders: ESTADO / ACTIVIDAD

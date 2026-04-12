@@ -1,55 +1,30 @@
-
-# Gobernanza ALEMty
-
-## Tipos de gobernanza
+## Gobernanza ALEMty
+### Tipos de gobernanza
 
 alemty distingue tres niveles:
-
-1. Gobernanza social
-2. Gobernanza política
-3. Gobernanza económica
-
----
-
-## Gobernanza social
-
+- Gobernanza social
+- Gobernanza política
+- Gobernanza económica
+### Gobernanza social
 - Basada en niveles (NFTs)
 - Voto simbólico
 - No afecta economía
-
----
-
-## Gobernanza política
-
+### Gobernanza política
 - Basada en veALEMTY
 - Decide reglas, dirección y upgrades
-
----
-
-## veALEMTY
-
+### veALEMTY
 - ALEM bloqueado por tiempo
 - Poder decae linealmente
 - Requiere relock
-
----
-
-## Seguridad
-
+### Seguridad
 - Sin voto líquido
 - Sin poder eterno
 - Sin compra directa de decisiones
-
----
-
-## Timelocks
+### Timelocks
 
 Decisiones críticas:
 - pasan por timelock
 - pueden ser revisadas
-
----
-
-## Conclusión
+### Conclusión
 
 Gobernar implica costo, tiempo y responsabilidad.

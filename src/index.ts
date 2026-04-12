@@ -1,26 +1,51 @@
 
 // src/index.ts
 import { Hono } from "hono";
+import { cors } from "hono/cors";
+
 import { auth } from "./middleware/auth";
 import { signJwt } from "./lib/jwt";
 
-// ✅ Importamos tu router legacy para no romper nada
+// ✅ Router legacy (no tocar)
 import { router } from "./router";
 
+/* =========================
+   Tipos
+========================= */
 type Bindings = {
   DB: D1Database;
-  SESSION_SECRET: string; // Secret (prod) o .dev.vars (local)
+  SESSION_SECRET: string;
 };
 
 type Vars = {
   address: string;
 };
 
+/* =========================
+   App
+========================= */
 const app = new Hono<{ Bindings: Bindings; Variables: Vars }>();
 
-/**
- * Health check (sin auth)
- */
+/* =========================
+   ✅ CORS GLOBAL (DEV + PROD)
+========================= */
+app.use(
+  "/*",
+  cors({
+    origin: [
+      "http://127.0.0.1:5500",
+      "http://localhost:5500",
+      "https://alemtydao.pages.dev",
+      "https://alemty.eth.limo",
+    ],
+    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowHeaders: ["Authorization", "Content-Type"],
+  })
+);
+
+/* =========================
+   Health check
+========================= */
 app.get("/api/health", (c) =>
   c.json({
     status: "ok",
@@ -30,13 +55,94 @@ app.get("/api/health", (c) =>
 );
 
 /**
- * DEBUG token generator (solo para dev)
- * ⚠️ Después lo reemplazamos por SIWE real.
+ * GET /api/me/stats (protegido)
+ * Métricas del perfil + tokenomics base
  */
+app.get("/api/me/stats", auth, async (c) => {
+  const address = c.get("address");
+
+  // Conteos personales
+  const posts = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM posts WHERE author = ?"
+  ).bind(address).first();
+
+  const comments = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM comments WHERE author = ?"
+  ).bind(address).first();
+
+  // Reacciones recibidas
+  const pointsReceived = await c.env.DB.prepare(
+    `
+    SELECT COUNT(*) AS n
+    FROM reactions r
+    JOIN posts p ON p.id = r.post_id
+    WHERE p.author = ? AND r.type = 'point'
+    `
+  ).bind(address).first();
+
+  const likesReceived = await c.env.DB.prepare(
+    `
+    SELECT COUNT(*) AS n
+    FROM reactions r
+    JOIN posts p ON p.id = r.post_id
+    WHERE p.author = ? AND r.type = 'like'
+    `
+  ).bind(address).first();
+
+  // Últimos eventos
+  const lastPost = await c.env.DB.prepare(
+    `
+    SELECT id, title, created_at
+    FROM posts
+    WHERE author = ?
+    ORDER BY created_at DESC
+    LIMIT 1
+    `
+  ).bind(address).first();
+
+  const lastComment = await c.env.DB.prepare(
+    `
+    SELECT post_id, body, created_at
+    FROM comments
+    WHERE author = ?
+    ORDER BY created_at DESC
+    LIMIT 1
+    `
+  ).bind(address).first();
+
+  // Tokenomics base
+  const dharma = Number((pointsReceived as any)?.n ?? 0);
+  const aura = dharma;
+
+  return c.json({
+    ok: true,
+    address,
+    activity: {
+      posts: Number((posts as any)?.n ?? 0),
+      comments: Number((comments as any)?.n ?? 0),
+    },
+    received: {
+      pointsReceived: dharma,
+      likesReceived: Number((likesReceived as any)?.n ?? 0),
+    },
+    tokenomics: {
+      dharma,
+      aura,
+    },
+    last: {
+      post: lastPost ?? null,
+      comment: lastComment ?? null,
+    },
+  });
+});
+
+/* =========================
+   DEBUG TOKEN (solo dev)
+========================= */
 app.get("/api/dev/token/:address", async (c) => {
   const address = c.req.param("address").toLowerCase();
   const now = Math.floor(Date.now() / 1000);
-  const exp = now + 60 * 60; // 1h
+  const exp = now + 60 * 60;
 
   const token = await signJwt(
     {
@@ -52,16 +158,15 @@ app.get("/api/dev/token/:address", async (c) => {
   return c.json({ token, address, expiresAt: exp });
 });
 
-/**
- * Endpoint protegido para probar:
- * - middleware auth
- * - binding env.DB
- * - upsert en users
- */
+/* =========================
+   Protected test
+========================= */
 app.get("/api/me", auth, async (c) => {
   const address = c.get("address");
 
-  await c.env.DB.prepare("INSERT OR IGNORE INTO users(address) VALUES (?)")
+  await c.env.DB.prepare(
+    "INSERT OR IGNORE INTO users(address) VALUES (?)"
+  )
     .bind(address)
     .run();
 
@@ -75,13 +180,8 @@ app.get("/api/me", auth, async (c) => {
 });
 
 /* =========================================================
-   POSTS (persistentes en D1)
+   POSTS
 ========================================================= */
-
-/**
- * GET /api/posts (público)
- * Query: ?limit=20 (max 50)
- */
 app.get("/api/posts", async (c) => {
   const limit = Math.min(Number(c.req.query("limit") || 20), 50);
 
@@ -97,9 +197,6 @@ app.get("/api/posts", async (c) => {
   return c.json({ posts: result.results });
 });
 
-/**
- * GET /api/posts/:id (público)
- */
 app.get("/api/posts/:id", async (c) => {
   const id = Number(c.req.param("id"));
   if (!Number.isFinite(id)) return c.json({ error: "Invalid id" }, 400);
@@ -116,10 +213,6 @@ app.get("/api/posts/:id", async (c) => {
   return c.json({ post });
 });
 
-/**
- * POST /api/posts (protegido)
- * Body: { title: string, body: string }
- */
 app.post("/api/posts", auth, async (c) => {
   const address = c.get("address");
   const payload = await c.req.json().catch(() => ({} as any));
@@ -127,15 +220,16 @@ app.post("/api/posts", auth, async (c) => {
   const title = String(payload.title || "").trim();
   const body = String(payload.body || "").trim();
 
-  if (!title || title.length < 3) {
+  if (title.length < 3) {
     return c.json({ error: "Title is required (min 3 chars)" }, 400);
   }
   if (!body) {
     return c.json({ error: "Body is required" }, 400);
   }
 
-  // Asegura que el user exista (idempotente)
-  await c.env.DB.prepare("INSERT OR IGNORE INTO users(address) VALUES (?)")
+  await c.env.DB.prepare(
+    "INSERT OR IGNORE INTO users(address) VALUES (?)"
+  )
     .bind(address)
     .run();
 
@@ -157,13 +251,8 @@ app.post("/api/posts", auth, async (c) => {
 });
 
 /* =========================================================
-   LEGACY ROUTER FALLBACK
+   Legacy fallback
 ========================================================= */
-
-/**
- * ✅ Fallback: si Hono no matchea ruta, intenta router legacy.
- * Si router devuelve null, respondemos 404.
- */
 app.all("*", (c) => {
   const legacy = router(c.req.raw);
   if (legacy) return legacy;
@@ -171,4 +260,3 @@ app.all("*", (c) => {
 });
 
 export default app;
-
