@@ -3,7 +3,11 @@
 import { createMiddleware } from "hono/factory";
 import { verifyJwt } from "../lib/jwt";
 
-type Env = { SESSION_SECRET: string };
+
+type Env = {
+  JWT_SECRET: string;
+};
+
 
 export const auth = createMiddleware<{ Bindings: Env; Variables: { address: string } }>(
   async (c, next) => {
@@ -15,7 +19,7 @@ export const auth = createMiddleware<{ Bindings: Env; Variables: { address: stri
     if (!token) return c.json({ error: "Missing Bearer token" }, 401);
 
     try {
-      const payload = await verifyJwt(token, c.env.SESSION_SECRET);
+      const payload = await verifyJwt(token, c.env.JWT_SECRET);
 
       // Opcional debug (descomenta si necesitas inspección rápida)
       // console.log("JWT payload:", payload);
