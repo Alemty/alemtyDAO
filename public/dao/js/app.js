@@ -1508,158 +1508,123 @@ function openTopicsModal(){
   openModal();
 }
 
-
 /* =========================
    Wire-up (SIN romper shell)
    Solo escuchamos dentro del main.container
 ========================= */
-
 (async () => {
-  // ✅ Seed demo: solo corre si NO hay posts en backend y NO hay posts locales
-  // (esto evita contaminar si backend ya es la fuente de verdad)
+  // 0) Espera a que el DOM del módulo exista (móvil puede tardar)
+  await new Promise((resolve) => {
+    const has = () => document.querySelector('main.container');
+    if (has()) return resolve();
+
+    const obs = new MutationObserver(() => {
+      if (has()) { obs.disconnect(); resolve(); }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+
+    // fallback defensivo (no bloquea para siempre)
+    setTimeout(() => { obs.disconnect(); resolve(); }, 3000);
+  });
+
+  // 1) Seed demo SOLO si backend y local están vacíos
   try {
     const backendPosts = await API.getPosts().catch(() => null);
     const localPosts = loadJSON(DB_KEY, []);
-
     if (Array.isArray(backendPosts) && backendPosts.length === 0 && localPosts.length === 0) {
       await seedIfEmpty();
     }
-  } catch (e) {
-    // Si falla API, mantenemos comportamiento anterior (seed local si está vacío)
+  } catch {
     try { await seedIfEmpty(); } catch {}
   }
 
-  // =========================
-  // Wire-up estático del DAO
-  // (tabs, search, publish, carrusel)
-  // =========================
+  // 2) Wire-up
   const daoMain = document.querySelector('main.container');
-
-  if (!daoMain) {
-    // Si no encuentra el contenedor, igual renderizamos por si acaso
-    await renderAll();
-    return;
-  }
-
-  // Render inicial
   await renderAll();
 
-  // =========================
+  if (!daoMain) return;
+
   // Tabs
-  // =========================
   daoMain.querySelectorAll('.dao-tab').forEach(btn => {
     btn.addEventListener('click', async () => {
       activeView = btn.dataset.view;
-
       daoMain.querySelectorAll('.dao-tab').forEach(b => {
         const on = b === btn;
         b.classList.toggle('active', on);
         b.setAttribute('aria-selected', on ? 'true' : 'false');
       });
-
       carIndex = 0;
       await renderAll();
     });
   });
 
-  // =========================
   // Backrooms / Topics
-  // =========================
-  daoMain.querySelector('#openRooms')
-    ?.addEventListener('click', openRoomsModal);
+  daoMain.querySelector('#openRooms')?.addEventListener('click', openRoomsModal);
+  daoMain.querySelector('#openTopics')?.addEventListener('click', openTopicsModal);
 
-  daoMain.querySelector('#openTopics')
-    ?.addEventListener('click', openTopicsModal);
-
-  // =========================
   // Carrusel
-  // =========================
-  daoMain.querySelector('#carPrev')
-    ?.addEventListener('click', async () => {
-      carIndex = Math.max(0, carIndex - 1);
-      await renderAll();
-    });
+  daoMain.querySelector('#carPrev')?.addEventListener('click', async () => {
+    carIndex = Math.max(0, carIndex - 1);
+    await renderAll();
+  });
+  daoMain.querySelector('#carNext')?.addEventListener('click', async () => {
+    carIndex += 1;
+    await renderAll();
+  });
+  daoMain.querySelector('#carDots')?.addEventListener('click', async (e) => {
+    const d = e.target.closest('[data-dot]');
+    if (!d) return;
+    carIndex = Number(d.dataset.dot || 0);
+    await renderAll();
+  });
 
-  daoMain.querySelector('#carNext')
-    ?.addEventListener('click', async () => {
-      carIndex += 1;
-      await renderAll();
-    });
-
-  daoMain.querySelector('#carDots')
-    ?.addEventListener('click', async (e) => {
-      const d = e.target.closest('[data-dot]');
-      if (!d) return;
-      carIndex = Number(d.dataset.dot || 0);
-      await renderAll();
-    });
-
-  // =========================
   // Search
-  // =========================
-  daoMain.querySelector('#search')
-    ?.addEventListener('input', () => { void renderAll(); });
+  daoMain.querySelector('#search')?.addEventListener('input', () => { void renderAll(); });
+  daoMain.querySelector('#clearSearch')?.addEventListener('click', () => {
+    const s = daoMain.querySelector('#search');
+    if (s) s.value = '';
+    void renderAll();
+  });
 
-  daoMain.querySelector('#clearSearch')
-    ?.addEventListener('click', () => {
-      const s = daoMain.querySelector('#search');
-      if (s) s.value = '';
-      void renderAll();
-    });
+  // Crear post
+  daoMain.querySelector('#publishPost')?.addEventListener('click', async () => {
+    const title = (daoMain.querySelector('#postTitle')?.value || '').trim();
+    const body  = (daoMain.querySelector('#postBody')?.value  || '').trim();
+    const topic = (daoMain.querySelector('#postTopic')?.value || '').trim();
+    const status = daoMain.querySelector('#publishStatus');
 
-  // =========================
-  // Crear post (BACKEND-first)
-  // =========================
-  daoMain.querySelector('#publishPost')
-    ?.addEventListener('click', async () => {
+    if (title.length < 3 || body.length < 10) {
+      if (status) status.textContent = 'Completa título (3+) y cuerpo (10+).';
+      return;
+    }
 
-      const title = (daoMain.querySelector('#postTitle')?.value || '').trim();
-      const body  = (daoMain.querySelector('#postBody')?.value || '').trim();
-      const topic = (daoMain.querySelector('#postTopic')?.value || '').trim();
-      const status = daoMain.querySelector('#publishStatus');
+    const jwt = localStorage.getItem("alemty.jwt") || "";
+    if (!jwt) {
+      if (status) status.textContent = 'Necesitas verificar SIWE para publicar.';
+      return;
+    }
 
-      // Validación mínima
-      if (title.length < 3 || body.length < 10) {
-        if (status) status.textContent = 'Completa título (3+) y cuerpo (10+).';
-        return;
-      }
+    try {
+      if (status) status.textContent = 'Publicando…';
+      const created = await API.createPost({ title, body, topic });
 
-      // Requiere SIWE/JWT para escribir en backend
-      const jwt = localStorage.getItem("alemty.jwt") || "";
-      if (!jwt) {
-        if (status) status.textContent = 'Necesitas verificar SIWE para publicar.';
-        return;
-      }
+      const t = daoMain.querySelector('#postTitle');
+      const b = daoMain.querySelector('#postBody');
+      if (t) t.value = '';
+      if (b) b.value = '';
 
-      try {
-        if (status) status.textContent = 'Publicando…';
+      if (status) status.textContent = 'Publicado ✅';
+      carIndex = 0;
+      await renderAll();
 
-        const created = await API.createPost({ title, body, topic });
-
-        // Limpia inputs
-        const t = daoMain.querySelector('#postTitle');
-        const b = daoMain.querySelector('#postBody');
-        if (t) t.value = '';
-        if (b) b.value = '';
-
-        if (status) status.textContent = 'Publicado ✅';
-
-        // Refresca todo desde backend
-        carIndex = 0;
-        await renderAll();
-
-        // (Opcional) abrir el post recién creado
-        if (created?.id) {
-          await openPostModal(String(created.id));
-        }
-
-      } catch (err) {
-        console.error("createPost error:", err);
-        if (status) status.textContent = 'Error publicando (revisa consola).';
-      }
-    });
-
+      if (created?.id) await openPostModal(String(created.id));
+    } catch (err) {
+      console.error("createPost error:", err);
+      if (status) status.textContent = 'Error publicando (revisa consola).';
+    }
+  });
 })();
+
 
 
 
