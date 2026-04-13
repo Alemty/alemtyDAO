@@ -4,10 +4,15 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 import { auth } from "./middleware/auth";
+
+// import { signJwt } from "./lib/jwt"; // usado solo en endpoints dev
 import { signJwt } from "./lib/jwt";
 
 // ✅ Router legacy (no tocar)
 import { router } from "./router";
+
+// ✅ Posts router (comments + react + posts)
+import { posts } from "./routes/posts";
 
 /* =========================
    Tipos
@@ -62,11 +67,11 @@ app.get("/api/health", (c) =>
 app.get("/api/me/stats", auth, async (c) => {
   const address = c.get("address");
 
-  const posts = await c.env.DB.prepare(
+  const postsCount = await c.env.DB.prepare(
     "SELECT COUNT(*) AS n FROM posts WHERE author = ?"
   ).bind(address).first();
 
-  const comments = await c.env.DB.prepare(
+  const commentsCount = await c.env.DB.prepare(
     "SELECT COUNT(*) AS n FROM comments WHERE author = ?"
   ).bind(address).first();
 
@@ -75,7 +80,7 @@ app.get("/api/me/stats", auth, async (c) => {
     SELECT COUNT(*) AS n
     FROM reactions r
     JOIN posts p ON p.id = r.post_id
-    WHERE p.author = ? AND r.type = 'points'
+    WHERE p.author = ? AND r.type = 'point'
     `
   ).bind(address).first();
 
@@ -90,9 +95,10 @@ app.get("/api/me/stats", auth, async (c) => {
 
   return c.json({
     ok: true,
+    address,
     activity: {
-      posts: Number((posts as any)?.n ?? 0),
-      comments: Number((comments as any)?.n ?? 0),
+      posts: Number((postsCount as any)?.n ?? 0),
+      comments: Number((commentsCount as any)?.n ?? 0),
     },
     received: {
       pointsReceived: Number((pointsReceived as any)?.n ?? 0),
@@ -102,127 +108,12 @@ app.get("/api/me/stats", auth, async (c) => {
 });
 
 /* =========================================================
-   POSTS
+   POSTS ROUTER (✅ AQUÍ SE MONTA posts.ts)
 ========================================================= */
-
-// ✅ List posts
-app.get("/api/posts", async (c) => {
-  const limit = Math.min(Number(c.req.query("limit") || 20), 50);
-
-  const result = await c.env.DB.prepare(
-    `
-    SELECT id, author, title, body, created_at
-    FROM posts
-    ORDER BY created_at DESC
-    LIMIT ?
-    `
-  ).bind(limit).all();
-
-  return c.json({ posts: result.results });
-});
-
-// ✅ Single post
-app.get("/api/posts/:id", async (c) => {
-  const id = Number(c.req.param("id"));
-  if (!Number.isFinite(id)) {
-    return c.json({ error: "Invalid id" }, 400);
-  }
-
-  const post = await c.env.DB.prepare(
-    `
-    SELECT id, author, title, body, created_at
-    FROM posts
-    WHERE id = ?
-    `
-  ).bind(id).first();
-
-  if (!post) return c.json({ error: "Not found" }, 404);
-  return c.json({ post });
-});
-
-// ✅ Create post
-app.post("/api/posts", auth, async (c) => {
-  const address = c.get("address");
-  const payload = await c.req.json().catch(() => ({} as any));
-
-  const title = String(payload.title || "").trim();
-  const body = String(payload.body || "").trim();
-
-  if (title.length < 3) {
-    return c.json({ error: "Title is required (min 3 chars)" }, 400);
-  }
-  if (!body) {
-    return c.json({ error: "Body is required" }, 400);
-  }
-
-  await c.env.DB.prepare(
-    "INSERT OR IGNORE INTO users(address) VALUES (?)"
-  ).bind(address).run();
-
-  const insert = await c.env.DB.prepare(
-    "INSERT INTO posts (author, title, body) VALUES (?, ?, ?)"
-  ).bind(address, title, body).run();
-
-  const id = (insert.meta as any)?.last_row_id;
-
-  return c.json({ ok: true, post: { id, author: address, title, body } }, 201);
-});
+app.route("/api/posts", posts);
 
 /* =========================================================
-   COMMENTS
-========================================================= */
-app.post("/api/posts/:id/comments", auth, async (c) => {
-  const address = c.get("address");
-  const id = Number(c.req.param("id"));
-  if (!Number.isFinite(id)) {
-    return c.json({ error: "Invalid post id" }, 400);
-  }
-
-  const payload = await c.req.json().catch(() => ({} as any));
-  const body = String(payload.body || "").trim();
-  if (!body) {
-    return c.json({ error: "Comment body is required" }, 400);
-  }
-
-  await c.env.DB.prepare(
-    `
-    INSERT INTO comments (post_id, author, body)
-    VALUES (?, ?, ?)
-    `
-  ).bind(id, address, body).run();
-
-  return c.json({ ok: true });
-});
-
-/* =========================================================
-   REACTIONS (LIKE / POINTS)
-========================================================= */
-app.post("/api/posts/:id/react", auth, async (c) => {
-  const address = c.get("address");
-  const id = Number(c.req.param("id"));
-  if (!Number.isFinite(id)) {
-    return c.json({ error: "Invalid post id" }, 400);
-  }
-
-  const payload = await c.req.json().catch(() => ({} as any));
-  const type = String(payload.type || "");
-
-  if (type !== "like" && type !== "points") {
-    return c.json({ error: "Invalid react type" }, 400);
-  }
-
-  await c.env.DB.prepare(
-    `
-    INSERT OR IGNORE INTO reactions (post_id, address, type)
-    VALUES (?, ?, ?)
-    `
-  ).bind(id, address, type).run();
-
-  return c.json({ ok: true });
-});
-
-/* =========================================================
-   LEGACY ROUTER (NO TOCAR)
+   LEGACY ROUTER (API EXTRA – NO TOCAR)
 ========================================================= */
 app.all("/api/*", (c) => {
   const legacy = router(c.req.raw);
@@ -238,5 +129,6 @@ app.all("*", async (c) => {
 });
 
 export default app;
+
 
 
