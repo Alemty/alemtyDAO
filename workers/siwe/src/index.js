@@ -5,10 +5,17 @@ import { verifyMessage } from "ethers";
  * ✅ ORÍGENES PERMITIDOS (CORS)
  */
 const ALLOWED_ORIGINS = new Set([
+  // ✅ Cloudflare Workers (frontend actual)
+  "https://alemtydao.alejandrogtzz93.workers.dev",
+
+  // ✅ Pages (legacy / preview)
   "https://alemtydao.pages.dev",
   "https://c45b9928.alemtydao.pages.dev",
-  "https://alemtydao.alejandrogtzz93.workers.dev",
+
+  // ✅ ENS / IPFS
   "https://alemty.eth.limo",
+
+  // ✅ Local dev
   "http://127.0.0.1:5500",
   "http://localhost:5500",
 ]);
@@ -65,8 +72,8 @@ function parseSiweMessage(message) {
     /^(.+?) wants you to sign in with your Ethereum account:$/
   );
   if (!headerMatch) return null;
-  const domain = headerMatch[1].trim();
 
+  const domain = headerMatch[1].trim();
   const address = (lines[1] || "").trim();
   if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return null;
 
@@ -106,12 +113,14 @@ function parseSiweMessage(message) {
 }
 
 /* =========================================================
-   ✅ JWT (HS256) — para devolver token en /verify
-   (sin dependencias, compatible con Workers)
+   ✅ JWT (HS256)
 ========================================================= */
 
 function b64urlEncode(input) {
-  const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
+  const bytes =
+    typeof input === "string"
+      ? new TextEncoder().encode(input)
+      : input;
   let bin = "";
   for (const b of bytes) bin += String.fromCharCode(b);
   return btoa(bin).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
@@ -134,8 +143,13 @@ async function signJwt(payload, secret) {
   const data = `${h}.${p}`;
 
   const key = await hmacKey(secret);
-  const sigBuf = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
+  const sigBuf = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(data)
+  );
   const sig = b64urlEncode(new Uint8Array(sigBuf));
+
   return `${data}.${sig}`;
 }
 
@@ -143,12 +157,11 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const origin = request.headers.get("Origin");
-    const acrh = request.headers.get("Access-Control-Request-Headers") || "";
+    const acrh =
+      request.headers.get("Access-Control-Request-Headers") || "";
     const cors = getCorsHeaders(origin, acrh);
 
-    /* =========================
-       ✅ CORS preflight
-       ========================= */
+    /* ===== CORS preflight ===== */
     if (request.method === "OPTIONS") {
       const allowed = cors["Access-Control-Allow-Origin"];
       return new Response(null, {
@@ -157,138 +170,87 @@ export default {
       });
     }
 
-    /* =========================
-       ✅ NONCE
-       ========================= */
+    /* ===== NONCE ===== */
     if (url.pathname === "/nonce" && request.method === "GET") {
       if (!env.SIWE_NONCES) {
-        return json(
-          { ok: false, error: "KV binding missing: SIWE_NONCES" },
-          500,
-          cors
-        );
+        return json({ ok: false, error: "KV binding missing" }, 500, cors);
       }
 
       const nonce = makeAlphanumericNonce(24);
-      const ttlSeconds = 600;
-
       await env.SIWE_NONCES.put(`nonce:${nonce}`, "1", {
-        expirationTtl: ttlSeconds,
+        expirationTtl: 600,
       });
 
-      return json({ ok: true, nonce, ttlSeconds }, 200, cors);
+      return json({ ok: true, nonce, ttlSeconds: 600 }, 200, cors);
     }
 
-    /* =========================
-       ✅ VERIFY SIWE + EMIT JWT
-       ========================= */
+    /* ===== VERIFY + JWT ===== */
     if (url.pathname === "/verify" && request.method === "POST") {
-      if (!env.SIWE_NONCES) {
+      if (!env.SIWE_NONCES || !env.JWT_SECRET) {
         return json(
-          { ok: false, error: "KV binding missing: SIWE_NONCES" },
+          { ok: false, error: "Server misconfigured" },
           500,
           cors
         );
       }
 
-      // ✅ Necesitamos el secret para firmar token
-      // (cambiado a JWT_SECRET)
-      if (!env.JWT_SECRET) {
-        return json(
-          { ok: false, error: "Missing env var: JWT_SECRET" },
-          500,
-          cors
-        );
-      }
-
-      let body;
-      try {
-        body = await request.json();
-      } catch {
-        return json({ ok: false, error: "Invalid JSON body" }, 400, cors);
-      }
-
-      const { message, signature } = body || {};
+      const { message, signature } = await request
+        .json()
+        .catch(() => ({}));
       if (!message || !signature) {
         return json(
-          { ok: false, error: "Missing message or signature" },
+          { ok: false, error: "Missing message/signature" },
           400,
           cors
         );
       }
 
       const parsed = parseSiweMessage(message);
-      if (!parsed) {
-        return json({ ok: false, error: "Invalid SIWE message" }, 400, cors);
-      }
-
-      /* ✅ Dominio SIWE permitido */
-      if (!SIWE_ALLOWED_DOMAINS.has(parsed.domain)) {
-        return json({ ok: false, error: "SIWE domain not allowed" }, 400, cors);
-      }
-
-      /* ✅ Chain allowlist */
-      if (![1, 8453].includes(parsed.chainId)) {
-        return json({ ok: false, error: "Unsupported chain" }, 400, cors);
-      }
-
-      /* ✅ Nonce anti‑replay */
-      const key = `nonce:${parsed.nonce}`;
-      const exists = await env.SIWE_NONCES.get(key);
-      if (!exists) {
+      if (!parsed || !SIWE_ALLOWED_DOMAINS.has(parsed.domain)) {
         return json(
-          { ok: false, error: "Nonce not found or already used" },
+          { ok: false, error: "Invalid SIWE message" },
+          400,
+          cors
+        );
+      }
+
+      const key = `nonce:${parsed.nonce}`;
+      if (!(await env.SIWE_NONCES.get(key))) {
+        return json({ ok: false, error: "Invalid nonce" }, 401, cors);
+      }
+
+      const recovered = verifyMessage(parsed.normalized, signature);
+      if (
+        recovered.toLowerCase() !== parsed.address.toLowerCase()
+      ) {
+        return json(
+          { ok: false, error: "Signature mismatch" },
           401,
           cors
         );
       }
 
-      let recovered;
-      try {
-        recovered = verifyMessage(parsed.normalized, signature);
-      } catch {
-        return json({ ok: false, error: "Invalid signature" }, 401, cors);
-      }
-
-      if (recovered.toLowerCase() !== parsed.address.toLowerCase()) {
-        return json({ ok: false, error: "Signature mismatch" }, 401, cors);
-      }
-
-      /* ✅ Invalidate nonce */
       await env.SIWE_NONCES.delete(key);
 
-      // ✅ Emitir JWT para tu API
-      const address = parsed.address.toLowerCase();
       const now = Math.floor(Date.now() / 1000);
-      const exp = now + 60 * 60;
-
       const token = await signJwt(
         {
           iss: "alemtydao-siwe",
           aud: "alemtydao-api",
-          sub: address,
+          sub: parsed.address.toLowerCase(),
           iat: now,
-          exp,
+          exp: now + 3600,
         },
-        env.JWT_SECRET // ✅ cambiado a JWT_SECRET
+        env.JWT_SECRET
       );
 
       return json(
-        {
-          ok: true,
-          address,
-          chainId: parsed.chainId,
-          token,
-        },
+        { ok: true, address: parsed.address, token },
         200,
         cors
       );
     }
 
-    return new Response("Not found", {
-      status: 404,
-      headers: cors,
-    });
+    return new Response("Not found", { status: 404, headers: cors });
   },
 };
-
