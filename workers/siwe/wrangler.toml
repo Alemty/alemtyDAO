@@ -1,0 +1,11 @@
+
+name = "alemtydao-siwe"
+main = "src/index.js"
+
+compatibility_date = "2026-04-05"
+compatibility_flags = ["nodejs_compat"]
+
+[[kv_namespaces]]
+binding = "SIWE_NONCES"
+id = "a271b2af6dae4d44aa3773960c8c96f0"
+

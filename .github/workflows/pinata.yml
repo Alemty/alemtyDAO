@@ -1,0 +1,112 @@
+
+name: Upload FULL repo to IPFS (Pinata) - debug
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  pinata:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Prepare FULL bundle (all folders)
+        run: |
+          rm -rf ipfs
+          mkdir -p ipfs
+          shopt -s dotglob
+
+          # Copia TODO lo que hay en la raíz, excepto:
+          # - ipfs (carpeta de salida)
+          # - .git (metadatos de git)
+          # - .github (workflows/secrets del repo)
+          for item in *; do
+            if [[ "$item" != "ipfs" && "$item" != ".git" && "$item" != ".github" ]]; then
+              cp -R "$item" ipfs/
+            fi
+          done
+
+          echo "✅ Copiado a ipfs/. Contenido raíz:"
+          ls -1 ipfs
+
+          echo "📦 Tamaño total (aprox):"
+          du -sh ipfs || true
+
+          echo "📄 Conteo de archivos (aprox):"
+          find ipfs -type f | wc -l || true
+
+      - name: Upload FULL bundle to Pinata (stable .mjs)
+        env:
+          PINATA_JWT: ${{ secrets.PINATA_JWT }}
+        run: |
+          npm init -y >/dev/null
+          npm install got form-data recursive-fs base-path-converter >/dev/null
+
+          cat > pinata_upload.mjs <<'EOF'
+          import fs from "fs";
+          import FormData from "form-data";
+          import rfs from "recursive-fs";
+          import basePathConverter from "base-path-converter";
+          import got from "got";
+
+          const jwt = process.env.PINATA_JWT;
+          if (!jwt) {
+            console.error("❌ PINATA_JWT not set (GitHub Secret missing or empty)");
+            process.exit(1);
+          }
+
+          // 1) Auth check
+          await got.get("https://api.pinata.cloud/data/testAuthentication", {
+            headers: { Authorization: `Bearer ${jwt}` },
+          });
+
+          // 2) Read directory
+          const src = "ipfs";
+          const { files } = await rfs.read(src);
+
+          console.log(`📄 Files to upload: ${files.length}`);
+
+          // 3) Build form-data (folder upload pattern)
+          const data = new FormData();
+
+          for (const file of files) {
+            // preserva estructura con filepath
+            data.append("file", fs.createReadStream(file), {
+              filepath: basePathConverter(src, file),
+            });
+          }
+
+          // 4) Upload
+          try {
+            const res = await got.post("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+              headers: {
+                Authorization: `Bearer ${jwt}`,
+                ...data.getHeaders(),
+                Accept: "application/json",
+              },
+              body: data,
+              timeout: { request: 600000 }, // 10 min por ser FULL repo
+            }).json();
+
+            console.log("✅ FULL repo IPFS CID:", res.IpfsHash);
+          } catch (err) {
+            console.error("❌ Pinata upload failed.");
+            if (err?.response?.body) {
+              console.error("Pinata response body:", err.response.body);
+            } else {
+              console.error(err);
+            }
+            process.exit(1);
+          }
+          EOF
+
+          node pinata_upload.mjs

@@ -1,0 +1,192 @@
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <!-- Theme init -->
+<script>
+  (function () {
+    try {
+      const saved = localStorage.getItem('theme');
+      const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+      const theme = saved || (prefersLight ? 'light' : 'dark');
+      if (theme === 'light') document.documentElement.classList.add('light');
+    } catch {}
+  })();
+</script>
+  <meta name="viewport" content="width=device-width, initial-scale=0.7, maximum-scale=1, user-scalable=yes">
+  <title>dao.alemty.eth · Comunidad</title>
+
+  <!-- CSS GLOBAL -->
+  <link rel="stylesheet" href="/settings/theme.css">
+  <link rel="stylesheet" href="/shared/css/module.css">
+  <link rel="stylesheet" href="/shared/css/shell.css">
+
+  <!-- DAO CSS -->
+  <link rel="stylesheet" href="/dao/css/style.css">
+
+  <!-- Fuente -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
+</head>
+
+<body class="dao-root">
+
+  <!-- Shell -->
+  <header id="topbar"></header>
+  <nav id="navbar"></nav>
+
+  <!-- Fondo vivo (clave para el glass real) -->
+  <div class="dao-bg"></div>
+ 
+  <main class="container" style="margin-top:16px;">
+
+    <div class="h1">Comunidad · dao.alemty.eth</div>
+      <p class="muted">Foro estilo Reddit/Taringa con glass UI. Vota, comenta, crea temas y backrooms.</p>
+
+      <div class="dao-tabs" role="tablist" aria-label="Filtros del foro">
+        <button class="dao-tab active" data-view="relevantes" type="button" role="tab" aria-selected="true">Relevantes</button>
+        <button class="dao-tab" data-view="recientes" type="button" role="tab" aria-selected="false">Recientes</button>
+        <button class="dao-tab" data-view="top-semana" type="button" role="tab" aria-selected="false">Top Semana</button>
+        <button class="dao-tab" data-view="top-mes" type="button" role="tab" aria-selected="false">Top Mes</button>
+      </div>
+    </section>
+
+    <!-- PANEL DINÁMICO (como en DEX: título/desc cambian por tab) -->
+    <section class="card dao-panel">
+      <div class="dao-panel-top">
+        <div>
+          <div class="h2" id="panelTitle">Relevantes</div>
+          <p class="small muted" id="panelDesc">Últimos 5 posts más relevantes en carrusel. Usa flechas.</p>
+        </div>
+        <div class="dao-panel-actions">
+          <button class="btn" id="openRooms" type="button">Backrooms</button>
+          <button class="btn" id="openTopics" type="button">Temas</button>
+        </div>
+      </div>
+
+      <!-- ======= CAROUSEL: últimos 5 relevantes ======= -->
+      <div class="carousel" id="carousel">
+        <button class="car-btn" id="carPrev" type="button" aria-label="Anterior">‹</button>
+
+        <div class="car-viewport">
+          <div class="car-track" id="carTrack"></div>
+        </div>
+
+        <button class="car-btn" id="carNext" type="button" aria-label="Siguiente">›</button>
+      </div>
+
+      <div class="car-dots" id="carDots" aria-label="Indicadores"></div>
+    </section>
+
+    <!-- ======= CREAR POST + ÚLTIMO POST ======= -->
+    <section class="grid" style="margin-top:16px;">
+      <div class="col-6">
+        <div class="card">
+          <div class="h2">Crear post</div>
+          <p class="small muted">Modo v0: guarda en localStorage (demo). Luego se conecta on-chain/off-chain.</p>
+
+          <div class="form">
+            <input id="postTitle" placeholder="Título…" maxlength="120">
+            <textarea id="postBody" rows="5" placeholder="Escribe tu post…"></textarea>
+
+            <div class="row">
+              <select id="postTopic">
+                <option value="">Sin tema</option>
+              </select>
+              <button class="btn primary" id="publishPost" type="button">Publicar</button>
+            </div>
+
+            <div class="small muted" id="publishStatus"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="card clickable" id="latestCard" data-open-post="">
+          <div class="h2">Último post</div>
+          <div class="small muted" id="latestMeta">—</div>
+          <div class="latest-title" id="latestTitle">—</div>
+          <div class="latest-snippet muted" id="latestSnippet">—</div>
+          <div class="latest-kpis">
+            
+
+<span class="pill like"
+      id="latestLikes"
+      data-action="like"
+      data-target="post"
+      data-post-id=""
+      role="button">
+  ♥️ <span class="count">0</span>
+</span>
+
+<span class="pill points"
+      id="latestPoints"
+      data-action="points"
+      data-target="post"
+      data-post-id=""
+      role="button">
+  ⭐ <span class="count">0</span>
+</span>
+
+<span class="pill comment"
+      id="latestComments"
+      data-action="comment"
+      data-target="post"
+      data-post-id=""
+      role="button">
+  💬 <span class="count">0</span>
+</span>
+
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======= TOPS (2 filas: semana 4 / mes 4) ======= -->
+    <section class="grid" style="margin-top:16px;">
+      <div class="col-12">
+        <div class="card">
+          <div class="h2">Top semana</div>
+          <div class="mini-grid" id="topWeek"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid" style="margin-top:16px;">
+      <div class="col-12">
+        <div class="card">
+          <div class="h2">Top mes</div>
+          <div class="mini-grid" id="topMonth"></div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="small muted" style="margin-top:24px;">
+      alemtydao · Comunidad v0 (demo UI)
+    </footer>
+
+  </main>
+
+  <!-- ======= MODAL ÚNICO (sheet estilo Apple) ======= -->
+  <div class="modal" id="daoModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close="daoModal"></div>
+    <div class="modal-card profile-card">
+      <div class="modal-headbar">
+        <strong id="daoModalTitle">Detalle</strong>
+        <button class="icon-btn" data-close="daoModal" type="button">✕</button>
+      </div>
+      <div class="modal-body" id="daoModalBody"></div>
+    </div>
+  </div>
+
+  
+
+  <!-- DAO JS -->
+  <script type="module" src="/dao/js/app.js"></script>
+</body>
+</html>
+
+

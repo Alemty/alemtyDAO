@@ -1,0 +1,18 @@
+# Node
+node_modules/
+
+# Local / temp
+_dump/
+
+# Office temp files
+~$*.pptx
+~$*.docx
+~$*.xlsx
+
+
+docs/*.pptx
+docs/~$*.pptx
+.wrangler/
+.dev.vars
+
+echo .dev.vars >> .gitignore
