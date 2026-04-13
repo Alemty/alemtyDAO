@@ -4,6 +4,7 @@ mountShell();
 
 
 
+
 // =========================
 // API base (DEV vs PROD)
 // =========================
@@ -28,26 +29,27 @@ function authHeaders(extra = {}) {
 
 // Adaptador: backend -> schema UI
 function mapPostFromApi(p) {
-  const ts = p.created_at ? Date.parse(p.created_at) : Date.now();
+  const ts = p?.created_at ? Date.parse(p.created_at) : Date.now();
+
   const commentsCount =
-    typeof p.comments === "number"
+    typeof p?.comments === "number"
       ? p.comments
-      : Array.isArray(p.comments)
+      : Array.isArray(p?.comments)
       ? p.comments.length
-      : Number(p.commentsCount || 0);
+      : Number(p?.commentsCount || 0);
 
   return {
-    id: String(p.id),
-    author: p.author || null,
-    title: p.title || "",
-    body: p.body || "",
-    topic: p.topic || "Sin tema",
+    id: String(p?.id ?? ""),
+    author: p?.author || null,
+    title: p?.title || "",
+    body: p?.body || "",
+    topic: p?.topic || "Sin tema",
     ts: Number.isFinite(ts) ? ts : Date.now(),
-    likes: Number(p.likes || 0),
-    points: Number(p.points || 0),
+    likes: Number(p?.likes || 0),
+    points: Number(p?.points || 0),
     commentsCount,
-    comments: Array.isArray(p.comments) ? p.comments : [],
-    created_at: p.created_at || null,
+    comments: Array.isArray(p?.comments) ? p.comments : [],
+    created_at: p?.created_at || null,
   };
 }
 
@@ -59,32 +61,94 @@ const API = {
     const arr = Array.isArray(data?.posts) ? data.posts : [];
     return arr.map(mapPostFromApi);
   },
+  
+async reactComment(postId, commentId, type) {
+  const norm = type === "points" ? "point" : type;
+  const r = await fetch(`${API_BASE}/api/posts/${postId}/comments/${commentId}/react`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ type: norm }),
+  });
+  if (!r.ok) throw new Error("reactComment failed");
+  return r.json().catch(() => ({}));
+},
 
+
+  // ✅ Trae post + comentarios reales (y anida replies)
   async getPost(postId) {
+    // 1) Post
     const r = await fetch(`${API_BASE}/api/posts/${postId}`, { cache: "no-store" });
     if (!r.ok) throw new Error("getPost failed");
     const data = await r.json().catch(() => ({}));
+    const base = data?.post ? data.post : data;
 
-    if (data?.post) {
-      const post = mapPostFromApi({ ...data.post, comments: data.comments || [] });
+    const post = mapPostFromApi(base);
 
-      post.comments = Array.isArray(data.comments)
-        ? data.comments.map((c) => ({
-            id: c.id ? String(c.id) : (crypto.randomUUID?.() || String(Math.random())),
-            ts: c.created_at ? Date.parse(c.created_at) : Date.now(),
-            text: c.body || "",
-            likes: 0,
-            points: 0,
-            replies: [],
-            author: c.author || null,
-          }))
-        : [];
-
-      post.commentsCount = post.comments.length;
-      return post;
+    // 2) Comments reales
+    let rawComments = [];
+    try {
+      const cr = await fetch(`${API_BASE}/api/posts/${postId}/comments`, { cache: "no-store" });
+      if (cr.ok) {
+        const cdata = await cr.json().catch(() => ({}));
+        rawComments = Array.isArray(cdata?.comments) ? cdata.comments : [];
+      }
+    } catch {
+      rawComments = [];
     }
 
-    return mapPostFromApi(data);
+    // 3) Map a schema UI (comentarios planos)
+    
+const mapped = rawComments.map((c) => {
+  const id = c?.id != null ? String(c.id) : (crypto.randomUUID?.() || String(Math.random()));
+  const ts = c?.created_at ? Date.parse(c.created_at) : Date.now();
+  return {
+    id,
+    ts: Number.isFinite(ts) ? ts : Date.now(),
+    text: String(c?.body || ""),
+    // ✅ AQUÍ estaba el bug: estabas forzando 0
+    likes: Number(c?.likes || 0),
+    points: Number(c?.points || 0),
+    replies: [],
+    author: c?.author || null,
+  };
+});
+
+
+    // 4) Reagrupar replies bajo su comment padre:
+    //    Tu UI manda replies como: "↪️ reply(c:<commentId>) <texto>"
+    const byId = Object.create(null);
+    for (const c of mapped) byId[String(c.id)] = c;
+
+    const topLevel = [];
+    for (const c of mapped) {
+      const m = c.text.match(/^↪️\s*reply\(c:([^)]+)\)\s*/);
+      if (m) {
+        const parentId = String(m[1]);
+        const parent = byId[parentId];
+
+        // quita prefijo
+        c.text = c.text.replace(m[0], "").trim();
+
+        if (parent) {
+          parent.replies = parent.replies || [];
+          parent.replies.push({
+            id: c.id,
+            ts: c.ts,
+            text: c.text,
+            likes: c.likes,
+            points: c.points,
+          });
+          continue; // NO va como top-level
+        }
+        // si el padre no existe, cae como top-level
+      }
+      topLevel.push(c);
+    }
+
+    post.comments = topLevel;
+    post.commentsCount = topLevel.length;
+
+    return post;
   },
 
   async createPost({ title, body, topic }) {
@@ -99,7 +163,7 @@ const API = {
   },
 
   async react(postId, type) {
-    const norm = type === "points" ? "point" : type;
+    const norm = type === "points" ? "point" : type; // compat
     const r = await fetch(`${API_BASE}/api/posts/${postId}/react`, {
       method: "POST",
       headers: authHeaders(),
@@ -358,7 +422,7 @@ async function handleGlobalAction(e) {
     if (userId === 'visitor') return;
 
     const actions = loadActions();
-    const entry = getActionEntry(actions, userId, postId);
+    const entry = getActionEntry(actions, userId, targetKeyPost(postId));
     if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
 
     // Optimistic UI
@@ -407,53 +471,77 @@ async function handleGlobalAction(e) {
       return;
     }
 
-    // Reacciones a comentarios/replies (LOCAL ONLY por ahora)
-    if (action === 'c-like' || action === 'c-points') {
-      const commentId = String(pill.dataset.commentId || '');
-      const replyId = pill.dataset.replyId ? String(pill.dataset.replyId) : null;
 
-      const userId = getUserId();
-      if (userId === 'visitor') return;
 
-      const actionsLedger = loadActions();
-      const key = replyId
-        ? targetKeyReply(postId, commentId, replyId)
-        : targetKeyComment(postId, commentId);
+// Reacciones a comentarios / replies (backend-first + UI inmediata)
+if (action === 'c-like' || action === 'c-points') {
+  const commentId = String(pill.dataset.commentId || '');
+  const replyId = pill.dataset.replyId ? String(pill.dataset.replyId) : '';
+  const userId = getUserId();
+  if (!commentId || userId === 'visitor') return;
 
-      const entry = getActionEntry(actionsLedger, userId, key);
+  // ✅ Target: si es reply real (id numérico), reaccionamos al reply
+  const replyNum = replyId ? Number(replyId) : NaN;
+  const hasRealReply = replyId && Number.isFinite(replyNum);
+  const targetId = hasRealReply ? replyId : commentId;
 
-      if (action === 'c-like') {
-        if (entry.liked) return;
-        entry.liked = true;
-      } else {
-        if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
-        entry.pointsGiven += 1;
-      }
-      saveActions(actionsLedger);
+  // Ledger key distinto para comment vs reply
+  const actionsLedger = loadActions();
+  const key = hasRealReply
+    ? targetKeyReply(postId, commentId, replyId)
+    : targetKeyComment(postId, commentId);
 
-      mutatePost(postId, post => {
-        post = ensurePostSchema(post);
-        const c = findComment(post, commentId);
-        if (!c) return post;
+  const entry = getActionEntry(actionsLedger, userId, key);
 
-        if (replyId) {
-          const r = (c.replies || []).find(x => String(x.id) === replyId);
-          if (!r) return post;
-          if (action === 'c-like') r.likes = (r.likes || 0) + 1;
-          else r.points = (r.points || 0) + 1;
-          return post;
-        }
+  // UI optimista (estado activo)
+  if (action === 'c-like') {
+    if (entry.liked) return;     // like es 1 por usuario
+    entry.liked = true;
+  } else {
+    if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
+    entry.pointsGiven += 1;
+  }
+  saveActions(actionsLedger);
 
-        if (action === 'c-like') c.likes = (c.likes || 0) + 1;
-        else c.points = (c.points || 0) + 1;
+  // 1) Backend
+  let res = null;
+  try {
+    res = await API.reactComment(postId, targetId, action === 'c-like' ? 'like' : 'points');
+  } catch (e) {
+    console.warn("API comment/react offline, usando estado local:", e);
+  }
 
-        return post;
-      });
-
-      await openPostModal(postId);
-      renderAll();
-      return;
+  // 2) ✅ UI inmediata con counts (acepta number o string)
+  const counts = res?.counts || null;
+  const countEl = pill.querySelector('.count');
+  if (countEl && counts) {
+    if (action === 'c-like') {
+      const n = Number(counts.likes);
+      if (Number.isFinite(n)) countEl.textContent = String(n);
+    } else {
+      const n = Number(counts.points);
+      if (Number.isFinite(n)) countEl.textContent = String(n);
     }
+  } else {
+    // fallback visual mínimo si no hubo counts:
+    if (countEl) {
+      const cur = Number(countEl.textContent || "0");
+      if (Number.isFinite(cur)) countEl.textContent = String(cur + 1);
+    }
+  }
+
+  // 3) Refresco “suave” del modal (evita read-lag inmediato)
+  //    Esto alinea UI con backend sin pisar el primer click.
+  setTimeout(async () => {
+    try { await openPostModal(postId); } catch {}
+  }, 220);
+
+  // No necesitas renderAll inmediato aquí; el modal ya se actualizó en DOM.
+  return;
+}
+
+
+
 
     // Acciones del POST (backend-first)
     if (action === 'comment') {
@@ -465,7 +553,7 @@ async function handleGlobalAction(e) {
     if (userId === 'visitor') return;
 
     const actions = loadActions();
-    const entry = getActionEntry(actions, userId, postId);
+    const entry = getActionEntry(actions, userId, targetKeyPost(postId));
 
     if (action === 'like') {
       if (entry.liked) return;
@@ -1261,21 +1349,20 @@ function updateModalPostCounts(postId){
 }
 
 
+
 // =========================
 // Post modal (BACKEND-first)
 // =========================
 
 let CURRENT_MODAL_POST_ID = null;
 
-async function openPostModal(postId){
+async function openPostModal(postId) {
   // Normaliza a string (en tu UI usas ids como string)
   const idStr = String(postId);
 
   // 1) Source of truth: backend
   let p = null;
   try {
-    // API.getPost() debe existir (del Paso 1 que reemplazó el bloque const API = {...})
-    // y debe devolver el post mapeado con comments reales.
     p = await API.getPost(idStr);
   } catch (err) {
     console.warn("API.getPost falló, usando fallback local:", err);
@@ -1288,14 +1375,15 @@ async function openPostModal(postId){
     p = ensurePostSchema(raw);
   }
 
-  if(!p) return;
+  if (!p) return;
 
   CURRENT_MODAL_POST_ID = idStr;
 
   document.getElementById('daoModalTitle').textContent = 'Post';
 
   const ui = loadUI();
-  const replyingTo = ui.replyTo && String(ui.replyTo.postId) === idStr ? ui.replyTo : null;
+  const replyingTo =
+    ui.replyTo && String(ui.replyTo.postId) === idStr ? ui.replyTo : null;
 
   // Nota: fmt(p.ts) usa timestamp; si viene de backend ya lo mapearon a ts
   document.getElementById('daoModalBody').innerHTML = `
@@ -1308,9 +1396,11 @@ async function openPostModal(postId){
         <button class="btn" type="button" data-like="${esc(p.id)}">
           ♥️ <span class="count">${getLikesCount(p)}</span>
         </button>
+
         <button class="btn" type="button" data-point="${esc(p.id)}">
           ⭐ <span class="count">${getPointsCount(p)}</span>
         </button>
+
         <button class="btn" type="button" data-share="${esc(p.id)}">🔗 Copiar link</button>
       </div>
     </div>
@@ -1338,8 +1428,17 @@ async function openPostModal(postId){
     </div>
   `;
 
+  // ✅ Abre modal
   openModal();
+
+  // ✅ FIX 3: aplica el estado visual (active/opaco) A LOS NUEVOS ELEMENTOS del modal
+  // Esto evita que “despierte” hasta el primer click o hasta renderAll().
+  applyActionState();
+
+  // ✅ (Opcional recomendado): sincroniza contadores del post en el modal con el cache
+  updateModalPostCounts(idStr);
 }
+
 
 
 
@@ -1349,22 +1448,29 @@ async function copyLink(id){
 }
 
 
-function mutatePost(id, fn){
-  const posts = loadJSON(DB_KEY, []);
-  const idx = posts.findIndex(p => p.id === id);
-  if(idx === -1) return;
 
-  const next = fn(ensurePostSchema(posts[idx])) || posts[idx];
-  posts[idx] = next;
+function mutatePost(id, fn) {
+  const idStr = String(id);
 
-  saveJSON(DB_KEY, posts);
-
-  // ✅ sincroniza cache para que openPostModal/renderAll usen lo nuevo
+  // 1) Actualiza cache en memoria SIEMPRE (backend-first)
   if (Array.isArray(POSTS_CACHE) && POSTS_CACHE.length) {
-    const cidx = POSTS_CACHE.findIndex(p => p.id === id);
-    if (cidx !== -1) POSTS_CACHE[cidx] = next;
+    const cidx = POSTS_CACHE.findIndex(p => String(p.id) === idStr);
+    if (cidx !== -1) {
+      const next = fn(ensurePostSchema(POSTS_CACHE[cidx])) || POSTS_CACHE[cidx];
+      POSTS_CACHE[cidx] = next;
+    }
+  }
+
+  // 2) Actualiza localStorage SOLO si existe (modo demo/offline)
+  const posts = loadJSON(DB_KEY, []);
+  const idx = posts.findIndex(p => String(p.id) === idStr);
+  if (idx !== -1) {
+    const next = fn(ensurePostSchema(posts[idx])) || posts[idx];
+    posts[idx] = next;
+    saveJSON(DB_KEY, posts);
   }
 }
+
 
 
 /* =========================

@@ -64,27 +64,30 @@ app.get("/api/health", (c) =>
 /* =========================================================
    PERFIL / STATS
 ========================================================= */
+
 app.get("/api/me/stats", auth, async (c) => {
   const address = c.get("address");
 
-  const postsCount = await c.env.DB.prepare(
+  // Conteos personales
+  const posts = await c.env.DB.prepare(
     "SELECT COUNT(*) AS n FROM posts WHERE author = ?"
   ).bind(address).first();
 
-  const commentsCount = await c.env.DB.prepare(
+  const comments = await c.env.DB.prepare(
     "SELECT COUNT(*) AS n FROM comments WHERE author = ?"
   ).bind(address).first();
 
-  const pointsReceived = await c.env.DB.prepare(
+  // ✅ Reacciones recibidas (SUM(amount) para point, COUNT para like)
+  const pointsReceivedRow = await c.env.DB.prepare(
     `
-    SELECT COUNT(*) AS n
+    SELECT COALESCE(SUM(r.amount),0) AS n
     FROM reactions r
     JOIN posts p ON p.id = r.post_id
     WHERE p.author = ? AND r.type = 'point'
     `
   ).bind(address).first();
 
-  const likesReceived = await c.env.DB.prepare(
+  const likesReceivedRow = await c.env.DB.prepare(
     `
     SELECT COUNT(*) AS n
     FROM reactions r
@@ -93,19 +96,31 @@ app.get("/api/me/stats", auth, async (c) => {
     `
   ).bind(address).first();
 
+  const pointsReceived = Number((pointsReceivedRow as any)?.n ?? 0);
+  const likesReceived = Number((likesReceivedRow as any)?.n ?? 0);
+
+  // ✅ Dharma: por acuerdo: “punto + like recibido”
+  const dharma = pointsReceived + likesReceived;
+  const aura = dharma; // 1:1 por ahora
+
   return c.json({
     ok: true,
     address,
     activity: {
-      posts: Number((postsCount as any)?.n ?? 0),
-      comments: Number((commentsCount as any)?.n ?? 0),
+      posts: Number((posts as any)?.n ?? 0),
+      comments: Number((comments as any)?.n ?? 0),
     },
     received: {
-      pointsReceived: Number((pointsReceived as any)?.n ?? 0),
-      likesReceived: Number((likesReceived as any)?.n ?? 0),
+      pointsReceived,
+      likesReceived,
+    },
+    tokenomics: {
+      dharma,
+      aura,
     },
   });
 });
+
 
 /* =========================================================
    POSTS ROUTER (✅ AQUÍ SE MONTA posts.ts)
