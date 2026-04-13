@@ -57,12 +57,11 @@ app.get("/api/health", (c) =>
 );
 
 /* =========================================================
-   API: PERFIL / STATS
+   PERFIL / STATS
 ========================================================= */
 app.get("/api/me/stats", auth, async (c) => {
   const address = c.get("address");
 
-  // Conteos personales
   const posts = await c.env.DB.prepare(
     "SELECT COUNT(*) AS n FROM posts WHERE author = ?"
   ).bind(address).first();
@@ -71,13 +70,12 @@ app.get("/api/me/stats", auth, async (c) => {
     "SELECT COUNT(*) AS n FROM comments WHERE author = ?"
   ).bind(address).first();
 
-  // Reacciones recibidas
   const pointsReceived = await c.env.DB.prepare(
     `
     SELECT COUNT(*) AS n
     FROM reactions r
     JOIN posts p ON p.id = r.post_id
-    WHERE p.author = ? AND r.type = 'point'
+    WHERE p.author = ? AND r.type = 'points'
     `
   ).bind(address).first();
 
@@ -90,95 +88,24 @@ app.get("/api/me/stats", auth, async (c) => {
     `
   ).bind(address).first();
 
-  // Últimos eventos
-  const lastPost = await c.env.DB.prepare(
-    `
-    SELECT id, title, created_at
-    FROM posts
-    WHERE author = ?
-    ORDER BY created_at DESC
-    LIMIT 1
-    `
-  ).bind(address).first();
-
-  const lastComment = await c.env.DB.prepare(
-    `
-    SELECT post_id, body, created_at
-    FROM comments
-    WHERE author = ?
-    ORDER BY created_at DESC
-    LIMIT 1
-    `
-  ).bind(address).first();
-
-  // Tokenomics base
-  const dharma = Number((pointsReceived as any)?.n ?? 0);
-  const aura = dharma; // 1:1 por ahora
-
   return c.json({
     ok: true,
-    address,
     activity: {
       posts: Number((posts as any)?.n ?? 0),
       comments: Number((comments as any)?.n ?? 0),
     },
     received: {
-      pointsReceived: dharma,
+      pointsReceived: Number((pointsReceived as any)?.n ?? 0),
       likesReceived: Number((likesReceived as any)?.n ?? 0),
     },
-    tokenomics: {
-      dharma,
-      aura,
-    },
-    last: {
-      post: lastPost ?? null,
-      comment: lastComment ?? null,
-    },
   });
-});
-
-/* =========================
-   DEBUG TOKEN (solo dev)
-========================= */
-app.get("/api/dev/token/:address", async (c) => {
-  const address = c.req.param("address").toLowerCase();
-  const now = Math.floor(Date.now() / 1000);
-  const exp = now + 60 * 60;
-
-  const token = await signJwt(
-    {
-      iss: "alemtydao-siwe",
-      aud: "alemtydao-api",
-      sub: address,
-      iat: now,
-      exp,
-    },
-    c.env.SESSION_SECRET
-  );
-
-  return c.json({ token, address, expiresAt: exp });
-});
-
-/* =========================
-   Auth test
-========================= */
-app.get("/api/me", auth, async (c) => {
-  const address = c.get("address");
-
-  await c.env.DB.prepare(
-    "INSERT OR IGNORE INTO users(address) VALUES (?)"
-  ).bind(address).run();
-
-  const user = await c.env.DB.prepare(
-    "SELECT address, ens, created_at FROM users WHERE address = ?"
-  ).bind(address).first();
-
-  return c.json({ user });
 });
 
 /* =========================================================
    POSTS
 ========================================================= */
+
+// ✅ List posts
 app.get("/api/posts", async (c) => {
   const limit = Math.min(Number(c.req.query("limit") || 20), 50);
 
@@ -194,9 +121,12 @@ app.get("/api/posts", async (c) => {
   return c.json({ posts: result.results });
 });
 
+// ✅ Single post
 app.get("/api/posts/:id", async (c) => {
   const id = Number(c.req.param("id"));
-  if (!Number.isFinite(id)) return c.json({ error: "Invalid id" }, 400);
+  if (!Number.isFinite(id)) {
+    return c.json({ error: "Invalid id" }, 400);
+  }
 
   const post = await c.env.DB.prepare(
     `
@@ -210,6 +140,7 @@ app.get("/api/posts/:id", async (c) => {
   return c.json({ post });
 });
 
+// ✅ Create post
 app.post("/api/posts", auth, async (c) => {
   const address = c.get("address");
   const payload = await c.req.json().catch(() => ({} as any));
@@ -238,7 +169,60 @@ app.post("/api/posts", auth, async (c) => {
 });
 
 /* =========================================================
-   LEGACY ROUTER (API extra)
+   COMMENTS
+========================================================= */
+app.post("/api/posts/:id/comments", auth, async (c) => {
+  const address = c.get("address");
+  const id = Number(c.req.param("id"));
+  if (!Number.isFinite(id)) {
+    return c.json({ error: "Invalid post id" }, 400);
+  }
+
+  const payload = await c.req.json().catch(() => ({} as any));
+  const body = String(payload.body || "").trim();
+  if (!body) {
+    return c.json({ error: "Comment body is required" }, 400);
+  }
+
+  await c.env.DB.prepare(
+    `
+    INSERT INTO comments (post_id, author, body)
+    VALUES (?, ?, ?)
+    `
+  ).bind(id, address, body).run();
+
+  return c.json({ ok: true });
+});
+
+/* =========================================================
+   REACTIONS (LIKE / POINTS)
+========================================================= */
+app.post("/api/posts/:id/react", auth, async (c) => {
+  const address = c.get("address");
+  const id = Number(c.req.param("id"));
+  if (!Number.isFinite(id)) {
+    return c.json({ error: "Invalid post id" }, 400);
+  }
+
+  const payload = await c.req.json().catch(() => ({} as any));
+  const type = String(payload.type || "");
+
+  if (type !== "like" && type !== "points") {
+    return c.json({ error: "Invalid react type" }, 400);
+  }
+
+  await c.env.DB.prepare(
+    `
+    INSERT OR IGNORE INTO reactions (post_id, address, type)
+    VALUES (?, ?, ?)
+    `
+  ).bind(id, address, type).run();
+
+  return c.json({ ok: true });
+});
+
+/* =========================================================
+   LEGACY ROUTER (NO TOCAR)
 ========================================================= */
 app.all("/api/*", (c) => {
   const legacy = router(c.req.raw);
@@ -247,11 +231,12 @@ app.all("/api/*", (c) => {
 });
 
 /* =========================================================
-   FRONTEND SPA FALLBACK (REEMPLAZO DE PAGES)
+   FRONTEND SPA FALLBACK
 ========================================================= */
 app.all("*", async (c) => {
   return c.env.ASSETS.fetch(c.req.raw);
 });
 
 export default app;
+
 
