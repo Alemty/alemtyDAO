@@ -117,9 +117,10 @@ function parseSiweMessage(message) {
 ========================================================= */
 
 function b64urlEncode(input) {
-  const bytes = typeof input === "string"
-    ? new TextEncoder().encode(input)
-    : input;
+  const bytes =
+    typeof input === "string"
+      ? new TextEncoder().encode(input)
+      : input;
   let bin = "";
   for (const b of bytes) bin += String.fromCharCode(b);
   return btoa(bin).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
@@ -142,7 +143,11 @@ async function signJwt(payload, secret) {
   const data = `${h}.${p}`;
 
   const key = await hmacKey(secret);
-  const sigBuf = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
+  const sigBuf = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(data)
+  );
   const sig = b64urlEncode(new Uint8Array(sigBuf));
 
   return `${data}.${sig}`;
@@ -152,7 +157,8 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const origin = request.headers.get("Origin");
-    const acrh = request.headers.get("Access-Control-Request-Headers") || "";
+    const acrh =
+      request.headers.get("Access-Control-Request-Headers") || "";
     const cors = getCorsHeaders(origin, acrh);
 
     /* ===== CORS preflight ===== */
@@ -171,7 +177,9 @@ export default {
       }
 
       const nonce = makeAlphanumericNonce(24);
-      await env.SIWE_NONCES.put(`nonce:${nonce}`, "1", { expirationTtl: 600 });
+      await env.SIWE_NONCES.put(`nonce:${nonce}`, "1", {
+        expirationTtl: 600,
+      });
 
       return json({ ok: true, nonce, ttlSeconds: 600 }, 200, cors);
     }
@@ -179,17 +187,31 @@ export default {
     /* ===== VERIFY + JWT ===== */
     if (url.pathname === "/verify" && request.method === "POST") {
       if (!env.SIWE_NONCES || !env.JWT_SECRET) {
-        return json({ ok: false, error: "Server misconfigured" }, 500, cors);
+        return json(
+          { ok: false, error: "Server misconfigured" },
+          500,
+          cors
+        );
       }
 
-      const { message, signature } = await request.json().catch(() => ({}));
+      const { message, signature } = await request
+        .json()
+        .catch(() => ({}));
       if (!message || !signature) {
-        return json({ ok: false, error: "Missing message/signature" }, 400, cors);
+        return json(
+          { ok: false, error: "Missing message/signature" },
+          400,
+          cors
+        );
       }
 
       const parsed = parseSiweMessage(message);
       if (!parsed || !SIWE_ALLOWED_DOMAINS.has(parsed.domain)) {
-        return json({ ok: false, error: "Invalid SIWE message" }, 400, cors);
+        return json(
+          { ok: false, error: "Invalid SIWE message" },
+          400,
+          cors
+        );
       }
 
       const key = `nonce:${parsed.nonce}`;
@@ -198,8 +220,14 @@ export default {
       }
 
       const recovered = verifyMessage(parsed.normalized, signature);
-      if (recovered.toLowerCase() !== parsed.address.toLowerCase()) {
-        return json({ ok: false, error: "Signature mismatch" }, 401, cors);
+      if (
+        recovered.toLowerCase() !== parsed.address.toLowerCase()
+      ) {
+        return json(
+          { ok: false, error: "Signature mismatch" },
+          401,
+          cors
+        );
       }
 
       await env.SIWE_NONCES.delete(key);
@@ -216,10 +244,13 @@ export default {
         env.JWT_SECRET
       );
 
-      return json({ ok: true, address: parsed.address, token }, 200, cors);
+      return json(
+        { ok: true, address: parsed.address, token },
+        200,
+        cors
+      );
     }
 
     return new Response("Not found", { status: 404, headers: cors });
   },
 };
-
