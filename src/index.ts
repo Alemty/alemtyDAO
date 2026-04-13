@@ -12,12 +12,13 @@ import { router } from "./router";
 /* =========================
    Tipos
 ========================= */
-type Bindings = {
+export type Bindings = {
   DB: D1Database;
   SESSION_SECRET: string;
+  ASSETS: Fetcher;
 };
 
-type Vars = {
+export type Vars = {
   address: string;
 };
 
@@ -36,6 +37,7 @@ app.use(
       "http://127.0.0.1:5500",
       "http://localhost:5500",
       "https://alemtydao.pages.dev",
+      "https://alemtydao.alejandrogtzz93.workers.dev",
       "https://alemty.eth.limo",
     ],
     allowMethods: ["GET", "POST", "OPTIONS"],
@@ -54,14 +56,12 @@ app.get("/api/health", (c) =>
   })
 );
 
-/**
- * GET /api/me/stats (protegido)
- * Métricas del perfil + tokenomics base
- */
+/* =========================================================
+   API: PERFIL / STATS
+========================================================= */
 app.get("/api/me/stats", auth, async (c) => {
   const address = c.get("address");
 
-  // Conteos personales
   const posts = await c.env.DB.prepare(
     "SELECT COUNT(*) AS n FROM posts WHERE author = ?"
   ).bind(address).first();
@@ -70,7 +70,6 @@ app.get("/api/me/stats", auth, async (c) => {
     "SELECT COUNT(*) AS n FROM comments WHERE author = ?"
   ).bind(address).first();
 
-  // Reacciones recibidas
   const pointsReceived = await c.env.DB.prepare(
     `
     SELECT COUNT(*) AS n
@@ -89,7 +88,6 @@ app.get("/api/me/stats", auth, async (c) => {
     `
   ).bind(address).first();
 
-  // Últimos eventos
   const lastPost = await c.env.DB.prepare(
     `
     SELECT id, title, created_at
@@ -110,9 +108,8 @@ app.get("/api/me/stats", auth, async (c) => {
     `
   ).bind(address).first();
 
-  // Tokenomics base
   const dharma = Number((pointsReceived as any)?.n ?? 0);
-  const aura = dharma;
+  const aura = dharma; // por ahora 1:1, luego se liga al ledger
 
   return c.json({
     ok: true,
@@ -159,7 +156,7 @@ app.get("/api/dev/token/:address", async (c) => {
 });
 
 /* =========================
-   Protected test
+   Auth test
 ========================= */
 app.get("/api/me", auth, async (c) => {
   const address = c.get("address");
@@ -251,12 +248,20 @@ app.post("/api/posts", auth, async (c) => {
 });
 
 /* =========================================================
-   Legacy fallback
+   LEGACY ROUTER (API extra)
 ========================================================= */
-app.all("*", (c) => {
+app.all("/api/*", (c) => {
   const legacy = router(c.req.raw);
   if (legacy) return legacy;
-  return c.text("Not Found", 404);
+  return c.json({ error: "API route not found" }, 404);
+});
+
+/* =========================================================
+   FRONTEND SPA FALLBACK (REEMPLAZO DE PAGES)
+========================================================= */
+app.all("*", async (c) => {
+  return c.env.ASSETS.fetch(c.req.raw);
 });
 
 export default app;
+
