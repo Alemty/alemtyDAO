@@ -2,44 +2,73 @@
 import { verifyMessage } from "ethers";
 
 /**
- * ✅ ORÍGENES PERMITIDOS (CORS)
- */
-const ALLOWED_ORIGINS = new Set([
-  // ✅ Cloudflare Workers (frontend actual)
-  "https://alemtydao.alejandrogtzz93.workers.dev",
-
-  // ✅ Pages (legacy / preview)
-  "https://alemtydao.pages.dev",
-  "https://c45b9928.alemtydao.pages.dev",
-
-  // ✅ ENS / IPFS
-  "https://alemty.eth.limo",
-
-  // ✅ Local dev
-  "http://127.0.0.1:5500",
-  "http://localhost:5500",
-]);
-
-/**
- * ✅ Dominios permitidos dentro del MENSAJE SIWE
+ * ✅ Dominios permitidos dentro del MENSAJE SIWE (EIP-4361)
+ * (Esto valida el "domain" dentro del mensaje, NO el Origin HTTP)
  */
 const SIWE_ALLOWED_DOMAINS = new Set([
   "alemty.eth",
   "alemty.eth.limo",
 ]);
 
-function getCorsHeaders(origin, requestHeaders = "") {
-  if (!origin) return {};
-  if (ALLOWED_ORIGINS.has(origin)) {
-    return {
-      "Access-Control-Allow-Origin": origin,
-      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-      "Access-Control-Allow-Headers": requestHeaders || "Content-Type",
-      "Access-Control-Max-Age": "86400",
-      "Vary": "Origin",
-    };
+/**
+ * ✅ CORS: orígenes permitidos (HTTP Origin)
+ * - Permite localhost/127.0.0.1 con CUALQUIER puerto
+ * - Permite Pages previews: https://<hash>.alemtydao.pages.dev
+ * - Permite prod/ENS/Workers
+ */
+const CORS_ALLOWLIST = new Set([
+  // Cloudflare Workers (frontend actual)
+  "https://alemtydao.alejandrogtzz93.workers.dev",
+
+  // Pages main
+  "https://alemtydao.pages.dev",
+
+  // ENS/IPFS gateway
+  "https://alemty.eth.limo",
+]);
+
+function isAllowedOrigin(origin) {
+  if (!origin) return false;
+
+  // Exact matches
+  if (CORS_ALLOWLIST.has(origin)) return true;
+
+  try {
+    const u = new URL(origin);
+
+    // Allow any localhost/127.0.0.1 port
+    if (u.hostname === "localhost" || u.hostname === "127.0.0.1") return true;
+
+    // Allow Pages preview deploys
+    if (u.hostname.endsWith(".alemtydao.pages.dev")) return true;
+  } catch {
+    // ignore invalid origin
   }
-  return {};
+
+  return false;
+}
+
+function getCorsHeaders(origin, requestHeaders = "") {
+  if (!origin || !isAllowedOrigin(origin)) return {};
+
+  // Si el browser manda Access-Control-Request-Headers, refléjalo
+  // y añade Authorization/Content-Type por defecto.
+  const requested = String(requestHeaders || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const base = ["Content-Type", "Authorization"];
+  const allowHeaders = Array.from(new Set([...base, ...requested])).join(", ");
+
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Headers": allowHeaders,
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Max-Age": "86400",
+    "Vary": "Origin",
+  };
 }
 
 function json(data, status = 200, cors = {}) {
@@ -118,9 +147,8 @@ function parseSiweMessage(message) {
 
 function b64urlEncode(input) {
   const bytes =
-    typeof input === "string"
-      ? new TextEncoder().encode(input)
-      : input;
+    typeof input === "string" ? new TextEncoder().encode(input) : input;
+
   let bin = "";
   for (const b of bytes) bin += String.fromCharCode(b);
   return btoa(bin).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
@@ -157,8 +185,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const origin = request.headers.get("Origin");
-    const acrh =
-      request.headers.get("Access-Control-Request-Headers") || "";
+    const acrh = request.headers.get("Access-Control-Request-Headers") || "";
     const cors = getCorsHeaders(origin, acrh);
 
     /* ===== CORS preflight ===== */
@@ -187,16 +214,10 @@ export default {
     /* ===== VERIFY + JWT ===== */
     if (url.pathname === "/verify" && request.method === "POST") {
       if (!env.SIWE_NONCES || !env.JWT_SECRET) {
-        return json(
-          { ok: false, error: "Server misconfigured" },
-          500,
-          cors
-        );
+        return json({ ok: false, error: "Server misconfigured" }, 500, cors);
       }
 
-      const { message, signature } = await request
-        .json()
-        .catch(() => ({}));
+      const { message, signature } = await request.json().catch(() => ({}));
       if (!message || !signature) {
         return json(
           { ok: false, error: "Missing message/signature" },
@@ -207,11 +228,7 @@ export default {
 
       const parsed = parseSiweMessage(message);
       if (!parsed || !SIWE_ALLOWED_DOMAINS.has(parsed.domain)) {
-        return json(
-          { ok: false, error: "Invalid SIWE message" },
-          400,
-          cors
-        );
+        return json({ ok: false, error: "Invalid SIWE message" }, 400, cors);
       }
 
       const key = `nonce:${parsed.nonce}`;
@@ -220,14 +237,8 @@ export default {
       }
 
       const recovered = verifyMessage(parsed.normalized, signature);
-      if (
-        recovered.toLowerCase() !== parsed.address.toLowerCase()
-      ) {
-        return json(
-          { ok: false, error: "Signature mismatch" },
-          401,
-          cors
-        );
+      if (recovered.toLowerCase() !== parsed.address.toLowerCase()) {
+        return json({ ok: false, error: "Signature mismatch" }, 401, cors);
       }
 
       await env.SIWE_NONCES.delete(key);
@@ -244,13 +255,10 @@ export default {
         env.JWT_SECRET
       );
 
-      return json(
-        { ok: true, address: parsed.address, token },
-        200,
-        cors
-      );
+      return json({ ok: true, address: parsed.address, token }, 200, cors);
     }
 
     return new Response("Not found", { status: 404, headers: cors });
   },
 };
+

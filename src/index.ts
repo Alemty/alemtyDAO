@@ -33,11 +33,12 @@ export type Vars = {
 const app = new Hono<{ Bindings: Bindings; Variables: Vars }>();
 
 /* =========================
-   ✅ CORS GLOBAL (DEV + PROD + Pages Preview + Local any port)
+   ✅ CORS GLOBAL (DEV + PROD + Pages Preview + Local ANY PORT)
    - Permite Authorization (JWT)
    - Permite previews: https://<hash>.alemtydao.pages.dev
    - Permite localhost / 127.0.0.1 con CUALQUIER puerto (ej. 51023)
 ========================= */
+
 const CORS_ALLOWLIST = new Set([
   // PROD
   "https://alemtydao.pages.dev",
@@ -48,13 +49,13 @@ const CORS_ALLOWLIST = new Set([
 function corsOrigin(origin: string | undefined): string | null {
   if (!origin) return null;
 
-  // Allow exact matches
+  // ✅ Allow exact matches (prod)
   if (CORS_ALLOWLIST.has(origin)) return origin;
 
   try {
     const u = new URL(origin);
 
-    // ✅ Allow Pages preview URLs: https://<hash>.alemtydao.pages.dev
+    // ✅ Allow Pages preview deploys
     if (u.hostname.endsWith(".alemtydao.pages.dev")) return origin;
 
     // ✅ Allow any localhost/127.0.0.1 port (serve elige puertos dinámicos)
