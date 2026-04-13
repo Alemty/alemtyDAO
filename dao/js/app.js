@@ -742,7 +742,13 @@ function getCommentsCount(p){
 }
 
 function byRecent(a,b){ return (b.ts||0)-(a.ts||0); }
-function byScore(a,b){ return score(b)-score(a); }
+
+function byScore(a, b) {
+  const sa = a?.score ?? a?.points ?? a?.likes ?? 0;
+  const sb = b?.score ?? b?.points ?? b?.likes ?? 0;
+  return sb - sa;
+}
+
 
 function filterWeek(posts){
   const weekAgo = now() - 7*24*60*60*1000;
