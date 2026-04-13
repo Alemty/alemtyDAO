@@ -33,20 +33,48 @@ export type Vars = {
 const app = new Hono<{ Bindings: Bindings; Variables: Vars }>();
 
 /* =========================
-   ✅ CORS GLOBAL (DEV + PROD)
+   ✅ CORS GLOBAL (DEV + PROD + Pages Preview + Local any port)
+   - Permite Authorization (JWT)
+   - Permite previews: https://<hash>.alemtydao.pages.dev
+   - Permite localhost / 127.0.0.1 con CUALQUIER puerto (ej. 51023)
 ========================= */
+const CORS_ALLOWLIST = new Set([
+  // PROD
+  "https://alemtydao.pages.dev",
+  "https://alemtydao.alejandrogtzz93.workers.dev",
+  "https://alemty.eth.limo",
+]);
+
+function corsOrigin(origin: string | undefined): string | null {
+  if (!origin) return null;
+
+  // Allow exact matches
+  if (CORS_ALLOWLIST.has(origin)) return origin;
+
+  try {
+    const u = new URL(origin);
+
+    // ✅ Allow Pages preview URLs: https://<hash>.alemtydao.pages.dev
+    if (u.hostname.endsWith(".alemtydao.pages.dev")) return origin;
+
+    // ✅ Allow any localhost/127.0.0.1 port (serve elige puertos dinámicos)
+    if (u.hostname === "localhost" || u.hostname === "127.0.0.1") return origin;
+  } catch {
+    // ignore invalid origin
+  }
+
+  return null;
+}
+
 app.use(
   "/*",
   cors({
-    origin: [
-      "http://127.0.0.1:5500",
-      "http://localhost:5500",
-      "https://alemtydao.pages.dev",
-      "https://alemtydao.alejandrogtzz93.workers.dev",
-      "https://alemty.eth.limo",
-    ],
-    allowMethods: ["GET", "POST", "OPTIONS"],
+    origin: (origin) => corsOrigin(origin ?? undefined),
+    allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
     allowHeaders: ["Authorization", "Content-Type"],
+    exposeHeaders: ["Content-Type"],
+    maxAge: 86400,
+    credentials: true,
   })
 );
 
@@ -69,13 +97,17 @@ app.get("/api/me/stats", auth, async (c) => {
   const address = c.get("address");
 
   // Conteos personales
-  const posts = await c.env.DB.prepare(
+  const postsRow = await c.env.DB.prepare(
     "SELECT COUNT(*) AS n FROM posts WHERE author = ?"
-  ).bind(address).first();
+  )
+    .bind(address)
+    .first();
 
-  const comments = await c.env.DB.prepare(
+  const commentsRow = await c.env.DB.prepare(
     "SELECT COUNT(*) AS n FROM comments WHERE author = ?"
-  ).bind(address).first();
+  )
+    .bind(address)
+    .first();
 
   // ✅ Reacciones recibidas (SUM(amount) para point, COUNT para like)
   const pointsReceivedRow = await c.env.DB.prepare(
@@ -85,7 +117,9 @@ app.get("/api/me/stats", auth, async (c) => {
     JOIN posts p ON p.id = r.post_id
     WHERE p.author = ? AND r.type = 'point'
     `
-  ).bind(address).first();
+  )
+    .bind(address)
+    .first();
 
   const likesReceivedRow = await c.env.DB.prepare(
     `
@@ -94,7 +128,9 @@ app.get("/api/me/stats", auth, async (c) => {
     JOIN posts p ON p.id = r.post_id
     WHERE p.author = ? AND r.type = 'like'
     `
-  ).bind(address).first();
+  )
+    .bind(address)
+    .first();
 
   const pointsReceived = Number((pointsReceivedRow as any)?.n ?? 0);
   const likesReceived = Number((likesReceivedRow as any)?.n ?? 0);
@@ -107,8 +143,8 @@ app.get("/api/me/stats", auth, async (c) => {
     ok: true,
     address,
     activity: {
-      posts: Number((posts as any)?.n ?? 0),
-      comments: Number((comments as any)?.n ?? 0),
+      posts: Number((postsRow as any)?.n ?? 0),
+      comments: Number((commentsRow as any)?.n ?? 0),
     },
     received: {
       pointsReceived,
@@ -120,7 +156,6 @@ app.get("/api/me/stats", auth, async (c) => {
     },
   });
 });
-
 
 /* =========================================================
    POSTS ROUTER (✅ AQUÍ SE MONTA posts.ts)
@@ -144,6 +179,7 @@ app.all("*", async (c) => {
 });
 
 export default app;
+
 
 
 
