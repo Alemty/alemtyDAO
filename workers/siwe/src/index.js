@@ -7,6 +7,7 @@ import { verifyMessage } from "ethers";
 const ALLOWED_ORIGINS = new Set([
   "https://alemtydao.pages.dev",
   "https://c45b9928.alemtydao.pages.dev",
+  "https://alemtydao.alejandrogtzz93.workers.dev",
   "https://alemty.eth.limo",
   "http://127.0.0.1:5500",
   "http://localhost:5500",
