@@ -1,4 +1,3 @@
-
 # alemty.eth — DAO v0.4
 
 **Estado:** Activo / En desarrollo  
@@ -242,4 +241,5 @@ Participar es una decisión personal y responsable.
 **alemty es identidad soberana + mérito real + economía útil + poder bloqueado + aprendizaje continuo, evolucionando hacia una consultora espacial auditable y sostenible.**
 
 
+>>>>>>> origin/main
 **alemty.eth** · Identidad · DAO · Economía · IA · Web3

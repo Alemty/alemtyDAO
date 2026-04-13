@@ -12,12 +12,13 @@ import { router } from "./router";
 /* =========================
    Tipos
 ========================= */
-type Bindings = {
+export type Bindings = {
   DB: D1Database;
   SESSION_SECRET: string;
+  ASSETS: Fetcher;
 };
 
-type Vars = {
+export type Vars = {
   address: string;
 };
 
@@ -36,6 +37,7 @@ app.use(
       "http://127.0.0.1:5500",
       "http://localhost:5500",
       "https://alemtydao.pages.dev",
+      "https://alemtydao.alejandrogtzz93.workers.dev",
       "https://alemty.eth.limo",
     ],
     allowMethods: ["GET", "POST", "OPTIONS"],
@@ -54,10 +56,9 @@ app.get("/api/health", (c) =>
   })
 );
 
-/**
- * GET /api/me/stats (protegido)
- * Métricas del perfil + tokenomics base
- */
+/* =========================================================
+   API: PERFIL / STATS
+========================================================= */
 app.get("/api/me/stats", auth, async (c) => {
   const address = c.get("address");
 
@@ -112,7 +113,7 @@ app.get("/api/me/stats", auth, async (c) => {
 
   // Tokenomics base
   const dharma = Number((pointsReceived as any)?.n ?? 0);
-  const aura = dharma;
+  const aura = dharma; // 1:1 por ahora
 
   return c.json({
     ok: true,
@@ -159,22 +160,18 @@ app.get("/api/dev/token/:address", async (c) => {
 });
 
 /* =========================
-   Protected test
+   Auth test
 ========================= */
 app.get("/api/me", auth, async (c) => {
   const address = c.get("address");
 
   await c.env.DB.prepare(
     "INSERT OR IGNORE INTO users(address) VALUES (?)"
-  )
-    .bind(address)
-    .run();
+  ).bind(address).run();
 
   const user = await c.env.DB.prepare(
     "SELECT address, ens, created_at FROM users WHERE address = ?"
-  )
-    .bind(address)
-    .first();
+  ).bind(address).first();
 
   return c.json({ user });
 });
@@ -186,13 +183,13 @@ app.get("/api/posts", async (c) => {
   const limit = Math.min(Number(c.req.query("limit") || 20), 50);
 
   const result = await c.env.DB.prepare(
-    `SELECT id, author, title, body, created_at
-     FROM posts
-     ORDER BY created_at DESC
-     LIMIT ?`
-  )
-    .bind(limit)
-    .all();
+    `
+    SELECT id, author, title, body, created_at
+    FROM posts
+    ORDER BY created_at DESC
+    LIMIT ?
+    `
+  ).bind(limit).all();
 
   return c.json({ posts: result.results });
 });
@@ -202,12 +199,12 @@ app.get("/api/posts/:id", async (c) => {
   if (!Number.isFinite(id)) return c.json({ error: "Invalid id" }, 400);
 
   const post = await c.env.DB.prepare(
-    `SELECT id, author, title, body, created_at
-     FROM posts
-     WHERE id = ?`
-  )
-    .bind(id)
-    .first();
+    `
+    SELECT id, author, title, body, created_at
+    FROM posts
+    WHERE id = ?
+    `
+  ).bind(id).first();
 
   if (!post) return c.json({ error: "Not found" }, 404);
   return c.json({ post });
@@ -229,34 +226,32 @@ app.post("/api/posts", auth, async (c) => {
 
   await c.env.DB.prepare(
     "INSERT OR IGNORE INTO users(address) VALUES (?)"
-  )
-    .bind(address)
-    .run();
+  ).bind(address).run();
 
   const insert = await c.env.DB.prepare(
     "INSERT INTO posts (author, title, body) VALUES (?, ?, ?)"
-  )
-    .bind(address, title, body)
-    .run();
+  ).bind(address, title, body).run();
 
   const id = (insert.meta as any)?.last_row_id;
 
-  return c.json(
-    {
-      ok: true,
-      post: { id, author: address, title, body },
-    },
-    201
-  );
+  return c.json({ ok: true, post: { id, author: address, title, body } }, 201);
 });
 
 /* =========================================================
-   Legacy fallback
+   LEGACY ROUTER (API extra)
 ========================================================= */
-app.all("*", (c) => {
+app.all("/api/*", (c) => {
   const legacy = router(c.req.raw);
   if (legacy) return legacy;
-  return c.text("Not Found", 404);
+  return c.json({ error: "API route not found" }, 404);
+});
+
+/* =========================================================
+   FRONTEND SPA FALLBACK (REEMPLAZO DE PAGES)
+========================================================= */
+app.all("*", async (c) => {
+  return c.env.ASSETS.fetch(c.req.raw);
 });
 
 export default app;
+
