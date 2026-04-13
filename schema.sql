@@ -40,18 +40,17 @@ CREATE TABLE IF NOT EXISTS reactions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   post_id INTEGER NOT NULL,
   address TEXT NOT NULL,
-  type TEXT NOT NULL, -- 'like' | 'point'
+  type TEXT NOT NULL, -- 'like' | 'points'
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (post_id) REFERENCES posts(id),
   FOREIGN KEY (address) REFERENCES users(address)
 );
 
--- una reacción por tipo, por usuario, por post
 CREATE UNIQUE INDEX IF NOT EXISTS uniq_reaction
 ON reactions (post_id, address, type);
 
 -- =========================
--- ÍNDICES DE PERFORMANCE
+-- PERFORMANCE INDEXES
 -- =========================
 CREATE INDEX IF NOT EXISTS idx_posts_created
 ON posts(created_at);
