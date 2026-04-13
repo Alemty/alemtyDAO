@@ -1085,7 +1085,15 @@ function renderTab(tab) {
 ========================= */
 
 async function syncProfile() {
-  const addr = getDid();
+  const token = localStorage.getItem("alemty.jwt");
+  
+let addr = getDid();
+if (!addr && token) {
+  // intenta rehidratar desde storage si hay sesión
+  const cached = localStorage.getItem("alemty.did") || localStorage.getItem("did");
+  if (cached) addr = cached;
+}
+
 
   const addrEl = profileModal.querySelector("#pfAddr");
   const lvlEl = profileModal.querySelector("#pfLevel");
