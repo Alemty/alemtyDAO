@@ -62,6 +62,7 @@ app.get("/api/health", (c) =>
 app.get("/api/me/stats", auth, async (c) => {
   const address = c.get("address");
 
+  // Conteos personales
   const posts = await c.env.DB.prepare(
     "SELECT COUNT(*) AS n FROM posts WHERE author = ?"
   ).bind(address).first();
@@ -70,6 +71,7 @@ app.get("/api/me/stats", auth, async (c) => {
     "SELECT COUNT(*) AS n FROM comments WHERE author = ?"
   ).bind(address).first();
 
+  // Reacciones recibidas
   const pointsReceived = await c.env.DB.prepare(
     `
     SELECT COUNT(*) AS n
@@ -88,6 +90,7 @@ app.get("/api/me/stats", auth, async (c) => {
     `
   ).bind(address).first();
 
+  // Últimos eventos
   const lastPost = await c.env.DB.prepare(
     `
     SELECT id, title, created_at
@@ -108,8 +111,9 @@ app.get("/api/me/stats", auth, async (c) => {
     `
   ).bind(address).first();
 
+  // Tokenomics base
   const dharma = Number((pointsReceived as any)?.n ?? 0);
-  const aura = dharma; // por ahora 1:1, luego se liga al ledger
+  const aura = dharma; // 1:1 por ahora
 
   return c.json({
     ok: true,
@@ -163,15 +167,11 @@ app.get("/api/me", auth, async (c) => {
 
   await c.env.DB.prepare(
     "INSERT OR IGNORE INTO users(address) VALUES (?)"
-  )
-    .bind(address)
-    .run();
+  ).bind(address).run();
 
   const user = await c.env.DB.prepare(
     "SELECT address, ens, created_at FROM users WHERE address = ?"
-  )
-    .bind(address)
-    .first();
+  ).bind(address).first();
 
   return c.json({ user });
 });
@@ -183,13 +183,13 @@ app.get("/api/posts", async (c) => {
   const limit = Math.min(Number(c.req.query("limit") || 20), 50);
 
   const result = await c.env.DB.prepare(
-    `SELECT id, author, title, body, created_at
-     FROM posts
-     ORDER BY created_at DESC
-     LIMIT ?`
-  )
-    .bind(limit)
-    .all();
+    `
+    SELECT id, author, title, body, created_at
+    FROM posts
+    ORDER BY created_at DESC
+    LIMIT ?
+    `
+  ).bind(limit).all();
 
   return c.json({ posts: result.results });
 });
@@ -199,12 +199,12 @@ app.get("/api/posts/:id", async (c) => {
   if (!Number.isFinite(id)) return c.json({ error: "Invalid id" }, 400);
 
   const post = await c.env.DB.prepare(
-    `SELECT id, author, title, body, created_at
-     FROM posts
-     WHERE id = ?`
-  )
-    .bind(id)
-    .first();
+    `
+    SELECT id, author, title, body, created_at
+    FROM posts
+    WHERE id = ?
+    `
+  ).bind(id).first();
 
   if (!post) return c.json({ error: "Not found" }, 404);
   return c.json({ post });
@@ -226,25 +226,15 @@ app.post("/api/posts", auth, async (c) => {
 
   await c.env.DB.prepare(
     "INSERT OR IGNORE INTO users(address) VALUES (?)"
-  )
-    .bind(address)
-    .run();
+  ).bind(address).run();
 
   const insert = await c.env.DB.prepare(
     "INSERT INTO posts (author, title, body) VALUES (?, ?, ?)"
-  )
-    .bind(address, title, body)
-    .run();
+  ).bind(address, title, body).run();
 
   const id = (insert.meta as any)?.last_row_id;
 
-  return c.json(
-    {
-      ok: true,
-      post: { id, author: address, title, body },
-    },
-    201
-  );
+  return c.json({ ok: true, post: { id, author: address, title, body } }, 201);
 });
 
 /* =========================================================
