@@ -8,10 +8,15 @@ mountShell();
 // =========================
 // API base (DEV vs PROD)
 // =========================
-const API_BASE =
-  (location.hostname === "127.0.0.1" || location.hostname === "localhost")
-    ? "https://alemtydao.alejandrogtzz93.workers.dev"
-    : "";
+
+const isENS = location.hostname.endsWith(".eth.limo");
+const isLocal =
+  location.hostname === "localhost" ||
+  location.hostname === "127.0.0.1";
+
+const API_WORKER = "https://alemtydao.alejandrogtzz93.workers.dev";
+const API_BASE = (isENS || isLocal) ? API_WORKER : "";
+
 
 // JWT (guardado por SIWE)
 function getJWT() {

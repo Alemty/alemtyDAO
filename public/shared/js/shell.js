@@ -868,15 +868,23 @@ function getHighestNft(addr) {
   return localStorage.getItem(key) || "—";
 }
 
+
 /**
- * ✅ API base:
- * - En DEV (LiveServer 127.0.0.1:5500): pega al Worker API en PROD
- * - En PROD (mismo origin): usa rutas relativas
+ * ✅ API base (universal):
+ * - ENS/IPFS (eth.limo) -> usa Worker API absoluto
+ * - DEV (localhost/127.0.0.1) -> usa Worker API absoluto
+ * - PROD en Workers (mismo origin) -> usa rutas relativas ("")
  */
-const API_BASE =
-  location.hostname === "127.0.0.1" || location.hostname === "localhost"
-    ? "https://alemtydao.alejandrogtzz93.workers.dev"
-    : "";
+const isENS = location.hostname.endsWith(".eth.limo");
+const isLocal =
+  location.hostname === "localhost" ||
+  location.hostname === "127.0.0.1";
+
+const API_WORKER = "https://alemtydao.alejandrogtzz93.workers.dev";
+
+const API_BASE = (isENS || isLocal) ? API_WORKER : "";
+
+
 
 /**
  * ✅ Fetch de métricas personales
