@@ -5,9 +5,12 @@ import { verifyMessage } from "ethers";
  * ✅ Dominios permitidos dentro del MENSAJE SIWE (EIP-4361)
  * (Esto valida el "domain" dentro del mensaje, NO el Origin HTTP)
  */
+
 const SIWE_ALLOWED_DOMAINS = new Set([
   "alemty.eth",
   "alemty.eth.limo",
+  "localhost",        // ✅ DEV local
+  "127.0.0.1",        // ✅ DEV local (por si acaso)
 ]);
 
 /**
