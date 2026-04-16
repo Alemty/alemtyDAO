@@ -301,18 +301,12 @@ function openModal(){
   m.setAttribute('aria-hidden','false');
 }
 
-
-
-// ✅ app.js — SOLO para el foro
 function closeModal(){
-  try { document.activeElement?.blur(); } catch {}
   const m = document.getElementById('daoModal');
   if(!m) return;
   m.classList.remove('open');
   m.setAttribute('aria-hidden','true');
 }
-
-
 
 /* =========================
    Delegación GLOBAL (sin duplicados en web/móvil)
@@ -326,7 +320,7 @@ let __lastPointerTs = 0;
 function isActionableTarget(t){
   if(!t || !t.closest) return false;
 return !!t.closest(
-  '[data-close], [data-like], [data-point], .pill[data-action], [data-open-post], [data-share], [data-send], [data-topic-pick], [data-reply-cancel], [data-replies-more], [data-replies-less], [data-post-menu], [data-post-edit], [data-post-delete], [data-post-save]'
+  '[data-close], [data-like], [data-point], .pill[data-action], [data-open-post], [data-share], [data-send], [data-topic-pick], [data-reply-cancel], [data-replies-more], [data-replies-less]'
 );
 
 
@@ -356,165 +350,6 @@ async function handleGlobalAction(e) {
     await openPostModal(postId);
     return;
   }
-
-  
-// =========================
-// KEBAB MENU (toggle)
-// =========================
-const kebab = e.target.closest('[data-post-menu]');
-if (kebab) {
-  e.preventDefault();
-  e.stopPropagation();
-
-  const postId = kebab.getAttribute('data-post-menu');
-  if (!postId) return;
-
-  // Cierra otros menús
-  document.querySelectorAll(".kebab-menu").forEach(m => {
-    const same = m.getAttribute("data-menu-for") === String(postId);
-    if (!same) m.setAttribute("hidden", "true");
-  });
-
-  const menu = document.querySelector(`.kebab-menu[data-menu-for="${CSS.escape(String(postId))}"]`);
-  if (menu) {
-    const isHidden = menu.hasAttribute("hidden");
-    if (isHidden) menu.removeAttribute("hidden");
-    else menu.setAttribute("hidden", "true");
-  }
-  return;
-}
-
-// =========================
-// DELETE POST (owner/admin)
-// =========================
-const del = e.target.closest('[data-post-delete]');
-if (del) {
-  e.preventDefault();
-  e.stopPropagation();
-  closeAllPostMenus();
-
-  const postId = del.getAttribute('data-post-delete');
-  if (!postId) return;
-
-  const jwt = getJWT();
-  if (!jwt) { alert("Necesitas SIWE para eliminar."); return; }
-
-  const ok = confirm("¿Eliminar este post? Esta acción no se puede deshacer.");
-  if (!ok) return;
-
-  try {
-    const r = await fetch(`${API_BASE}/api/posts/${postId}`, {
-      method: "DELETE",
-      headers: authHeaders(),
-    });
-
-    if (r.ok) {
-      // refresca UI desde backend
-      await renderAll();
-      // si el modal estaba abierto con ese post, ciérralo
-      const m = document.getElementById('daoModal');
-      if (m?.classList.contains('open')) closeModal();
-      return;
-    }
-
-    const err = await r.json().catch(() => ({}));
-    alert(`No se pudo eliminar: ${err.error || r.status}`);
-  } catch (ex) {
-    console.warn("delete post failed:", ex);
-    alert("Error de conexión al eliminar.");
-  }
-  return;
-}
-
-// =========================
-// EDIT POST (owner)
-// =========================
-const edit = e.target.closest('[data-post-edit]');
-if (edit) {
-  e.preventDefault();
-  e.stopPropagation();
-  closeAllPostMenus();
-
-  const postId = edit.getAttribute('data-post-edit');
-  if (!postId) return;
-
-  const jwt = getJWT();
-  if (!jwt) { alert("Necesitas SIWE para editar."); return; }
-
-  // Trae el post (backend first)
-  let p = null;
-  try { p = await API.getPost(String(postId)); } catch {}
-  if (!p) {
-    // fallback a cache
-    p = POSTS_CACHE.find(x => String(x.id) === String(postId)) || null;
-  }
-  if (!p) return;
-
-  document.getElementById('daoModalTitle').textContent = 'Editar post';
-  document.getElementById('daoModalBody').innerHTML = `
-    <div class="sheet-item">
-      <div class="h2">Editar</div>
-      <div class="form" style="margin-top:10px">
-        <input id="editTitle" maxlength="120" value="${esc(p.title || '')}">
-        <textarea id="editBody" rows="6">${esc(p.body || '')}</textarea>
-        <input id="editTopic" value="${esc(p.topic || '')}" placeholder="Tema (opcional)">
-        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
-          <button class="btn primary" type="button" data-post-save="${esc(p.id)}">Guardar</button>
-          <button class="btn" type="button" data-close="daoModal">Cancelar</button>
-        </div>
-        <div class="small muted" style="margin-top:8px">
-          Nota: requiere endpoint PUT/PATCH en backend (si no existe, verás un aviso).
-        </div>
-      </div>
-    </div>
-  `;
-  openModal();
-  return;
-}
-
-// =========================
-// SAVE EDIT (attempt PUT)
-// =========================
-const saveEdit = e.target.closest('[data-post-save]');
-if (saveEdit) {
-  e.preventDefault();
-  e.stopPropagation();
-
-  const postId = saveEdit.getAttribute('data-post-save');
-  if (!postId) return;
-
-  const title = (document.getElementById('editTitle')?.value || '').trim();
-  const body  = (document.getElementById('editBody')?.value  || '').trim();
-  const topic = (document.getElementById('editTopic')?.value || '').trim();
-
-  if (title.length < 3 || body.length < 10) {
-    alert("Título (3+) y cuerpo (10+) requeridos.");
-    return;
-  }
-
-  try {
-    const r = await fetch(`${API_BASE}/api/posts/${postId}`, {
-      method: "PUT",
-      headers: authHeaders(),
-      body: JSON.stringify({ title, body, topic }),
-    });
-
-    if (!r.ok) {
-      // si no existe el endpoint, r.status será 404
-      const err = await r.json().catch(() => ({}));
-      alert(`No se pudo editar (backend): ${err.error || r.status}`);
-      return;
-    }
-
-    closeModal();
-    await renderAll();
-  } catch (ex) {
-    console.warn("save edit failed:", ex);
-    alert("Error de conexión al guardar.");
-  }
-  return;
-}
-
 
   // =========================
   // Replies more/less (UI only)
@@ -873,12 +708,7 @@ document.addEventListener('click', async (e) => {
 });
 
 
-// Cierra menús si haces click fuera (no depende de isActionableTarget)
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".kebab-wrap")) {
-    closeAllPostMenus();
-  }
-}, true);
+
 
 async function getPostsSafe() {
   const local = loadJSON(DB_KEY, []); // siempre disponible
@@ -1138,39 +968,6 @@ function renderCarousel(posts){
 }
 
 
-// =========================
-// Admin / helpers (kebab menu)
-// =========================
-const ADMIN_ADDRESS = ""; // <- pon tu wallet admin en minúsculas: "0x...."
-
-function isAdmin(addr) {
-  if (!ADMIN_ADDRESS) return false;
-  if (!addr) return false;
-  return String(addr).toLowerCase() === String(ADMIN_ADDRESS).toLowerCase();
-}
-
-function shortAddr(addr) {
-  if (!addr) return "—";
-  const a = String(addr);
-  if (a.length < 12) return a;
-  return a.slice(0, 6) + "…" + a.slice(-4);
-}
-
-function canDeletePost(p, did) {
-  const author = String(p?.author || "").toLowerCase();
-  const me = String(did || "").toLowerCase();
-  return !!me && (author === me || isAdmin(me));
-}
-
-function canEditPost(p, did) {
-  const author = String(p?.author || "").toLowerCase();
-  const me = String(did || "").toLowerCase();
-  return !!me && author === me; // solo dueño edita
-}
-
-function closeAllPostMenus() {
-  document.querySelectorAll(".kebab-menu").forEach(m => m.setAttribute("hidden", "true"));
-}
 
 
 // =========================
@@ -1414,57 +1211,35 @@ function renderFeed(posts){
     return;
   }
 
-  
-feed.innerHTML = list.map(p => {
-  const did = getUserId();
-  const showMenu = canDeletePost(p, did) || canEditPost(p, did);
-
-  const menuHtml = showMenu ? `
-    <div class="kebab-wrap" aria-label="Acciones del post">
-      <button class="kebab-btn" type="button" data-post-menu="${esc(p.id)}" aria-label="Más opciones">⋯</button>
-      <div class="kebab-menu" data-menu-for="${esc(p.id)}" hidden="true">
-        ${canEditPost(p, did) ? `<button class="kebab-item" type="button" data-post-edit="${esc(p.id)}">✏️ Editar</button>` : ``}
-        ${canDeletePost(p, did) ? `<button class="kebab-item danger" type="button" data-post-delete="${esc(p.id)}">🗑️ Eliminar</button>` : ``}
+  feed.innerHTML = list.map(p => `
+    <article class="post" data-open-post="${esc(p.id)}">
+      <div class="vote">
+        <button class="vbtn" data-like="${esc(p.id)}" type="button">▲</button>
+        <div class="vnum">${score(p)}</div>
+        <button class="vbtn" data-point="${esc(p.id)}" type="button">✨</button>
       </div>
-    </div>
-  ` : ``;
+      <div class="post-body">
+        <div class="post-title">${esc(p.title)}</div>
+        <div class="post-meta">${esc(p.topic||'Sin tema')} · ${esc(fmt(p.ts))}</div>
+        <div class="post-snippet">${esc((p.body||'').slice(0,220))}${(p.body||'').length>220?'…':''}</div>
+        <div class="post-tags">
+          
 
-  const author = p.author ? shortAddr(p.author) : "—";
+<span class="pill like" data-action="like" data-post-id="${esc(p.id)}">
+  ♥️ <span class="count">${getLikesCount(p)}</span>
+</span>
+<span class="pill points" data-action="points" data-post-id="${esc(p.id)}">
+  ⭐ <span class="count">${getPointsCount(p)}</span>
+</span>
+<span class="pill comment" data-action="comment" data-post-id="${esc(p.id)}">
+  💬 <span class="count">${getCommentsCount(p)}</span>
+</span>
 
-  return `
-  <article class="post" data-open-post="${esc(p.id)}">
-    <div class="vote">
-      <button class="vbtn" data-like="${esc(p.id)}" type="button">▲</button>
-      <div class="vnum">${score(p)}</div>
-      <button class="vbtn" data-point="${esc(p.id)}" type="button">✨</button>
-    </div>
 
-    <div class="post-body">
-      <div class="post-head">
-        <span class="post-author" title="${esc(p.author || '')}">${esc(author)}</span>
-        ${menuHtml}
+        </div>
       </div>
-
-      <div class="post-title">${esc(p.title)}</div>
-      <div class="post-meta">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
-      <div class="post-snippet">${esc((p.body || '').slice(0,220))}${(p.body || '').length>220?'…':''}</div>
-
-      <div class="post-tags">
-        <span class="pill like" data-action="like" data-post-id="${esc(p.id)}">
-          ♥️ <span class="count">${getLikesCount(p)}</span>
-        </span>
-        <span class="pill points" data-action="points" data-post-id="${esc(p.id)}">
-          ⭐ <span class="count">${getPointsCount(p)}</span>
-        </span>
-        <span class="pill comment" data-action="comment" data-post-id="${esc(p.id)}">
-          💬 <span class="count">${getCommentsCount(p)}</span>
-        </span>
-      </div>
-    </div>
-  </article>
-  `;
-}).join('');
-
+    </article>
+  `).join('');
 }
 
 let POSTS_CACHE = [];
