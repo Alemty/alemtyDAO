@@ -13,7 +13,6 @@ const SIWE_ALLOWED_DOMAINS = new Set([
   "127.0.0.1",        // ✅ DEV local (por si acaso)
 ]);
 
-
 /**
  * ✅ CORS: orígenes permitidos (HTTP Origin)
  * - Permite localhost/127.0.0.1 con CUALQUIER puerto
