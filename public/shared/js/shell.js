@@ -31,13 +31,14 @@ function esc(s){
   return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 }
 
-function openModal(id){
-  const m=document.getElementById(id);
-  if(m){m.classList.add("open");m.setAttribute("aria-hidden","false");}
-}
+// ✅ shell.js — modal genérico por ID (profileModal, etc.)
 function closeModal(id){
-  const m=document.getElementById(id);
-  if(m){m.classList.remove("open");m.setAttribute("aria-hidden","true");}
+  try { document.activeElement?.blur(); } catch {}
+  const m = document.getElementById(id);
+  if (m) {
+    m.classList.remove("open");
+    m.setAttribute("aria-hidden", "true");
+  }
 }
 
 async function fetchFirstJson(urls){
@@ -569,9 +570,6 @@ drawer.querySelector("#siweBtn")?.addEventListener("click", async () => {
   }
 });
 
-
-
-
 // 🔌 Botón: Desconectar wallet
 drawer.querySelector("#disconnectBtn")?.addEventListener("click", () => {
   // 1. Desconecta la wallet (DID)
@@ -585,14 +583,18 @@ drawer.querySelector("#disconnectBtn")?.addEventListener("click", () => {
   syncDid();
 });
 
-
-
 document.getElementById("drawerBackdrop")?.remove();
 document.getElementById("drawer")?.remove();
 document.body.append(drawerBackdrop,drawer);
 
 const openDrawer=()=>{drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");drawerBackdrop.classList.add("show");};
-const closeDrawer=()=>{drawer.classList.remove("open");drawer.setAttribute("aria-hidden","true");drawerBackdrop.classList.remove("show");};
+const closeDrawer = () => {
+  // ✅ Evita warning aria-hidden con foco activo
+  try { document.activeElement?.blur(); } catch {}
+  drawer.classList.remove("open");
+  drawer.setAttribute("aria-hidden", "true");
+  drawerBackdrop.classList.remove("show");
+};
 
 function openAcc(which){
 drawer.querySelectorAll(".acc").forEach(s=>{
