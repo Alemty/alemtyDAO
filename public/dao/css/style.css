@@ -821,3 +821,345 @@ html:not(.light) .vbtn[data-point]:hover{
 html:not(.light) .pill.like.active{ background: rgba(255,70,90,0.30); }
 html:not(.light) .pill.comment.active{ background: rgba(90,160,255,0.28); }
 html:not(.light) .pill.points.active{ background: rgba(255,190,90,0.32); }
+
+
+/* =====================================================
+   DAO — UNIFIED GLASS (TRANSPARENTE) + CONTRASTE + ESMERALDA
+   Reemplaza TODO el bloque "CONGRUENCIA... + iOS glass system + polish patch"
+   ===================================================== */
+
+/* ------------------------------
+   0) TOKENS (solo DAO)
+-------------------------------- */
+.dao-root{
+  /* Acento principal */
+  --dao-emerald: #00ffd5;
+  --dao-emerald-2: #00a3ff;
+
+  /* Texto (dark default) */
+  --dao-text: rgba(255,255,255,.92);
+  --dao-muted: rgba(255,255,255,.68);
+  --dao-title: rgba(255,255,255,.96);
+
+  /* Hairlines */
+  --dao-border: rgba(255,255,255,.14);
+  --dao-border-soft: rgba(255,255,255,.10);
+
+  /* Glass (TRANSPARENTE, color viene del dao-bg) */
+  --dao-surface: rgba(255,255,255,.01); /* casi transparente para compat */
+  --dao-blur-lg: blur(24px) saturate(150%);
+  --dao-blur-md: blur(18px) saturate(140%);
+  --dao-blur-sm: blur(12px) saturate(130%);
+
+  /* Radius */
+  --dao-r-card: 26px;
+  --dao-r-sub: 20px;
+}
+
+/* Light theme: contraste + títulos esmeralda */
+html.light .dao-root{
+  --dao-text: rgba(14,26,24,.92);
+  --dao-muted: rgba(14,26,24,.58);
+
+  /* ✅ Títulos en light: esmeralda */
+  --dao-title: #0db9a6;
+
+  --dao-border: rgba(0,0,0,.10);
+  --dao-border-soft: rgba(0,0,0,.08);
+
+  --dao-surface: rgba(255,255,255,.01); /* sigue transparente */
+}
+
+/* ------------------------------
+   1) TIPOGRAFÍA / CONTRASTE
+-------------------------------- */
+.dao-root,
+.dao-root .muted{ color: var(--dao-text); }
+
+.dao-root .muted,
+.dao-root .small.muted{ color: var(--dao-muted) !important; }
+
+/* títulos y textos fuertes */
+.dao-root .h1,
+.dao-root .h2,
+.dao-root .post-title,
+.dao-root .car-title,
+.dao-root .mini .t{
+  color: var(--dao-title);
+  text-shadow: 0 0 18px rgba(0,0,0,.22);
+}
+
+/* en dark: una pizca de emerald en títulos (muy sutil) */
+html:not(.light) .dao-root .h2,
+html:not(.light) .dao-root .car-title{
+  text-shadow:
+    0 0 18px rgba(0,0,0,.30),
+    0 0 14px rgba(0,255,213,.10);
+}
+
+/* ------------------------------
+   2) SUPERFICIES TRANSPARENTES (contenedores + cards + posts)
+   ✅ Todo transparente: el color viene del .dao-bg
+   ✅ Sin sombras externas (no "ventana debajo")
+-------------------------------- */
+
+/* Contenedor general */
+.dao-root .container{
+  background: transparent !important;
+}
+
+/* Cards contenedoras (panel, crear post, top, feed card, etc.) */
+.dao-root .card,
+.dao-root .dao-panel{
+  background: var(--dao-surface) !important;
+  border-radius: var(--dao-r-card);
+  border: .5px solid var(--dao-border);
+  box-shadow: none !important;
+  backdrop-filter: var(--dao-blur-lg);
+  -webkit-backdrop-filter: var(--dao-blur-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ✅ Quita cualquier gloss que esté “lavando” el texto */
+.dao-root .card::before{ content: none !important; }
+
+/* Sub-cards (posts, minis, carrusel cards) */
+.dao-root .post,
+.dao-root .mini,
+.dao-root .car-card{
+  background: var(--dao-surface) !important;
+  border-radius: var(--dao-r-sub);
+  border: .5px solid var(--dao-border-soft);
+  box-shadow: none !important;
+  backdrop-filter: var(--dao-blur-md);
+  -webkit-backdrop-filter: var(--dao-blur-md);
+  position: relative;
+  overflow: hidden;
+}
+.dao-root .post::before,
+.dao-root .mini::before,
+.dao-root .car-card::before{ content: none !important; }
+
+/* viewport del carrusel transparente */
+.dao-root .car-viewport{
+  background: transparent !important;
+  border-radius: 22px;
+  border: .5px solid var(--dao-border);
+  overflow: hidden;
+}
+
+/* ------------------------------
+   3) BOTONES ESMERALDA (default)
+   ✅ Todos los botones del DAO se ven esmeralda
+-------------------------------- */
+.dao-root .btn{
+  border-radius: 16px;
+  border: 1px solid rgba(0,255,213,.35);
+  background: rgba(0,255,213,.08);
+  color: var(--dao-text);
+  font-weight: 900;
+  backdrop-filter: var(--dao-blur-sm);
+  -webkit-backdrop-filter: var(--dao-blur-sm);
+  box-shadow: none !important;
+  transition: transform .18s ease, background .18s ease, border-color .18s ease, opacity .18s ease;
+}
+.dao-root .btn:hover{
+  transform: translateY(-1px);
+  background: rgba(0,255,213,.12);
+  border-color: rgba(0,255,213,.55);
+}
+.dao-root .btn.primary{
+  border: 0;
+  color: #061018;
+  background: linear-gradient(135deg, var(--dao-emerald), var(--dao-emerald-2));
+}
+
+/* Light theme botones */
+html.light .dao-root .btn{
+  color: rgba(14,26,24,.92);
+  background: rgba(13,185,166,.14);
+  border-color: rgba(13,185,166,.40);
+}
+html.light .dao-root .btn.primary{
+  color: #ffffff;
+  background: linear-gradient(135deg, #0db9a6, #0aa0ff);
+}
+
+/* ------------------------------
+   4) TABS (pills) legibles + esmeralda
+-------------------------------- */
+.dao-root .dao-tab{
+  border-radius: 999px;
+  border: 1px solid rgba(0,255,213,.28);
+  background: rgba(0,255,213,.06);
+  color: var(--dao-text);
+  font-weight: 900;
+  box-shadow: none !important;
+  transition: transform .18s ease, background .18s ease, border-color .18s ease;
+}
+.dao-root .dao-tab:hover{
+  transform: translateY(-1px);
+  background: rgba(0,255,213,.10);
+  border-color: rgba(0,255,213,.45);
+}
+.dao-root .dao-tab.active{
+  border: 0;
+  color: #061018;
+  background: linear-gradient(135deg, var(--dao-emerald), var(--dao-emerald-2));
+}
+
+/* ------------------------------
+   5) PILLS / VBTN con colores semánticos (sin pisarse)
+   ✅ Like rojo, Comment azul, Points dorado
+   ✅ En ambos temas con contraste suave
+-------------------------------- */
+.pill.like,
+.pill.comment,
+.pill.points,
+.vbtn[data-like],
+.vbtn[data-point]{
+  border-radius: 999px;
+  font-weight: 900;
+  backdrop-filter: blur(8px) saturate(135%);
+  -webkit-backdrop-filter: blur(8px) saturate(135%);
+  box-shadow: none !important;
+  transition: background .18s ease, border-color .18s ease, transform .18s ease, color .18s ease;
+}
+
+/* DARK */
+html:not(.light) .dao-root .pill.like,
+html:not(.light) .dao-root .vbtn[data-like]{
+  background: rgba(255,70,90,0.20);
+  color: rgba(255,230,235,0.95);
+  border: 1px solid rgba(255,70,90,0.40);
+}
+html:not(.light) .dao-root .pill.comment{
+  background: rgba(90,160,255,0.20);
+  color: rgba(220,235,255,0.95);
+  border: 1px solid rgba(90,160,255,0.40);
+}
+html:not(.light) .dao-root .pill.points,
+html:not(.light) .dao-root .vbtn[data-point]{
+  background: rgba(255,190,90,0.22);
+  color: rgba(255,242,220,0.95);
+  border: 1px solid rgba(255,190,90,0.42);
+}
+
+/* hover dark */
+html:not(.light) .dao-root .pill.like:hover,
+html:not(.light) .dao-root .pill.comment:hover,
+html:not(.light) .dao-root .pill.points:hover,
+html:not(.light) .dao-root .vbtn[data-like]:hover,
+html:not(.light) .dao-root .vbtn[data-point]:hover{
+  transform: translateY(-1px);
+  opacity: .95;
+}
+
+/* active dark */
+html:not(.light) .dao-root .pill.like.active{ background: rgba(255,70,90,0.32); }
+html:not(.light) .dao-root .pill.comment.active{ background: rgba(90,160,255,0.30); }
+html:not(.light) .dao-root .pill.points.active{ background: rgba(255,190,90,0.34); }
+
+/* LIGHT */
+html.light .dao-root .pill.like,
+html.light .dao-root .vbtn[data-like]{
+  background: rgba(255,70,90,0.10);
+  color: rgba(90,20,30,0.88);
+  border: 1px solid rgba(255,70,90,0.22);
+}
+html.light .dao-root .pill.comment{
+  background: rgba(64,163,255,0.10);
+  color: rgba(20,40,90,0.86);
+  border: 1px solid rgba(64,163,255,0.22);
+}
+html.light .dao-root .pill.points,
+html.light .dao-root .vbtn[data-point]{
+  background: rgba(255,205,120,0.12);
+  color: rgba(90,60,10,0.86);
+  border: 1px solid rgba(255,205,120,0.26);
+}
+
+/* ------------------------------
+   6) CARRUSEL — flechas overlay transparentes (no ocupan margen)
+-------------------------------- */
+.dao-root .carousel{
+  position: relative;
+  display: block;
+  margin-top: 12px;
+}
+.dao-root .car-viewport{
+  width: 100%;
+}
+.dao-root .car-btn{
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  background: rgba(0,255,213,.08);
+  border: 1px solid rgba(0,255,213,.25);
+  color: var(--dao-text);
+  opacity: .70;
+}
+.dao-root #carPrev.car-btn{ left: 10px; }
+.dao-root #carNext.car-btn{ right: 10px; }
+.dao-root .car-btn:hover{
+  opacity: .95;
+  background: rgba(0,255,213,.14);
+}
+
+/* Carrusel full width */
+.dao-root .car-track{ padding: 0 !important; }
+.dao-root .car-card{
+  min-width: 100% !important;
+  width: 100% !important;
+  border-radius: 22px;
+}
+
+/* ------------------------------
+   7) MODAL DAO — premium iOS (mantener como lo tenías)
+   (capas correctas para que no “lave” el contenido)
+-------------------------------- */
+.dao-root #daoModal .modal-card{
+  background: rgba(10,20,26,.65);
+  border: 1px solid var(--dao-border);
+  border-radius: 26px;
+  backdrop-filter: var(--dao-blur-lg);
+  -webkit-backdrop-filter: var(--dao-blur-lg);
+  box-shadow: 0 24px 60px rgba(0,0,0,.55);
+  overflow: hidden;
+  position: relative;
+}
+html.light .dao-root #daoModal .modal-card{
+  background: rgba(255,255,255,.82);
+  border-color: rgba(0,0,0,.10);
+  box-shadow: 0 18px 46px rgba(0,0,0,.16);
+}
+.dao-root #daoModal .modal-card::before,
+.dao-root #daoModal .modal-card::after{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  border-radius:inherit;
+  pointer-events:none;
+  z-index:0;
+}
+.dao-root #daoModal .modal-card::before{
+  inset:0;
+  background: linear-gradient(180deg, rgba(255,255,255,.08) 0%, transparent 34%);
+}
+.dao-root #daoModal .modal-card::after{
+  background:
+    radial-gradient(420px 220px at 15% 0%, rgba(0,255,213,.22), transparent 65%),
+    radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.18), transparent 70%);
+  opacity:.65;
+  filter: blur(14px);
+}
+.dao-root #daoModal .modal-headbar,
+.dao-root #daoModal .modal-body{
+  position: relative;
+  z-index: 1;
+}

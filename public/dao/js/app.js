@@ -319,9 +319,11 @@ let __lastPointerTs = 0;
 // Define qué elementos consideramos "accionables"
 function isActionableTarget(t){
   if(!t || !t.closest) return false;
+
 return !!t.closest(
-  '[data-close], [data-like], [data-point], .pill[data-action], [data-open-post], [data-share], [data-send], [data-topic-pick], [data-reply-cancel], [data-replies-more], [data-replies-less]'
+  '[data-close], [data-like], [data-point], .pill[data-action], [data-open-post], [data-share], [data-send], [data-topic-pick], [data-reply-cancel], [data-replies-more], [data-replies-less], [data-feed-open], [data-feed-prev], [data-feed-next]'
 );
+
 
 
 
@@ -329,6 +331,32 @@ return !!t.closest(
 
 
 async function handleGlobalAction(e) {
+
+// =========================
+  // FEED MODAL: abrir / paginar
+  // =========================
+  if (e.target.closest('[data-feed-open]')) {
+    e.preventDefault?.();
+    FEED_MODAL_PAGE = 0;
+    openFeedListModal();
+    return;
+  }
+
+  if (e.target.closest('[data-feed-prev]')) {
+    e.preventDefault?.();
+    FEED_MODAL_PAGE = Math.max(0, FEED_MODAL_PAGE - 1);
+    openFeedListModal();
+    return;
+  }
+
+  if (e.target.closest('[data-feed-next]')) {
+    e.preventDefault?.();
+    FEED_MODAL_PAGE = FEED_MODAL_PAGE + 1;
+    openFeedListModal();
+    return;
+  }
+
+
   // =========================
   // Cerrar modal
   // =========================
@@ -836,11 +864,15 @@ function getCommentsCount(p){
 
 function byRecent(a,b){ return (b.ts||0)-(a.ts||0); }
 
+
 function byScore(a, b) {
-  const sa = a?.score ?? a?.points ?? a?.likes ?? 0;
-  const sb = b?.score ?? b?.points ?? b?.likes ?? 0;
-  return sb - sa;
+  // usa tu score(p) (ya existe) y rompe empates por fecha
+  const sa = score(a);
+  const sb = score(b);
+  if (sb !== sa) return sb - sa;
+  return ((b.ts || 0) - (a.ts || 0)); // ✅ más nuevo primero
 }
+
 
 
 function filterWeek(posts){
@@ -868,6 +900,18 @@ function getPointsCount(p){
   if (typeof p.points === "number") return p.points;
   if (typeof p.pointsCount === "number") return p.pointsCount;
   return 0;
+}
+
+// =========================
+// Score (SOURCE OF TRUTH)
+// =========================
+function score(p){
+  // coherente con byScore() que ya usa score/points/likes como fallback
+  // y con tu UI: el número del voto debe ser estable
+  const likes = getLikesCount(p);
+  const points = getPointsCount(p);
+  const comments = getCommentsCount(p);
+  return (points * 2) + likes + comments; // ajuste simple; puedes cambiar pesos
 }
 
 
@@ -940,31 +984,45 @@ function renderCarousel(posts){
     `<span class="dot ${i === carIndex ? 'active' : ''}" data-dot="${i}"></span>`
   ).join('');
 
-  // 3) Aplicar transform cuando el layout ya exista (evita “descuadre”)
-  requestAnimationFrame(() => {
-    const first = track.firstElementChild;
-    if(!first){
-      track.style.transform = 'translateX(0px)';
-      return;
-    }
+  
+// 3) Aplicar transform cuando el layout ya exista (evita “descuadre”)
+requestAnimationFrame(() => {
+  const first = track.firstElementChild;
+  if(!first){
+    track.style.transform = 'translateX(0px)';
+    return;
+  }
 
-    const cardW = first.getBoundingClientRect().width;
-    const gap = 10;
+  const viewport = track.closest('.car-viewport');
+  const viewportW = viewport ? viewport.getBoundingClientRect().width : 0;
 
-    // Si todavía no hay ancho (0), intenta un frame extra
-    if(!cardW){
-      requestAnimationFrame(() => {
-        const f2 = track.firstElementChild;
-        const w2 = f2 ? f2.getBoundingClientRect().width : 0;
-        const x2 = (w2 + gap) * carIndex;
-        track.style.transform = `translateX(${-x2}px)`;
-      });
-      return;
-    }
+  const cardW = first.getBoundingClientRect().width;
+  const gap = 10;
 
-    const x = (cardW + gap) * carIndex;
-    track.style.transform = `translateX(${-x}px)`;
-  });
+  if(!cardW){
+    requestAnimationFrame(() => {
+      const f2 = track.firstElementChild;
+      const w2 = f2 ? f2.getBoundingClientRect().width : 0;
+      const vw2 = viewport ? viewport.getBoundingClientRect().width : 0;
+
+      const raw2 = (w2 + gap) * carIndex;
+      const centerOffset2 = Math.max(0, (vw2 - w2) / 2);
+      const maxX2 = Math.max(0, (w2 + gap) * (track.children.length - 1));
+      const x2 = Math.max(0, Math.min(maxX2, raw2 - centerOffset2));
+
+      track.style.transform = `translateX(${-x2}px)`;
+    });
+    return;
+  }
+
+  const raw = (cardW + gap) * carIndex;
+  const centerOffset = Math.max(0, (viewportW - cardW) / 2);
+  const maxX = Math.max(0, (cardW + gap) * (track.children.length - 1));
+  const x = Math.max(0, Math.min(maxX, raw - centerOffset));
+
+  track.style.transform = `translateX(${-x}px)`;
+});
+
 }
 
 
@@ -1190,59 +1248,146 @@ function renderMiniGrid(elId, posts){
   `).join('');
 }
 
+
+// =========================
+// Feed list builder (FEED SIEMPRE RECIENTE)
+// - Ignora activeView: el feed siempre es "más recientes" (desc)
+// - Mantiene búsqueda
+// =========================
+function buildFeedList(posts){
+  const s = document.getElementById('search');
+  const q = ((s && s.value) ? s.value : '').trim().toLowerCase();
+
+  // ✅ FEED SIEMPRE POR FECHA DESC
+  let list = posts.slice().sort(byRecent);
+
+  // ✅ filtro por búsqueda
+  if(q.length >= 2){
+    list = list.filter(p => (`${p.title} ${p.body} ${p.topic}`).toLowerCase().includes(q));
+  }
+
+  return list;
+}
+
+
+
+
+
 function renderFeed(posts){
   const feed = document.getElementById('feed');
   if(!feed) return;
 
-  const q = (document.getElementById('search').value || '').trim().toLowerCase();
-  let list = posts.slice();
-
-  if(activeView === 'recientes') list.sort(byRecent);
-  else if(activeView === 'top-semana') list = filterWeek(list).sort(byScore);
-  else if(activeView === 'top-mes') list = filterMonth(list).sort(byScore);
-  else list.sort(byScore);
-
-  if(q.length >= 2){
-    list = list.filter(p => (`${p.title} ${p.body} ${p.topic}`).toLowerCase().includes(q));
-  }
+  // ✅ Usa la lógica centralizada (recientes / top-semana / top-mes / relevantes + búsqueda)
+  const list = buildFeedList(posts);
+  FEED_LAST_LIST = list;
 
   if(!list.length){
     feed.innerHTML = `<p class="muted">Sin resultados.</p>`;
     return;
   }
 
-  feed.innerHTML = list.map(p => `
+  // ✅ Solo primeros 5 en el feed principal
+  const visible = list.slice(0, FEED_PREVIEW_LIMIT);
+
+  const cards = visible.map(p => `
     <article class="post" data-open-post="${esc(p.id)}">
       <div class="vote">
         <button class="vbtn" data-like="${esc(p.id)}" type="button">▲</button>
         <div class="vnum">${score(p)}</div>
         <button class="vbtn" data-point="${esc(p.id)}" type="button">✨</button>
       </div>
+
       <div class="post-body">
         <div class="post-title">${esc(p.title)}</div>
-        <div class="post-meta">${esc(p.topic||'Sin tema')} · ${esc(fmt(p.ts))}</div>
-        <div class="post-snippet">${esc((p.body||'').slice(0,220))}${(p.body||'').length>220?'…':''}</div>
+        <div class="post-meta">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+        <div class="post-snippet">${esc((p.body || '').slice(0,220))}${(p.body || '').length > 220 ? '…' : ''}</div>
+
         <div class="post-tags">
-          
+          <span class="pill like" data-action="like" data-post-id="${esc(p.id)}">
+            ♥️ <span class="count">${getLikesCount(p)}</span>
+          </span>
 
-<span class="pill like" data-action="like" data-post-id="${esc(p.id)}">
-  ♥️ <span class="count">${getLikesCount(p)}</span>
-</span>
-<span class="pill points" data-action="points" data-post-id="${esc(p.id)}">
-  ⭐ <span class="count">${getPointsCount(p)}</span>
-</span>
-<span class="pill comment" data-action="comment" data-post-id="${esc(p.id)}">
-  💬 <span class="count">${getCommentsCount(p)}</span>
-</span>
+          <span class="pill points" data-action="points" data-post-id="${esc(p.id)}">
+            ⭐ <span class="count">${getPointsCount(p)}</span>
+          </span>
 
-
+          <span class="pill comment" data-action="comment" data-post-id="${esc(p.id)}">
+            💬 <span class="count">${getCommentsCount(p)}</span>
+          </span>
         </div>
       </div>
     </article>
   `).join('');
+
+  // ✅ Botón "Ver todos" si hay más de 5
+  const more = (list.length > FEED_PREVIEW_LIMIT)
+    ? `
+      <div style="margin-top:12px;display:flex;justify-content:center;">
+        <button class="btn" type="button" data-feed-open="1">
+          Ver todos (${list.length})
+        </button>
+      </div>
+    `
+    : '';
+
+  feed.innerHTML = cards + more;
 }
 
+
 let POSTS_CACHE = [];
+
+// =========================
+// Carousel autoplay (solo "relevantes")
+// =========================
+let CAR_AUTO_ID = null;
+let CAR_AUTO_PAUSE_UNTIL = 0;
+const CAR_AUTO_MS = 4200;      // velocidad del giro
+const CAR_AUTO_PAUSE_MS = 8000; // pausa tras interacción manual
+
+function stopCarouselAuto(){
+  if (CAR_AUTO_ID) {
+    clearInterval(CAR_AUTO_ID);
+    CAR_AUTO_ID = null;
+  }
+}
+
+function startCarouselAuto(){
+  stopCarouselAuto();
+
+  // Solo autoplay cuando estás en "relevantes"
+  if (activeView !== 'relevantes') return;
+
+  CAR_AUTO_ID = setInterval(() => {
+    // pausa cuando el usuario tocó algo
+    if (Date.now() < CAR_AUTO_PAUSE_UNTIL) return;
+
+    // no girar si la pestaña está en background
+    if (document.hidden) return;
+
+    const total = Math.min(5, Array.isArray(POSTS_CACHE) ? POSTS_CACHE.length : 0);
+    if (total <= 1) return;
+
+    carIndex = (carIndex + 1) % total;
+
+    // ✅ MUY IMPORTANTE: no llamamos renderAll() (evita fetch constante)
+    // Solo repintamos carrusel/dots/transform:
+    renderCarousel(POSTS_CACHE);
+  }, CAR_AUTO_MS);
+}
+
+// helper para pausar al tocar flechas/dots
+function pauseCarouselAuto(){
+  CAR_AUTO_PAUSE_UNTIL = Date.now() + CAR_AUTO_PAUSE_MS;
+}
+
+// =========================
+// Feed UI (limit + modal paging)
+// =========================
+const FEED_PREVIEW_LIMIT = 5;      // muestra solo 5 en el feed principal
+const FEED_MODAL_PAGE_SIZE = 10;   // paginación de 10 en 10 en el modal
+let FEED_MODAL_PAGE = 0;           // página actual en el modal
+let FEED_LAST_LIST = [];           // cache del último listado (según filtros)
+
 
 function renderPanel(){
   document.getElementById('panelTitle').textContent = PANEL_MODEL[activeView].title;
@@ -1513,6 +1658,51 @@ function openTopicsModal(){
   openModal();
 }
 
+function openFeedListModal(){
+  // Recalcula lista en vivo para respetar filtros/tabs/búsqueda
+  const posts = Array.isArray(POSTS_CACHE) ? POSTS_CACHE : [];
+  const list = buildFeedList(posts);
+  FEED_LAST_LIST = list;
+
+  // Ajuste de página si la lista cambió
+  const maxPage = Math.max(0, Math.ceil(list.length / FEED_MODAL_PAGE_SIZE) - 1);
+  FEED_MODAL_PAGE = Math.max(0, Math.min(FEED_MODAL_PAGE, maxPage));
+
+  const start = FEED_MODAL_PAGE * FEED_MODAL_PAGE_SIZE;
+  const pageItems = list.slice(start, start + FEED_MODAL_PAGE_SIZE);
+
+  document.getElementById('daoModalTitle').textContent = 'Feed';
+  document.getElementById('daoModalBody').innerHTML = `
+    <div class="sheet-item" style="margin-bottom:12px;">
+      <div class="t">Todos los posts</div>
+      <div class="m small muted">Página ${FEED_MODAL_PAGE + 1} de ${maxPage + 1} · ${list.length} total</div>
+    </div>
+
+    ${pageItems.map(p => `
+      <div class="sheet-item" data-open-post="${esc(p.id)}" style="cursor:pointer;">
+        <div class="t">${esc(p.title)}</div>
+        <div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+        <div class="small muted" style="margin-top:6px;">
+          ${esc((p.body || '').slice(0,140))}${(p.body || '').length>140?'…':''}
+        </div>
+        <div class="post-tags" style="margin-top:10px;">
+          <span class="pill like">♥️ <span class="count">${getLikesCount(p)}</span></span>
+          <span class="pill points">⭐ <span class="count">${getPointsCount(p)}</span></span>
+          <span class="pill comment">💬 <span class="count">${getCommentsCount(p)}</span></span>
+        </div>
+      </div>
+    `).join('')}
+
+    <div style="margin-top:14px;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+      <button class="btn" type="button" data-feed-prev="1" ${FEED_MODAL_PAGE===0?'disabled':''}>◀ Anterior</button>
+      <div class="small muted">Mostrando ${Math.min(list.length, start+1)}–${Math.min(list.length, start + pageItems.length)} de ${list.length}</div>
+      <button class="btn" type="button" data-feed-next="1" ${FEED_MODAL_PAGE>=maxPage?'disabled':''}>Siguiente ▶</button>
+    </div>
+  `;
+
+  openModal();
+}
+
 
 function waitForDaoContainer(timeout = 3000) {
   return new Promise((resolve) => {
@@ -1539,18 +1729,14 @@ function waitForDaoContainer(timeout = 3000) {
   });
 }
 
-
-
 /* =========================
    Wire-up (SIN romper shell)
    Solo escuchamos dentro del main.container
 ========================= */
 
 (async () => {
-  // ✅ 0) Esperar a que el shell haya montado el DOM (móvil puede tardar)
   await waitForDaoContainer(3000);
 
-  // ✅ 1) Seed demo SOLO si backend y local están vacíos
   try {
     const backendPosts = await API.getPosts().catch(() => null);
     const localPosts   = loadJSON(DB_KEY, []);
@@ -1559,15 +1745,15 @@ function waitForDaoContainer(timeout = 3000) {
       await seedIfEmpty();
     }
   } catch {
-    // Si falla API, mantenemos comportamiento anterior (seed local si está vacío)
     try { await seedIfEmpty(); } catch {}
   }
 
-  // ✅ 2) Render inicial
   const daoMain = document.querySelector('main.container');
   await renderAll();
 
-  // Si por alguna razón extrema no existe, no rompas
+  // ✅ (1) Encender autoplay después del render inicial
+  startCarouselAuto();
+
   if (!daoMain) return;
 
   // ✅ 3) Tabs
@@ -1579,31 +1765,40 @@ function waitForDaoContainer(timeout = 3000) {
         b.classList.toggle('active', on);
         b.setAttribute('aria-selected', on ? 'true' : 'false');
       });
+
       carIndex = 0;
       await renderAll();
+
+      // ✅ (2) Reiniciar autoplay tras cambiar de tab
+      startCarouselAuto();
     });
   });
 
-  // ✅ 4) Backrooms / Topics
   daoMain.querySelector('#openRooms')?.addEventListener('click', openRoomsModal);
   daoMain.querySelector('#openTopics')?.addEventListener('click', openTopicsModal);
 
-  // ✅ 5) Carrusel
+  // ✅ 5) Carrusel (manual pausa + reanuda)
   daoMain.querySelector('#carPrev')?.addEventListener('click', async () => {
+    pauseCarouselAuto();
     carIndex = Math.max(0, carIndex - 1);
     await renderAll();
+    startCarouselAuto();
   });
 
   daoMain.querySelector('#carNext')?.addEventListener('click', async () => {
+    pauseCarouselAuto();
     carIndex += 1;
     await renderAll();
+    startCarouselAuto();
   });
 
   daoMain.querySelector('#carDots')?.addEventListener('click', async (e) => {
     const d = e.target.closest('[data-dot]');
     if (!d) return;
+    pauseCarouselAuto();
     carIndex = Number(d.dataset.dot || 0);
     await renderAll();
+    startCarouselAuto();
   });
 
   // ✅ 6) Search
@@ -1648,6 +1843,9 @@ function waitForDaoContainer(timeout = 3000) {
 
       carIndex = 0;
       await renderAll();
+
+      // ✅ (3) Asegura que el autoplay vuelva (por si estaba pausado)
+      startCarouselAuto();
 
       if (created?.id) await openPostModal(String(created.id));
     } catch (err) {
