@@ -844,6 +844,16 @@ html:not(.light) .pill.points.active{ background: rgba(255,190,90,0.32); }
   /* Hairlines */
   --dao-border: rgba(255,255,255,.14);
   --dao-border-soft: rgba(255,255,255,.10);
+  
+/* ✅ Contorno visible (doble capa) */
+  --dao-edge: rgba(255,255,255,.26);        /* borde principal (más visible) */
+  --dao-edge-soft: rgba(255,255,255,.14);   /* segunda línea suave */
+  --dao-edge-emerald: rgba(0,255,213,.10);  /* toque esmeralda muy sutil */
+
+  /* ✅ separación interna (no sombra externa) */
+  --dao-inset-hi: rgba(255,255,255,.08);    /* brillo interno arriba */
+  --dao-inset-lo: rgba(0,0,0,.20);          /* sombra interna abajo */
+
 
   /* Glass (TRANSPARENTE, color viene del dao-bg) */
   --dao-surface: rgba(255,255,255,.01); /* casi transparente para compat */
@@ -856,19 +866,27 @@ html:not(.light) .pill.points.active{ background: rgba(255,190,90,0.32); }
   --dao-r-sub: 20px;
 }
 
-/* Light theme: contraste + títulos esmeralda */
+
 html.light .dao-root{
   --dao-text: rgba(14,26,24,.92);
   --dao-muted: rgba(14,26,24,.58);
 
-  /* ✅ Títulos en light: esmeralda */
+  /* títulos */
   --dao-title: #0db9a6;
 
-  --dao-border: rgba(0,0,0,.10);
-  --dao-border-soft: rgba(0,0,0,.08);
+  /* 🔥 EDGE = ES EL CONTORNO */
+  --dao-edge: rgba(13,185,166,.85);       /* contorno fuerte */
+  --dao-edge-soft: rgba(13,185,166,.45);  /* segunda línea */
+  --dao-edge-emerald: rgba(13,185,166,.25);
 
-  --dao-surface: rgba(255,255,255,.01); /* sigue transparente */
+  /* ✅ glass casi invisible con micro tinte */
+  --dao-surface: rgba(13,185,166,.02);
+
+  /* relieve interno (NO sombra) */
+  --dao-inset-hi: rgba(255,255,255,.45);
+  --dao-inset-lo: rgba(13,185,166,.18);
 }
+
 
 /* ------------------------------
    1) TIPOGRAFÍA / CONTRASTE
@@ -913,12 +931,23 @@ html:not(.light) .dao-root .car-title{
 .dao-root .dao-panel{
   background: var(--dao-surface) !important;
   border-radius: var(--dao-r-card);
-  border: .5px solid var(--dao-border);
-  box-shadow: none !important;
+  
+/* antes: border: .5px solid var(--dao-border); */
+  border: 1px solid transparent;
+
+  /* ✅ doble línea + separación interna (sin sombra externa) */
+  box-shadow:
+    inset 0 0 0 1px var(--dao-edge),
+    inset 0 0 0 2px var(--dao-edge-soft),
+    inset 0 1px 0 var(--dao-inset-hi),
+    inset 0 -1px 0 var(--dao-inset-lo),
+    0 0 0 1px var(--dao-edge-emerald) !important;
+
   backdrop-filter: var(--dao-blur-lg);
   -webkit-backdrop-filter: var(--dao-blur-lg);
   position: relative;
   overflow: hidden;
+
 }
 
 /* ✅ Quita cualquier gloss que esté “lavando” el texto */
@@ -930,24 +959,43 @@ html:not(.light) .dao-root .car-title{
 .dao-root .car-card{
   background: var(--dao-surface) !important;
   border-radius: var(--dao-r-sub);
-  border: .5px solid var(--dao-border-soft);
-  box-shadow: none !important;
+  
+/* antes: border: .5px solid var(--dao-border-soft); */
+  border: 1px solid transparent;
+
+  box-shadow:
+    inset 0 0 0 1px var(--dao-edge-soft),
+    inset 0 1px 0 var(--dao-inset-hi),
+    inset 0 -1px 0 var(--dao-inset-lo),
+    0 0 0 1px rgba(0,0,0,0) !important; /* no “drop shadow”, solo mantiene consistencia */
+
   backdrop-filter: var(--dao-blur-md);
   -webkit-backdrop-filter: var(--dao-blur-md);
   position: relative;
   overflow: hidden;
+
 }
 .dao-root .post::before,
 .dao-root .mini::before,
 .dao-root .car-card::before{ content: none !important; }
 
 /* viewport del carrusel transparente */
+
 .dao-root .car-viewport{
   background: transparent !important;
   border-radius: 22px;
-  border: .5px solid var(--dao-border);
+  border: 1px solid transparent;
+
+  box-shadow:
+    inset 0 0 0 1px var(--dao-edge),
+    inset 0 0 0 2px var(--dao-edge-soft),
+    inset 0 1px 0 var(--dao-inset-hi),
+    inset 0 -1px 0 var(--dao-inset-lo),
+    0 0 0 1px var(--dao-edge-emerald);
+
   overflow: hidden;
 }
+
 
 /* ------------------------------
    3) BOTONES ESMERALDA (default)
@@ -1163,3 +1211,148 @@ html.light .dao-root #daoModal .modal-card{
   position: relative;
   z-index: 1;
 }
+
+/* =====================================
+   MODAL FEED ("Ver todos") — spacing
+   ===================================== */
+
+/* contenedor del body del modal */
+.dao-root #daoModalBody{
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* 🔥 separación real entre items */
+}
+
+/* Items del listado del feed dentro del modal */
+.dao-root #daoModalBody .sheet-item{
+  margin: 0;
+  border-radius: 20px;
+}
+
+
+/* El modal SIEMPRE cubre toda la pantalla */
+.dao-root .modal{
+  overflow: hidden;
+}
+
+/* El scroll vive dentro de la card */
+.dao-root #daoModal .modal-card{
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Body del modal scrolleable */
+.dao-root #daoModalBody{
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 6px; /* evita salto del scroll */
+}
+
+
+/* =====================================
+   MODAL FEED — items como POSTS (LIGHT)
+   ===================================== */
+
+html.light .dao-root #daoModalBody .sheet-item{
+  /* ✅ mismo glass base que .post */
+  background: var(--dao-surface) !important;
+
+  backdrop-filter: var(--dao-blur-md);
+  -webkit-backdrop-filter: var(--dao-blur-md);
+
+  border-radius: var(--dao-r-sub);
+  border: 1px solid transparent;
+
+  /* ✅ sistema de bordes esmeralda (base) */
+  box-shadow:
+    inset 0 0 0 1px var(--dao-edge),
+    inset 0 0 0 2px var(--dao-edge-soft),
+    inset 0 1px 0 var(--dao-inset-hi),
+    inset 0 -1px 0 var(--dao-inset-lo),
+    0 0 0 1px var(--dao-edge-emerald);
+
+  padding: 14px;
+  cursor: pointer;
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    background .18s ease;
+}
+
+/* =====================================
+   HOVER — efecto esmeralda leve (Apple‑like)
+   ===================================== */
+
+html.light .dao-root #daoModalBody .sheet-item:hover{
+  transform: translateY(-1px);
+
+  box-shadow:
+    inset 0 0 0 1px rgba(13,185,166,.95),
+    inset 0 0 0 2px rgba(13,185,166,.55),
+    inset 0 1px 0 rgba(255,255,255,.70),
+    inset 0 -1px 0 rgba(13,185,166,.28),
+    0 0 0 1px rgba(13,185,166,.35);
+}
+
+
+/* =====================================
+   MODAL FEED — items como POSTS (DARK)
+   ===================================== */
+
+html:not(.light) .dao-root #daoModalBody .sheet-item{
+  /* ✅ glass base oscuro */
+  background: var(--dao-surface) !important;
+
+  backdrop-filter: var(--dao-blur-md);
+  -webkit-backdrop-filter: var(--dao-blur-md);
+
+  border-radius: var(--dao-r-sub);
+  border: 1px solid transparent;
+
+  /* ✅ bordes visibles en dark (claro + esmeralda) */
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.22),
+    inset 0 0 0 2px rgba(255,255,255,.12),
+    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 -1px 0 rgba(0,0,0,.55),
+    0 0 0 1px rgba(0,255,213,.14);
+
+  padding: 14px;
+  cursor: pointer;
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    background .18s ease;
+}
+
+/* =====================================
+   MODAL FEED (LIGHT) — título en esmeralda
+   ===================================== */
+
+/* Título del post dentro del modal "Ver todos" */
+html.light .dao-root #daoModalBody .sheet-item .t{
+  color: var(--dao-title) !important; /* esmeralda */
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+
+/* =====================================
+   HOVER DARK — brillo esmeralda sutil
+   ===================================== */
+
+html:not(.light) .dao-root #daoModalBody .sheet-item:hover{
+  transform: translateY(-1px);
+
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.35),
+    inset 0 0 0 2px rgba(0,255,213,.30),
+    inset 0 1px 0 rgba(255,255,255,.18),
+    inset 0 -1px 0 rgba(0,0,0,.65),
+    0 0 0 1px rgba(0,255,213,.35);
+}
+
+
