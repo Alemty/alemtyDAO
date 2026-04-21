@@ -253,12 +253,23 @@ function closeAllKebabs(){
   });
 }
 
-function toggleKebab(postId){
-  const menu = document.querySelector(`[data-kebab-menu="${postId}"]`);
+function toggleKebabFromButton(btn){
+  const host =
+    btn.closest('[data-open-post]') ||
+    btn.closest('.car-card') ||
+    btn.closest('#latestCard') ||
+    btn.closest('.mini') ||
+    btn.closest('.sheet-item') ||
+    btn.parentElement;
+
+  if(!host) return;
+
+  const menu = host.querySelector('[data-kebab-menu]');
   if(!menu) return;
+
   const isOpen = !menu.hidden;
   closeAllKebabs();
-  menu.hidden = isOpen; // si estaba abierto, lo cierra; si estaba cerrado, lo abre
+  menu.hidden = isOpen;
 }
 
 
@@ -314,7 +325,7 @@ function findComment(p, commentId){
 
 // ✅ Escape HTML correcto (evita XSS y NO rompe sintaxis)
 function esc(s){
-  return String(s ?? '').replace(/[&<>"']/g, ch => ({
+  return String(s ?? '').replace(/[&<>"']/g, (ch) => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
@@ -322,6 +333,7 @@ function esc(s){
     "'": '&#39;',
   }[ch]));
 }
+
 
 
 
@@ -389,13 +401,12 @@ async function handleGlobalAction(e) {
 // =========================
 // KEBAB TOGGLE (FASE 4.1)
 // =========================
+
 const kb = e.target.closest('[data-kebab]');
 if (kb) {
   e.preventDefault?.();
   e.stopPropagation?.();
-  const postId = String(kb.getAttribute('data-kebab') || '');
-  if (!postId) return;
-  toggleKebab(postId);
+  toggleKebabFromButton(kb);
   return;
 }
 
@@ -412,55 +423,55 @@ if (item) {
   return;
 }
 
+// =========================
+// Cerrar modal
+// =========================
+if (e.target.closest('[data-close]')) {
+  e.preventDefault?.();
+  closeModal();
+  return;
+}
 
-  // =========================
-  // Cerrar modal
-  // =========================
-  if (e.target.closest('[data-close]')) {
-    e.preventDefault?.();
-    closeModal();
-    return;
-  }
+// =========================
+// Cancel reply
+// =========================
+const cancel = e.target.closest('[data-reply-cancel]');
+if (cancel) {
+  const postId = String(cancel.getAttribute('data-reply-cancel') || '');
+  const ui = loadUI();
+  ui.replyTo = null;
+  saveUI(ui);
+  await openPostModal(postId);
+  return;
+}
 
-  // =========================
-  // Cancel reply
-  // =========================
-  const cancel = e.target.closest('[data-reply-cancel]');
-  if (cancel) {
-    const postId = String(cancel.getAttribute('data-reply-cancel') || '');
-    const ui = loadUI();
-    ui.replyTo = null;
-    saveUI(ui);
-    await openPostModal(postId);
-    return;
-  }
+// =========================
+// Replies more/less (UI only)
+// =========================
+const more = e.target.closest('[data-replies-more]');
+if (more) {
+  const postId = String(more.getAttribute('data-post-id') || '');
+  const commentId = String(more.getAttribute('data-replies-more') || '');
+  const ui = loadUI();
+  ui.expand = ui.expand || {};
+  ui.expand[commentId] = true;
+  saveUI(ui);
+  await openPostModal(postId);
+  return;
+}
 
-  // =========================
-  // Replies more/less (UI only)
-  // =========================
-  const more = e.target.closest('[data-replies-more]');
-  if (more) {
-    const postId = String(more.getAttribute('data-post-id') || '');
-    const commentId = String(more.getAttribute('data-replies-more') || '');
-    const ui = loadUI();
-    ui.expand = ui.expand || {};
-    ui.expand[commentId] = true;
-    saveUI(ui);
-    await openPostModal(postId);
-    return;
-  }
+const less = e.target.closest('[data-replies-less]');
+if (less) {
+  const postId = String(less.getAttribute('data-post-id') || '');
+  const commentId = String(less.getAttribute('data-replies-less') || '');
+  const ui = loadUI();
+  ui.expand = ui.expand || {};
+  ui.expand[commentId] = false;
+  saveUI(ui);
+  await openPostModal(postId);
+  return;
+}
 
-  const less = e.target.closest('[data-replies-less]');
-  if (less) {
-    const postId = String(less.getAttribute('data-post-id') || '');
-    const commentId = String(less.getAttribute('data-replies-less') || '');
-    const ui = loadUI();
-    ui.expand = ui.expand || {};
-    ui.expand[commentId] = false;
-    saveUI(ui);
-    await openPostModal(postId);
-    return;
-  }
 
 // =========================
 // Abrir perfil (SOON) desde autor
@@ -469,17 +480,17 @@ const prof = e.target.closest('[data-profile-open]');
 if (prof) {
   e.preventDefault?.();
   e.stopPropagation?.();
+
   const addr = String(prof.getAttribute('data-profile-open') || '');
   if (!addr) return;
 
-  // Reusa tu daoModal para mostrar perfil básico (read-only)
   document.getElementById('daoModalTitle').textContent = 'Perfil';
   document.getElementById('daoModalBody').innerHTML = `
     <div class="sheet-item">
       <div class="t">Usuario</div>
       <div class="m">${esc(shortHex(addr))}</div>
       <div class="small muted" style="margin-top:10px;">
-        Perfil público (stats) — SOON. Por ahora mostramos address.
+        Perfil público (stats) — SOON.
       </div>
     </div>
   `;
@@ -487,34 +498,189 @@ if (prof) {
   return;
 }
 
-  // =========================
-  // LIKE (botones data-like)
-  // =========================
-  const like = e.target.closest('[data-like]');
-  if (like) {
-    e.preventDefault();
+// =========================
+// LIKE (botones data-like)
+// =========================
+const like = e.target.closest('[data-like]');
+if (like) {
+  e.preventDefault();
 
-    const postId = String(like.getAttribute('data-like') || '');
-    if (!postId) return;
+  const postId = String(like.getAttribute('data-like') || '');
+  if (!postId) return;
 
+  const userId = getUserId();
+  if (userId === 'visitor') return; // backend requiere JWT
+
+  const actions = loadActions();
+  const entry = getActionEntry(actions, userId, targetKeyPost(postId));
+  if (entry.liked) return;
+
+  // Optimistic UI
+  mutatePost(postId, p => ({
+    ...ensurePostSchema(p),
+    likes: (p.likes || 0) + 1
+  }));
+
+  // Ledger local
+  entry.liked = true;
+  saveActions(actions);
+
+  // Backend
+  try { await reactSafe(postId, 'like'); } catch {}
+
+  renderAll();
+  updateModalPostCounts(postId);
+  return;
+}
+
+// =========================
+// POINTS (data-point)
+// =========================
+const point = e.target.closest('[data-point]');
+if (point) {
+  e.preventDefault();
+
+  const postId = String(point.getAttribute('data-point') || '');
+  if (!postId) return;
+
+  const userId = getUserId();
+  if (userId === 'visitor') return;
+
+  const actions = loadActions();
+  const entry = getActionEntry(actions, userId, targetKeyPost(postId));
+  if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
+
+  // Optimistic UI
+  mutatePost(postId, p => ({
+    ...ensurePostSchema(p),
+    points: (p.points || 0) + 1
+  }));
+
+  // Ledger local
+  entry.pointsGiven += 1;
+  saveActions(actions);
+
+  // Backend
+  try { await reactSafe(postId, 'points'); } catch {}
+
+  renderAll();
+  updateModalPostCounts(postId);
+  return;
+}
+
+// =========================
+// PILLs: like / points / comment / c-like / c-points / c-reply
+// =========================
+const pill = e.target.closest('.pill[data-action]');
+if (pill) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const action = pill.dataset.action;
+  let postId = pill.dataset.postId;
+
+  if (!postId) {
+    const latestCard = document.getElementById('latestCard');
+    postId = latestCard?.dataset.openPost;
+  }
+
+  postId = String(postId || '');
+  if (!postId) return;
+
+  // Reply UI (local)
+  if (action === 'c-reply') {
+    const ui = loadUI();
+    ui.replyTo = { postId, commentId: pill.dataset.commentId };
+    saveUI(ui);
+    await openPostModal(postId);
+    return;
+  }
+
+  // Reacciones a comentarios / replies (backend-first + UI inmediata)
+  if (action === 'c-like' || action === 'c-points') {
+    const commentId = String(pill.dataset.commentId || '');
+    const replyId = pill.dataset.replyId ? String(pill.dataset.replyId) : '';
     const userId = getUserId();
-    if (userId === 'visitor') return; // backend requiere JWT
+    if (!commentId || userId === 'visitor') return;
 
-    const actions = loadActions();
-    const entry = getActionEntry(actions, userId, targetKeyPost(postId));
+    // Target: si es reply real, reaccionamos al reply
+    const replyNum = replyId ? Number(replyId) : NaN;
+    const hasRealReply = replyId && Number.isFinite(replyNum);
+    const targetId = hasRealReply ? replyId : commentId;
+
+    // Ledger key distinto para comment vs reply
+    const actionsLedger = loadActions();
+    const key = hasRealReply
+      ? targetKeyReply(postId, commentId, replyId)
+      : targetKeyComment(postId, commentId);
+
+    const entry = getActionEntry(actionsLedger, userId, key);
+
+    // UI optimista (estado activo)
+    if (action === 'c-like') {
+      if (entry.liked) return; // like es 1 por usuario
+      entry.liked = true;
+    } else {
+      if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
+      entry.pointsGiven += 1;
+    }
+    saveActions(actionsLedger);
+
+    // Backend
+    let res = null;
+    try {
+      res = await API.reactComment(postId, targetId, action === 'c-like' ? 'like' : 'points');
+    } catch (e) {
+      console.warn("API comment/react offline, usando estado local:", e);
+    }
+
+    // UI inmediata con counts
+    const counts = res?.counts || null;
+    const countEl = pill.querySelector('.count');
+    if (countEl && counts) {
+      if (action === 'c-like') {
+        const n = Number(counts.likes);
+        if (Number.isFinite(n)) countEl.textContent = String(n);
+      } else {
+        const n = Number(counts.points);
+        if (Number.isFinite(n)) countEl.textContent = String(n);
+      }
+    } else if (countEl) {
+      const cur = Number(countEl.textContent || "0");
+      if (Number.isFinite(cur)) countEl.textContent = String(cur + 1);
+    }
+
+    // Refresco “suave” del modal
+    setTimeout(async () => {
+      try { await openPostModal(postId); } catch {}
+    }, 220);
+
+    return;
+  }
+
+  // Acciones del POST (backend-first)
+  if (action === 'comment') {
+    await openPostModal(postId);
+    return;
+  }
+
+  const userId = getUserId();
+  if (userId === 'visitor') return;
+
+  const actions = loadActions();
+  const entry = getActionEntry(actions, userId, targetKeyPost(postId));
+
+  if (action === 'like') {
     if (entry.liked) return;
 
-    // Optimistic UI
     mutatePost(postId, p => ({
       ...ensurePostSchema(p),
       likes: (p.likes || 0) + 1
     }));
 
-    // Ledger local
     entry.liked = true;
     saveActions(actions);
 
-    // Backend
     try { await reactSafe(postId, 'like'); } catch {}
 
     renderAll();
@@ -522,34 +688,17 @@ if (prof) {
     return;
   }
 
-  // =========================
-  // POINTS (data-point)
-  // =========================
-  const point = e.target.closest('[data-point]');
-  if (point) {
-    e.preventDefault();
-
-    const postId = String(point.getAttribute('data-point') || '');
-    if (!postId) return;
-
-    const userId = getUserId();
-    if (userId === 'visitor') return;
-
-    const actions = loadActions();
-    const entry = getActionEntry(actions, userId, targetKeyPost(postId));
+  if (action === 'points') {
     if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
 
-    // Optimistic UI
     mutatePost(postId, p => ({
       ...ensurePostSchema(p),
       points: (p.points || 0) + 1
     }));
 
-    // Ledger local
     entry.pointsGiven += 1;
     saveActions(actions);
 
-    // Backend
     try { await reactSafe(postId, 'points'); } catch {}
 
     renderAll();
@@ -557,247 +706,96 @@ if (prof) {
     return;
   }
 
-  // =========================
-  // PILLs: like / points / comment / c-like / c-points / c-reply
-  // =========================
-  const pill = e.target.closest('.pill[data-action]');
-  if (pill) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const action = pill.dataset.action;
-    let postId = pill.dataset.postId;
-
-    if (!postId) {
-      const latestCard = document.getElementById('latestCard');
-      postId = latestCard?.dataset.openPost;
-    }
-
-    postId = String(postId || '');
-    if (!postId) return;
-
-    // Reply UI (local)
-    if (action === 'c-reply') {
-      const ui = loadUI();
-      ui.replyTo = { postId, commentId: pill.dataset.commentId };
-      saveUI(ui);
-      await openPostModal(postId);
-      return;
-    }
-
-
-
-// Reacciones a comentarios / replies (backend-first + UI inmediata)
-if (action === 'c-like' || action === 'c-points') {
-  const commentId = String(pill.dataset.commentId || '');
-  const replyId = pill.dataset.replyId ? String(pill.dataset.replyId) : '';
-  const userId = getUserId();
-  if (!commentId || userId === 'visitor') return;
-
-  // ✅ Target: si es reply real (id numérico), reaccionamos al reply
-  const replyNum = replyId ? Number(replyId) : NaN;
-  const hasRealReply = replyId && Number.isFinite(replyNum);
-  const targetId = hasRealReply ? replyId : commentId;
-
-  // Ledger key distinto para comment vs reply
-  const actionsLedger = loadActions();
-  const key = hasRealReply
-    ? targetKeyReply(postId, commentId, replyId)
-    : targetKeyComment(postId, commentId);
-
-  const entry = getActionEntry(actionsLedger, userId, key);
-
-  // UI optimista (estado activo)
-  if (action === 'c-like') {
-    if (entry.liked) return;     // like es 1 por usuario
-    entry.liked = true;
-  } else {
-    if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
-    entry.pointsGiven += 1;
-  }
-  saveActions(actionsLedger);
-
-  // 1) Backend
-  let res = null;
-  try {
-    res = await API.reactComment(postId, targetId, action === 'c-like' ? 'like' : 'points');
-  } catch (e) {
-    console.warn("API comment/react offline, usando estado local:", e);
-  }
-
-  // 2) ✅ UI inmediata con counts (acepta number o string)
-  const counts = res?.counts || null;
-  const countEl = pill.querySelector('.count');
-  if (countEl && counts) {
-    if (action === 'c-like') {
-      const n = Number(counts.likes);
-      if (Number.isFinite(n)) countEl.textContent = String(n);
-    } else {
-      const n = Number(counts.points);
-      if (Number.isFinite(n)) countEl.textContent = String(n);
-    }
-  } else {
-    // fallback visual mínimo si no hubo counts:
-    if (countEl) {
-      const cur = Number(countEl.textContent || "0");
-      if (Number.isFinite(cur)) countEl.textContent = String(cur + 1);
-    }
-  }
-
-  // 3) Refresco “suave” del modal (evita read-lag inmediato)
-  //    Esto alinea UI con backend sin pisar el primer click.
-  setTimeout(async () => {
-    try { await openPostModal(postId); } catch {}
-  }, 220);
-
-  // No necesitas renderAll inmediato aquí; el modal ya se actualizó en DOM.
   return;
 }
 
+// =========================
+// Abrir post
+// =========================
+const openPost = e.target.closest('[data-open-post]');
+if (openPost) {
+  e.preventDefault();
+  const id = String(openPost.dataset.openPost || '');
+  if (id) await openPostModal(id);
+  return;
+}
 
+// =========================
+// SHARE
+// =========================
+const share = e.target.closest('[data-share]');
+if (share) {
+  e.preventDefault();
+  await copyLink(String(share.getAttribute('data-share') || ''));
+  return;
+}
 
+// =========================
+// SEND comment (backend-first con fallback local)
+// =========================
+const send = e.target.closest('[data-send]');
+if (send) {
+  e.preventDefault();
 
-    // Acciones del POST (backend-first)
-    if (action === 'comment') {
-      await openPostModal(postId);
-      return;
-    }
+  const id = String(send.getAttribute('data-send') || '');
+  const input = document.getElementById('commentText');
+  const textRaw = (input?.value || '').trim();
+  if (textRaw.length < 2) return;
 
-    const userId = getUserId();
-    if (userId === 'visitor') return;
+  const ui = loadUI();
+  const replying = ui.replyTo && String(ui.replyTo.postId) === id ? ui.replyTo : null;
+  const text = replying ? `↪️ reply(c:${replying.commentId}) ${textRaw}` : textRaw;
 
-    const actions = loadActions();
-    const entry = getActionEntry(actions, userId, targetKeyPost(postId));
-
-    if (action === 'like') {
-      if (entry.liked) return;
-
-      mutatePost(postId, p => ({
-        ...ensurePostSchema(p),
-        likes: (p.likes || 0) + 1
-      }));
-
-      entry.liked = true;
-      saveActions(actions);
-
-      try { await reactSafe(postId, 'like'); } catch {}
-
-      renderAll();
-      updateModalPostCounts(postId);
-      return;
-    }
-
-    if (action === 'points') {
-      if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
-
-      mutatePost(postId, p => ({
-        ...ensurePostSchema(p),
-        points: (p.points || 0) + 1
-      }));
-
-      entry.pointsGiven += 1;
-      saveActions(actions);
-
-      try { await reactSafe(postId, 'points'); } catch {}
-
-      renderAll();
-      updateModalPostCounts(postId);
-      return;
-    }
-
-    return;
-  }
-
-  // =========================
-  // Abrir post
-  // =========================
-  const openPost = e.target.closest('[data-open-post]');
-  if (openPost) {
-    e.preventDefault();
-    const id = String(openPost.dataset.openPost || '');
-    if (id) await openPostModal(id);
-    return;
-  }
-
-  // =========================
-  // SHARE
-  // =========================
-  const share = e.target.closest('[data-share]');
-  if (share) {
-    e.preventDefault();
-    await copyLink(String(share.getAttribute('data-share') || ''));
-    return;
-  }
-
-  // =========================
-  // SEND comment (backend-first con fallback local)
-  // =========================
-  const send = e.target.closest('[data-send]');
-  if (send) {
-    e.preventDefault();
-
-    const id = String(send.getAttribute('data-send') || '');
-    const input = document.getElementById('commentText');
-    const textRaw = (input?.value || '').trim();
-    if (textRaw.length < 2) return;
-
-    const ui = loadUI();
-    const replying = ui.replyTo && String(ui.replyTo.postId) === id ? ui.replyTo : null;
-
-    const text = replying ? `↪️ reply(c:${replying.commentId}) ${textRaw}` : textRaw;
-
-    try {
-      await API.addComment(id, text);
-      if (input) input.value = '';
-      if (replying) { ui.replyTo = null; saveUI(ui); }
-
-      await openPostModal(id);
-      renderAll();
-      return;
-    } catch (err) {
-      console.warn("API comments offline, usando localStorage:", err);
-    }
-
-    mutatePost(id, post => {
-      post = ensurePostSchema(post);
-
-      if (replying) {
-        const c = findComment(post, replying.commentId);
-        if (!c) return post;
-        c.replies = c.replies || [];
-        c.replies.push({ id: uid(), ts: now(), text: textRaw, likes: 0, points: 0 });
-        return post;
-      }
-
-      post.comments = post.comments || [];
-      post.comments.push({ id: uid(), ts: now(), text: textRaw, likes: 0, points: 0, replies: [] });
-      post.commentsCount = (post.commentsCount || 0) + 1;
-      return post;
-    });
-
+  try {
+    await API.addComment(id, text);
     if (input) input.value = '';
     if (replying) { ui.replyTo = null; saveUI(ui); }
 
     await openPostModal(id);
     renderAll();
     return;
+  } catch (err) {
+    console.warn("API comments offline, usando localStorage:", err);
   }
 
-  // =========================
-  // PICK TOPIC
-  // =========================
-  const pick = e.target.closest('[data-topic-pick]');
-  if (pick) {
-    e.preventDefault();
-    const t = pick.getAttribute('data-topic-pick');
-    const sel = document.querySelector('#postTopic');
-    if (sel) sel.value = t;
-    closeModal();
-    return;
-  }
+  mutatePost(id, post => {
+    post = ensurePostSchema(post);
+
+    if (replying) {
+      const c = findComment(post, replying.commentId);
+      if (!c) return post;
+      c.replies = c.replies || [];
+      c.replies.push({ id: uid(), ts: now(), text: textRaw, likes: 0, points: 0 });
+      return post;
+    }
+
+    post.comments = post.comments || [];
+    post.comments.push({ id: uid(), ts: now(), text: textRaw, likes: 0, points: 0, replies: [] });
+    post.commentsCount = (post.commentsCount || 0) + 1;
+    return post;
+  });
+
+  if (input) input.value = '';
+  if (replying) { ui.replyTo = null; saveUI(ui); }
+
+  await openPostModal(id);
+  renderAll();
+  return;
+}
+
+// =========================
+// PICK TOPIC
+// =========================
+const pick = e.target.closest('[data-topic-pick]');
+if (pick) {
+  e.preventDefault();
+  const t = pick.getAttribute('data-topic-pick');
+  const sel = document.querySelector('#postTopic');
+  if (sel) sel.value = t;
+  closeModal();
+  return;
+}
 } // ✅ <— ESTA LLAVE ES LA QUE FALTABA (CIERRA handleGlobalAction)
-
-
 
 // =========================
 // LISTENERS (dedupe pointerup + click)
@@ -1248,12 +1246,22 @@ function renderLatest(posts){
   card.dataset.openPost = latest.id;
 
  
-if (metaEl) {
-  metaEl.innerHTML = `
-    <div class="post-author">${authorLinkHTML(latest.author)}</div>
-    <div>${esc(latest.topic || 'Sin tema')} · ${esc(fmt(latest.ts))}</div>
-  `;
-}
+
+metaEl.innerHTML = `
+  <div class="post-headrow">
+    <div>
+      <div class="post-author">${authorLinkHTML(latest.author)}</div>
+      <div>${esc(latest.topic || 'Sin tema')} · ${esc(fmt(latest.ts))}</div>
+    </div>
+
+    <button class="kebab-btn" type="button" data-kebab="${esc(latest.id)}" aria-label="Opciones">⋮</button>
+
+    <div class="kebab-menu" data-kebab-menu="${esc(latest.id)}" hidden>
+      <button class="kebab-item" type="button" data-kebab-item="1">Opciones (SOON)</button>
+    </div>
+  </div>
+`;
+
 if(titleEl) titleEl.textContent = latest.title;
   if(snipEl) snipEl.textContent =
     (latest.body || '').slice(0,180) + ((latest.body || '').length > 180 ? '…' : '');
@@ -1337,27 +1345,39 @@ function renderMiniGrid(elId, posts){
     return;
   }
 
-  el.innerHTML = list.map(p => `
-    <div class="mini" data-open-post="${esc(p.id)}">
-      <div class="t">${esc(p.title.slice(0,52))}${p.title.length>52?'…':''}</div>
-      <div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
-      <div class="k">
-        
+  
+el.innerHTML = list.map(p => `
+  <div class="mini" data-open-post="${esc(p.id)}">
+    <div class="post-headrow">
+      <div>
+        <div class="t">${esc(p.title.slice(0,52))}${p.title.length>52?'…':''}</div>
+        <div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+      </div>
 
-<span class="pill like" data-action="like" data-post-id="${esc(p.id)}">
-  ♥️ <span class="count">${getLikesCount(p)}</span>
-</span>
-<span class="pill points" data-action="points" data-post-id="${esc(p.id)}">
-  ⭐ <span class="count">${getPointsCount(p)}</span>
-</span>
-<span class="pill comment" data-action="comment" data-post-id="${esc(p.id)}">
-  💬 <span class="count">${getCommentsCount(p)}</span>
-</span>
+      <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
 
-
+      <div class="kebab-menu" data-kebab-menu="${esc(p.id)}" hidden>
+        <button class="kebab-item" type="button" data-kebab-item="1">Opciones (SOON)</button>
       </div>
     </div>
-  `).join('');
+
+    <div class="mini-snippet">
+      ${esc((p.body || '').slice(0,110))}${(p.body || '').length > 110 ? '…' : ''}
+    </div>
+
+    <div class="k">
+      <span class="pill like" data-action="like" data-post-id="${esc(p.id)}">
+        ♥️ <span class="count">${getLikesCount(p)}</span>
+      </span>
+      <span class="pill points" data-action="points" data-post-id="${esc(p.id)}">
+        ⭐ <span class="count">${getPointsCount(p)}</span>
+      </span>
+      <span class="pill comment" data-action="comment" data-post-id="${esc(p.id)}">
+        💬 <span class="count">${getCommentsCount(p)}</span>
+      </span>
+    </div>
+  </div>
+`).join('');
 }
 
 
@@ -1630,10 +1650,10 @@ function updateModalPostCounts(postId){
 // Post modal (BACKEND-first)
 // =========================
 
+
 let CURRENT_MODAL_POST_ID = null;
 
 async function openPostModal(postId) {
-  // Normaliza a string (en tu UI usas ids como string)
   const idStr = String(postId);
 
   // 1) Source of truth: backend
@@ -1654,21 +1674,30 @@ async function openPostModal(postId) {
   if (!p) return;
 
   CURRENT_MODAL_POST_ID = idStr;
-
   document.getElementById('daoModalTitle').textContent = 'Post';
 
   const ui = loadUI();
   const replyingTo =
     ui.replyTo && String(ui.replyTo.postId) === idStr ? ui.replyTo : null;
 
-  // Nota: fmt(p.ts) usa timestamp; si viene de backend ya lo mapearon a ts
+  // Render del modal (post + acciones + comentarios)
   document.getElementById('daoModalBody').innerHTML = `
     <div class="sheet-item">
-      
-<div class="t">${esc(p.title)}</div>
-<div class="post-author">${authorLinkHTML(p.author)}</div>
-<div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
-<div style="margin-top:10px;white-space:pre-wrap;">${esc(p.body || '')}</div>
+      <div class="post-headrow">
+        <div>
+          <div class="t">${esc(p.title)}</div>
+          <div class="post-author">${authorLinkHTML(p.author)}</div>
+          <div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+        </div>
+
+        <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
+
+        <div class="kebab-menu" data-kebab-menu hidden>
+          <button class="kebab-item" type="button" data-kebab-item="1">Opciones (SOON)</button>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;white-space:pre-wrap;">${esc(p.body || '')}</div>
 
       <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn" type="button" data-like="${esc(p.id)}">
@@ -1706,14 +1735,8 @@ async function openPostModal(postId) {
     </div>
   `;
 
-  // ✅ Abre modal
   openModal();
-
-  // ✅ FIX 3: aplica el estado visual (active/opaco) A LOS NUEVOS ELEMENTOS del modal
-  // Esto evita que “despierte” hasta el primer click o hasta renderAll().
   applyActionState();
-
-  // ✅ (Opcional recomendado): sincroniza contadores del post en el modal con el cache
   updateModalPostCounts(idStr);
 }
 
@@ -1807,12 +1830,26 @@ function openFeedListModal(){
     </div>
 
     ${pageItems.map(p => `
-      <div class="sheet-item" data-open-post="${esc(p.id)}" style="cursor:pointer;">
-        <div class="t">${esc(p.title)}</div>
-        <div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
-        <div class="small muted" style="margin-top:6px;">
-          ${esc((p.body || '').slice(0,140))}${(p.body || '').length>140?'…':''}
-        </div>
+      
+<div class="sheet-item" data-open-post="${esc(p.id)}" style="cursor:pointer;">
+  <div class="post-headrow">
+    <div>
+      <div class="t">${esc(p.title)}</div>
+      <div class="post-author">${authorLinkHTML(p.author)}</div>
+      <div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+    </div>
+
+    <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
+
+    <div class="kebab-menu" data-kebab-menu="${esc(p.id)}" hidden>
+      <button class="kebab-item" type="button" data-kebab-item="1">Opciones (SOON)</button>
+    </div>
+  </div>
+
+  <div class="small muted" style="margin-top:6px;">
+    ${esc((p.body || '').slice(0,140))}${(p.body || '').length>140?'…':''}
+  </div>
+
         <div class="post-tags" style="margin-top:10px;">
           <span class="pill like">♥️ <span class="count">${getLikesCount(p)}</span></span>
           <span class="pill points">⭐ <span class="count">${getPointsCount(p)}</span></span>
