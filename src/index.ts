@@ -71,7 +71,7 @@ app.use(
   "/*",
   cors({
     origin: (origin) => corsOrigin(origin ?? undefined),
-    allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Authorization", "Content-Type"],
     exposeHeaders: ["Content-Type"],
     maxAge: 86400,

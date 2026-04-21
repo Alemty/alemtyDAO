@@ -88,6 +88,7 @@ posts.get("/:id", async (c) => {
   return c.json({ post });
 });
 
+
 /* =========================================================
    LISTAR COMMENTS
    GET /api/posts/:id/comments
@@ -128,6 +129,180 @@ posts.get("/:id/comments", async (c) => {
 
   return c.json({ comments: result.results });
 });
+
+
+/* =========================================================
+   CREAR COMENTARIO
+   POST /api/posts/:id/comments
+========================================================= */
+posts.post("/:id/comments", auth, async (c) => {
+  const address = c.get("address");
+  const postId = Number(c.req.param("id"));
+  if (!Number.isFinite(postId)) {
+    return c.json({ error: "Invalid post id" }, 400);
+  }
+
+  const payload = await c.req.json().catch(() => ({} as any));
+  const body = String(payload.body || "").trim();
+
+  if (body.length < 2) {
+    return c.json({ error: "Comment too short" }, 400);
+  }
+
+  // Asegura usuario
+  await c.env.DB.prepare(
+    "INSERT OR IGNORE INTO users (address) VALUES (?)"
+  ).bind(address).run();
+
+  const res = await c.env.DB.prepare(`
+    INSERT INTO comments (post_id, author, body)
+    VALUES (?, ?, ?)
+  `).bind(postId, address, body).run();
+
+  return c.json({
+    ok: true,
+    comment: {
+      id: (res.meta as any)?.last_row_id,
+      post_id: postId,
+      author: address,
+      body,
+      created_at: new Date().toISOString(),
+    },
+  }, 201);
+});
+
+
+/* =========================================================
+   REACT A COMENTARIOS / RESPUESTAS
+   POST /api/posts/:postId/comments/:commentId/react
+   - like: idempotente
+   - point: incremental
+========================================================= */
+
+posts.post("/:postId/comments/:commentId/react", auth, async (c) => {
+  const address = c.get("address");
+  const postId = Number(c.req.param("postId"));
+  const commentId = Number(c.req.param("commentId"));
+
+  if (!Number.isFinite(postId) || !Number.isFinite(commentId)) {
+    return c.json({ error: "Invalid post/comment id" }, 400);
+  }
+
+  const payload = await c.req.json().catch(() => ({} as any));
+  const rawType = String(payload.type || "").trim().toLowerCase();
+  const type = rawType === "points" ? "point" : rawType;
+
+  if (type !== "like" && type !== "point") {
+    return c.json({ error: "Invalid reaction type" }, 400);
+  }
+
+  // asegura usuario
+  await c.env.DB.prepare(
+    "INSERT OR IGNORE INTO users (address) VALUES (?)"
+  ).bind(address).run();
+
+  if (type === "like") {
+    await c.env.DB.prepare(`
+      INSERT INTO comment_reactions
+        (post_id, comment_id, reply_id, address, type, amount)
+      VALUES
+        (?, ?, '', ?, 'like', 1)
+      ON CONFLICT(post_id, comment_id, reply_id, address, type)
+        DO NOTHING
+    `).bind(postId, commentId, address).run();
+  } else {
+    await c.env.DB.prepare(`
+      INSERT INTO comment_reactions
+        (post_id, comment_id, reply_id, address, type, amount)
+      VALUES
+        (?, ?, '', ?, 'point', 1)
+      ON CONFLICT(post_id, comment_id, reply_id, address, type)
+        DO UPDATE SET amount = comment_reactions.amount + 1
+    `).bind(postId, commentId, address).run();
+  }
+
+  const row = await c.env.DB.prepare(`
+    SELECT
+      COALESCE(SUM(CASE WHEN type='like' THEN amount ELSE 0 END), 0) AS likes,
+      COALESCE(SUM(CASE WHEN type='point' THEN amount ELSE 0 END), 0) AS points
+    FROM comment_reactions
+    WHERE post_id = ? AND comment_id = ? AND reply_id = ''
+  `).bind(postId, commentId).first();
+
+  return c.json({
+    ok: true,
+    counts: {
+      likes: Number((row as any)?.likes ?? 0),
+      points: Number((row as any)?.points ?? 0),
+    },
+  });
+});
+
+
+
+/* =========================================================
+   REACT (like / point)
+   POST /api/posts/:id/react
+   - like: idempotente (1 por user)
+   - point: incrementa amount
+========================================================= */
+posts.post("/:id/react", auth, async (c) => {
+  const address = c.get("address");
+  const postId = Number(c.req.param("id"));
+  if (!Number.isFinite(postId)) {
+    return c.json({ error: "Invalid post id" }, 400);
+  }
+
+  const payload = await c.req.json().catch(() => ({} as any));
+  const rawType = String(payload.type || "").trim().toLowerCase();
+
+  // Harden: acepta points/point
+  const type = rawType === "points" ? "point" : rawType;
+
+  if (type !== "like" && type !== "point") {
+    return c.json({ error: "Invalid reaction type" }, 400);
+  }
+
+  // Asegura usuario en tabla users (consistencia)
+  await c.env.DB.prepare(
+    "INSERT OR IGNORE INTO users (address) VALUES (?)"
+  ).bind(address).run();
+
+  if (type === "like") {
+    // Idempotente: si ya existe, no cambia
+    await c.env.DB.prepare(`
+      INSERT INTO reactions (post_id, address, type, amount)
+      VALUES (?, ?, 'like', 1)
+      ON CONFLICT(post_id, address, type) DO NOTHING
+    `).bind(postId, address).run();
+  } else {
+    // point: incrementa amount (o crea)
+    await c.env.DB.prepare(`
+      INSERT INTO reactions (post_id, address, type, amount)
+      VALUES (?, ?, 'point', 1)
+      ON CONFLICT(post_id, address, type)
+      DO UPDATE SET amount = reactions.amount + 1
+    `).bind(postId, address).run();
+  }
+
+  // Devuelve counts actualizados (source of truth)
+  const row = await c.env.DB.prepare(`
+    SELECT
+      COALESCE(SUM(CASE WHEN type='like' THEN amount ELSE 0 END), 0) AS likes,
+      COALESCE(SUM(CASE WHEN type='point' THEN amount ELSE 0 END), 0) AS points
+    FROM reactions
+    WHERE post_id = ?
+  `).bind(postId).first();
+
+  return c.json({
+    ok: true,
+    counts: {
+      likes: Number((row as any)?.likes ?? 0),
+      points: Number((row as any)?.points ?? 0),
+    },
+  });
+});
+
 
 /* =========================================================
    CREAR POST
