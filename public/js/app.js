@@ -28,7 +28,7 @@ const LINKS=[
  {platform:'Telegram',desc:'Grupo alemtyv',url:'https://t.me/+A91KGSxgvr5hYThhotra',icon:'assets/icons/telegram.svg'},
  {platform:'OpenSea',desc:'Galería de NFTs',url:'https://opensea.io/es/0x6a202f991c4c1df079449be9847b1dac3f51854f',icon:'assets/icons/opensea.svg'},
  {platform:'Decentraland',desc:'Mi Avatar del Metaverso',url:'https://decentraland.org/profile/accounts/0x6a202f991c4c1df079449be9847b1dac3f51854f',icon:'assets/icons/decentraland.svg'},
- {platform:'GitHub',desc:'Repositorio del proyecto',url:'https://github.com/Alemty/alemty.eth-DAO',icon:'assets/icons/github.svg'},
+ {platform:'GitHub',desc:'Repositorio del proyecto',url:'https://github.com/Alemty/alemtyDAO',icon:'assets/icons/github.svg'},
  {platform:'Discord',desc:'Servidor oficial (SOON)',url:'https://discord.com',icon:'assets/icons/discord.svg'}
 ];
 

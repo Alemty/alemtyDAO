@@ -1389,3 +1389,85 @@ html:not(.light) .dao-root{
   font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace);
 }
 
+
+/* =========================
+   KEBAB MENU (FASE 4.1)
+========================= */
+
+/* Asegura que el card pueda posicionar el menú */
+.post, .car-card, .mini, #daoModalBody .sheet-item {
+  position: relative;
+}
+
+/* Botón kebab */
+.kebab-btn{
+  width: 34px;
+  height: 34px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 1000;
+  cursor: pointer;
+  z-index: 20;
+}
+
+.kebab-btn:hover{
+  box-shadow: 0 0 0 1px rgba(0,255,213,.20), 0 0 18px rgba(0,255,213,.12);
+  transform: translateY(-1px);
+}
+
+/* Contenedor del menú */
+.kebab-menu{
+  position: absolute;
+  right: 12px;
+  top: 44px;
+  min-width: 180px;
+  padding: 6px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(10,20,26,.70);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  z-index: 30;
+}
+
+html.light .kebab-menu{
+  background: rgba(255,255,255,.86);
+}
+
+/* Items */
+.kebab-item{
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 10px 10px;
+  border-radius: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.kebab-item:hover{
+  background: rgba(0,255,213,.10);
+}
+
+/* Header row dentro de post-body (título + kebab) */
+.post-headrow{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+
+/* Para carrusel: alinear kebab sin romper layout */
+.car-headrow{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
