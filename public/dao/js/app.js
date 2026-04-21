@@ -244,6 +244,23 @@ function authorLinkHTML(addr){
   return `<a href="#" class="post-author-link" data-profile-open="${esc(full)}">${esc(label)}</a>`;
 }
 
+// =========================
+// Kebab UI (FASE 4.1)
+// =========================
+function closeAllKebabs(){
+  document.querySelectorAll('[data-kebab-menu]').forEach(m => {
+    m.hidden = true;
+  });
+}
+
+function toggleKebab(postId){
+  const menu = document.querySelector(`[data-kebab-menu="${postId}"]`);
+  if(!menu) return;
+  const isOpen = !menu.hidden;
+  closeAllKebabs();
+  menu.hidden = isOpen; // si estaba abierto, lo cierra; si estaba cerrado, lo abre
+}
+
 
 // =========================
 // Comentarios (schema + helpers)
@@ -339,7 +356,7 @@ function isActionableTarget(t){
   if(!t || !t.closest) return false;
 
 return !!t.closest(
-  '[data-close], [data-like], [data-point], .pill[data-action], [data-open-post], [data-share], [data-send], [data-topic-pick], [data-reply-cancel], [data-replies-more], [data-replies-less], [data-feed-open], [data-feed-prev], [data-feed-next], [data-profile-open]'
+  '[data-close], [data-like], [data-point], .pill[data-action], [data-open-post], [data-share], [data-send], [data-topic-pick], [data-reply-cancel], [data-replies-more], [data-replies-less], [data-feed-open], [data-feed-prev], [data-feed-next], [data-profile-open], [data-kebab], [data-kebab-item]'
 );
 }
 
@@ -368,6 +385,32 @@ async function handleGlobalAction(e) {
     openFeedListModal();
     return;
   }
+
+// =========================
+// KEBAB TOGGLE (FASE 4.1)
+// =========================
+const kb = e.target.closest('[data-kebab]');
+if (kb) {
+  e.preventDefault?.();
+  e.stopPropagation?.();
+  const postId = String(kb.getAttribute('data-kebab') || '');
+  if (!postId) return;
+  toggleKebab(postId);
+  return;
+}
+
+// =========================
+// KEBAB ITEM (FASE 4.1) - placeholder
+// =========================
+const item = e.target.closest('[data-kebab-item]');
+if (item) {
+  e.preventDefault?.();
+  e.stopPropagation?.();
+  closeAllKebabs();
+  // En FASE 4.1 no hacemos nada más
+  // (En FASE 4.2 aquí conectamos Edit/Delete/Report según rol)
+  return;
+}
 
 
   // =========================
@@ -755,6 +798,7 @@ if (action === 'c-like' || action === 'c-points') {
 } // ✅ <— ESTA LLAVE ES LA QUE FALTABA (CIERRA handleGlobalAction)
 
 
+
 // =========================
 // LISTENERS (dedupe pointerup + click)
 // =========================
@@ -773,7 +817,21 @@ document.addEventListener('click', async (e) => {
   await handleGlobalAction(e);
 });
 
+// =========================
+// KEBAB: cerrar con Escape (una sola vez)
+// =========================
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeAllKebabs();
+});
 
+// =========================
+// KEBAB: cerrar con click afuera (una sola vez)
+// =========================
+document.addEventListener('pointerdown', (e) => {
+  if (!e.target.closest('.kebab-btn') && !e.target.closest('.kebab-menu')) {
+    closeAllKebabs();
+  }
+}, { passive: true });
 
 
 async function getPostsSafe() {
@@ -994,9 +1052,20 @@ function renderCarousel(posts){
   // 1) Render del carrusel (KPIs con clases semánticas)
   track.innerHTML = top5.map(p => `
     <div class="car-card" data-open-post="${esc(p.id)}"> 
-<div class="car-title">${esc(p.title)}</div>
-<div class="car-author">${authorLinkHTML(p.author)}</div>
-<div class="car-meta">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+
+<div class="car-headrow">
+  <div>
+    <div class="car-title">${esc(p.title)}</div>
+    <div class="car-author">${authorLinkHTML(p.author)}</div>
+    <div class="car-meta">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+  </div>
+
+  <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
+
+  <div class="kebab-menu" data-kebab-menu="${esc(p.id)}" hidden>
+    <button class="kebab-item" type="button" data-kebab-item="1">Opciones (SOON)</button>
+  </div>
+</div>
 <div class="car-snippet">
         ${esc((p.body || '').slice(0,160))}${(p.body || '').length > 160 ? '…' : ''}
       </div>
@@ -1063,8 +1132,6 @@ requestAnimationFrame(() => {
 });
 
 }
-
-
 
 
 // =========================
@@ -1339,12 +1406,27 @@ function renderFeed(posts){
         <button class="vbtn" data-point="${esc(p.id)}" type="button">✨</button>
       </div>
 
-      <div class="post-body">
-        
-<div class="post-title">${esc(p.title)}</div>
-<div class="post-author">${authorLinkHTML(p.author)}</div>
-<div class="post-meta">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
-<div class="post-snippet">${esc((p.body || '').slice(0,220))}${(p.body || '').length > 220 ? '…' : ''}</div>
+      
+<div class="post-body">
+  <div class="post-headrow">
+    <div>
+      <div class="post-title">${esc(p.title)}</div>
+      <div class="post-author">${authorLinkHTML(p.author)}</div>
+      <div class="post-meta">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+    </div>
+
+    <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
+
+    <div class="kebab-menu" data-kebab-menu="${esc(p.id)}" hidden>
+      <button class="kebab-item" type="button" data-kebab-item="1">Opciones (SOON)</button>
+    </div>
+  </div>
+
+  
+<div class="post-snippet">
+  ${esc((p.body || '').slice(0,220))}${(p.body || '').length > 220 ? '…' : ''}
+</div>
+
 
         <div class="post-tags">
           <span class="pill like" data-action="like" data-post-id="${esc(p.id)}">
