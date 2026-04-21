@@ -33,26 +33,45 @@
 <!-- ==================================================
      REDIRECT ENS → SUBAPP (ANTES DE RENDER)
 ================================================== -->
+
+
 <script>
-(function(){
+(function () {
   const h = location.hostname;
   const p = location.pathname;
 
+  // 1️⃣ Si estamos en sub-app por PATH (localhost / IPFS)
+  if (
+    p.startsWith("/dao/") ||
+    p.startsWith("/token/") ||
+    p.startsWith("/dex/") ||
+    p.startsWith("/ia/")
+  ) {
+    // No redirigir, dejar que cargue ese index.html
+    return;
+  }
+
+  // 2️⃣ Si estamos en subdominios ENS (producción)
   const map = {
     "dao.": "/dao/",
+    "token.": "/token/",
     "dex.": "/dex/",
-    "ia.": "/ia/",
-    "token.": "/token/"
+    "ia.": "/ia/"
   };
 
-  for (const sub in map){
-    if (h.startsWith(sub) && !p.startsWith(map[sub])) {
+  for (const sub in map) {
+    if (h.startsWith(sub)) {
       location.replace(map[sub]);
       return;
     }
   }
+
+  // 3️⃣ Si no es nada de lo anterior → ID (no hace nada)
 })();
 </script>
+
+
+
 
 <header id="topbar"></header>
 <nav id="navbar"></nav>
@@ -76,7 +95,7 @@
   <section class="profile container" style="margin-top:8px;position:relative;z-index:2;">
     <div class="avatar-wrap">
       <img class="avatar"
-           src="./assets/avatar.png"
+           src="/assets/avatar.png"
            alt="Foto de perfil"
            loading="eager">
       <div class="aura"></div>
