@@ -253,12 +253,23 @@ function closeAllKebabs(){
   });
 }
 
-function toggleKebab(postId){
-  const menu = document.querySelector(`[data-kebab-menu="${postId}"]`);
+function toggleKebabFromButton(btn){
+  const host =
+    btn.closest('[data-open-post]') ||
+    btn.closest('.car-card') ||
+    btn.closest('#latestCard') ||
+    btn.closest('.mini') ||
+    btn.closest('.sheet-item') ||
+    btn.parentElement;
+
+  if(!host) return;
+
+  const menu = host.querySelector('[data-kebab-menu]');
   if(!menu) return;
+
   const isOpen = !menu.hidden;
   closeAllKebabs();
-  menu.hidden = isOpen; // si estaba abierto, lo cierra; si estaba cerrado, lo abre
+  menu.hidden = isOpen;
 }
 
 
@@ -314,7 +325,7 @@ function findComment(p, commentId){
 
 // ✅ Escape HTML correcto (evita XSS y NO rompe sintaxis)
 function esc(s){
-  return String(s ?? '').replace(/[&<>"']/g, ch => ({
+  return String(s ?? '').replace(/[&<>"']/g, (ch) => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
@@ -322,6 +333,7 @@ function esc(s){
     "'": '&#39;',
   }[ch]));
 }
+
 
 
 
@@ -389,15 +401,16 @@ async function handleGlobalAction(e) {
 // =========================
 // KEBAB TOGGLE (FASE 4.1)
 // =========================
+
 const kb = e.target.closest('[data-kebab]');
 if (kb) {
   e.preventDefault?.();
   e.stopPropagation?.();
-  const postId = String(kb.getAttribute('data-kebab') || '');
-  if (!postId) return;
-  toggleKebab(postId);
+  toggleKebabFromButton(kb);
   return;
 }
+
+
 
 // =========================
 // KEBAB ITEM (FASE 4.1) - placeholder
@@ -465,24 +478,86 @@ if (item) {
 // =========================
 // Abrir perfil (SOON) desde autor
 // =========================
+
+
+// =========================
+// Abrir perfil (SOON) desde autor
+// =========================
 const prof = e.target.closest('[data-profile-open]');
 if (prof) {
   e.preventDefault?.();
   e.stopPropagation?.();
+
   const addr = String(prof.getAttribute('data-profile-open') || '');
   if (!addr) return;
 
-  // Reusa tu daoModal para mostrar perfil básico (read-only)
   document.getElementById('daoModalTitle').textContent = 'Perfil';
   document.getElementById('daoModalBody').innerHTML = `
     <div class="sheet-item">
       <div class="t">Usuario</div>
       <div class="m">${esc(shortHex(addr))}</div>
       <div class="small muted" style="margin-top:10px;">
-        Perfil público (stats) — SOON. Por ahora mostramos address.
+        Perfil público (stats) — SOON.
       </div>
     </div>
   `;
+  openModal();
+  return;
+
+
+
+  // Reusa tu daoModal para mostrar perfil básico (read-only)
+  document.getElementById('daoModalTitle').textContent = 'Perfil';
+  
+document.getElementById('daoModalBody').innerHTML = `
+  <div class="sheet-item">
+    <div class="post-headrow">
+      <div>
+        <div class="t">${esc(p.title)}</div>
+        <div class="post-author">${authorLinkHTML(p.author)}</div>
+        <div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+      </div>
+
+      <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
+
+      <div class="kebab-menu" data-kebab-menu="${esc(p.id)}" hidden>
+        <button class="kebab-item" type="button" data-kebab-item="1">Opciones (SOON)</button>
+      </div>
+    </div>
+
+    <div style="margin-top:10px;white-space:pre-wrap;">${esc(p.body || '')}</div>
+
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn" type="button" data-like="${esc(p.id)}">
+        ♥️ <span class="count">${getLikesCount(p)}</span>
+      </button>
+      <button class="btn" type="button" data-point="${esc(p.id)}">
+        ⭐ <span class="count">${getPointsCount(p)}</span>
+      </button>
+      <button class="btn" type="button" data-share="${esc(p.id)}">🔗 Copiar link</button>
+    </div>
+  </div>
+
+  <div style="margin-top:14px;">
+    <div class="h2">Comentarios</div>
+    <div id="commentsWrap">
+      ${renderComments(p)}
+    </div>
+    ${replyingTo ? `
+      <div class="small muted" style="margin-top:10px;">
+        Respondiendo a comentario…
+        <button class="btn" type="button" data-reply-cancel="${esc(p.id)}">Cancelar</button>
+      </div>
+    ` : ''}
+    <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;">
+      <input id="commentText" placeholder="${replyingTo ? 'Escribe una respuesta…' : 'Escribe un comentario…'}">
+      <button class="btn primary" type="button" data-send="${esc(p.id)}">
+        ${replyingTo ? 'Responder' : 'Enviar'}
+      </button>
+    </div>
+  </div>
+`;
+
   openModal();
   return;
 }
@@ -1248,12 +1323,22 @@ function renderLatest(posts){
   card.dataset.openPost = latest.id;
 
  
-if (metaEl) {
-  metaEl.innerHTML = `
-    <div class="post-author">${authorLinkHTML(latest.author)}</div>
-    <div>${esc(latest.topic || 'Sin tema')} · ${esc(fmt(latest.ts))}</div>
-  `;
-}
+
+metaEl.innerHTML = `
+  <div class="post-headrow">
+    <div>
+      <div class="post-author">${authorLinkHTML(latest.author)}</div>
+      <div>${esc(latest.topic || 'Sin tema')} · ${esc(fmt(latest.ts))}</div>
+    </div>
+
+    <button class="kebab-btn" type="button" data-kebab="${esc(latest.id)}" aria-label="Opciones">⋮</button>
+
+    <div class="kebab-menu" data-kebab-menu="${esc(latest.id)}" hidden>
+      <button class="kebab-item" type="button" data-kebab-item="1">Opciones (SOON)</button>
+    </div>
+  </div>
+`;
+
 if(titleEl) titleEl.textContent = latest.title;
   if(snipEl) snipEl.textContent =
     (latest.body || '').slice(0,180) + ((latest.body || '').length > 180 ? '…' : '');
@@ -1338,10 +1423,23 @@ function renderMiniGrid(elId, posts){
   }
 
   el.innerHTML = list.map(p => `
-    <div class="mini" data-open-post="${esc(p.id)}">
+    
+<div class="mini" data-open-post="${esc(p.id)}">
+  <div class="post-headrow">
+    <div>
       <div class="t">${esc(p.title.slice(0,52))}${p.title.length>52?'…':''}</div>
       <div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
-      <div class="k">
+    </div>
+
+    <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
+
+    <div class="kebab-menu" data-kebab-menu="${esc(p.id)}" hidden>
+      <button class="kebab-item" type="button" data-kebab-item="1">Opciones (SOON)</button>
+    </div>
+  </div>
+
+  <div class="k">
+
         
 
 <span class="pill like" data-action="like" data-post-id="${esc(p.id)}">
@@ -1630,10 +1728,10 @@ function updateModalPostCounts(postId){
 // Post modal (BACKEND-first)
 // =========================
 
+
 let CURRENT_MODAL_POST_ID = null;
 
 async function openPostModal(postId) {
-  // Normaliza a string (en tu UI usas ids como string)
   const idStr = String(postId);
 
   // 1) Source of truth: backend
@@ -1654,21 +1752,30 @@ async function openPostModal(postId) {
   if (!p) return;
 
   CURRENT_MODAL_POST_ID = idStr;
-
   document.getElementById('daoModalTitle').textContent = 'Post';
 
   const ui = loadUI();
   const replyingTo =
     ui.replyTo && String(ui.replyTo.postId) === idStr ? ui.replyTo : null;
 
-  // Nota: fmt(p.ts) usa timestamp; si viene de backend ya lo mapearon a ts
+  // Render del modal (post + acciones + comentarios)
   document.getElementById('daoModalBody').innerHTML = `
     <div class="sheet-item">
-      
-<div class="t">${esc(p.title)}</div>
-<div class="post-author">${authorLinkHTML(p.author)}</div>
-<div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
-<div style="margin-top:10px;white-space:pre-wrap;">${esc(p.body || '')}</div>
+      <div class="post-headrow">
+        <div>
+          <div class="t">${esc(p.title)}</div>
+          <div class="post-author">${authorLinkHTML(p.author)}</div>
+          <div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+        </div>
+
+        <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
+
+        <div class="kebab-menu" data-kebab-menu hidden>
+          <button class="kebab-item" type="button" data-kebab-item="1">Opciones (SOON)</button>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;white-space:pre-wrap;">${esc(p.body || '')}</div>
 
       <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn" type="button" data-like="${esc(p.id)}">
@@ -1706,14 +1813,8 @@ async function openPostModal(postId) {
     </div>
   `;
 
-  // ✅ Abre modal
   openModal();
-
-  // ✅ FIX 3: aplica el estado visual (active/opaco) A LOS NUEVOS ELEMENTOS del modal
-  // Esto evita que “despierte” hasta el primer click o hasta renderAll().
   applyActionState();
-
-  // ✅ (Opcional recomendado): sincroniza contadores del post en el modal con el cache
   updateModalPostCounts(idStr);
 }
 
@@ -1807,12 +1908,26 @@ function openFeedListModal(){
     </div>
 
     ${pageItems.map(p => `
-      <div class="sheet-item" data-open-post="${esc(p.id)}" style="cursor:pointer;">
-        <div class="t">${esc(p.title)}</div>
-        <div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
-        <div class="small muted" style="margin-top:6px;">
-          ${esc((p.body || '').slice(0,140))}${(p.body || '').length>140?'…':''}
-        </div>
+      
+<div class="sheet-item" data-open-post="${esc(p.id)}" style="cursor:pointer;">
+  <div class="post-headrow">
+    <div>
+      <div class="t">${esc(p.title)}</div>
+      <div class="post-author">${authorLinkHTML(p.author)}</div>
+      <div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+    </div>
+
+    <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
+
+    <div class="kebab-menu" data-kebab-menu="${esc(p.id)}" hidden>
+      <button class="kebab-item" type="button" data-kebab-item="1">Opciones (SOON)</button>
+    </div>
+  </div>
+
+  <div class="small muted" style="margin-top:6px;">
+    ${esc((p.body || '').slice(0,140))}${(p.body || '').length>140?'…':''}
+  </div>
+
         <div class="post-tags" style="margin-top:10px;">
           <span class="pill like">♥️ <span class="count">${getLikesCount(p)}</span></span>
           <span class="pill points">⭐ <span class="count">${getPointsCount(p)}</span></span>
