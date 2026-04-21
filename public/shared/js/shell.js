@@ -475,19 +475,20 @@ drawer.querySelector("#siweBtn")?.addEventListener("click", async () => {
     const nonce = nonceJson?.nonce;
     if (!nonce) throw new Error("Nonce inválido");
 
-    // 2) Mensaje SIWE
-    const message = [
-      "alemty.eth wants you to sign in with your Ethereum account:",
-      address,
-      "",
-      "Sign in with Ethereum to AlemtyDAO.",
-      "",
-      `URI: ${location.origin}`,
-      "Version: 1",
-      "Chain ID: 8453",
-      `Nonce: ${nonce}`,
-      `Issued At: ${new Date().toISOString()}`
-    ].join("\n");
+// 2) Mensaje SIWE
+const message = [
+  `${location.hostname} wants you to sign in with your Ethereum account:`,
+  address,
+  "",
+  "Sign in with Ethereum to AlemtyDAO.",
+  "",
+  `URI: ${location.origin}`,
+  "Version: 1",
+  "Chain ID: 8453",
+  `Nonce: ${nonce}`,
+  `Issued At: ${new Date().toISOString()}`
+].join("\n");
+
 
     console.log("📝 SIWE message:\n", message);
 

@@ -33,14 +33,38 @@ CREATE TABLE IF NOT EXISTS comments (
   FOREIGN KEY (author) REFERENCES users(address)
 );
 
+
+-- =========================
+-- COMMENT REACTIONS (likes / points)
+-- =========================
+CREATE TABLE IF NOT EXISTS comment_reactions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  post_id INTEGER NOT NULL,
+  comment_id INTEGER NOT NULL,
+  address TEXT NOT NULL,
+  type TEXT NOT NULL, -- 'like' | 'point'
+  amount INTEGER NOT NULL DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (post_id) REFERENCES posts(id),
+  FOREIGN KEY (comment_id) REFERENCES comments(id),
+  FOREIGN KEY (address) REFERENCES users(address),
+  UNIQUE(post_id, comment_id, address, type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_comment_reactions_comment
+ON comment_reactions(post_id, comment_id);
+
+
 -- =========================
 -- REACTIONS (likes / points)
 -- =========================
+
 CREATE TABLE IF NOT EXISTS reactions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   post_id INTEGER NOT NULL,
   address TEXT NOT NULL,
-  type TEXT NOT NULL, -- 'like' | 'points'
+  type TEXT NOT NULL, -- 'like' | 'point'
+  amount INTEGER NOT NULL DEFAULT 1,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (post_id) REFERENCES posts(id),
   FOREIGN KEY (address) REFERENCES users(address)
@@ -48,6 +72,10 @@ CREATE TABLE IF NOT EXISTS reactions (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uniq_reaction
 ON reactions (post_id, address, type);
+
+CREATE INDEX IF NOT EXISTS idx_reactions_post
+ON reactions(post_id);
+
 
 -- =========================
 -- PERFORMANCE INDEXES
@@ -58,5 +86,4 @@ ON posts(created_at);
 CREATE INDEX IF NOT EXISTS idx_comments_post
 ON comments(post_id);
 
-CREATE INDEX IF NOT EXISTS idx_reactions_post
-ON reactions(post_id);
+

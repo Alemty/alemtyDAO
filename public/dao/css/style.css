@@ -325,21 +325,54 @@ input:focus, textarea:focus, select:focus{
   cursor:pointer;
   font-weight:1000;
 }
-.vnum{ font-weight:1000; opacity:.9; }
-.post-body{ cursor:pointer; }
-.post-title{ font-weight:1000; margin:0 0 6px; }
-.post-meta{ font-size:12px; opacity:.75; }
-.post-snippet{ opacity:.92; white-space:pre-wrap; margin-top:6px; }
-.post-tags{ margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
-.tag{
-  border-radius:999px;
-  border:1px solid var(--border);
-  background: rgba(255,255,255,.05);
-  padding:6px 10px;
-  font-size:12px;
-  font-weight:900;
-  opacity:.9;
+
+.vnum{
+  font-weight: 1000;
+  opacity: .9;
 }
+
+.post-body{
+  cursor: pointer;
+}
+
+/* Título del post */
+.post-title{
+  font-weight: 1000;
+  margin: 0 0 2px;
+}
+
+/* Meta: tema + fecha */
+.post-meta{
+  font-size: 12px;
+  opacity: .75;
+  margin-top: 2px;
+}
+
+/* Snippet del cuerpo (SIN sangría, SIN espacios fantasmas) */
+.post-snippet{
+  white-space: pre-line;
+  margin-top: 4px;
+}
+
+/* Contenedor de pills */
+.post-tags{
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Pills genéricas */
+.tag{
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.05);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  opacity: .9;
+}
+
 
 /* ======================
    Mini grids (Top 4) 2x2

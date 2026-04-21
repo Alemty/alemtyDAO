@@ -5,12 +5,6 @@
 -- ======================================
 
 -- =========================
--- POSTS: agregar topic
--- =========================
-ALTER TABLE posts
-ADD COLUMN topic TEXT DEFAULT 'Sin tema';
-
--- =========================
 -- REPORTS: denuncias de posts
 -- =========================
 CREATE TABLE IF NOT EXISTS reports (
