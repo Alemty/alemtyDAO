@@ -1390,19 +1390,53 @@ html:not(.light) .dao-root{
 }
 
 
+
 /* =========================
-   KEBAB MENU (FASE 4.1)
+   KEBAB MENU (FASE 4.1) + FIX LAYOUT
+   - Sin duplicados
+   - Evita que el header empuje el snippet
+   - El menú no mete espacio (absolute)
 ========================= */
 
+/* Tokens locales (para no repetir colores) */
+:root{
+  --kebab-bg-dark: rgba(10,20,26,.70);
+  --kebab-bg-light: rgba(255,255,255,.86);
+  --kebab-hover: rgba(0,255,213,.10);
+  --kebab-glow: rgba(0,255,213,.20);
+  --kebab-glow2: rgba(0,255,213,.12);
+}
+
 /* Asegura que el card pueda posicionar el menú */
-.post, .car-card, .mini, #daoModalBody .sheet-item {
+.post,
+.car-card,
+.mini,
+#daoModalBody .sheet-item{
   position: relative;
+}
+
+/* Header row: alinea título/autor/meta con kebab sin empujar contenido */
+.post-headrow,
+.car-headrow{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* El bloque izquierdo (texto) debe poder crecer sin forzar wraps raros */
+.post-headrow > div,
+.car-headrow > div{
+  flex: 1 1 auto;
+  min-width: 0; /* clave: evita que el texto empuje/rompa layout */
 }
 
 /* Botón kebab */
 .kebab-btn{
+  flex: 0 0 auto;
   width: 34px;
   height: 34px;
+  margin-left: 8px;
   border-radius: 14px;
   border: 1px solid var(--border);
   background: rgba(255,255,255,.06);
@@ -1413,14 +1447,22 @@ html:not(.light) .dao-root{
   font-weight: 1000;
   cursor: pointer;
   z-index: 20;
+  transform: translateY(0);
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
 }
 
 .kebab-btn:hover{
-  box-shadow: 0 0 0 1px rgba(0,255,213,.20), 0 0 18px rgba(0,255,213,.12);
+  box-shadow: 0 0 0 1px var(--kebab-glow), 0 0 18px var(--kebab-glow2);
   transform: translateY(-1px);
 }
 
-/* Contenedor del menú */
+/* Accesibilidad (keyboard) */
+.kebab-btn:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0,255,213,.22);
+}
+
+/* Contenedor del menú (SIEMPRE fuera del flujo para no meter espacios) */
 .kebab-menu{
   position: absolute;
   right: 12px;
@@ -1429,17 +1471,17 @@ html:not(.light) .dao-root{
   padding: 6px;
   border-radius: 16px;
   border: 1px solid var(--border);
-  background: rgba(10,20,26,.70);
+  background: var(--kebab-bg-dark);
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   z-index: 30;
 }
 
 html.light .kebab-menu{
-  background: rgba(255,255,255,.86);
+  background: var(--kebab-bg-light);
 }
 
-/* Items */
+/* Items del menú */
 .kebab-item{
   width: 100%;
   text-align: left;
@@ -1450,24 +1492,29 @@ html.light .kebab-menu{
   border-radius: 12px;
   font-weight: 900;
   cursor: pointer;
+  transition: background .15s ease, transform .15s ease;
 }
 
 .kebab-item:hover{
-  background: rgba(0,255,213,.10);
+  background: var(--kebab-hover);
 }
 
-/* Header row dentro de post-body (título + kebab) */
-.post-headrow{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:10px;
+/* FIX: el snippet debe verse pegado al header, no “brincar” o desaparecer */
+.post-snippet{
+  display: block;
+  margin-top: 8px; /* baja este valor a 4px si lo quieres más compacto */
 }
 
-/* Para carrusel: alinear kebab sin romper layout */
-.car-headrow{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:10px;
+/* Evita cortes raros por overflow si algún estilo global lo fuerza */
+.post-body,
+.post,
+.mini{
+  overflow: visible;
+}
+
+.mini-snippet{
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: .86;
+  line-height: 1.35;
 }
