@@ -1362,4 +1362,30 @@ html:not(.light) .dao-root{
   --dao-inset-lo: rgba(0,0,0,.30);
 }
 
+/* CSS Post autor kebab */
+.post-author{
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: .9;
+  font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
+
+.post-author-link{
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  opacity: .95;
+}
+.post-author-link:hover{
+  opacity: 1;
+  text-decoration-thickness: 2px;
+}
+
+.car-author{
+  margin-top: 6px;
+  font-size: 12px;
+  opacity: .9;
+  font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
 

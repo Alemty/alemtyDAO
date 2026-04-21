@@ -2,9 +2,6 @@
 import { mountShell } from '/shared/js/shell.js';
 mountShell();
 
-
-
-
 // =========================
 // API base (DEV vs PROD)
 // =========================
@@ -227,6 +224,27 @@ function fmt(ts){
   return d.toLocaleString('es-MX', { year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit' });
 }
 
+function shortHex(addr, start = 6, end = 4){
+  const a = String(addr || '');
+  if (!a) return '—';
+  if (a.length <= start + end) return a;
+  return `${a.slice(0, start)}…${a.slice(-end)}`;
+}
+
+// (FASE 3) Por ahora no tienes ENS real en posts; si luego lo agregas,
+// aquí decides si muestra .eth o 0x...
+function displayAuthor(addr){
+  return shortHex(String(addr || '').toLowerCase());
+}
+
+// HTML del link del autor (clickable)
+function authorLinkHTML(addr){
+  const full = String(addr || '').toLowerCase();
+  const label = displayAuthor(full);
+  return `<a href="#" class="post-author-link" data-profile-open="${esc(full)}">${esc(label)}</a>`;
+}
+
+
 // =========================
 // Comentarios (schema + helpers)
 // =========================
@@ -321,14 +339,9 @@ function isActionableTarget(t){
   if(!t || !t.closest) return false;
 
 return !!t.closest(
-  '[data-close], [data-like], [data-point], .pill[data-action], [data-open-post], [data-share], [data-send], [data-topic-pick], [data-reply-cancel], [data-replies-more], [data-replies-less], [data-feed-open], [data-feed-prev], [data-feed-next]'
+  '[data-close], [data-like], [data-point], .pill[data-action], [data-open-post], [data-share], [data-send], [data-topic-pick], [data-reply-cancel], [data-replies-more], [data-replies-less], [data-feed-open], [data-feed-prev], [data-feed-next], [data-profile-open]'
 );
-
-
-
-
 }
-
 
 async function handleGlobalAction(e) {
 
@@ -405,6 +418,31 @@ async function handleGlobalAction(e) {
     await openPostModal(postId);
     return;
   }
+
+// =========================
+// Abrir perfil (SOON) desde autor
+// =========================
+const prof = e.target.closest('[data-profile-open]');
+if (prof) {
+  e.preventDefault?.();
+  e.stopPropagation?.();
+  const addr = String(prof.getAttribute('data-profile-open') || '');
+  if (!addr) return;
+
+  // Reusa tu daoModal para mostrar perfil básico (read-only)
+  document.getElementById('daoModalTitle').textContent = 'Perfil';
+  document.getElementById('daoModalBody').innerHTML = `
+    <div class="sheet-item">
+      <div class="t">Usuario</div>
+      <div class="m">${esc(shortHex(addr))}</div>
+      <div class="small muted" style="margin-top:10px;">
+        Perfil público (stats) — SOON. Por ahora mostramos address.
+      </div>
+    </div>
+  `;
+  openModal();
+  return;
+}
 
   // =========================
   // LIKE (botones data-like)
@@ -955,10 +993,11 @@ function renderCarousel(posts){
 
   // 1) Render del carrusel (KPIs con clases semánticas)
   track.innerHTML = top5.map(p => `
-    <div class="car-card" data-open-post="${esc(p.id)}">
-      <div class="car-meta">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
-      <div class="car-title">${esc(p.title)}</div>
-      <div class="car-snippet">
+    <div class="car-card" data-open-post="${esc(p.id)}"> 
+<div class="car-title">${esc(p.title)}</div>
+<div class="car-author">${authorLinkHTML(p.author)}</div>
+<div class="car-meta">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+<div class="car-snippet">
         ${esc((p.body || '').slice(0,160))}${(p.body || '').length > 160 ? '…' : ''}
       </div>
 
@@ -1141,8 +1180,14 @@ function renderLatest(posts){
   // Importante: tu sistema de abrir modal usa esto
   card.dataset.openPost = latest.id;
 
-  if(metaEl) metaEl.textContent = `${latest.topic || 'Sin tema'} · ${fmt(latest.ts)}`;
-  if(titleEl) titleEl.textContent = latest.title;
+ 
+if (metaEl) {
+  metaEl.innerHTML = `
+    <div class="post-author">${authorLinkHTML(latest.author)}</div>
+    <div>${esc(latest.topic || 'Sin tema')} · ${esc(fmt(latest.ts))}</div>
+  `;
+}
+if(titleEl) titleEl.textContent = latest.title;
   if(snipEl) snipEl.textContent =
     (latest.body || '').slice(0,180) + ((latest.body || '').length > 180 ? '…' : '');
 
@@ -1270,9 +1315,6 @@ function buildFeedList(posts){
 }
 
 
-
-
-
 function renderFeed(posts){
   const feed = document.getElementById('feed');
   if(!feed) return;
@@ -1298,9 +1340,11 @@ function renderFeed(posts){
       </div>
 
       <div class="post-body">
-        <div class="post-title">${esc(p.title)}</div>
-        <div class="post-meta">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
-        <div class="post-snippet">${esc((p.body || '').slice(0,220))}${(p.body || '').length > 220 ? '…' : ''}</div>
+        
+<div class="post-title">${esc(p.title)}</div>
+<div class="post-author">${authorLinkHTML(p.author)}</div>
+<div class="post-meta">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+<div class="post-snippet">${esc((p.body || '').slice(0,220))}${(p.body || '').length > 220 ? '…' : ''}</div>
 
         <div class="post-tags">
           <span class="pill like" data-action="like" data-post-id="${esc(p.id)}">
@@ -1538,9 +1582,11 @@ async function openPostModal(postId) {
   // Nota: fmt(p.ts) usa timestamp; si viene de backend ya lo mapearon a ts
   document.getElementById('daoModalBody').innerHTML = `
     <div class="sheet-item">
-      <div class="t">${esc(p.title)}</div>
-      <div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
-      <div style="margin-top:10px;white-space:pre-wrap;">${esc(p.body || '')}</div>
+      
+<div class="t">${esc(p.title)}</div>
+<div class="post-author">${authorLinkHTML(p.author)}</div>
+<div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+<div style="margin-top:10px;white-space:pre-wrap;">${esc(p.body || '')}</div>
 
       <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn" type="button" data-like="${esc(p.id)}">
