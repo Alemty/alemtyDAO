@@ -29,6 +29,14 @@ function authHeaders(extra = {}) {
   };
 }
 
+function authHeadersGet(extra = {}) {
+  const jwt = getJWT();
+  return {
+    ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
+    ...extra,
+  };
+}
+
 // Adaptador: backend -> schema UI
 function mapPostFromApi(p) {
   const ts = p?.created_at ? Date.parse(p.created_at) : Date.now();
@@ -49,6 +57,8 @@ function mapPostFromApi(p) {
     ts: Number.isFinite(ts) ? ts : Date.now(),
     likes: Number(p?.likes || 0),
     points: Number(p?.points || 0),
+    myLike: !!p?.myLike,
+    myPoints: Number(p?.myPoints ?? 0),
     commentsCount,
     comments: Array.isArray(p?.comments) ? p.comments : [],
     created_at: p?.created_at || null,
@@ -57,7 +67,12 @@ function mapPostFromApi(p) {
 
 const API = {
   async getPosts() {
-    const r = await fetch(`${API_BASE}/api/posts`, { cache: "no-store" });
+    
+const r = await fetch(`${API_BASE}/api/posts`, {
+  cache: "no-store",
+  headers: authHeadersGet(),
+});
+
     if (!r.ok) throw new Error("getPosts failed");
     const data = await r.json().catch(() => ({}));
     const arr = Array.isArray(data?.posts) ? data.posts : [];
@@ -79,7 +94,12 @@ async reactComment(postId, commentId, type) {
   // ✅ Trae post + comentarios reales (y anida replies)
   async getPost(postId) {
     // 1) Post
-    const r = await fetch(`${API_BASE}/api/posts/${postId}`, { cache: "no-store" });
+    
+const r = await fetch(`${API_BASE}/api/posts/${postId}`, {
+  cache: "no-store",
+  headers: authHeadersGet(),
+});
+
     if (!r.ok) throw new Error("getPost failed");
     const data = await r.json().catch(() => ({}));
     const base = data?.post ? data.post : data;
@@ -89,7 +109,12 @@ async reactComment(postId, commentId, type) {
     // 2) Comments reales
     let rawComments = [];
     try {
-      const cr = await fetch(`${API_BASE}/api/posts/${postId}/comments`, { cache: "no-store" });
+      
+const cr = await fetch(`${API_BASE}/api/posts/${postId}/comments`, {
+  cache: "no-store",
+  headers: authHeadersGet(),
+});
+
       if (cr.ok) {
         const cdata = await cr.json().catch(() => ({}));
         rawComments = Array.isArray(cdata?.comments) ? cdata.comments : [];
@@ -110,6 +135,8 @@ const mapped = rawComments.map((c) => {
     // ✅ AQUÍ estaba el bug: estabas forzando 0
     likes: Number(c?.likes || 0),
     points: Number(c?.points || 0),
+    myLike: !!c?.myLike,
+    myPoints: Number(c?.myPoints ?? 0),
     replies: [],
     author: c?.author || null,
   };
@@ -133,13 +160,17 @@ const mapped = rawComments.map((c) => {
 
         if (parent) {
           parent.replies = parent.replies || [];
-          parent.replies.push({
-            id: c.id,
-            ts: c.ts,
-            text: c.text,
-            likes: c.likes,
-            points: c.points,
-          });
+          
+parent.replies.push({
+  id: c.id,
+  ts: c.ts,
+  text: c.text,
+  likes: c.likes,
+  points: c.points,
+  myLike: !!c.myLike,
+  myPoints: Number(c.myPoints ?? 0),
+});
+
           continue; // NO va como top-level
         }
         // si el padre no existe, cae como top-level
@@ -501,6 +532,7 @@ if (prof) {
 // =========================
 // LIKE (botones data-like)
 // =========================
+
 const like = e.target.closest('[data-like]');
 if (like) {
   e.preventDefault();
@@ -509,33 +541,33 @@ if (like) {
   if (!postId) return;
 
   const userId = getUserId();
-  if (userId === 'visitor') return; // backend requiere JWT
+  if (userId === 'visitor') return;
 
-  const actions = loadActions();
-  const entry = getActionEntry(actions, userId, targetKeyPost(postId));
-  if (entry.liked) return;
+  // ✅ Fuente de verdad (cache del backend)
+  const p0 = Array.isArray(POSTS_CACHE) ? POSTS_CACHE.find(x => String(x.id) === postId) : null;
+  if (p0?.myLike) return; // ya dio like según backend
 
-  // Optimistic UI
+  // ✅ Optimistic UI: sube likes + marca myLike
   mutatePost(postId, p => ({
     ...ensurePostSchema(p),
-    likes: (p.likes || 0) + 1
+    likes: (p.likes || 0) + 1,
+    myLike: true,
   }));
-
-  // Ledger local
-  entry.liked = true;
-  saveActions(actions);
 
   // Backend
   try { await reactSafe(postId, 'like'); } catch {}
 
+  // Re-render
   renderAll();
   updateModalPostCounts(postId);
   return;
 }
 
+
 // =========================
 // POINTS (data-point)
 // =========================
+
 const point = e.target.closest('[data-point]');
 if (point) {
   e.preventDefault();
@@ -546,27 +578,27 @@ if (point) {
   const userId = getUserId();
   if (userId === 'visitor') return;
 
-  const actions = loadActions();
-  const entry = getActionEntry(actions, userId, targetKeyPost(postId));
-  if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
+  // ✅ Fuente de verdad (cache del backend)
+  const p0 = Array.isArray(POSTS_CACHE) ? POSTS_CACHE.find(x => String(x.id) === postId) : null;
+  const already = Number(p0?.myPoints ?? 0);
+  if (already >= POINTS_MAX_PER_POST) return;
 
-  // Optimistic UI
+  // ✅ Optimistic UI: sube points + marca myPoints
   mutatePost(postId, p => ({
     ...ensurePostSchema(p),
-    points: (p.points || 0) + 1
+    points: (p.points || 0) + 1,
+    myPoints: Number(p.myPoints ?? 0) + 1,
   }));
-
-  // Ledger local
-  entry.pointsGiven += 1;
-  saveActions(actions);
 
   // Backend
   try { await reactSafe(postId, 'points'); } catch {}
 
+  // Re-render
   renderAll();
   updateModalPostCounts(postId);
   return;
 }
+
 
 // =========================
 // PILLs: like / points / comment / c-like / c-points / c-reply
@@ -1289,34 +1321,35 @@ setPillCount(pointsEl, '⭐', getPointsCount(latest));
 }
 
 
-
-function applyActionState(){
+function applyActionState() {
+  // ✅ Ledger local (solo para comments/replies por ahora)
   const userId = getUserId();
   const actions = loadActions();
   const mine = actions[userId] || {};
 
-  // posts (ya lo hacías)
+  // ✅ Índice posts por id desde cache backend
+  const byId = Object.create(null);
+  (Array.isArray(POSTS_CACHE) ? POSTS_CACHE : []).forEach(p => {
+    byId[String(p.id)] = p;
+  });
+
+  // ✅ POSTS: backend-driven
   document.querySelectorAll('.pill[data-action][data-post-id]').forEach(el => {
     const postId = el.dataset.postId;
     const act = el.dataset.action;
+    const p = byId[String(postId)];
+    if (!p) return;
 
-    if (act === 'like') {
-      const entry = mine[targetKeyPost(postId)];
-      el.classList.toggle('active', !!entry?.liked);
-    }
-
-    if (act === 'points') {
-      const entry = mine[targetKeyPost(postId)];
-      el.classList.toggle('active', (entry?.pointsGiven || 0) >= POINTS_MAX_PER_POST);
-    }
+    if (act === 'like') el.classList.toggle('active', !!p.myLike);
+    if (act === 'points') el.classList.toggle('active', Number(p.myPoints ?? 0) >= POINTS_MAX_PER_POST);
   });
 
-  // comentarios y replies (nuevo)
+  // ✅ COMMENTS/REPLIES: por ahora sigue ledger local
   document.querySelectorAll('.pill[data-action="c-like"], .pill[data-action="c-points"]').forEach(el => {
     const postId = el.dataset.postId;
     const commentId = el.dataset.commentId;
     const replyId = el.dataset.replyId || null;
-    if(!postId || !commentId) return;
+    if (!postId || !commentId) return;
 
     const key = replyId
       ? targetKeyReply(postId, commentId, replyId)
@@ -1332,6 +1365,7 @@ function applyActionState(){
     }
   });
 }
+
 
 
 
