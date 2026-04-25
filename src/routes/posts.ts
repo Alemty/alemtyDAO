@@ -3,46 +3,84 @@ import { Hono } from "hono";
 import { auth } from "../middleware/auth";
 import type { Bindings, Vars } from "../index";
 import { isAdmin } from "../lib/permissions";
+import { authOptional } from "../middleware/authOptional";
+
+
 
 const posts = new Hono<{
   Bindings: Bindings;
   Variables: Vars;
 }>();
 
+// Devuelve la address del usuario si hay JWT, o null si es visitante
+function getViewer(c: any): string | null {
+  try {
+    return c.get("address") ?? null;
+  } catch {
+    return null;
+  }
+}
 /* =========================================================
    LISTAR POSTS
    GET /api/posts
 ========================================================= */
+
+// Para GET: si hay JWT válido, setea address; si no, no bloquea.
+posts.use("*", authOptional);
+
 posts.get("/", async (c) => {
+  const viewer = getViewer(c);
   const limit = Math.min(Number(c.req.query("limit") || 20), 50);
 
-  const result = await c.env.DB.prepare(
-    `
-    SELECT
-      p.id,
-      p.author,
-      p.title,
-      p.body,
-      p.topic,
-      p.created_at,
+  
+const result = await c.env.DB.prepare(
+  `
+  SELECT
+    p.id,
+    p.author,
+    p.title,
+    p.body,
+    p.topic,
+    p.created_at,
 
-      (SELECT COUNT(*)
-         FROM reactions r
-        WHERE r.post_id = p.id AND r.type = 'like') AS likes,
+    /* Totales */
+    (SELECT COUNT(*) FROM reactions r
+      WHERE r.post_id = p.id AND r.type = 'like') AS likes,
 
-      (SELECT COALESCE(SUM(r.amount), 0)
-         FROM reactions r
-        WHERE r.post_id = p.id AND r.type = 'point') AS points,
+    (SELECT COALESCE(SUM(r.amount), 0) FROM reactions r
+      WHERE r.post_id = p.id AND r.type = 'point') AS points,
 
-      (SELECT COUNT(*)
-         FROM comments c2
-        WHERE c2.post_id = p.id) AS commentsCount
+    (SELECT COUNT(*) FROM comments c2
+      WHERE c2.post_id = p.id) AS commentsCount,
 
-    FROM posts p
-    ORDER BY p.created_at DESC
-    LIMIT ?
-    `
-  ).bind(limit).all();
+    /* Estado del usuario */
+    ${viewer ? `
+    EXISTS(
+      SELECT 1 FROM reactions r2
+      WHERE r2.post_id = p.id
+        AND r2.address = ?
+        AND r2.type = 'like'
+    ) AS myLike,
+
+    COALESCE(
+      (SELECT SUM(r3.amount) FROM reactions r3
+       WHERE r3.post_id = p.id
+         AND r3.address = ?
+         AND r3.type = 'point'),
+      0
+    ) AS myPoints
+    ` : `
+    0 AS myLike,
+    0 AS myPoints
+    `}
+  FROM posts p
+  ORDER BY p.created_at DESC
+  LIMIT ?
+  `
+)
+.bind(...(viewer ? [viewer, viewer] : []), limit)
+.all();
+
 
   return c.json({ posts: result.results });
 });
@@ -52,37 +90,58 @@ posts.get("/", async (c) => {
    GET /api/posts/:id
 ========================================================= */
 posts.get("/:id", async (c) => {
+  const viewer = getViewer(c);
   const id = Number(c.req.param("id"));
   if (!Number.isFinite(id)) {
     return c.json({ error: "Invalid post id" }, 400);
   }
 
-  const post = await c.env.DB.prepare(
-    `
-    SELECT
-      p.id,
-      p.author,
-      p.title,
-      p.body,
-      p.topic,
-      p.created_at,
+  
+const post = await c.env.DB.prepare(
+  `
+  SELECT
+    p.id,
+    p.author,
+    p.title,
+    p.body,
+    p.topic,
+    p.created_at,
 
-      (SELECT COUNT(*)
-         FROM reactions r
-        WHERE r.post_id = p.id AND r.type = 'like') AS likes,
+    (SELECT COUNT(*) FROM reactions r
+      WHERE r.post_id = p.id AND r.type = 'like') AS likes,
 
-      (SELECT COALESCE(SUM(r.amount), 0)
-         FROM reactions r
-        WHERE r.post_id = p.id AND r.type = 'point') AS points,
+    (SELECT COALESCE(SUM(r.amount), 0) FROM reactions r
+      WHERE r.post_id = p.id AND r.type = 'point') AS points,
 
-      (SELECT COUNT(*)
-         FROM comments c2
-        WHERE c2.post_id = p.id) AS commentsCount
+    (SELECT COUNT(*) FROM comments c2
+      WHERE c2.post_id = p.id) AS commentsCount,
 
-    FROM posts p
-    WHERE p.id = ?
-    `
-  ).bind(id).first();
+    ${viewer ? `
+    EXISTS(
+      SELECT 1 FROM reactions r2
+      WHERE r2.post_id = p.id
+        AND r2.address = ?
+        AND r2.type = 'like'
+    ) AS myLike,
+
+    COALESCE(
+      (SELECT SUM(r3.amount) FROM reactions r3
+       WHERE r3.post_id = p.id
+         AND r3.address = ?
+         AND r3.type = 'point'),
+      0
+    ) AS myPoints
+    ` : `
+    0 AS myLike,
+    0 AS myPoints
+    `}
+  FROM posts p
+  WHERE p.id = ?
+  `
+)
+.bind(...(viewer ? [viewer, viewer] : []), id)
+.first();
+
 
   if (!post) return c.json({ error: "Not found" }, 404);
   return c.json({ post });
@@ -94,38 +153,72 @@ posts.get("/:id", async (c) => {
    GET /api/posts/:id/comments
 ========================================================= */
 posts.get("/:id/comments", async (c) => {
+  const viewer = getViewer(c);
   const postId = Number(c.req.param("id"));
   if (!Number.isFinite(postId)) {
     return c.json({ error: "Invalid post id" }, 400);
   }
 
-  const result = await c.env.DB.prepare(
-    `
-    SELECT
-      c.id,
-      c.author,
-      c.body,
-      c.created_at,
+  
+const result = await c.env.DB.prepare(
+  `
+  SELECT
+    c.id,
+    c.author,
+    c.body,
+    c.created_at,
 
-      (SELECT COUNT(*)
-         FROM comment_reactions cr
-        WHERE cr.post_id = c.post_id
-          AND cr.comment_id = c.id
-          AND cr.reply_id = ''
-          AND cr.type = 'like') AS likes,
+    /* Totales */
+    COALESCE(
+      (SELECT SUM(cr.amount) FROM comment_reactions cr
+       WHERE cr.post_id = c.post_id
+         AND cr.comment_id = c.id
+         AND cr.reply_id = ''
+         AND cr.type = 'like'),
+      0
+    ) AS likes,
 
-      (SELECT COALESCE(SUM(cr.amount),0)
-         FROM comment_reactions cr
-        WHERE cr.post_id = c.post_id
-          AND cr.comment_id = c.id
-          AND cr.reply_id = ''
-          AND cr.type = 'point') AS points
+    COALESCE(
+      (SELECT SUM(cr.amount) FROM comment_reactions cr
+       WHERE cr.post_id = c.post_id
+         AND cr.comment_id = c.id
+         AND cr.reply_id = ''
+         AND cr.type = 'point'),
+      0
+    ) AS points,
 
-    FROM comments c
-    WHERE c.post_id = ?
-    ORDER BY c.created_at ASC
-    `
-  ).bind(postId).all();
+    /* Estado del usuario */
+    ${viewer ? `
+    EXISTS(
+      SELECT 1 FROM comment_reactions cr2
+      WHERE cr2.post_id = c.post_id
+        AND cr2.comment_id = c.id
+        AND cr2.reply_id = ''
+        AND cr2.address = ?
+        AND cr2.type = 'like'
+    ) AS myLike,
+
+    COALESCE(
+      (SELECT SUM(cr3.amount) FROM comment_reactions cr3
+       WHERE cr3.post_id = c.post_id
+         AND cr3.comment_id = c.id
+         AND cr3.reply_id = ''
+         AND cr3.address = ?
+         AND cr3.type = 'point'),
+      0
+    ) AS myPoints
+    ` : `
+    0 AS myLike,
+    0 AS myPoints
+    `}
+  FROM comments c
+  WHERE c.post_id = ?
+  ORDER BY c.created_at ASC
+  `
+)
+.bind(...(viewer ? [viewer, viewer] : []), postId)
+.all();
+
 
   return c.json({ comments: result.results });
 });
@@ -345,6 +438,8 @@ posts.post("/", auth, async (c) => {
     201
   );
 });
+
+
 
 /* =========================================================
    EDITAR POST

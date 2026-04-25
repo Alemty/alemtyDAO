@@ -17,15 +17,20 @@ import { posts } from "./routes/posts";
 /* =========================
    Tipos
 ========================= */
+
 export type Bindings = {
   DB: D1Database;
   SESSION_SECRET: string;
+  JWT_SECRET: string;
   ASSETS: Fetcher;
 };
 
+
+
 export type Vars = {
-  address: string;
+  address?: string;
 };
+
 
 /* =========================
    App
