@@ -37,6 +37,22 @@ function authHeadersGet(extra = {}) {
   };
 }
 
+
+function normAddr(a) {
+  return String(a || '').trim().toLowerCase();
+}
+
+function isOwnerPost(p) {
+  const me = normAddr(getUserId());
+  const author = normAddr(p?.author);
+  return me && me !== 'visitor' && author && me === author;
+}
+
+function hasAuth() {
+  return !!getJWT();
+}
+
+
 // Adaptador: backend -> schema UI
 function mapPostFromApi(p) {
   const ts = p?.created_at ? Date.parse(p.created_at) : Date.now();
@@ -68,10 +84,10 @@ function mapPostFromApi(p) {
 const API = {
   async getPosts() {
     
-const r = await fetch(`${API_BASE}/api/posts`, {
+  const r = await fetch(`${API_BASE}/api/posts`, {
   cache: "no-store",
   headers: authHeadersGet(),
-});
+  });
 
     if (!r.ok) throw new Error("getPosts failed");
     const data = await r.json().catch(() => ({}));
@@ -79,6 +95,37 @@ const r = await fetch(`${API_BASE}/api/posts`, {
     return arr.map(mapPostFromApi);
   },
   
+
+async updatePost(postId, { title, body, topic }) {
+  const r = await fetch(`${API_BASE}/api/posts/${postId}`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify({ title, body, topic }),
+  });
+  if (!r.ok) throw new Error("updatePost failed");
+  return r.json().catch(() => ({}));
+},
+
+async deletePost(postId) {
+  const r = await fetch(`${API_BASE}/api/posts/${postId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!r.ok) throw new Error("deletePost failed");
+  return r.json().catch(() => ({}));
+},
+
+async reportPost(postId, reason) {
+  const r = await fetch(`${API_BASE}/api/posts/${postId}/report`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ reason: String(reason || "").trim() }),
+  });
+  if (!r.ok) throw new Error("reportPost failed");
+  return r.json().catch(() => ({}));
+},
+
+
 async reactComment(postId, commentId, type) {
   const norm = type === "points" ? "point" : type;
   const r = await fetch(`${API_BASE}/api/posts/${postId}/comments/${commentId}/react`, {
@@ -275,6 +322,27 @@ function authorLinkHTML(addr){
   return `<a href="#" class="post-author-link" data-profile-open="${esc(full)}">${esc(label)}</a>`;
 }
 
+
+function kebabMenuHTML(p) {
+  const id = esc(String(p?.id || ''));
+  const canEdit = isOwnerPost(p);
+  const canDelete = isOwnerPost(p); // (admin lo puedes agregar luego si expones rol)
+  const canReport = hasAuth() && !isOwnerPost(p);
+
+  const items = [
+    canEdit ? `<button class="kebab-item" type="button" data-kebab-item="1" data-kebab-action="edit" data-post-id="${id}">✏️ Editar</button>` : '',
+    canDelete ? `<button class="kebab-item" type="button" data-kebab-item="1" data-kebab-action="delete" data-post-id="${id}">🗑️ Eliminar</button>` : '',
+    canReport ? `<button class="kebab-item" type="button" data-kebab-item="1" data-kebab-action="report" data-post-id="${id}">🚩 Reportar</button>` : '',
+  ].filter(Boolean).join('');
+
+  return `
+    <div class="kebab-menu" data-kebab-menu="${id}" hidden>
+      ${items || `<button class="kebab-item" type="button" disabled>Sin acciones</button>`}
+    </div>
+  `;
+}
+
+
 // =========================
 // Kebab UI (FASE 4.1)
 // =========================
@@ -399,11 +467,94 @@ function isActionableTarget(t){
   if(!t || !t.closest) return false;
 
 return !!t.closest(
-  '[data-close], [data-like], [data-point], .pill[data-action], [data-open-post], [data-share], [data-send], [data-topic-pick], [data-reply-cancel], [data-replies-more], [data-replies-less], [data-feed-open], [data-feed-prev], [data-feed-next], [data-profile-open], [data-kebab], [data-kebab-item]'
+  '[data-close], [data-like], [data-point], .pill[data-action], [data-open-post], [data-share], [data-send], [data-topic-pick], [data-reply-cancel], [data-replies-more], [data-replies-less], [data-feed-open], [data-feed-prev], [data-feed-next], [data-profile-open], [data-kebab], [data-kebab-item], [data-post-save], [data-post-delete-confirm], [data-post-report-send]'
 );
 }
 
 async function handleGlobalAction(e) {
+
+  
+// =========================
+// Guardar edición de post
+// =========================
+const saveBtn = e.target.closest('[data-post-save]');
+if (saveBtn) {
+  e.preventDefault?.();
+  const postId = String(saveBtn.getAttribute('data-post-save') || '');
+  if (!postId) return;
+
+  const title = (document.getElementById('editPostTitle')?.value || '').trim();
+  const topic = (document.getElementById('editPostTopic')?.value || '').trim() || 'Sin tema';
+  const body  = (document.getElementById('editPostBody')?.value || '').trim();
+  const status = document.getElementById('editPostStatus');
+
+  if (title.length < 3 || body.length < 10) {
+    if (status) status.textContent = 'Completa título (3+) y contenido (10+).';
+    return;
+  }
+
+  try {
+    if (status) status.textContent = 'Guardando…';
+    await API.updatePost(postId, { title, body, topic });
+    if (status) status.textContent = 'Guardado ✅';
+    closeModal();
+    await renderAll();
+    // reabrir post para ver cambios
+    try { await openPostModal(postId); } catch {}
+  } catch (err) {
+    console.error(err);
+    if (status) status.textContent = 'Error guardando.';
+  }
+  return;
+}
+
+// =========================
+// Confirmar delete de post
+// =========================
+const delBtn = e.target.closest('[data-post-delete-confirm]');
+if (delBtn) {
+  e.preventDefault?.();
+  const postId = String(delBtn.getAttribute('data-post-delete-confirm') || '');
+  const status = document.getElementById('deletePostStatus');
+  if (!postId) return;
+
+  try {
+    if (status) status.textContent = 'Eliminando…';
+    await API.deletePost(postId);
+    if (status) status.textContent = 'Eliminado ✅';
+    closeModal();
+    await renderAll();
+  } catch (err) {
+    console.error(err);
+    if (status) status.textContent = 'Error eliminando.';
+  }
+  return;
+}
+
+// =========================
+// Enviar reporte de post
+// =========================
+const repBtn = e.target.closest('[data-post-report-send]');
+if (repBtn) {
+  e.preventDefault?.();
+  const postId = String(repBtn.getAttribute('data-post-report-send') || '');
+  const reason = (document.getElementById('reportPostReason')?.value || '').trim();
+  const status = document.getElementById('reportPostStatus');
+  if (!postId) return;
+
+  try {
+    if (status) status.textContent = 'Enviando…';
+    await API.reportPost(postId, reason);
+    if (status) status.textContent = 'Reporte enviado ✅';
+    // cerrar después de un toque
+    setTimeout(() => { try { closeModal(); } catch {} }, 350);
+  } catch (err) {
+    console.error(err);
+    if (status) status.textContent = 'Error enviando reporte.';
+  }
+  return;
+}
+
 
 // =========================
   // FEED MODAL: abrir / paginar
@@ -444,15 +595,42 @@ if (kb) {
 // =========================
 // KEBAB ITEM (FASE 4.1) - placeholder
 // =========================
+
 const item = e.target.closest('[data-kebab-item]');
 if (item) {
   e.preventDefault?.();
   e.stopPropagation?.();
   closeAllKebabs();
-  // En FASE 4.1 no hacemos nada más
-  // (En FASE 4.2 aquí conectamos Edit/Delete/Report según rol)
+
+  const action = String(item.getAttribute('data-kebab-action') || '');
+  const postId = String(item.getAttribute('data-post-id') || '');
+  if (!action || !postId) return;
+
+  // Requiere auth para cualquier acción
+  if (!getJWT()) {
+    // UX simple
+    alert('Necesitas iniciar sesión (SIWE) para esta acción.');
+    return;
+  }
+
+  if (action === 'edit') {
+    await openEditPostModal(postId);
+    return;
+  }
+
+  if (action === 'delete') {
+    await openDeletePostModal(postId);
+    return;
+  }
+
+  if (action === 'report') {
+    await openReportPostModal(postId);
+    return;
+  }
+
   return;
 }
+
 
 // =========================
 // Cerrar modal
@@ -462,6 +640,79 @@ if (e.target.closest('[data-close]')) {
   closeModal();
   return;
 }
+
+
+async function openEditPostModal(postId) {
+  let p = null;
+  try {
+    p = await API.getPost(String(postId));
+  } catch {}
+  const post = p || CURRENT_MODAL_POST;
+  if (!post) return;
+
+  const topic = String(post.topic || 'Sin tema');
+  const title = String(post.title || '');
+  const body = String(post.body || '');
+
+  document.getElementById('daoModalTitle').textContent = 'Editar post';
+  document.getElementById('daoModalBody').innerHTML = `
+    <div class="sheet-item">
+      <div class="t">Título</div>
+      <input id="editPostTitle" value="${esc(title)}" />
+    </div>
+    <div class="sheet-item">
+      <div class="t">Tema</div>
+      <input id="editPostTopic" value="${esc(topic)}" />
+      <div class="small muted" style="margin-top:6px;">Puedes escribir un tema o dejar “Sin tema”.</div>
+    </div>
+    <div class="sheet-item">
+      <div class="t">Contenido</div>
+      <textarea id="editPostBody" style="min-height:140px;">${esc(body)}</textarea>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn primary" type="button" data-post-save="${esc(String(postId))}">Guardar</button>
+      <button class="btn" type="button" data-close="1">Cancelar</button>
+    </div>
+    <div id="editPostStatus" class="small muted" style="margin-top:10px;"></div>
+  `;
+  openModal();
+}
+
+
+async function openDeletePostModal(postId) {
+  document.getElementById('daoModalTitle').textContent = 'Eliminar post';
+  document.getElementById('daoModalBody').innerHTML = `
+    <div class="sheet-item">
+      <div class="t">Confirmación</div>
+      <div class="m">¿Seguro que quieres eliminar este post? Esta acción no se puede deshacer.</div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn" type="button" data-close="1">Cancelar</button>
+      <button class="btn primary" type="button" data-post-delete-confirm="${esc(String(postId))}">Sí, eliminar</button>
+    </div>
+    <div id="deletePostStatus" class="small muted" style="margin-top:10px;"></div>
+  `;
+  openModal();
+}
+
+
+async function openReportPostModal(postId) {
+  document.getElementById('daoModalTitle').textContent = 'Reportar post';
+  document.getElementById('daoModalBody').innerHTML = `
+    <div class="sheet-item">
+      <div class="t">Motivo</div>
+      <textarea id="reportPostReason" style="min-height:110px;" placeholder="Describe el motivo del reporte…"></textarea>
+      <div class="small muted" style="margin-top:6px;">Evita datos personales. Sé breve y claro.</div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn" type="button" data-close="1">Cancelar</button>
+      <button class="btn primary" type="button" data-post-report-send="${esc(String(postId))}">Enviar reporte</button>
+    </div>
+    <div id="reportPostStatus" class="small muted" style="margin-top:10px;"></div>
+  `;
+  openModal();
+}
+
 
 // =========================
 // Cancel reply
@@ -629,65 +880,89 @@ if (pill) {
   }
 
   // Reacciones a comentarios / replies (backend-first + UI inmediata)
-  if (action === 'c-like' || action === 'c-points') {
-    const commentId = String(pill.dataset.commentId || '');
-    const replyId = pill.dataset.replyId ? String(pill.dataset.replyId) : '';
-    const userId = getUserId();
-    if (!commentId || userId === 'visitor') return;
+  
+if (action === 'c-like' || action === 'c-points') {
+  const commentId = String(pill.dataset.commentId || '');
+  const replyId = pill.dataset.replyId ? String(pill.dataset.replyId) : '';
+  const userId = getUserId();
+  if (!commentId || userId === 'visitor') return;
 
-    // Target: si es reply real, reaccionamos al reply
-    const replyNum = replyId ? Number(replyId) : NaN;
-    const hasRealReply = replyId && Number.isFinite(replyNum);
-    const targetId = hasRealReply ? replyId : commentId;
+  // targetId: si es reply real y numérico, reaccionamos al reply
+  const replyNum = replyId ? Number(replyId) : NaN;
+  const hasRealReply = replyId && Number.isFinite(replyNum);
+  const targetId = hasRealReply ? replyId : commentId;
 
-    // Ledger key distinto para comment vs reply
-    const actionsLedger = loadActions();
-    const key = hasRealReply
-      ? targetKeyReply(postId, commentId, replyId)
-      : targetKeyComment(postId, commentId);
+  // Backend-driven source: CURRENT_MODAL_POST
+  const post = CURRENT_MODAL_POST;
+  if (!post) return;
 
-    const entry = getActionEntry(actionsLedger, userId, key);
+  // Index rápido para encontrar target
+  let target = null;
+  if (hasRealReply) {
+    for (const c of (post.comments || [])) {
+      const r = (c.replies || []).find(x => String(x.id) === String(replyId));
+      if (r) { target = r; break; }
+    }
+  } else {
+    target = (post.comments || []).find(x => String(x.id) === String(commentId)) || null;
+  }
+  if (!target) return;
 
-    // UI optimista (estado activo)
+  // Check backend-driven limits
+  if (action === 'c-like') {
+    if (target.myLike) return;
+  } else {
+    if (Number(target.myPoints ?? 0) >= POINTS_MAX_PER_POST) return;
+  }
+
+  // Optimistic UI: actualiza target + DOM count
+  const countEl = pill.querySelector('.count');
+
+  if (action === 'c-like') {
+    target.myLike = true;
+    target.likes = Number(target.likes || 0) + 1;
+    if (countEl) countEl.textContent = String(target.likes);
+    pill.classList.add('active');
+  } else {
+    target.myPoints = Number(target.myPoints ?? 0) + 1;
+    target.points = Number(target.points || 0) + 1;
+    if (countEl) countEl.textContent = String(target.points);
+    // active solo si ya alcanzó el límite
+    pill.classList.toggle('active', Number(target.myPoints ?? 0) >= POINTS_MAX_PER_POST);
+  }
+
+  // Backend request
+  let res = null;
+  try {
+    res = await API.reactComment(postId, targetId, action === 'c-like' ? 'like' : 'points');
+  } catch (e) {
+    console.warn("API comment/react offline:", e);
+  }
+
+  // Si backend devuelve counts, sincroniza
+  const counts = res?.counts || null;
+  if (counts && countEl) {
     if (action === 'c-like') {
-      if (entry.liked) return; // like es 1 por usuario
-      entry.liked = true;
-    } else {
-      if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
-      entry.pointsGiven += 1;
-    }
-    saveActions(actionsLedger);
-
-    // Backend
-    let res = null;
-    try {
-      res = await API.reactComment(postId, targetId, action === 'c-like' ? 'like' : 'points');
-    } catch (e) {
-      console.warn("API comment/react offline, usando estado local:", e);
-    }
-
-    // UI inmediata con counts
-    const counts = res?.counts || null;
-    const countEl = pill.querySelector('.count');
-    if (countEl && counts) {
-      if (action === 'c-like') {
-        const n = Number(counts.likes);
-        if (Number.isFinite(n)) countEl.textContent = String(n);
-      } else {
-        const n = Number(counts.points);
-        if (Number.isFinite(n)) countEl.textContent = String(n);
+      const n = Number(counts.likes);
+      if (Number.isFinite(n)) {
+        target.likes = n;
+        countEl.textContent = String(n);
       }
-    } else if (countEl) {
-      const cur = Number(countEl.textContent || "0");
-      if (Number.isFinite(cur)) countEl.textContent = String(cur + 1);
+    } else {
+      const n = Number(counts.points);
+      if (Number.isFinite(n)) {
+        target.points = n;
+        countEl.textContent = String(n);
+      }
     }
+  }
 
-    // Refresco “suave” del modal
-    setTimeout(async () => {
-      try { await openPostModal(postId); } catch {}
-    }, 220);
+  // Refresh suave del modal para asegurar consistencia
+  setTimeout(async () => {
+    try { await openPostModal(postId); } catch {}
+  }, 220);
 
-    return;
+  return;
   }
 
   // Acciones del POST (backend-first)
@@ -1090,9 +1365,7 @@ function renderCarousel(posts){
 
   <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
 
-  <div class="kebab-menu" data-kebab-menu="${esc(p.id)}" hidden>
-    <button class="kebab-item" type="button" data-kebab-item="1">Opciones (SOON)</button>
-  </div>
+  ${kebabMenuHTML(p)}
 </div>
 <div class="car-snippet">
         ${esc((p.body || '').slice(0,160))}${(p.body || '').length > 160 ? '…' : ''}
@@ -1286,9 +1559,7 @@ metaEl.innerHTML = `
 
     <button class="kebab-btn" type="button" data-kebab="${esc(latest.id)}" aria-label="Opciones">⋮</button>
 
-    <div class="kebab-menu" data-kebab-menu="${esc(latest.id)}" hidden>
-      <button class="kebab-item" type="button" data-kebab-item="1">Opciones (SOON)</button>
-    </div>
+    ${kebabMenuHTML(latest)}
   </div>
 `;
 
@@ -1319,19 +1590,14 @@ setPillCount(pointsEl, '⭐', getPointsCount(latest));
 }
 
 
-function applyActionState() {
-  // ✅ Ledger local (solo para comments/replies por ahora)
-  const userId = getUserId();
-  const actions = loadActions();
-  const mine = actions[userId] || {};
 
-  // ✅ Índice posts por id desde cache backend
+function applyActionState() {
+  // ========== POSTS (backend-driven) ==========
   const byId = Object.create(null);
   (Array.isArray(POSTS_CACHE) ? POSTS_CACHE : []).forEach(p => {
     byId[String(p.id)] = p;
   });
 
-  // ✅ POSTS: backend-driven
   document.querySelectorAll('.pill[data-action][data-post-id]').forEach(el => {
     const postId = el.dataset.postId;
     const act = el.dataset.action;
@@ -1342,29 +1608,35 @@ function applyActionState() {
     if (act === 'points') el.classList.toggle('active', Number(p.myPoints ?? 0) >= POINTS_MAX_PER_POST);
   });
 
-  // ✅ COMMENTS/REPLIES: por ahora sigue ledger local
+  // ========== COMMENTS / REPLIES (backend-driven) ==========
+  const post = CURRENT_MODAL_POST;
+  if (!post || !Array.isArray(post.comments)) return;
+
+  const cMap = Object.create(null);
+  const rMap = Object.create(null);
+
+  for (const c of post.comments) {
+    cMap[String(c.id)] = c;
+    for (const r of (c.replies || [])) {
+      rMap[String(r.id)] = r;
+    }
+  }
+
   document.querySelectorAll('.pill[data-action="c-like"], .pill[data-action="c-points"]').forEach(el => {
-    const postId = el.dataset.postId;
-    const commentId = el.dataset.commentId;
-    const replyId = el.dataset.replyId || null;
-    if (!postId || !commentId) return;
+    const act = el.dataset.action;              // c-like | c-points
+    const commentId = el.dataset.commentId;     // id comment padre
+    const replyId = el.dataset.replyId || null; // id reply si aplica
 
-    const key = replyId
-      ? targetKeyReply(postId, commentId, replyId)
-      : targetKeyComment(postId, commentId);
+    const target = replyId ? rMap[String(replyId)] : cMap[String(commentId)];
+    if (!target) return;
 
-    const entry = mine[key];
-    if (!entry) return;
-
-    if (el.dataset.action === 'c-like') {
-      el.classList.toggle('active', !!entry.liked);
+    if (act === 'c-like') {
+      el.classList.toggle('active', !!target.myLike);
     } else {
-      el.classList.toggle('active', (entry.pointsGiven || 0) >= POINTS_MAX_PER_POST);
+      el.classList.toggle('active', Number(target.myPoints ?? 0) >= POINTS_MAX_PER_POST);
     }
   });
 }
-
-
 
 
 function renderMiniGrid(elId, posts){
@@ -1388,9 +1660,7 @@ el.innerHTML = list.map(p => `
 
       <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
 
-      <div class="kebab-menu" data-kebab-menu="${esc(p.id)}" hidden>
-        <button class="kebab-item" type="button" data-kebab-item="1">Opciones (SOON)</button>
-      </div>
+      ${kebabMenuHTML(p)}
     </div>
 
     <div class="mini-snippet">
@@ -1469,9 +1739,7 @@ function renderFeed(posts){
 
     <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
 
-    <div class="kebab-menu" data-kebab-menu="${esc(p.id)}" hidden>
-      <button class="kebab-item" type="button" data-kebab-item="1">Opciones (SOON)</button>
-    </div>
+    ${kebabMenuHTML(p)}
   </div>
 
   
@@ -1684,6 +1952,7 @@ function updateModalPostCounts(postId){
 
 
 let CURRENT_MODAL_POST_ID = null;
+let CURRENT_MODAL_POST = null; // guarda el post completo del modal (source of truth para comments/replies)
 
 async function openPostModal(postId) {
   const idStr = String(postId);
@@ -1706,6 +1975,7 @@ async function openPostModal(postId) {
   if (!p) return;
 
   CURRENT_MODAL_POST_ID = idStr;
+  CURRENT_MODAL_POST = p;
   document.getElementById('daoModalTitle').textContent = 'Post';
 
   const ui = loadUI();
@@ -1724,9 +1994,7 @@ async function openPostModal(postId) {
 
         <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
 
-        <div class="kebab-menu" data-kebab-menu hidden>
-          <button class="kebab-item" type="button" data-kebab-item="1">Opciones (SOON)</button>
-        </div>
+        ${kebabMenuHTML(p)}
       </div>
 
       <div style="margin-top:10px;white-space:pre-wrap;">${esc(p.body || '')}</div>
@@ -1873,9 +2141,7 @@ function openFeedListModal(){
 
     <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
 
-    <div class="kebab-menu" data-kebab-menu="${esc(p.id)}" hidden>
-      <button class="kebab-item" type="button" data-kebab-item="1">Opciones (SOON)</button>
-    </div>
+   ${kebabMenuHTML(p)}
   </div>
 
   <div class="small muted" style="margin-top:6px;">
