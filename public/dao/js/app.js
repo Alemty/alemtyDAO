@@ -696,47 +696,45 @@ if (pill) {
     return;
   }
 
-  const userId = getUserId();
-  if (userId === 'visitor') return;
+  
+// Acciones del POST (backend-driven)
+const userId = getUserId();
+if (userId === 'visitor') return;
 
-  const actions = loadActions();
-  const entry = getActionEntry(actions, userId, targetKeyPost(postId));
+// Source of truth: cache backend
+const p0 = Array.isArray(POSTS_CACHE) ? POSTS_CACHE.find(x => String(x.id) === String(postId)) : null;
 
-  if (action === 'like') {
-    if (entry.liked) return;
+if (action === 'like') {
+  if (p0?.myLike) return;
 
-    mutatePost(postId, p => ({
-      ...ensurePostSchema(p),
-      likes: (p.likes || 0) + 1
-    }));
+  mutatePost(postId, p => ({
+    ...ensurePostSchema(p),
+    likes: (p.likes || 0) + 1,
+    myLike: true,
+  }));
 
-    entry.liked = true;
-    saveActions(actions);
+  try { await reactSafe(postId, 'like'); } catch {}
+  renderAll();
+  updateModalPostCounts(postId);
+  return;
+}
 
-    try { await reactSafe(postId, 'like'); } catch {}
+if (action === 'points') {
+  const already = Number(p0?.myPoints ?? 0);
+  if (already >= POINTS_MAX_PER_POST) return;
 
-    renderAll();
-    updateModalPostCounts(postId);
-    return;
-  }
+  mutatePost(postId, p => ({
+    ...ensurePostSchema(p),
+    points: (p.points || 0) + 1,
+    myPoints: Number(p.myPoints ?? 0) + 1,
+  }));
 
-  if (action === 'points') {
-    if (entry.pointsGiven >= POINTS_MAX_PER_POST) return;
+  try { await reactSafe(postId, 'points'); } catch {}
+  renderAll();
+  updateModalPostCounts(postId);
+  return;
+}
 
-    mutatePost(postId, p => ({
-      ...ensurePostSchema(p),
-      points: (p.points || 0) + 1
-    }));
-
-    entry.pointsGiven += 1;
-    saveActions(actions);
-
-    try { await reactSafe(postId, 'points'); } catch {}
-
-    renderAll();
-    updateModalPostCounts(postId);
-    return;
-  }
 
   return;
 }
