@@ -389,6 +389,57 @@ function kebabMenuHTML(p) {
   `;
 }
 
+function commentKebabMenuHTML({ postId, comment, isReply = false, parentId = null }) {
+  const rawId = String(comment?.id || '');
+  const escId = esc(rawId);
+
+  const me = getViewerAddress();
+  const author = normAddr(comment?.author);
+  const isOwner = me !== 'visitor' && author && me === author;
+
+  const canEdit = isOwner;
+  const canDelete = isOwner;
+  const canReport = hasAuth() && !isOwner;
+
+  const items = [
+    canEdit
+      ? `<button class="kebab-item" type="button"
+          data-kebab-item="1"
+          data-kebab-action="c-edit"
+          data-post-id="${postId}"
+          data-comment-id="${rawId}"
+          ${isReply ? `data-reply-id="${rawId}" data-parent-id="${parentId}"` : ''}>
+          ✏️ Editar
+        </button>`
+      : '',
+    canDelete
+      ? `<button class="kebab-item" type="button"
+          data-kebab-item="1"
+          data-kebab-action="c-delete"
+          data-post-id="${postId}"
+          data-comment-id="${rawId}"
+          ${isReply ? `data-reply-id="${rawId}" data-parent-id="${parentId}"` : ''}>
+          🗑️ Eliminar
+        </button>`
+      : '',
+    canReport
+      ? `<button class="kebab-item" type="button"
+          data-kebab-item="1"
+          data-kebab-action="c-report"
+          data-post-id="${postId}"
+          data-comment-id="${rawId}">
+          🚩 Reportar
+        </button>`
+      : '',
+  ].filter(Boolean).join('');
+
+  return `
+    <div class="kebab-menu" data-kebab-menu="${escId}" hidden>
+      ${items || `<button class="kebab-item" type="button" disabled>Sin acciones</button>`}
+    </div>
+  `;
+}
+
 
 
 // =========================
@@ -748,10 +799,10 @@ if (kb) {
   return;
 }
 
-// =========================
-// KEBAB ITEM (FASE 4.1) - placeholder
-// =========================
 
+// =========================
+// KEBAB ITEM (POSTS + COMMENTS) — FASE 4.1 / 5.2.3
+// =========================
 const item = e.target.closest('[data-kebab-item]');
 if (item) {
   e.preventDefault?.();
@@ -760,15 +811,18 @@ if (item) {
 
   const action = String(item.getAttribute('data-kebab-action') || '');
   const postId = String(item.getAttribute('data-post-id') || '');
+
   if (!action || !postId) return;
 
   // Requiere auth para cualquier acción
   if (!getJWT()) {
-    // UX simple
     alert('Necesitas iniciar sesión (SIWE) para esta acción.');
     return;
   }
 
+  // =========================
+  // POSTS
+  // =========================
   if (action === 'edit') {
     await openEditPostModal(postId);
     return;
@@ -781,6 +835,35 @@ if (item) {
 
   if (action === 'report') {
     await openReportPostModal(postId);
+    return;
+  }
+
+  // =========================
+  // COMMENTS / REPLIES — FASE 5.2.3
+  // =========================
+  if (action.startsWith('c-')) {
+    const commentId = item.getAttribute('data-comment-id');
+    const replyId   = item.getAttribute('data-reply-id');
+    const parentId  = item.getAttribute('data-parent-id');
+
+    if (!commentId) return;
+
+    if (action === 'c-edit') {
+      // TODO FASE 5.2.4
+      alert('Editar comentario (FASE 5.2.4)');
+      return;
+    }
+
+    if (action === 'c-delete') {
+      alert('Eliminar comentario (FASE 5.2.4)');
+      return;
+    }
+
+    if (action === 'c-report') {
+      alert('Reportar comentario (FASE 5.2.4)');
+      return;
+    }
+
     return;
   }
 
@@ -1944,7 +2027,18 @@ function renderReplies(comment, postId){
   const visible = expanded ? replies : replies.slice(0, 2);
 
   const items = visible.map(r => `
-    <div class="comment comment-l2" data-reply-id="${esc(r.id)}">
+    <
+<div class="comment comment-l2" data-reply-id="${esc(r.id)}">
+  <div class="comment-headrow">
+    <span class="muted small">${esc(fmt(r.ts))}</span>
+    <button class="kebab-btn" type="button" data-kebab="${esc(r.id)}" aria-label="Opciones">⋮</button>
+    ${commentKebabMenuHTML({
+      postId,
+      comment: r,
+      isReply: true,
+      parentId: comment.id
+    })}
+  </div>
       <div class="comment-head">
         <span class="muted small">${esc(fmt(r.ts))}</span>
       </div>
@@ -1983,7 +2077,14 @@ function renderComments(post){
   }
 
   return comments.map(c => `
-    <div class="comment comment-l1" data-comment-id="${esc(c.id)}">
+    
+<div class="comment comment-l1" data-comment-id="${esc(c.id)}">
+  <div class="comment-headrow">
+    <span class="muted small">${esc(fmt(c.ts))}</span>
+    <button class="kebab-btn" type="button" data-kebab="${esc(c.id)}" aria-label="Opciones">⋮</button>
+    ${commentKebabMenuHTML({ postId: post.id, comment: c })}
+  </div>
+
       <div class="comment-head">
         <span class="muted small">${esc(fmt(c.ts))}</span>
       </div>
