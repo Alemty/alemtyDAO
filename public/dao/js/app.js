@@ -38,6 +38,17 @@ function authHeadersGet(extra = {}) {
 }
 
 
+async function readErr(r) {
+  const ct = r.headers.get('content-type') || '';
+  if (ct.includes('application/json')) {
+    const j = await r.json().catch(() => null);
+    return j?.error || j?.message || null;
+  }
+  const t = await r.text().catch(() => '');
+  return t || null;
+}
+
+
 function normAddr(a) {
   return String(a || '').trim().toLowerCase();
 }
@@ -118,7 +129,12 @@ async updatePost(postId, { title, body, topic }) {
     headers: authHeaders(),
     body: JSON.stringify({ title, body, topic }),
   });
-  if (!r.ok) throw new Error("updatePost failed");
+  
+if (!r.ok) {
+  const msg = await readErr(r);
+  throw new Error(msg || 'updatePost failed');
+}
+
   return r.json().catch(() => ({}));
 },
 
@@ -127,7 +143,10 @@ async deletePost(postId) {
     method: "DELETE",
     headers: authHeaders(),
   });
-  if (!r.ok) throw new Error("deletePost failed");
+  if (!r.ok) {
+    const msg = await readErr(r);
+    throw new Error(msg || 'deletePost failed');
+  }
   return r.json().catch(() => ({}));
 },
 
@@ -137,7 +156,10 @@ async reportPost(postId, reason) {
     headers: authHeaders(),
     body: JSON.stringify({ reason: String(reason || "").trim() }),
   });
-  if (!r.ok) throw new Error("reportPost failed");
+if (!r.ok) {
+  const msg = await readErr(r);
+  throw new Error(msg || 'reportPost failed');
+}
   return r.json().catch(() => ({}));
 },
 
@@ -480,6 +502,77 @@ function closeModal(){
   m.setAttribute('aria-hidden','true');
 }
 
+async function openEditPostModal(postId) {
+  let p = null;
+  try {
+    p = await API.getPost(String(postId));
+  } catch {}
+  const post = p || CURRENT_MODAL_POST;
+  if (!post) return;
+
+  const topic = String(post.topic || 'Sin tema');
+  const title = String(post.title || '');
+  const body = String(post.body || '');
+
+  document.getElementById('daoModalTitle').textContent = 'Editar post';
+  document.getElementById('daoModalBody').innerHTML = `
+    <div class="sheet-item">
+      <div class="t">Título</div>
+      <input id="editPostTitle" value="${esc(title)}" />
+    </div>
+    <div class="sheet-item">
+      <div class="t">Tema</div>
+      <input id="editPostTopic" value="${esc(topic)}" />
+      <div class="small muted" style="margin-top:6px;">Puedes escribir un tema o dejar “Sin tema”.</div>
+    </div>
+    <div class="sheet-item">
+      <div class="t">Contenido</div>
+      <textarea id="editPostBody" style="min-height:140px;">${esc(body)}</textarea>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn primary" type="button" data-post-save="${esc(String(postId))}">Guardar</button>
+      <button class="btn" type="button" data-close="1">Cancelar</button>
+    </div>
+    <div id="editPostStatus" class="small muted" style="margin-top:10px;"></div>
+  `;
+  openModal();
+}
+
+
+async function openDeletePostModal(postId) {
+  document.getElementById('daoModalTitle').textContent = 'Eliminar post';
+  document.getElementById('daoModalBody').innerHTML = `
+    <div class="sheet-item">
+      <div class="t">Confirmación</div>
+      <div class="m">¿Seguro que quieres eliminar este post? Esta acción no se puede deshacer.</div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn" type="button" data-close="1">Cancelar</button>
+      <button class="btn primary" type="button" data-post-delete-confirm="${esc(String(postId))}">Sí, eliminar</button>
+    </div>
+    <div id="deletePostStatus" class="small muted" style="margin-top:10px;"></div>
+  `;
+  openModal();
+}
+
+
+async function openReportPostModal(postId) {
+  document.getElementById('daoModalTitle').textContent = 'Reportar post';
+  document.getElementById('daoModalBody').innerHTML = `
+    <div class="sheet-item">
+      <div class="t">Motivo</div>
+      <textarea id="reportPostReason" style="min-height:110px;" placeholder="Describe el motivo del reporte…"></textarea>
+      <div class="small muted" style="margin-top:6px;">Evita datos personales. Sé breve y claro.</div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn" type="button" data-close="1">Cancelar</button>
+      <button class="btn primary" type="button" data-post-report-send="${esc(String(postId))}">Enviar reporte</button>
+    </div>
+    <div id="reportPostStatus" class="small muted" style="margin-top:10px;"></div>
+  `;
+  openModal();
+}
+
 /* =========================
    Delegación GLOBAL (sin duplicados en web/móvil)
    - pointerup + click (dedupe)
@@ -500,17 +593,19 @@ return !!t.closest(
 async function handleGlobalAction(e) {
 
   
+
 // =========================
 // Guardar edición de post
 // =========================
 const saveBtn = e.target.closest('[data-post-save]');
 if (saveBtn) {
   e.preventDefault?.();
+
   const postId = String(saveBtn.getAttribute('data-post-save') || '');
   if (!postId) return;
 
   const title = (document.getElementById('editPostTitle')?.value || '').trim();
-  const topic = (document.getElementById('editPostTopic')?.value || '').trim() || 'Sin tema';
+  const topic = ((document.getElementById('editPostTopic')?.value || '').trim()) || 'Sin tema';
   const body  = (document.getElementById('editPostBody')?.value || '').trim();
   const status = document.getElementById('editPostStatus');
 
@@ -519,20 +614,26 @@ if (saveBtn) {
     return;
   }
 
+  saveBtn.disabled = true;
   try {
     if (status) status.textContent = 'Guardando…';
     await API.updatePost(postId, { title, body, topic });
     if (status) status.textContent = 'Guardado ✅';
+
     closeModal();
     await renderAll();
-    // reabrir post para ver cambios
     try { await openPostModal(postId); } catch {}
   } catch (err) {
     console.error(err);
-    if (status) status.textContent = 'Error guardando.';
+    const msg = (err && err.message) ? String(err.message) : 'Error guardando.';
+    if (status) status.textContent = msg;
+  } finally {
+    saveBtn.disabled = false;
   }
   return;
 }
+
+
 
 // =========================
 // Confirmar delete de post
@@ -540,22 +641,29 @@ if (saveBtn) {
 const delBtn = e.target.closest('[data-post-delete-confirm]');
 if (delBtn) {
   e.preventDefault?.();
+
   const postId = String(delBtn.getAttribute('data-post-delete-confirm') || '');
   const status = document.getElementById('deletePostStatus');
   if (!postId) return;
 
+  delBtn.disabled = true;
   try {
     if (status) status.textContent = 'Eliminando…';
     await API.deletePost(postId);
     if (status) status.textContent = 'Eliminado ✅';
+
     closeModal();
     await renderAll();
   } catch (err) {
     console.error(err);
-    if (status) status.textContent = 'Error eliminando.';
+    const msg = (err && err.message) ? String(err.message) : 'Error eliminando.';
+    if (status) status.textContent = msg;
+  } finally {
+    delBtn.disabled = false;
   }
   return;
 }
+
 
 
 // =========================
@@ -688,79 +796,6 @@ if (e.target.closest('[data-close]')) {
   closeModal();
   return;
 }
-
-
-async function openEditPostModal(postId) {
-  let p = null;
-  try {
-    p = await API.getPost(String(postId));
-  } catch {}
-  const post = p || CURRENT_MODAL_POST;
-  if (!post) return;
-
-  const topic = String(post.topic || 'Sin tema');
-  const title = String(post.title || '');
-  const body = String(post.body || '');
-
-  document.getElementById('daoModalTitle').textContent = 'Editar post';
-  document.getElementById('daoModalBody').innerHTML = `
-    <div class="sheet-item">
-      <div class="t">Título</div>
-      <input id="editPostTitle" value="${esc(title)}" />
-    </div>
-    <div class="sheet-item">
-      <div class="t">Tema</div>
-      <input id="editPostTopic" value="${esc(topic)}" />
-      <div class="small muted" style="margin-top:6px;">Puedes escribir un tema o dejar “Sin tema”.</div>
-    </div>
-    <div class="sheet-item">
-      <div class="t">Contenido</div>
-      <textarea id="editPostBody" style="min-height:140px;">${esc(body)}</textarea>
-    </div>
-    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
-      <button class="btn primary" type="button" data-post-save="${esc(String(postId))}">Guardar</button>
-      <button class="btn" type="button" data-close="1">Cancelar</button>
-    </div>
-    <div id="editPostStatus" class="small muted" style="margin-top:10px;"></div>
-  `;
-  openModal();
-}
-
-
-async function openDeletePostModal(postId) {
-  document.getElementById('daoModalTitle').textContent = 'Eliminar post';
-  document.getElementById('daoModalBody').innerHTML = `
-    <div class="sheet-item">
-      <div class="t">Confirmación</div>
-      <div class="m">¿Seguro que quieres eliminar este post? Esta acción no se puede deshacer.</div>
-    </div>
-    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
-      <button class="btn" type="button" data-close="1">Cancelar</button>
-      <button class="btn primary" type="button" data-post-delete-confirm="${esc(String(postId))}">Sí, eliminar</button>
-    </div>
-    <div id="deletePostStatus" class="small muted" style="margin-top:10px;"></div>
-  `;
-  openModal();
-}
-
-
-async function openReportPostModal(postId) {
-  document.getElementById('daoModalTitle').textContent = 'Reportar post';
-  document.getElementById('daoModalBody').innerHTML = `
-    <div class="sheet-item">
-      <div class="t">Motivo</div>
-      <textarea id="reportPostReason" style="min-height:110px;" placeholder="Describe el motivo del reporte…"></textarea>
-      <div class="small muted" style="margin-top:6px;">Evita datos personales. Sé breve y claro.</div>
-    </div>
-    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
-      <button class="btn" type="button" data-close="1">Cancelar</button>
-      <button class="btn primary" type="button" data-post-report-send="${esc(String(postId))}">Enviar reporte</button>
-    </div>
-    <div id="reportPostStatus" class="small muted" style="margin-top:10px;"></div>
-  `;
-  openModal();
-}
-
 
 // =========================
 // Cancel reply
