@@ -42,11 +42,27 @@ function normAddr(a) {
   return String(a || '').trim().toLowerCase();
 }
 
-function isOwnerPost(p) {
-  const me = normAddr(getUserId());
-  const author = normAddr(p?.author);
-  return me && me !== 'visitor' && author && me === author;
+
+function getViewerAddress() {
+  // 1) Si guardas address explícito al hacer SIWE, úsalo primero
+  const a = localStorage.getItem('alemty.address');
+  if (a) return normAddr(a);
+
+  // 2) Fallback: lo que ya tengas como userId (si es address)
+  const u = getUserId?.() || '';
+  if (u && u !== 'visitor') return normAddr(u);
+
+  return 'visitor';
 }
+
+
+
+function isOwnerPost(p) {
+  const me = getViewerAddress();
+  const author = normAddr(p?.author);
+  return me !== 'visitor' && !!author && me === author;
+}
+
 
 function hasAuth() {
   return !!getJWT();
@@ -323,24 +339,34 @@ function authorLinkHTML(addr){
 }
 
 
+
 function kebabMenuHTML(p) {
-  const id = esc(String(p?.id || ''));
+  const rawId = String(p?.id || '');
+  const escId = esc(rawId);
+
   const canEdit = isOwnerPost(p);
-  const canDelete = isOwnerPost(p); // (admin lo puedes agregar luego si expones rol)
+  const canDelete = isOwnerPost(p); // (admin lo agregas luego si expones rol)
   const canReport = hasAuth() && !isOwnerPost(p);
 
   const items = [
-    canEdit ? `<button class="kebab-item" type="button" data-kebab-item="1" data-kebab-action="edit" data-post-id="${id}">✏️ Editar</button>` : '',
-    canDelete ? `<button class="kebab-item" type="button" data-kebab-item="1" data-kebab-action="delete" data-post-id="${id}">🗑️ Eliminar</button>` : '',
-    canReport ? `<button class="kebab-item" type="button" data-kebab-item="1" data-kebab-action="report" data-post-id="${id}">🚩 Reportar</button>` : '',
+    canEdit
+      ? `<button class="kebab-item" type="button" data-kebab-item="1" data-kebab-action="edit" data-post-id="${rawId}">✏️ Editar</button>`
+      : '',
+    canDelete
+      ? `<button class="kebab-item" type="button" data-kebab-item="1" data-kebab-action="delete" data-post-id="${rawId}">🗑️ Eliminar</button>`
+      : '',
+    canReport
+      ? `<button class="kebab-item" type="button" data-kebab-item="1" data-kebab-action="report" data-post-id="${rawId}">🚩 Reportar</button>`
+      : '',
   ].filter(Boolean).join('');
 
   return `
-    <div class="kebab-menu" data-kebab-menu="${id}" hidden>
+    <div class="kebab-menu" data-kebab-menu="${escId}" hidden>
       ${items || `<button class="kebab-item" type="button" disabled>Sin acciones</button>`}
     </div>
   `;
 }
+
 
 
 // =========================
