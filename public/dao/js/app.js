@@ -557,29 +557,51 @@ if (delBtn) {
   return;
 }
 
+
 // =========================
 // Enviar reporte de post
 // =========================
 const repBtn = e.target.closest('[data-post-report-send]');
 if (repBtn) {
   e.preventDefault?.();
+
   const postId = String(repBtn.getAttribute('data-post-report-send') || '');
   const reason = (document.getElementById('reportPostReason')?.value || '').trim();
   const status = document.getElementById('reportPostStatus');
   if (!postId) return;
 
+  // ✅ Validación mínima
+  if (reason.length < 3) {
+    if (status) status.textContent = 'Escribe un motivo (mínimo 3 caracteres).';
+    return;
+  }
+
+  // ✅ Anti doble-submit
+  repBtn.disabled = true;
+
   try {
     if (status) status.textContent = 'Enviando…';
+
     await API.reportPost(postId, reason);
+
     if (status) status.textContent = 'Reporte enviado ✅';
     // cerrar después de un toque
     setTimeout(() => { try { closeModal(); } catch {} }, 350);
+
   } catch (err) {
     console.error(err);
-    if (status) status.textContent = 'Error enviando reporte.';
+
+    // ✅ Mensaje más útil (si existe)
+    const msg = (err && err.message) ? String(err.message) : 'Error enviando reporte.';
+    if (status) status.textContent = msg;
+
+  } finally {
+    repBtn.disabled = false;
   }
+
   return;
 }
+
 
 
 // =========================
