@@ -558,12 +558,13 @@ async function openEditPostModal(postId) {
   try {
     p = await API.getPost(String(postId));
   } catch {}
+
   const post = p || CURRENT_MODAL_POST;
   if (!post) return;
 
   const topic = String(post.topic || 'Sin tema');
   const title = String(post.title || '');
-  const body = String(post.body || '');
+  const body  = String(post.body || '');
 
   document.getElementById('daoModalTitle').textContent = 'Editar post';
   document.getElementById('daoModalBody').innerHTML = `
@@ -588,6 +589,7 @@ async function openEditPostModal(postId) {
   `;
   openModal();
 }
+
 
 
 async function openDeletePostModal(postId) {

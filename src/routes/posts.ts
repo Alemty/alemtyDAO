@@ -470,6 +470,7 @@ posts.put("/:id", auth, async (c) => {
   return c.json({ ok: true });
 });
 
+
 /* =========================================================
    ELIMINAR POST
    DELETE /api/posts/:id
@@ -478,23 +479,35 @@ posts.delete("/:id", auth, async (c) => {
   const address = c.get("address");
   const id = Number(c.req.param("id"));
 
+  if (!Number.isFinite(id)) {
+    return c.json({ error: "Invalid post id" }, 400);
+  }
+
+  // 1️⃣ Traer el post
   const post = await c.env.DB.prepare(
     "SELECT author FROM posts WHERE id = ?"
   ).bind(id).first();
 
-  if (!post) return c.json({ error: "Not found" }, 404);
+  if (!post) {
+    return c.json({ error: "Not found" }, 404);
+  }
 
+  // 2️⃣ Permisos
   const isOwner = (post as any).author === address;
-  if (!isOwner && !isAdmin(address)) {
+  const isModOrAdmin = isAdmin(address);
+
+  if (!isOwner && !isModOrAdmin) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
-  await c.env.DB.prepare("DELETE FROM posts WHERE id = ?")
-    .bind(id)
-    .run();
+  // 3️⃣ Eliminar
+  await c.env.DB.prepare(
+    "DELETE FROM posts WHERE id = ?"
+  ).bind(id).run();
 
   return c.json({ ok: true });
 });
+
 
 /* =========================================================
    REPORTAR POST
