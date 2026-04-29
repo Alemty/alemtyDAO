@@ -27,9 +27,36 @@ function el(t,a={},h=""){
   return n;
 }
 
+
 function esc(s){
-  return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+  return String(s ?? "").replace(/[&<>"']/g, (ch) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[ch]));
 }
+
+
+const MOD_ONLY_ALLOW = new Set([
+  "0x6a202f991c4c1df079449be9847b1dac3f51854f", // alemty.eth
+]);
+
+
+
+function isModOrAdminNow() {
+  const a = (
+    (getDid?.() || "") ||
+    localStorage.getItem("alemty.did") ||
+    localStorage.getItem("did") ||
+    ""
+  ).toLowerCase();
+
+  return MOD_ONLY_ALLOW.has(a);
+}
+
+
 
 function openModal(id){
   const m=document.getElementById(id);
@@ -305,12 +332,16 @@ stripEl.querySelectorAll(".cert-badge").forEach(a=>{
 }
 
 export function mountShell(){
+  
+if (window.__alemtyShellMounted) return;
+window.__alemtyShellMounted = true;
+
 const appState = {
   did: null,
   siwe: false,
   balances: {}
 };
-window.__alemtyShellMounted=true;
+
 loadTheme();
 requestAnimationFrame(()=>document.documentElement.classList.add("theme-ready"));
 bindEthereumAccountsChanged();
@@ -326,10 +357,22 @@ navbar.classList.add("navbar");
 const topInner=el("div",{class:"topbar-inner"});
 const brand=el("a",{class:"brand-link",href: "/","aria-label":"Ir a ID"},`<span class="brand">alemty<span class="dot">.</span><span class="eth">eth</span></span>`);
 const icons=el("div",{class:"iconbar"});
-const themeBtn=el("button",{class:"icon-btn",id:"themeBtn",type:"button","aria-label":"Tema"},"🌘");
-const profileBtn=el("button",{class:"icon-btn",id:"profileBtn",type:"button","aria-label":"Perfil"},"🧙🏻");
-const menuBtn=el("button",{class:"icon-btn",id:"menuBtn",type:"button","aria-label":"Menú"},"☰");
-icons.append(themeBtn,profileBtn,menuBtn);
+
+const themeBtn = el("button",{class:"icon-btn",id:"themeBtn",type:"button","aria-label":"Tema"},"🌘");
+const profileBtn = el("button",{class:"icon-btn",id:"profileBtn",type:"button","aria-label":"Perfil"},"🧙🏻");
+
+// 🔔 Notificaciones (badge dentro)
+const notifBtn = el(
+  "button",
+  { class:"icon-btn", id:"notifBtn", type:"button", "aria-label":"Notificaciones" },
+  `🔔<span class="badge" id="notifBadge" hidden>0</span>`
+);
+
+const menuBtn = el("button",{class:"icon-btn",id:"menuBtn",type:"button","aria-label":"Menú"},"☰");
+
+// orden: tema, perfil, 🔔, menú
+icons.append(themeBtn, profileBtn, notifBtn, menuBtn);
+
 topInner.append(brand,icons);
 topbar.innerHTML="";
 topbar.append(topInner);
@@ -610,7 +653,20 @@ themeBtn.addEventListener("click",toggleTheme);
 menuBtn.addEventListener("click",()=>drawer.classList.contains("open")?closeDrawer():openDrawer());
 drawer.querySelector("#drawerClose")?.addEventListener("click",closeDrawer);
 drawerBackdrop.addEventListener("click",closeDrawer);
-document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;drawer.classList.contains("open")&&closeDrawer();const pm=document.getElementById("profileModal");pm&&pm.classList.contains("open")&&closeModal("profileModal");});
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+
+  drawer.classList.contains("open") && closeDrawer();
+
+  const pm = document.getElementById("profileModal");
+  pm && pm.classList.contains("open") && closeModal("profileModal");
+
+  const nm = document.getElementById("notifModal");
+  nm && nm.classList.contains("open") && closeModal("notifModal");
+
+  const mm = document.getElementById("modModal");
+  mm && mm.classList.contains("open") && closeModal("modModal");
+});
 
 const didStatus=drawer.querySelector("#didStatus");
 const didAddress=drawer.querySelector("#didAddress");
@@ -664,6 +720,11 @@ function updateSiweStatus() {
 drawer.querySelector("#connectBtn")?.addEventListener("click",async()=>{try{await connectDid();}catch{}syncDid();});
 drawer.querySelector("#disconnectBtn")?.addEventListener("click",()=>{clearDid();syncDid();});
 window.addEventListener("did:changed",syncDid);
+
+window.addEventListener("did:changed", async () => {
+  await updateNotifUI();
+});
+
 syncDid();
 
 
@@ -791,6 +852,54 @@ profileModal.innerHTML = `
 
 document.getElementById("profileModal")?.remove();
 document.body.appendChild(profileModal);
+
+
+/* =========================================================
+   Notificaciones (🔔) + Moderación (solo mods/admins)
+========================================================= */
+
+// ---------- Notificaciones ----------
+const notifModal = el("div", { class: "modal", id: "notifModal", "aria-hidden": "true" });
+notifModal.innerHTML = `
+  <div class="modal-backdrop" id="notifBackdrop"></div>
+  <div class="modal-card notif-card">
+    <div class="modal-headbar">
+      <strong>Notificaciones</strong>
+      <button class="icon-btn" id="notifClose" type="button" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="notif-body" id="notifBody">
+      <div class="small muted">Cargando…</div>
+    </div>
+  </div>
+`;
+document.getElementById("notifModal")?.remove();
+document.body.appendChild(notifModal);
+
+notifModal.querySelector("#notifClose")?.addEventListener("click", () => closeModal("notifModal"));
+notifModal.querySelector("#notifBackdrop")?.addEventListener("click", () => closeModal("notifModal"));
+
+// ---------- Moderación ----------
+const modModal = el("div", { class: "modal", id: "modModal", "aria-hidden": "true" });
+modModal.innerHTML = `
+  <div class="modal-backdrop" id="modBackdrop"></div>
+  <div class="modal-card mod-card">
+    <div class="modal-headbar">
+      <strong>Moderación</strong>
+      <button class="icon-btn" id="modClose" type="button" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="mod-body" id="modBody">
+      <div class="small muted">Cargando…</div>
+    </div>
+  </div>
+`;
+document.getElementById("modModal")?.remove();
+document.body.appendChild(modModal);
+
+modModal.querySelector("#modClose")?.addEventListener("click", () => closeModal("modModal"));
+modModal.querySelector("#modBackdrop")?.addEventListener("click", () => closeModal("modModal"));
+
+
+
 
 /* =========================
    Cache + utilidades
@@ -920,6 +1029,8 @@ async function fetchMeStats() {
     return null;
   }
 }
+
+
 
 
 /* =========================
@@ -1121,6 +1232,7 @@ async function syncProfile() {
   // Stats reales (si hay sesión)
   __ME_STATS__ = addr ? await fetchMeStats() : null;
 
+
   // Dharma/Aura: derivado de points recibidos en backend [1](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!se04a61d341c348b1a2c3f47cc82f4913)[2](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!s7661d7b6025c4ae48cf1527b37a4260c)
   const dharma = __ME_STATS__?.tokenomics?.dharma ?? 0;
   const aura = __ME_STATS__?.tokenomics?.aura ?? 0;
@@ -1181,10 +1293,223 @@ async function syncProfile() {
   renderTab(activeTab);
 }
 
-/* =========================
-   Listeners del modal
-========================= */
 
+
+
+async function fetchNotifStats() {
+  // Reusa stats ya existentes si ya se cargaron
+  if (__ME_STATS__) return __ME_STATS__;
+  const addr = getDid();
+  if (!addr) return null;
+  __ME_STATS__ = await fetchMeStats();
+  return __ME_STATS__;
+}
+
+// Best-effort: intentar traer reportes pendientes si hay endpoint (si no existe, no rompe)
+async function fetchModPendingCount() {
+  if (!isModOrAdminNow()) return 0;
+  const token = localStorage.getItem("alemty.jwt") || "";
+  if (!token) return 0;
+
+  try {
+    const r = await fetch(`${API_BASE}/api/mod/reports?status=pending`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!r.ok) return 0;
+
+    const ct = r.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) return 0;
+
+    const j = await r.json().catch(() => ({}));
+    const n = Number(j?.total || j?.pending || 0);
+    return Number.isFinite(n) ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function setNotifBadge(n) {
+  const badge = document.getElementById("notifBadge");
+  if (!badge) return;
+  const x = Number(n || 0);
+  if (x > 0) {
+    badge.hidden = false;
+    badge.textContent = String(x);
+  } else {
+    badge.hidden = true;
+    badge.textContent = "0";
+  }
+}
+
+async function updateNotifUI() {
+  const stats = await fetchNotifStats();
+  const likesReceived = Number(stats?.received?.likesReceived || 0);
+  const commentsReceived = Number(stats?.received?.commentsReceived || 0);
+  const pointsReceived = Number(stats?.received?.pointsReceived || 0);
+
+  // “Respuestas” aún no tenemos métrica: placeholder
+  const repliesReceived = Number(stats?.received?.repliesReceived || 0);
+
+  const modPending = await fetchModPendingCount();
+
+  // Total badge: sumamos lo que tenemos hoy (puedes ajustar luego)
+  const total = likesReceived + commentsReceived + pointsReceived + repliesReceived + modPending;
+
+  setNotifBadge(total);
+}
+
+function renderNotifList({ stats, modPending }) {
+  const body = document.getElementById("notifBody");
+  if (!body) return;
+
+  const addr = getDid();
+  const isAuth = !!localStorage.getItem("alemty.jwt");
+
+  if (!addr) {
+    body.innerHTML = `<div class="small muted">Conecta tu wallet y verifica SIWE para ver notificaciones.</div>`;
+    return;
+  }
+
+  if (!isAuth) {
+    body.innerHTML = `<div class="small muted">Verifica SIWE para habilitar notificaciones.</div>`;
+    return;
+  }
+
+  const likesReceived = Number(stats?.received?.likesReceived || 0);
+  const commentsReceived = Number(stats?.received?.commentsReceived || 0);
+  const pointsReceived = Number(stats?.received?.pointsReceived || 0);
+
+  // Placeholder si aún no existe en backend
+  const repliesReceived = Number(stats?.received?.repliesReceived || 0);
+
+  const modRow = isModOrAdminNow()
+    ? `
+      <button class="notif-item" type="button" data-open-mod="1">
+        <span class="ico">⚖️</span>
+        <span class="txt">Moderación / Reportes</span>
+        <span class="n">${modPending}</span>
+      </button>
+    `
+    : "";
+
+  body.innerHTML = `
+    <div class="notif-list">
+      <div class="notif-item">
+        <span class="ico">♥️</span>
+        <span class="txt">Likes recibidos (acumulado)</span>
+        <span class="n">${likesReceived}</span>
+      </div>
+      <div class="notif-item">
+        <span class="ico">💬</span>
+        <span class="txt">Comentarios recibidos (acumulado)</span>
+        <span class="n">${commentsReceived}</span>
+      </div>
+      <div class="notif-item">
+        <span class="ico">⭐</span>
+        <span class="txt">Points recibidos (acumulado)</span>
+        <span class="n">${pointsReceived}</span>
+      </div>
+      <div class="notif-item">
+        <span class="ico">↪️</span>
+        <span class="txt">Respuestas (SOON)</span>
+        <span class="n">${repliesReceived}</span>
+      </div>
+      ${modRow}
+    </div>
+
+    <div class="small muted" style="margin-top:10px;">
+      Notificaciones detalladas (por post/comentario) — SOON.
+    </div>
+  `;
+
+  // Click en moderación
+  body.querySelector('[data-open-mod]')?.addEventListener("click", async () => {
+    await openModerationModal();
+  });
+}
+
+async function openNotifModal() {
+  const stats = await fetchNotifStats();
+  const modPending = await fetchModPendingCount();
+  renderNotifList({ stats, modPending });
+  openModal("notifModal");
+}
+
+async function openModerationModal() {
+  const modBody = document.getElementById("modBody");
+  if (!modBody) return;
+
+  if (!isModOrAdminNow()) {
+    modBody.innerHTML = `<div class="small muted">No tienes permisos de moderación.</div>`;
+    openModal("modModal");
+    return;
+  }
+
+  const token = localStorage.getItem("alemty.jwt") || "";
+  if (!token) {
+    modBody.innerHTML = `<div class="small muted">Necesitas SIWE para moderar.</div>`;
+    openModal("modModal");
+    return;
+  }
+
+  // Best-effort fetch
+  try {
+    const r = await fetch(`${API_BASE}/api/mod/reports?status=pending`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+
+    if (!r.ok) {
+      modBody.innerHTML = `<div class="small muted">Sin endpoint aún (SOON). Status: ${r.status}</div>`;
+      openModal("modModal");
+      return;
+    }
+
+    const ct = r.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) {
+      modBody.innerHTML = `<div class="small muted">Respuesta no JSON (SOON).</div>`;
+      openModal("modModal");
+      return;
+    }
+
+    const j = await r.json().catch(() => ({}));
+    const items = Array.isArray(j?.reports) ? j.reports : [];
+
+    if (!items.length) {
+      modBody.innerHTML = `<div class="small muted">No hay reportes pendientes ✅</div>`;
+      openModal("modModal");
+      return;
+    }
+
+    modBody.innerHTML = `
+      <div class="mod-list">
+        ${items.map(rep => `
+          <div class="mod-item">
+            <div class="t">${esc(rep.targetType || 'item')} #${esc(rep.targetId || '')}</div>
+            <div class="m small muted">${esc(rep.reason || 'Sin motivo')}</div>
+            <div class="m small muted">by: ${esc(rep.reportedBy || '—')}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="small muted" style="margin-top:10px;">
+        Acciones (Ocultar/Eliminar/Dismiss) — siguiente fase.
+      </div>
+    `;
+    openModal("modModal");
+  } catch (e) {
+    modBody.innerHTML = `<div class="small muted">Error cargando reportes (SOON).</div>`;
+    openModal("modModal");
+  }
+}
+
+notifBtn.addEventListener("click", async () => {
+  await openNotifModal();
+});
+
+/* =========================
+   Listeners del PERFIL modal
+========================= */
 profileModal.querySelector("#profileClose")?.addEventListener("click", () => closeModal("profileModal"));
 profileModal.querySelector("#profileBackdrop")?.addEventListener("click", () => closeModal("profileModal"));
 
@@ -1196,38 +1521,24 @@ profileModal.querySelectorAll("#pfTabs .tab-btn").forEach((b) =>
   })
 );
 
-// Al abrir el perfil, refresca antes de mostrar
+// ✅ Al abrir el perfil, refresca antes de mostrar
 profileBtn.addEventListener("click", async () => {
   await syncProfile();
   openModal("profileModal");
 });
 
+// ✅ Cuando cambia DID, refresca perfil + badge
 window.addEventListener("did:changed", async () => {
   await syncProfile();
+  void updateNotifUI();
 });
 
-// Primer render
+/* =========================
+   Primer render (AL FINAL)
+========================= */
 syncProfile();
+void updateNotifUI();
 
-
-
-
-function renderTab(t){
-  const c=profileModal.querySelector("#pfContent");
-  if(!c)return;
-  if(t==="perfil")c.innerHTML=`<div class="pf-box"><div class="h2">Estado</div><p class="muted">Panel MMORPG. Conectaremos tokenomics.js después.</p></div>`;
-  else if(t==="actividad")c.innerHTML=`<div class="pf-box"><div class="h2">Actividad</div><p class="muted">SOON</p></div>`;
-  else if(t==="dm")c.innerHTML=`<div class="pf-box"><div class="h2">DM</div><p class="muted">SOON</p></div>`;
-  else if(t==="dex")c.innerHTML=`<div class="pf-box"><div class="h2">DEX</div><div class="dex-grid"><button class="tab-btn" disabled>Swap</button><button class="tab-btn" disabled>LP Pools</button><button class="tab-btn" disabled>Staking</button><button class="tab-btn" disabled>Vote</button><button class="tab-btn" disabled>Reclaim Rewards</button><button class="tab-btn" disabled>Reclaim Bribes</button></div></div>`;
-  else if(t==="tienda")c.innerHTML=`<div class="pf-box"><div class="h2">Tienda</div><p class="muted">SOON</p></div>`;
-}
-
-profileBtn.addEventListener("click",()=>{syncProfile();renderTab("perfil");openModal("profileModal");});
-profileModal.querySelector("#profileClose")?.addEventListener("click",()=>closeModal("profileModal"));
-profileModal.querySelector("#profileBackdrop")?.addEventListener("click",()=>closeModal("profileModal"));
-profileModal.querySelectorAll("#pfTabs .tab-btn").forEach(b=>b.addEventListener("click",()=>{profileModal.querySelectorAll("#pfTabs .tab-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");renderTab(b.getAttribute("data-tab"));}));
-window.addEventListener("did:changed",syncProfile);
-syncProfile();
 
 }
 
