@@ -1,0 +1,379 @@
+
+/* =====================================================
+  DeFi · UI (basado en el look DAO: bg vivo + glass + glow)
+  - Sin drop-shadow duro
+  - Contornos + inset + glow al hover
+===================================================== */
+
+.defi-root{
+  background: var(--bg);
+  min-height: 100vh;
+  position: relative;
+
+  /* tokens locales (inspirados en DAO) */
+  --defi-emerald: #00ffd5;
+  --defi-azure: #00a3ff;
+
+  --defi-surface: rgba(255,255,255,.02);
+  --defi-border: rgba(255,255,255,.12);
+
+  --defi-edge: rgba(0,255,213,.38);
+  --defi-edge2: rgba(0,255,213,.22);
+
+  --defi-inset-hi: rgba(255,255,255,.08);
+  --defi-inset-lo: rgba(0,0,0,.26);
+
+  --defi-text: rgba(255,255,255,.92);
+  --defi-muted: rgba(255,255,255,.68);
+
+  --defi-blur-lg: blur(22px) saturate(150%);
+  --defi-blur-md: blur(16px) saturate(140%);
+  --defi-r: 18px;
+}
+
+html.light .defi-root{
+  /* evita blanco “firme”; usamos glass blanco suave */
+  --defi-surface: rgba(255,255,255,.58);
+  --defi-border: rgba(0,0,0,.06);
+
+  --defi-edge: rgba(13,185,166,.85);
+  --defi-edge2: rgba(13,185,166,.45);
+
+  --defi-inset-hi: rgba(255,255,255,.45);
+  --defi-inset-lo: rgba(13,185,166,.16);
+
+  --defi-text: rgba(14,26,24,.92);
+  --defi-muted: rgba(14,26,24,.58);
+}
+
+/* Fondo vivo (como DAO) */
+.defi-bg{
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(680px 420px at 18% 0%, rgba(0,255,213,.16), transparent 62%),
+    radial-gradient(540px 320px at 82% 18%, rgba(0,163,255,.13), transparent 60%),
+    var(--bg);
+  pointer-events: none;
+}
+
+.container{
+  background: transparent !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* Card base glass (sin sombra externa dura) */
+.defi-root .card{
+  border-radius: var(--defi-r);
+  border: 1px solid transparent;
+  background: var(--defi-surface);
+  backdrop-filter: var(--defi-blur-lg);
+  -webkit-backdrop-filter: var(--defi-blur-lg);
+
+  /* contorno + doble línea + relieve interno (estilo DAO unified) */
+  box-shadow:
+    inset 0 0 0 1px var(--defi-edge),
+    inset 0 0 0 2px var(--defi-edge2),
+    inset 0 1px 0 var(--defi-inset-hi),
+    inset 0 -1px 0 var(--defi-inset-lo);
+}
+
+/* Hover = activación + glow, sin drop shadow */
+.defi-root .card:hover{
+  box-shadow:
+    inset 0 0 0 1px rgba(0,255,213,.50),
+    inset 0 0 0 2px rgba(0,255,213,.26),
+    inset 0 1px 0 var(--defi-inset-hi),
+    inset 0 -1px 0 var(--defi-inset-lo),
+    0 0 28px rgba(0,255,213,.14);
+}
+html.light .defi-root .card:hover{
+  box-shadow:
+    inset 0 0 0 1px rgba(13,185,166,.90),
+    inset 0 0 0 2px rgba(13,185,166,.50),
+    inset 0 1px 0 var(--defi-inset-hi),
+    inset 0 -1px 0 var(--defi-inset-lo),
+    0 0 24px rgba(13,185,166,.16);
+}
+
+/* Mini cards */
+.defi-mini{
+  padding: 10px 12px;
+  min-height: 104px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap: 8px;
+}
+
+.mini-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 10px;
+}
+
+.mini-title{
+  font-weight: 1000;
+  letter-spacing: -0.01em;
+  color: var(--defi-text);
+  line-height: 1.1;
+}
+.mini-meta{
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--defi-muted);
+  line-height: 1.25;
+}
+
+.mini-tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap: 6px;
+}
+.mini-tag{
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.04);
+  padding: 5px 9px;
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--defi-text);
+}
+html.light .mini-tag{
+  border-color: rgba(0,0,0,.06);
+  background: rgba(0,0,0,.03);
+}
+
+/* mini actions (estos son los que abren modales) */
+.mini-actions{
+  display:flex;
+  gap: 8px;
+  flex-wrap:wrap;
+}
+.btn{
+  border-radius: 999px;
+  border: 1px solid rgba(0,255,213,.35);
+  padding: 8px 10px;
+  background: rgba(0,255,213,.08);
+  color: var(--defi-text);
+  font-weight: 950;
+  cursor: pointer;
+  transition: transform .18s ease, background .18s ease, border-color .18s ease, opacity .18s ease;
+  line-height: 1;
+}
+.btn:hover{
+  transform: translateY(-1px);
+  background: rgba(0,255,213,.12);
+  border-color: rgba(0,255,213,.55);
+}
+.btn.primary{
+  border: 0;
+  color: #061018;
+  background: linear-gradient(135deg, var(--defi-emerald), var(--defi-azure));
+}
+html.light .btn{
+  color: rgba(14,26,24,.92);
+  background: rgba(13,185,166,.14);
+  border-color: rgba(13,185,166,.40);
+}
+html.light .btn.primary{
+  color:#fff;
+  background: linear-gradient(135deg,#0db9a6,#0aa0ff);
+}
+
+/* icon buttons (mini) */
+.icon-btn{
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: inherit;
+  cursor:pointer;
+  width: 40px;
+  height: 40px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  transition: transform .18s ease, opacity .18s ease, box-shadow .18s ease;
+}
+.icon-btn:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 0 18px rgba(0,255,213,.14);
+}
+.icon-btn.mini{
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+}
+
+/* Layout: 4 en línea en desktop (solo baja en pantallas chicas) */
+.defi-row4{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.defi-row2{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* Charts grid: pie + 3 charts */
+.defi-charts{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* Chart cards */
+.chart-card{
+  padding: 10px 10px 8px;
+  cursor: pointer;
+  user-select:none;
+}
+.chart-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.t{
+  font-weight: 950;
+  color: var(--defi-text);
+  letter-spacing:-0.01em;
+}
+.small.muted{
+  color: var(--defi-muted) !important;
+}
+canvas{
+  width: 100%;
+  height: auto;
+  display:block;
+  border-radius: 12px;
+}
+
+/* Pie compacto + barra lateral */
+.chart-pie{
+  grid-column: span 1;
+}
+.pie-grid{
+  display:grid;
+  grid-template-columns: 220px 1fr;
+  gap: 10px;
+  align-items:center;
+}
+.pie-bar{
+  display:flex;
+  flex-direction:column;
+  gap: 6px;
+}
+.pie-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 8px;
+}
+.swatch{
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.20);
+}
+.pie-left{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  min-width: 0;
+}
+.pie-name{
+  font-weight: 950;
+  font-size: 12px;
+  color: var(--defi-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pie-val{
+  font-weight: 950;
+  font-size: 12px;
+  color: var(--defi-text);
+  opacity: .92;
+}
+
+/* Modal (sheet estilo DAO) */
+.modal{
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 60;
+}
+.modal.open{ display:block; }
+.modal-backdrop{
+  position:absolute;
+  inset:0;
+  background: rgba(0,0,0,.45);
+}
+.modal-card{
+  position: relative;
+  margin: 6vh auto;
+  width: min(920px, 92vw);
+  max-height: 88vh;
+  display:flex;
+  flex-direction: column;
+  border-radius: 26px;
+
+  background: rgba(10,20,26,.62);
+  border: 1px solid rgba(0,255,213,.18);
+  backdrop-filter: var(--defi-blur-lg);
+  -webkit-backdrop-filter: var(--defi-blur-lg);
+
+  box-shadow:
+    0 0 0 1px rgba(0,255,213,.10) inset;
+  overflow: hidden;
+}
+html.light .modal-card{
+  background: rgba(255,255,255,.82);
+  border-color: rgba(13,185,166,.18);
+  box-shadow:
+    0 0 0 1px rgba(13,185,166,.10) inset;
+}
+.modal-headbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.10);
+}
+.modal-body{
+  padding: 14px;
+  overflow:auto;
+}
+
+/* Modal chart area */
+.modal-chart{
+  border-radius: 18px;
+  padding: 12px;
+  margin-top: 10px;
+  background: rgba(255,255,255,.02);
+  border: 1px solid rgba(255,255,255,.10);
+}
+html.light .modal-chart{
+  background: rgba(255,255,255,.62);
+  border-color: rgba(0,0,0,.06);
+}
+
+/* Responsive: SOLO aquí baja columnas (no en desktop) */
+@media (max-width: 820px){
+  .defi-row4{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .defi-charts{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .pie-grid{ grid-template-columns: 1fr; }
+}
+@media (max-width: 520px){
+  .defi-row4{ grid-template-columns: 1fr; }
+  .defi-row2{ grid-template-columns: 1fr; }
+  .defi-charts{ grid-template-columns: 1fr; }
+}
