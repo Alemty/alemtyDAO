@@ -6,7 +6,7 @@ import{connectDid,clearDid,getDid,bindEthereumAccountsChanged,formatDidStatus}fr
 const ROUTES = [
   { key:"id",    label:"ID",    ico:"🪪", href:"/" },
   { key:"dao",   label:"DAO",   ico:"🏛️", href:"/dao/" },
-  { key:"token", label:"Token", ico:"🪙", href:"/token/" },
+  { key:"defi", label:"DEFI", ico:"🧩", href:"/defi/" },
   { key:"dex",   label:"DEX",   ico:"🔁", href:"#" },
   { key:"ia",    label:"IA",    ico:"🤖", href:"#" },
   { key:"ar",    label:"AR",    ico:"🕶️", href:"#" }

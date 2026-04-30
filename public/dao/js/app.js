@@ -686,8 +686,6 @@ if (saveBtn) {
   return;
 }
 
-
-
 // =========================
 // Confirmar delete de post
 // =========================
