@@ -28,14 +28,6 @@ alemty nace como respuesta a errores estructurales comunes en Web3:
 
 ---
 
-## Novedades v0.6 (avance al momento)
-
-Esta versión mantiene el enfoque y estructura del README original, pero integra el progreso reciente del repo:
-
-- **Renombre del módulo Token → DeFi** y consolidación del subdominio **/defi/** como dashboard visual de tokenomics (cards compactas + gráficas + modales explicativos), manteniendo el **mismo estilo de frontend** (glass + glow) del módulo DAO.
-- **Backend persistente (base v0.4)**: integración de SIWE + JWT y API Worker con D1 para estado compartido y escrituras autenticadas; frontend sigue siendo estático/auditable.- **Tokenomics canónico documentado**: el sistema económico se apoya en el **Rulebook v1.3** (y versiones previas v1.2) como fuente de verdad: separación regulatoria, emisión, caps, pool interno y gobernanza por quórums.
-
----
 
 ## La evolución del sistema (visión completa)
 
