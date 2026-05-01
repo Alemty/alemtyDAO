@@ -1,162 +1,566 @@
 
-:root{--hero-h:64vh}
+/* =========================================================
+   ID — iOS/Aero Modal-Match (v1.2)
+   - Cards match shell modal glass/halo (same formula)
+   - No drop shadows on cards
+   - Social cards: no harsh split, fade wash like ID top glow
+   - Light theme: book card corner fixed with emerald wash
+   Scoped to #pageIdentity only (safe for DAO/DEFI later)
+   ========================================================= */
 
-#pageIdentity .hero{position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
-#pageIdentity .hero-glow{position:absolute;inset:-40px;background:radial-gradient(700px 320px at 15% 30%, rgba(0,255,213,.18), transparent 65%),radial-gradient(560px 280px at 85% 40%, rgba(0,163,255,.12), transparent 60%);pointer-events:none}
-#pageIdentity .hero-inner{position:relative;z-index:2}
-#pageIdentity .kicker{margin:0 0 8px;color:var(--muted);font-weight:800;letter-spacing:.6px;text-transform:uppercase;font-size:.85rem}
-#pageIdentity h1{margin:0;font-size:clamp(1.7rem,4.2vw,2.6rem);line-height:1.1}
-#pageIdentity .sub{margin:6px 0 0;color:var(--muted);max-width:64ch}
-#pageIdentity .emerald{color:var(--primary)}
+#pageIdentity{
+  /* Identity palette (no changes) */
+  --id-bg: var(--bg, #0B1220);
+  --id-panel: var(--panel, #18243A);
+  --id-text: var(--text, #EAF2FF);
+  --id-muted: var(--muted, #9FB2C7);
+  --id-primary: var(--primary, #00FFD5);
+  --id-accent: var(--accent, #00A3FF);
 
-#pageIdentity .profile{position:relative;margin-top:-64px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;z-index:2}
-#pageIdentity .avatar-wrap{position:relative;width:176px;height:176px;display:grid;place-items:center}
-#pageIdentity .avatar{width:176px;height:176px;border-radius:50%;border:2px solid rgba(255,255,255,.16);object-fit:cover;object-position:center;background:#071a20}
-#pageIdentity .aura{position:absolute;inset:-18px;border-radius:50%;filter:blur(18px);background:radial-gradient(closest-side, rgba(238,255,0,.14), rgba(179,255,0,.39), transparent 10%);animation:pulse 6s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+  /* Shell-like border token fallback */
+  --id-border: var(--border, rgba(255,255,255,.12));
 
-#pageIdentity .name{font-weight:950;font-size:clamp(1.5rem,4vw,2.1rem);margin:8px 0 0}
-#pageIdentity .ens{font-weight:800;color:var(--primary);margin:0}
-#pageIdentity .ens a{color:var(--primary);text-decoration:none}
-#pageIdentity .ens a:hover{text-decoration:underline}
-#pageIdentity .pubkey{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap}
-#pageIdentity .pubkey code{background:rgba(0,255,213,.12);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.10)}
-#pageIdentity .copy-btn{padding:10px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.18);cursor:pointer;font-weight:950;background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03)),linear-gradient(90deg, var(--primary), var(--accent));box-shadow:0 7px 16px rgba(0,0,0,.22)}
-#pageIdentity .copy-ok{color:var(--primary);font-weight:900}
+  /* Radii */
+  --r-card: 22px;
+  --r-card-mobile: 18px;
+  --r-btn: 12px;
+  --r-pill: 999px;
 
-/* BOOK */
-#pageIdentity .book-portal{width:100vw;position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw;padding:18px 0 10px}
-#pageIdentity .book-frame{max-width:1100px;margin:0 auto;padding:18px 16px;border-radius:22px;position:relative;overflow:hidden;background:linear-gradient(135deg, rgba(0,255,213,.16), rgba(0,163,255,.12), rgba(10,31,39,.55));border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 34px rgba(0,0,0,.28);transition:transform .18s ease, box-shadow .22s ease, filter .22s ease, border-color .22s ease}
-#pageIdentity .book-frame::before{content:"";position:absolute;inset:-2px;background:radial-gradient(420px 260px at 12% 30%, rgba(0,255,213,.28), transparent 65%),radial-gradient(420px 260px at 88% 70%, rgba(0,163,255,.22), transparent 70%);filter:blur(6px);opacity:.35;pointer-events:none;transition:opacity .25s ease, filter .25s ease}
-#pageIdentity .book-frame>*{position:relative;z-index:2}
-#pageIdentity .book-frame:hover{transform:translateY(-2px);filter:saturate(118%);box-shadow:0 22px 48px rgba(0,0,0,.45),0 0 0 1px rgba(0,255,213,.18) inset}
-#pageIdentity .book-frame:hover::before{opacity:.75;filter:blur(8px)}
-#pageIdentity .book-frame.engaged{box-shadow:0 26px 60px rgba(0,0,0,.55),0 0 0 1px rgba(0,255,213,.28) inset}
-#pageIdentity .book-frame.engaged::before{opacity:.92;filter:blur(9px)}
+  /* Layout */
+  --content-max: 760px;
+  --pad-x: 18px;
 
-/* Badge */
-#pageIdentity .book-badge{display:inline-flex;align-items:center;gap:8px;font-weight:950;letter-spacing:.6px;padding:6px 10px;border-radius:999px;background:linear-gradient(135deg,#2cb5b7e9,#50c2c4df);border:1px solid rgba(255,255,255,.12);color:var(--text);text-transform:uppercase;font-size:.78rem;box-shadow:0 0 0 1px rgba(0,255,213,.12) inset,0 10px 22px rgba(0,0,0,.25)}
-#pageIdentity .book-frame.engaged .book-badge{animation:badgePulse 1.2s ease-in-out infinite;box-shadow:0 0 0 1px rgba(0,255,213,.25) inset,0 0 18px rgba(0,255,213,.35)}
-@keyframes badgePulse{0%,100%{transform:translateY(0);filter:saturate(110%)}50%{transform:translateY(-1px);filter:saturate(135%)}}
+  /* Motion */
+  --t-fast: 200ms ease-out;
+  --t-med: 300ms ease-out;
 
-#pageIdentity .book-title{margin:10px 0 6px;font-size:1.6rem;font-weight:980}
-#pageIdentity .book-sub{margin:0 0 14px;color:var(--muted);max-width:78ch}
-#pageIdentity .book-note{opacity:.85}
-#pageIdentity .book-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-#pageIdentity .book-rune{position:absolute;right:16px;bottom:12px;font-size:3.2rem;opacity:.12;user-select:none}
+  /* Shell-like glass tuning (match) */
+  --glass-ui: color-mix(in oklab, var(--id-panel), transparent 12%);
+  --glass-blur: blur(12px) saturate(108%); /* match shell theme-ready blocks */ /* [1](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!sad588434360e40fc89990cdbc3c07abb) */
 
-/* CTA botones: ambos iguales */
-#pageIdentity .btn-primary{display:inline-flex;align-items:center;gap:8px;border-radius:14px;padding:10px 14px;text-decoration:none;font-weight:950;cursor:pointer;border:1px solid rgba(255,255,255,.18);color:#08101a;background:linear-gradient(90deg, var(--primary), #bff8ff);box-shadow:0 9px 18px rgba(0,0,0,.22)}
-#pageIdentity .btn-primary:hover{transform:translateY(-1px);filter:saturate(125%) brightness(1.06);box-shadow:0 14px 28px rgba(0,0,0,.30),0 0 0 1px rgba(0,255,213,.22) inset,0 0 18px rgba(0,255,213,.35)}
-#pageIdentity .book-frame.engaged .btn-primary{animation:ctaPulse 1.1s ease-in-out infinite}
-@keyframes ctaPulse{0%,100%{transform:translateY(0);filter:saturate(110%)}50%{transform:translateY(-1px);filter:saturate(140%)}}
-
-#pageIdentity .buy-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1.1}
-#pageIdentity .buy-main{font-size:1rem;font-weight:950}
-#pageIdentity .buy-sub{font-size:.7rem;font-weight:700;opacity:.85;letter-spacing:.4px;text-transform:uppercase}
-
-/* Tema claro: book + CTA contraste fuerte (para que NO se funda con el fondo) */
-html.light #pageIdentity .book-frame{background:linear-gradient(135deg, rgba(0,255,213,.22), rgba(0,200,170,.18), rgba(200,255,245,.55));border-color:rgba(0,163,255,.18)}
-html.light #pageIdentity .btn-primary{background:linear-gradient(135deg,#00cbb0,#00a3ff);color:#08101a;border-color:rgba(0,163,255,.55);box-shadow:0 10px 22px rgba(0,163,255,.45),0 0 0 1px rgba(255,255,255,.65) inset}
-html.light #pageIdentity .btn-primary:hover{box-shadow:0 18px 36px rgba(0,163,255,.55),0 0 0 1px rgba(0,163,255,.45) inset,0 0 22px rgba(0,163,255,.45)}
-
-/* SOCIAL CARDS */
-#pageIdentity .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-top:16px}
-#pageIdentity .social-card{display:flex;flex-direction:column;gap:6px;padding:16px;border-radius:18px;text-decoration:none;color:var(--text);background:color-mix(in oklab,var(--panel),transparent 25%);border:1px solid var(--border);backdrop-filter:blur(10px);transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease, filter .15s ease}
-#pageIdentity .social-card:hover{transform:translateY(-2px);filter:saturate(115%);border-color:rgba(0,255,213,.35);box-shadow:0 14px 32px rgba(0,0,0,.35),0 0 0 1px rgba(0,255,213,.25) inset}
-#pageIdentity .social-card .platform{font-weight:900;font-size:14px}
-#pageIdentity .social-card .desc{font-size:12px;opacity:.75}
-html.light #pageIdentity .social-card{background:linear-gradient(135deg, rgba(0,255,213,.18), rgba(200,255,245,.55))}
-
-#pageIdentity .social-card .row{display:flex;align-items:center;gap:10px}
-#pageIdentity .social-card .ico{width:22px;height:22px;flex:0 0 22px;display:block}
-
-#pageIdentity .cards-grid,
-#cards.cards-grid{
-display:grid;
-grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
-gap:16px;
-justify-content:center;
-margin-top:16px;
+  /* Typography */
+  --ts-display: clamp(1.75rem, 4.6vw, 2.6rem);
+  --ts-h2: clamp(1.3rem, 3.3vw, 2.05rem);
+  --ts-label: 11px;
 }
 
+/* Container */
+#pageIdentity .container{
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 var(--pad-x);
+}
+
+/* ID-only background glow */
+#pageIdentity{ position:relative; isolation:isolate; }
+#pageIdentity::before{
+  content:"";
+  position:fixed;
+  inset:-20%;
+  z-index:-1;
+  pointer-events:none;
+  background:
+    radial-gradient(720px 360px at 15% 16%, rgba(0,255,213,.10), transparent 66%),
+    radial-gradient(640px 360px at 85% 18%, rgba(0,163,255,.08), transparent 62%);
+  opacity:.95;
+}
+
+/* HERO */
+#pageIdentity .hero{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  padding:54px 0 22px;
+}
+#pageIdentity .hero-glow{
+  position:absolute;
+  inset:-40px;
+  pointer-events:none;
+  background:
+    radial-gradient(780px 380px at 12% 24%, rgba(0,255,213,.18), transparent 68%),
+    radial-gradient(660px 360px at 86% 34%, rgba(0,163,255,.12), transparent 66%);
+  opacity:.95;
+}
+#pageIdentity .hero-inner{ position:relative; z-index:2; text-align:center; }
+#pageIdentity .kicker{
+  margin:0 0 10px;
+  color:var(--id-muted);
+  font-weight:800;
+  letter-spacing:.6px;
+  text-transform:uppercase;
+  font-size:var(--ts-label);
+}
+#pageIdentity h1{
+  margin:0;
+  font-size:var(--ts-display);
+  line-height:1.08;
+  letter-spacing:-0.6px;
+}
+#pageIdentity .emerald{ color:var(--id-primary); text-shadow:none; }
+#pageIdentity .sub{
+  margin:10px auto 0;
+  color:var(--id-muted);
+  max-width:64ch;
+  font-size:14px;
+  line-height:1.55;
+}
+
+/* PROFILE */
+#pageIdentity .profile{
+  position:relative;
+  margin-top:-64px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+  text-align:center;
+  z-index:2;
+}
+#pageIdentity .avatar-wrap{
+  position:relative;
+  width:176px;height:176px;
+  display:grid;
+  place-items:center;
+}
+#pageIdentity .avatar{
+  width:176px;height:176px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.16);
+  object-fit:cover;
+  object-position:center;
+  background:#071a20;
+  box-shadow:none;   /* no glow/shadow on photo */
+  filter:none;
+}
+#pageIdentity .aura{ display:none; } /* remove photo glow */
+#pageIdentity .name{
+  font-weight:950;
+  font-size:var(--ts-h2);
+  margin:6px 0 0;
+  letter-spacing:-0.4px;
+}
+#pageIdentity .ens{
+  font-weight:850;
+  color:var(--id-primary);
+  margin:0;
+}
+#pageIdentity .ens a{ color:var(--id-primary); text-decoration:none; }
+#pageIdentity .ens a:hover{ text-decoration:underline; }
+
+/* Pubkey + copy */
+#pageIdentity .pubkey{
+  display:flex; gap:10px;
+  align-items:center; justify-content:center;
+  flex-wrap:wrap;
+}
+#pageIdentity .pubkey code{
+  background:rgba(0,255,213,.08);
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.12);
+  font-variant-numeric:tabular-nums;
+}
+#pageIdentity .copy-btn{
+  min-height:44px;
+  padding:10px 14px;
+  border-radius:var(--r-btn);
+  border:1px solid rgba(255,255,255,.18);
+  cursor:pointer;
+  font-weight:950;
+  color:#08101a;
+  background:linear-gradient(135deg,var(--id-primary),var(--id-accent));
+  box-shadow:none;
+  transition:transform var(--t-fast), filter var(--t-fast);
+}
+#pageIdentity .copy-btn:hover{ transform:translateY(-1px); filter:saturate(120%) brightness(1.03); }
+#pageIdentity .copy-btn:active{ transform:translateY(0); }
+#pageIdentity .copy-ok{ color:var(--id-primary); font-weight:900; }
+#pageIdentity .copy-ok[hidden]{ display:none !important; }
+
+/* Focus accessibility */
+#pageIdentity a:focus-visible,
+#pageIdentity button:focus-visible{
+  outline:2px solid rgba(0,255,213,.55);
+  outline-offset:3px;
+  border-radius:12px;
+}
+
+/* =========================================================
+   MODAL-MATCH GLASS CARD (align to shell.css)
+   - backdrop-filter blur(12px) saturate(108%)
+   - halo ::after with same dual radial gradients, opacity/blur
+   - no box-shadow
+   This mirrors shell topbar/bottom-nav/drawer/modal halos. [1](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!sad588434360e40fc89990cdbc3c07abb)
+   ========================================================= */
+#pageIdentity .modal-glass{
+  position:relative;
+  border-radius:var(--r-card);
+  border:1px solid var(--id-border);
+  background:var(--glass-ui);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
+  overflow:hidden;
+  box-shadow:none;
+  transition:transform var(--t-fast), filter var(--t-fast), border-color var(--t-fast);
+}
+#pageIdentity .modal-glass::before{
+  /* subtle top highlight like glass catching light */
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  border-radius:inherit;
+  background:
+    radial-gradient(ellipse 95% 70% at 50% -14%, rgba(255,255,255,.06), transparent 72%);
+  opacity:.9;
+}
+#pageIdentity .modal-glass::after{
+  /* SAME halo structure as shell.css (radials + blur + opacity). */ /* [1](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!sad588434360e40fc89990cdbc3c07abb) */
+  content:"";
+  position:absolute;
+  inset:-1px;
+  pointer-events:none;
+  border-radius:inherit;
+  background:
+    radial-gradient(420px 220px at 15% 0%, rgba(0,255,213,.22), transparent 65%),
+    radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.18), transparent 70%);
+  opacity:.65;
+  filter:blur(14px);
+}
+#pageIdentity .modal-glass > *{ position:relative; z-index:1; }
+
+#pageIdentity .modal-glass:hover{
+  transform:translateY(-1px);
+  filter:saturate(112%);
+  border-color:rgba(0,255,213,.22);
+}
+
+/* =========================================================
+   BOOK PORTAL — now uses modal-glass perfectly
+   ========================================================= */
+#pageIdentity .book-portal{ width:100%; padding:18px 0 10px; }
+#pageIdentity .book-frame{
+  max-width:1100px;
+  margin:0 auto;
+  padding:18px 16px;
+
+  /* modal glass */
+  border-radius:var(--r-card);
+  border:1px solid var(--id-border);
+  background:var(--glass-ui);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
+  position:relative;
+  overflow:hidden;
+  box-shadow:none;
+  transition:transform var(--t-fast), filter var(--t-fast), border-color var(--t-fast);
+}
+/* use the same halo formula as modal */
+#pageIdentity .book-frame::after{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  pointer-events:none;
+  border-radius:inherit;
+  background:
+    radial-gradient(420px 220px at 15% 0%, rgba(0,255,213,.22), transparent 65%),
+    radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.18), transparent 70%);
+  opacity:.65;
+  filter:blur(14px);
+}
+/* top highlight + inner wash */
+#pageIdentity .book-frame::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  border-radius:inherit;
+  background:
+    radial-gradient(ellipse 95% 70% at 50% -14%, rgba(255,255,255,.06), transparent 72%),
+    radial-gradient(520px 320px at 16% 26%, rgba(0,255,213,.14), transparent 68%),
+    radial-gradient(520px 320px at 86% 74%, rgba(0,163,255,.10), transparent 72%);
+  opacity:.95;
+}
+#pageIdentity .book-frame > *{ position:relative; z-index:2; }
+
+#pageIdentity .book-frame:hover{
+  transform:translateY(-1px);
+  filter:saturate(112%);
+  border-color:rgba(0,255,213,.22);
+}
+#pageIdentity .book-frame.engaged{
+  filter:saturate(118%);
+  border-color:rgba(0,255,213,.28);
+}
+
+#pageIdentity .book-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-weight:950;
+  letter-spacing:.6px;
+  padding:6px 10px;
+  border-radius:var(--r-pill);
+  background:linear-gradient(135deg, rgba(0,255,213,.18), rgba(0,163,255,.14));
+  border:1px solid rgba(255,255,255,.12);
+  color:var(--id-text);
+  text-transform:uppercase;
+  font-size:11px;
+  box-shadow:none;
+}
+#pageIdentity .book-title{
+  margin:10px 0 6px;
+  font-size:1.55rem;
+  font-weight:980;
+  letter-spacing:-0.4px;
+}
+#pageIdentity .book-sub{
+  margin:0 0 14px;
+  color:var(--id-muted);
+  max-width:78ch;
+  line-height:1.55;
+}
+#pageIdentity .book-note{ opacity:.88; }
+
+#pageIdentity .book-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+#pageIdentity .btn-primary{
+  min-height:44px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  border-radius:var(--r-btn);
+  padding:10px 14px;
+  text-decoration:none;
+  font-weight:950;
+  cursor:pointer;
+  border:1px solid rgba(255,255,255,.18);
+  color:#08101a;
+  background:linear-gradient(135deg, var(--id-primary), #bff8ff);
+  box-shadow:none;
+  transition:transform var(--t-fast), filter var(--t-fast);
+}
+#pageIdentity .btn-primary:hover{ transform:translateY(-1px); filter:saturate(120%) brightness(1.03); }
+#pageIdentity .buy-btn{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; line-height:1.1; }
+#pageIdentity .buy-main{ font-size:1rem; font-weight:950; }
+#pageIdentity .buy-sub{ font-size:.72rem; font-weight:700; opacity:.88; letter-spacing:.4px; text-transform:uppercase; }
+#pageIdentity .book-rune{
+  position:absolute;
+  right:16px;
+  bottom:12px;
+  font-size:3.2rem;
+  opacity:.10;
+  user-select:none;
+}
+
+/* SECTION TITLE */
+#pageIdentity .section-title{
+  margin:18px 0 0;
+  font-size:var(--ts-label);
+  font-weight:700;
+  letter-spacing:2.5px;
+  text-transform:uppercase;
+  color:var(--id-muted);
+}
+
+/* =========================================================
+   SOCIAL CARDS — no harsh split; faded wash across left side
+   ========================================================= */
+#pageIdentity .cards-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+  gap:16px;
+  justify-content:center;
+  margin-top:16px;
+}
 
 #pageIdentity .social-card{
-display:grid;
-grid-template-columns:92px 1fr;
-align-items:stretch;
-gap:0;
-padding:0;
-border-radius:18px;
-overflow:hidden;
-text-decoration:none;
-color:var(--text);
-background:color-mix(in oklab,var(--panel),transparent 25%);
-border:1px solid var(--border);
-backdrop-filter:blur(10px);
-min-height:92px;
-max-height:92px;
+  text-decoration:none;
+  color:var(--id-text);
+  border-radius:var(--r-card);
+  overflow:hidden;
+
+  display:grid;
+  grid-template-columns:92px 1fr;
+  min-height:92px;
+
+  /* modal glass base */
+  border:1px solid var(--id-border);
+  background:var(--glass-ui);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
+
+  box-shadow:none;
+  position:relative;
+  transition:transform var(--t-fast), filter var(--t-fast), border-color var(--t-fast);
 }
 
+/* Top highlight + LEFT FADE WASH (removes harsh division) */
+#pageIdentity .social-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  border-radius:inherit;
+
+  /* 1) top glass highlight (like hero top) 
+     2) left-to-right wash (emerald/azure) that fades smoothly */
+  background:
+    radial-gradient(ellipse 95% 70% at 50% -14%, rgba(255,255,255,.06), transparent 72%),
+    linear-gradient(90deg, rgba(0,255,213,.12), rgba(0,163,255,.08), transparent 70%);
+  opacity:.95;
+}
+
+/* SAME halo formula as modal */
+#pageIdentity .social-card::after{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  pointer-events:none;
+  border-radius:inherit;
+  background:
+    radial-gradient(420px 220px at 15% 0%, rgba(0,255,213,.22), transparent 65%),
+    radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.18), transparent 70%);
+  opacity:.65;
+  filter:blur(14px);
+}
+
+#pageIdentity .social-card > *{ position:relative; z-index:1; }
+
+#pageIdentity .social-card:hover{
+  transform:translateY(-1px);
+  filter:saturate(112%);
+  border-color:rgba(0,255,213,.22);
+}
+
+/* Icon pane: transparent, no border-right, so no “cut” */
 #pageIdentity .social-card .icon-pane{
-display:flex;
-align-items:center;
-justify-content:center;
-background:linear-gradient(135deg,rgba(0,255,213,.22),rgba(0,163,255,.16));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:transparent;
+  border-right:0;
 }
-
 #pageIdentity .social-card .ico{
-width:100%;
-height:100%;
-padding:18px;
-object-fit:contain;
-display:block;
+  width:100%;
+  height:100%;
+  padding:18px;
+  object-fit:contain;
+  display:block;
+  filter:none;
 }
 
 #pageIdentity .social-card .text-pane{
-display:flex;
-flex-direction:column;
-justify-content:center;
-gap:4px;
-padding:12px 14px;
-min-width:0;
-min-height:0; /* clave para evitar empujes */
-overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:4px;
+  padding:12px 14px;
+  min-width:0;
+  overflow:hidden;
 }
-
 #pageIdentity .social-card .platform{
-font-weight:700;
-font-size:14px;
-line-height:1.1;
-white-space:nowrap;
-overflow:hidden;
-text-overflow:ellipsis;
+  font-weight:850;
+  font-size:14px;
+  letter-spacing:-0.1px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
-
-
 #pageIdentity .social-card .desc{
   font-size:12px;
-  line-height:1.2;
-  opacity:.78;
+  line-height:1.25;
+  color:rgba(234,242,255,.78);
+  overflow:hidden;
+  text-overflow:ellipsis;
 
-  /* Estándar moderno */
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-
-  /* Fallback WebKit */
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-
-  /* Estándar emergente */
-  line-clamp: 2;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  line-clamp:2;
 }
 
+/* Bottom safe space */
+#pageIdentity .bottom-safe-space{
+  height:120px;
+  pointer-events:none;
+}
 
+/* =========================================================
+   LIGHT THEME — emerald wash fixes book corner & keeps modal feel
+   ========================================================= */
+html.light #pageIdentity{
+  /* Keep modal feel: lighter glass base */
+  --glass-ui: rgba(255,255,255,.82);
+  --id-border: rgba(0,0,0,.08);
+}
 
-/* Tema claro: mantener contraste suave */
-html.light #pageIdentity .social-card{
-background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(255,255,255,.68));
-border-color:rgba(0,0,0,.06);
+/* Book: eliminate any “dark corner” with explicit emerald wash */
+html.light #pageIdentity .book-frame::before{
+  background:
+    radial-gradient(ellipse 110% 80% at 0% 0%, rgba(0,255,213,.18), transparent 62%),
+    radial-gradient(ellipse 110% 80% at 100% 0%, rgba(0,163,255,.14), transparent 62%),
+    radial-gradient(ellipse 95% 70% at 50% -14%, rgba(255,255,255,.78), transparent 72%);
+  opacity:1;
+}
+html.light #pageIdentity .book-frame::after{
+  opacity:.45;
+  filter:blur(12px);
+}
+
+/* Social cards in light: keep fade and soften text */
+html.light #pageIdentity .social-card::before{
+  background:
+    radial-gradient(ellipse 95% 70% at 50% -14%, rgba(255,255,255,.78), transparent 72%),
+    linear-gradient(90deg, rgba(0,255,213,.14), rgba(0,163,255,.10), transparent 70%);
+  opacity:1;
+}
+html.light #pageIdentity .social-card::after{
+  opacity:.42;
+  filter:blur(12px);
+}
+html.light #pageIdentity .sub,
+html.light #pageIdentity .kicker,
+html.light #pageIdentity .section-title{
+  color:rgba(8,16,26,.62);
+}
+html.light #pageIdentity .social-card .desc{
+  color:rgba(8,16,26,.64);
+}
+html.light #pageIdentity .pubkey code{
+  background:rgba(0,163,255,.08);
+  border-color:rgba(0,0,0,.08);
+}
+html.light #pageIdentity .btn-primary{
+  background:linear-gradient(135deg,#00cbb0,#00a3ff);
+  border-color:rgba(0,163,255,.55);
+  box-shadow:none;
+}
+
+/* =========================================================
+   Mobile (plan): padding 16px & blur <= 12px (already)
+   ========================================================= */
+@media (max-width:480px){
+  #pageIdentity{ --pad-x:16px; }
+  #pageIdentity .hero{ padding:44px 0 18px; }
+  #pageIdentity .cards-grid{ grid-template-columns:1fr; gap:12px; }
+  #pageIdentity .social-card,
+  #pageIdentity .book-frame{ border-radius:var(--r-card-mobile); }
+
+  /* reduce blur slightly for performance */
+  #pageIdentity{ --glass-blur: blur(10px) saturate(120%); }
+  #pageIdentity .book-frame::after,
+  #pageIdentity .social-card::after{ filter: blur(12px); opacity: .55; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion:reduce){
+  #pageIdentity *{ animation:none !important; transition:none !important; }
 }
