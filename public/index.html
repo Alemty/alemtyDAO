@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <!-- ================= THEME INIT ================= -->
+<script>
+(function () {
+  try {
+    const saved = localStorage.getItem('theme');
+    const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+    const theme = saved || (prefersLight ? 'light' : 'dark');
+    if (theme === 'light') document.documentElement.classList.add('light');
+  } catch {}
+})();
+</script>
+  <meta name="viewport" content="width=device-width, initial-scale=0.7, maximum-scale=1, user-scalable=yes">
+  <title>alemty.eth · ID</title>
+
+  <!-- CSS GLOBAL (desde raíz) -->
+  <link rel="stylesheet" href="/settings/theme.css">
+  <link rel="stylesheet" href="/shared/css/module.css">
+  <link rel="stylesheet" href="/shared/css/shell.css">
+  <link rel="stylesheet" href="/css/style.css">
+
+  <!-- Fuente -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<!-- ==================================================
+     REDIRECT ENS → SUBAPP (ANTES DE RENDER)
+================================================== -->
+
+
+<script>
+(function () {
+  const h = location.hostname;
+  const p = location.pathname;
+
+  // 1️⃣ Si estamos en sub-app por PATH (localhost / IPFS)
+  if (
+    p.startsWith("/dao/") ||
+    p.startsWith("/token/") ||
+    p.startsWith("/dex/") ||
+    p.startsWith("/ia/")
+  ) {
+    // No redirigir, dejar que cargue ese index.html
+    return;
+  }
+
+  // 2️⃣ Si estamos en subdominios ENS (producción)
+  const map = {
+    "dao.": "/dao/",
+    "token.": "/token/",
+    "dex.": "/dex/",
+    "ia.": "/ia/"
+  };
+
+  for (const sub in map) {
+    if (h.startsWith(sub)) {
+      location.replace(map[sub]);
+      return;
+    }
+  }
+
+  // 3️⃣ Si no es nada de lo anterior → ID (no hace nada)
+})();
+</script>
+
+
+
+
+<header id="topbar"></header>
+<nav id="navbar"></nav>
+
+<main id="pageIdentity">
+
+  <!-- ================= HERO ================= -->
+  <section class="hero" style="padding:48px 0 20px;position:relative;overflow:hidden;">
+    <div class="hero-glow"></div>
+    <div class="hero-inner container">
+      <p class="kicker">Escuela de Ciencia · Filosofía · Gnosis · Web3.0</p>
+      <h1>
+        Consultora Web Espacial<br>
+        <span class="emerald">alemtyDAO</span>
+      </h1>
+      <p class="sub">DID - DAO - DEFI - DEX - IA - AR</p>
+    </div>
+  </section>
+
+  <!-- ================= PERFIL ================= -->
+  <section class="profile container" style="margin-top:8px;position:relative;z-index:2;">
+    <div class="avatar-wrap">
+      <img class="avatar"
+           src="/assets/avatar.png"
+           alt="Foto de perfil"
+           loading="eager">
+      <div class="aura"></div>
+    </div>
+
+    <h2 class="name">Alejandro Gutierrez Zavala</h2>
+
+    <p class="ens">
+      <a href="https://app.ens.domains/alemty.eth" target="_blank" rel="noopener noreferrer">
+        alemty.eth
+      </a>
+    </p>
+
+    <div class="pubkey">
+      <code id="pubkey" data-full="0x6a202f991c4c1df079449be9847b1dac3f51854f">
+        0x6a20…1854f
+      </code>
+      <button class="copy-btn" id="copyBtn" type="button">Copiar</button>
+      <span id="copyOk" class="copy-ok" hidden>¡Copiado!</span>
+    </div>
+  </section>
+
+  <!-- ================= LIBRO ================= -->
+  <section class="book-portal" aria-label="Lanzamiento del libro">
+    <div class="book-frame" id="bookFrame">
+      <div class="book-badge" id="bookBadge">NUEVO · Libro</div>
+
+      <h3 class="book-title">La Simulación del Dragón</h3>
+
+      <p class="book-sub">
+        Descarga gratuita directa desde esta web.
+        <span class="book-note">Comprar será una forma opcional de apoyar el trabajo.</span>
+      </p>
+
+      <div class="book-actions">
+        <a class="btn-primary"
+           id="downloadBook"
+           href="/assets/data/LaSimulacióndelDragón-alemty.eth.pdf"
+           download>
+          Descargar
+        </a>
+
+        <a class="btn-primary buy-btn"
+           id="buyBtn"
+           href="https://www.amazon.es/dp/B0GS624W3C"
+           target="_blank"
+           rel="noopener noreferrer">
+          <span class="buy-main">Comprar</span>
+          <span class="buy-sub">Amazon</span>
+        </a>
+      </div>
+
+      <div class="book-rune" aria-hidden="true">🐉</div>
+    </div>
+  </section>
+
+  <!-- ================= SOCIAL ================= -->
+  <section class="container">
+    <h3 class="section-title">Sígueme</h3>
+    <div class="cards-grid" id="cards"></div>
+  </section>
+
+  <div class="bottom-safe-space"></div>
+
+</main>
+
+<!-- ================= APP JS ================= -->
+<script type="module" src="/js/app.js"></script>
+
+</body>
+</html>

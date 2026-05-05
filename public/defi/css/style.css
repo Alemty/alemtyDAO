@@ -1,0 +1,481 @@
+
+/* =====================================================
+   DeFi — UI v5 (DAO-soft + PNG canvases)
+   - Misma suavidad que DAO: sin drop-shadow externo
+   - Bordes hairline + inset
+   - Charts grandes tipo pools (2 por fila)
+   - Mint Pie y Line charts: canvas transparente (JS también)
+   - Tipografía “nativa” y compacta (nada se sale)
+   - Topbar fixed + modal offset
+===================================================== */
+
+/* -----------------------------
+   0) Reset & hardening
+------------------------------ */
+*{ box-sizing:border-box; }
+html, body{ max-width:100%; overflow-x:hidden; }
+img, canvas{ display:block; max-width:100%; height:auto; }
+button{ font:inherit; }
+:focus-visible{ outline:none; }
+
+/* -----------------------------
+   1) Root tokens
+------------------------------ */
+.defi-root{
+  background: var(--bg);
+  min-height: 100vh;
+  position: relative;
+
+  --defi-emerald: #00ffd5;
+  --defi-azure: #00a3ff;
+
+  --defi-blur: blur(22px) saturate(140%);
+  --defi-blur-md: blur(16px) saturate(135%);
+  --defi-r: 18px;
+  --defi-gap: 10px;
+  --defi-topbar-h: 72px;
+
+  /* Typography (nativa/limpia) */
+  --defi-fs-h1: clamp(1.6rem, 3.2vw, 2.2rem);
+  --defi-fs-title: clamp(13px, 1.05vw, 15px);
+  --defi-fs-meta: clamp(11px, 0.95vw, 12.5px);
+  --defi-fs-tag: 11px;
+  --defi-fs-btn: 12px;
+  --defi-fs-chart: clamp(12.5px, 1.05vw, 14px);
+
+  /* Dark defaults */
+  --defi-surface: rgba(10,20,26,.62);
+  --defi-border: rgba(0,255,213,.18);
+  --defi-inset: rgba(0,255,213,.10);
+  --defi-text: rgba(255,255,255,.92);
+  --defi-muted: rgba(255,255,255,.68);
+  --defi-hair: rgba(255,255,255,.08);
+}
+
+/* Light */
+html.light .defi-root{
+  --defi-surface: rgba(255,255,255,.82);
+  --defi-border: rgba(13,185,166,.18);
+  --defi-inset: rgba(13,185,166,.10);
+  --defi-text: rgba(14,26,24,.92);
+  --defi-muted: rgba(14,26,24,.58);
+  --defi-hair: rgba(0,0,0,.06);
+}
+
+/* -----------------------------
+   2) Background vivo
+------------------------------ */
+.defi-bg{
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events:none;
+  background:
+    radial-gradient(680px 420px at 18% 0%, rgba(0,255,213,.16), transparent 62%),
+    radial-gradient(540px 320px at 82% 18%, rgba(0,163,255,.13), transparent 60%),
+    var(--bg);
+} /* existe en index DeFi [2](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!scab846db2d6c4d6da9638b33bd97dfa5) */
+
+.defi-root .container{
+  background: transparent !important;
+  position: relative;
+  z-index: 1;
+  padding-top: var(--defi-topbar-h);
+  padding-bottom: 96px; /* aire por bottom-nav fixed del shell */
+} /* main.container existe [2](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!scab846db2d6c4d6da9638b33bd97dfa5) */
+
+/* H1 look */
+.defi-root .h1{
+  font-size: var(--defi-fs-h1);
+  letter-spacing: -0.02em;
+}
+.defi-root .muted{ color: var(--defi-muted); }
+
+/* -----------------------------
+   3) Topbar / Bottom nav fixed
+------------------------------ */
+.topbar{
+  position: fixed !important;
+  top:0; left:0; right:0;
+  z-index: 1000;
+  backdrop-filter: var(--defi-blur) !important;
+  -webkit-backdrop-filter: var(--defi-blur) !important;
+}
+.bottom-nav{
+  position: fixed !important;
+  bottom:0; left:0; right:0;
+  z-index: 1000;
+  backdrop-filter: var(--defi-blur) !important;
+  -webkit-backdrop-filter: var(--defi-blur) !important;
+}
+
+/* -----------------------------
+   4) Card system — DAO-soft (sin sombra externa)
+------------------------------ */
+.defi-root .card{
+  border-radius: var(--defi-r);
+  background: var(--defi-surface);
+  border: 1px solid var(--defi-border);
+  backdrop-filter: var(--defi-blur);
+  -webkit-backdrop-filter: var(--defi-blur);
+  position: relative;
+  overflow: hidden;
+
+  /* ✅ solo inset/hairline */
+  box-shadow: inset 0 0 0 1px var(--defi-inset);
+}
+
+.defi-root .card::after{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  pointer-events:none;
+  border-radius:inherit;
+  background:
+    radial-gradient(420px 220px at 15% 0%, rgba(0,255,213,.18), transparent 65%),
+    radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.14), transparent 70%);
+  opacity:.22;
+  filter: blur(14px);
+}
+.defi-root .card > *{ position: relative; z-index: 1; }
+
+.defi-root .card:hover{
+  transform:none;
+  box-shadow: inset 0 0 0 1px var(--defi-inset);
+}
+
+/* -----------------------------
+   5) Layout grids
+------------------------------ */
+.defi-row4{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: var(--defi-gap);
+} /* row4 existe [2](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!scab846db2d6c4d6da9638b33bd97dfa5) */
+
+.defi-row2{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: var(--defi-gap);
+} /* row2 existe [2](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!scab846db2d6c4d6da9638b33bd97dfa5) */
+
+/* charts big grid (2 por fila) */
+.defi-charts{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: var(--defi-gap);
+  grid-auto-flow: row dense;
+} /* defi-charts existe [2](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!scab846db2d6c4d6da9638b33bd97dfa5) */
+
+/* -----------------------------
+   6) Mini cards (tokens/pools)
+------------------------------ */
+.defi-mini{
+  padding: 10px 12px;
+  min-height: 124px;
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+  justify-content: space-between;
+}
+.mini-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+.mini-top > div{ min-width:0; }
+
+.mini-title{
+  font-weight: 1000;
+  color: var(--defi-text);
+  font-size: var(--defi-fs-title);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  overflow-wrap:anywhere;
+  display:-webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow:hidden;
+}
+.mini-meta{
+  margin-top: 4px;
+  color: var(--defi-muted);
+  font-size: var(--defi-fs-meta);
+  line-height: 1.22;
+  overflow-wrap:anywhere;
+  display:-webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow:hidden;
+}
+
+.mini-tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  min-width:0;
+}
+.mini-tag{
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--defi-border), transparent 35%);
+  background: transparent; /* ✅ tags transparentes (resalta fondo) */
+  padding: 5px 9px;
+  font-size: var(--defi-fs-tag);
+  font-weight: 900;
+  color: var(--defi-text);
+  max-width: 100%;
+  white-space: nowrap;
+  overflow:hidden;
+  text-overflow: ellipsis;
+}
+
+/* actions as 2-col grid */
+.mini-actions{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 8px;
+}
+.mini-actions .btn{
+  width: 100%;
+  min-width:0;
+  font-size: var(--defi-fs-btn);
+  padding: 8px 10px;
+}
+
+/* -----------------------------
+   7) Buttons
+------------------------------ */
+.btn{
+  border-radius: 999px;
+  border: 1px solid rgba(0,255,213,.35);
+  padding: 8px 10px;
+  background: rgba(0,255,213,.08);
+  color: var(--defi-text);
+  font-weight: 950;
+  cursor:pointer;
+  line-height: 1;
+  transition: background .18s ease, border-color .18s ease, opacity .18s ease;
+}
+.btn:hover{
+  background: rgba(0,255,213,.12);
+  border-color: rgba(0,255,213,.55);
+}
+.btn.primary{
+  border:0;
+  color:#061018;
+  background: linear-gradient(135deg,var(--defi-emerald),var(--defi-azure));
+}
+html.light .btn{ color: rgba(14,26,24,.92); background: rgba(13,185,166,.14); border-color: rgba(13,185,166,.40); }
+html.light .btn.primary{ color:#fff; background: linear-gradient(135deg,#0db9a6,#0aa0ff); }
+
+/* icon buttons */
+.icon-btn{
+  border-radius: 14px;
+  border: 1px solid color-mix(in oklab, var(--defi-border), transparent 35%);
+  background: rgba(255,255,255,.06);
+  color: inherit;
+  cursor:pointer;
+  width: 40px;
+  height: 40px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.icon-btn.mini{ width:34px; height:34px; border-radius:12px; }
+
+/* -----------------------------
+   8) Chart cards BIG (nativo, canvases transparentes)
+------------------------------ */
+.chart-card{
+  padding: 10px 10px 10px;
+  cursor:pointer;
+  user-select:none;
+  display:flex;
+  flex-direction:column;
+  gap: 8px;
+  min-width:0;
+
+  /* BIG size como pools */
+  grid-column: span 2;
+  min-height: 220px;
+}
+
+.chart-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+.chart-head > div{ min-width:0; }
+
+/* ✅ texto “nativo” (sin efectos raros, igual entre charts) */
+.t{
+  font-weight: 950;
+  color: var(--defi-text);
+  font-size: var(--defi-fs-chart);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  overflow-wrap:anywhere;
+  display:-webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow:hidden;
+}
+.small.muted{ color: var(--defi-muted) !important; }
+
+/* ✅ canvas “PNG”: sin fondo, sin borde, sin frame */
+.chart-card canvas{
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* -----------------------------
+   9) Mint Pie — PNG look + tight box (sin achicar)
+------------------------------ */
+.chart-pie{
+  grid-column: span 2;
+  min-height: 220px;
+}
+.pie-grid{
+  display:grid;
+  grid-template-columns: minmax(220px, 240px) minmax(0, 1fr);
+  gap: 12px;
+  align-items:center;
+  min-width:0;
+}
+#mintPieWrap canvas,
+#chartPie{
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+#chartPie{
+  justify-self:center;
+  align-self:center;
+  width: 220px;
+  max-width:100%;
+}
+#mintPieWrap #pieBar,
+#mintPieWrap .pie-left,
+.pie-bar, .pie-left{ min-width:0; }
+.pie-bar{ display:flex; flex-direction:column; gap:6px; }
+.pie-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; }
+.pie-left{ display:flex; align-items:center; gap:8px; min-width:0; }
+.pie-name{
+  font-weight: 950;
+  font-size: 12px;
+  color: var(--defi-text);
+  min-width:0;
+  max-width:100%;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.pie-val{
+  font-weight: 950;
+  font-size: 12px;
+  color: var(--defi-text);
+  opacity:.92;
+  flex:0 0 auto;
+}
+.swatch{
+  width:12px; height:12px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.20);
+  flex:0 0 auto;
+}
+
+/* -----------------------------
+   10) “Sub-cards” internas transparentes (sobre otra card)
+   (modal-chart, y cualquier bloque interno tipo panel)
+------------------------------ */
+.modal-chart{
+  border-radius: 18px;
+  padding: 12px;
+  margin-top: 10px;
+  background: transparent; /* ✅ transparente como sub-cards DAO */
+  border: 1px solid color-mix(in oklab, var(--defi-border), transparent 35%);
+  box-shadow: inset 0 0 0 1px var(--defi-hair);
+}
+html.light .modal-chart{
+  background: transparent;
+  border-color: rgba(0,0,0,.08);
+}
+
+/* -----------------------------
+   11) Modal + offset topbar
+------------------------------ */
+.modal{
+  position: fixed;
+  inset:0;
+  display:none;
+  z-index:120;
+}
+.modal.open{ display:block; }
+.modal-backdrop{ position:absolute; inset:0; background: rgba(0,0,0,.45); }
+
+.modal-card{
+  position: relative;
+  width: min(920px, 92vw);
+  display:flex;
+  flex-direction:column;
+  border-radius: 26px;
+  overflow:hidden;
+
+  margin: calc(var(--defi-topbar-h) + 16px) auto 0;
+  max-height: calc(100vh - var(--defi-topbar-h) - 28px);
+
+  background: var(--defi-surface);
+  border: 1px solid var(--defi-border);
+  backdrop-filter: var(--defi-blur);
+  -webkit-backdrop-filter: var(--defi-blur);
+
+  /* ✅ no drop shadow */
+  box-shadow: inset 0 0 0 1px var(--defi-inset);
+}
+.modal-headbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:12px 14px;
+  border-bottom: 1px solid color-mix(in oklab, var(--defi-border), transparent 45%);
+}
+.modal-body{
+  padding:14px;
+  overflow:auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* -----------------------------
+   12) Responsive
+------------------------------ */
+@media (max-width: 900px){
+  .defi-row4{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .defi-row2{ grid-template-columns: 1fr; }
+  .defi-charts{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .chart-card, .chart-pie{ grid-column: span 1; }
+}
+@media (max-width: 820px){
+  .defi-charts{ grid-template-columns: 1fr; }
+  .chart-card, .chart-pie{ grid-column: span 1; min-height:0; }
+  .pie-grid{ grid-template-columns: 1fr; }
+  #chartPie{ width: 220px; }
+  .mini-actions{ grid-template-columns: 1fr; }
+}
+@media (max-width: 520px){
+  .defi-row4{ grid-template-columns: 1fr; }
+  .defi-row2{ grid-template-columns: 1fr; }
+  .defi-charts{ grid-template-columns: 1fr; }
+  .mini-actions{ grid-template-columns: 1fr; }
+}
+
+

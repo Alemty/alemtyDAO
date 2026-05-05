@@ -1,0 +1,11 @@
+
+{
+  "liveServer.settings.port": 5500,
+  "files.autoSave": "afterDelay",
+  "liveServer.settings.proxy": {
+    "enable": true,
+    "baseUri": "/api",
+    "proxyUri": "http://localhost:3000/api"
+  }
+}
+

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="320" viewBox="0 0 1200 320" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="alemtyDAO banner">
+  <defs>
+    <linearGradient id="gTitle" x1="240" y1="80" x2="760" y2="80" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00FFD5"/>
+      <stop offset="1" stop-color="#00A3FF"/>
+    </linearGradient>
+    <radialGradient id="gGlow1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(350 70) rotate(90) scale(170 340)">
+      <stop stop-color="#00FFD5" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#00FFD5" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gGlow2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(880 220) rotate(90) scale(190 380)">
+      <stop stop-color="#00A3FF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#00A3FF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gBg" x1="0" y1="0" x2="1200" y2="320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#050B14"/>
+      <stop offset="0.55" stop-color="#071322"/>
+      <stop offset="1" stop-color="#040812"/>
+    </linearGradient>
+    <filter id="fGlass" x="0" y="0" width="1200" height="320" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="0" result="blur"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="320" rx="28" fill="url(#gBg)"/>
+  <rect width="1200" height="320" rx="28" fill="url(#gGlow1)"/>
+  <rect width="1200" height="320" rx="28" fill="url(#gGlow2)"/>
+
+  <!-- Subtle grid + network lines -->
+  <g opacity="0.18">
+    <path d="M70 70H1130" stroke="#B7C6FF" stroke-opacity="0.10"/>
+    <path d="M70 140H1130" stroke="#B7C6FF" stroke-opacity="0.08"/>
+    <path d="M70 210H1130" stroke="#B7C6FF" stroke-opacity="0.08"/>
+    <path d="M140 30V290" stroke="#B7C6FF" stroke-opacity="0.08"/>
+    <path d="M320 30V290" stroke="#B7C6FF" stroke-opacity="0.06"/>
+    <path d="M520 30V290" stroke="#B7C6FF" stroke-opacity="0.05"/>
+    <path d="M740 30V290" stroke="#B7C6FF" stroke-opacity="0.05"/>
+    <path d="M960 30V290" stroke="#B7C6FF" stroke-opacity="0.06"/>
+  </g>
+
+  <g opacity="0.60">
+    <path d="M120 230C220 180 260 180 360 230C460 280 540 270 660 210C780 150 860 150 980 205C1080 250 1120 240 1140 232" stroke="#00FFD5" stroke-opacity="0.10" stroke-width="2"/>
+    <path d="M90 120C170 80 220 70 330 110C450 155 560 140 690 95C820 50 920 60 1030 105" stroke="#00A3FF" stroke-opacity="0.10" stroke-width="2"/>
+  </g>
+
+  <!-- Glass panel behind title -->
+  <g>
+    <rect x="54" y="52" width="1092" height="216" rx="22" fill="rgba(255,255,255,0.04)"/>
+    <rect x="54" y="52" width="1092" height="216" rx="22" fill="none" stroke="rgba(0,255,213,0.20)"/>
+    <rect x="56" y="54" width="1088" height="212" rx="21" fill="none" stroke="rgba(0,255,213,0.10)"/>
+  </g>
+
+  <!-- Left emblem (single, non-repeated) -->
+  <g transform="translate(84 92)">
+    <path d="M36 0L72 20V56L36 76L0 56V20L36 0Z" fill="rgba(0,255,213,0.10)" stroke="rgba(0,255,213,0.45)" stroke-width="2"/>
+    <path d="M36 14L54 24V44L36 54L18 44V24L36 14Z" fill="rgba(0,163,255,0.12)" stroke="rgba(0,163,255,0.35)"/>
+    <circle cx="36" cy="34" r="5" fill="url(#gTitle)"/>
+  </g>
+
+  <!-- Title & subtitles -->
+  <g font-family="Inter, Segoe UI, Arial, sans-serif">
+    <text x="180" y="128" font-size="64" font-weight="800" letter-spacing="-1" fill="url(#gTitle)">alemtyDAO</text>
+    <text x="182" y="168" font-size="22" font-weight="700" fill="rgba(255,255,255,0.86)">Consultora Web Espacial</text>
+    <text x="182" y="205" font-size="16" font-weight="600" fill="rgba(255,255,255,0.70)">Identidad - DAO - DEFI - DEX - IA - AR</text>
+  </g>
+
+  <!-- Accent underline -->
+  <path d="M182 218H690" stroke="rgba(0,255,213,0.35)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M182 218H420" stroke="rgba(0,163,255,0.28)" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Corner glows -->
+  <g opacity="0.9">
+    <circle cx="1140" cy="78" r="7" fill="rgba(0,255,213,0.55)"/>
+    <circle cx="1110" cy="246" r="6" fill="rgba(0,163,255,0.45)"/>
+    <circle cx="104" cy="246" r="6" fill="rgba(0,255,213,0.35)"/>
+  </g>
+</svg>
