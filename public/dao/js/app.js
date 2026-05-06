@@ -1974,50 +1974,52 @@ function renderFeed(posts){
   // ✅ Solo primeros 5 en el feed principal
   const visible = list.slice(0, FEED_PREVIEW_LIMIT);
 
-  const cards = visible.map(p => `
-    <article class="post" data-open-post="${esc(p.id)}">
-      <div class="vote">
-        <button class="vbtn" data-like="${esc(p.id)}" type="button">▲</button>
-        <div class="vnum">${score(p)}</div>
-        <button class="vbtn" data-point="${esc(p.id)}" type="button">✨</button>
-      </div>
-
-      
-<div class="post-body">
-  <div class="post-headrow">
-    <div>
-      <div class="post-title">${esc(p.title)}</div>
-      <div class="post-author">${authorLinkHTML(p.author)}</div>
-      <div class="post-meta">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
-    </div>
-
-    <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
-
-    ${kebabMenuHTML(p)}
-  </div>
-
   
-<div class="post-snippet">
-  ${esc((p.body || '').slice(0,220))}${(p.body || '').length > 220 ? '…' : ''}
-</div>
+const cards = visible.map(p => `
+  <article class="post" data-open-post="${esc(p.id)}">
+    <div class="post-body">
 
-
-        <div class="post-tags">
-          <span class="pill like" data-action="like" data-post-id="${esc(p.id)}">
-            ♥️ <span class="count">${getLikesCount(p)}</span>
-          </span>
-
-          <span class="pill points" data-action="points" data-post-id="${esc(p.id)}">
-            ⭐ <span class="count">${getPointsCount(p)}</span>
-          </span>
-
-          <span class="pill comment" data-action="comment" data-post-id="${esc(p.id)}">
-            💬 <span class="count">${getCommentsCount(p)}</span>
-          </span>
+      <div class="post-headrow">
+        <div>
+          <div class="post-title">${esc(p.title)}</div>
+          <div class="post-author">${authorLinkHTML(p.author)}</div>
+          <div class="post-meta">
+            ${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}
+          </div>
         </div>
+
+        <button
+          class="kebab-btn"
+          type="button"
+          data-kebab="${esc(p.id)}"
+          aria-label="Opciones"
+        >⋮</button>
+        ${kebabMenuHTML(p)}
       </div>
-    </article>
-  `).join('');
+
+      <div class="post-snippet">
+        ${esc((p.body || '').slice(0, 220))}
+        ${(p.body || '').length > 220 ? '…' : ''}
+      </div>
+
+      <div class="post-tags">
+        <span class="pill like" data-action="like" data-post-id="${esc(p.id)}">
+          ♥️ <span class="count">${getLikesCount(p)}</span>
+        </span>
+
+        <span class="pill points" data-action="points" data-post-id="${esc(p.id)}">
+          ⭐ <span class="count">${getPointsCount(p)}</span>
+        </span>
+
+        <span class="pill comment" data-action="comment" data-post-id="${esc(p.id)}">
+          💬 <span class="count">${getCommentsCount(p)}</span>
+        </span>
+      </div>
+
+    </div>
+  </article>
+`).join('');
+
 
   // ✅ Botón "Ver todos" si hay más de 5
   const more = (list.length > FEED_PREVIEW_LIMIT)
