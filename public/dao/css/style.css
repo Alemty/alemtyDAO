@@ -302,15 +302,15 @@ input:focus, textarea:focus, select:focus{
   flex-direction:column;
   gap:10px;
 }
-.post{
-  display:grid;
-  grid-template-columns: 56px 1fr;
-  gap:12px;
-  padding:12px;
-  border-radius:18px;
-  border:1px solid var(--border);
+
+.post {
+  display: block;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
   background: rgba(255,255,255,.03);
 }
+
 .vote{
   display:flex;
   flex-direction:column;
