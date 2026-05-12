@@ -41,7 +41,11 @@
   <div class="defi-bg"></div>
 
   <main class="container" style="margin-top:16px;">
-    <div class="h1">DeFi</div>
+    
+<div class="h1 defi-brand" aria-label="DeFi.alemty.eth">
+  <span class="defi-brand-em">DeFi</span><span class="defi-brand-em">.</span><span class="defi-brand-base">alemty</span><span class="defi-brand-base">.</span><span class="defi-brand-em">eth</span>
+</div>
+
     <p class="muted">Reporte visual: emisión, volatilidad y puente hacia DEX.</p>
 
     <!-- 4 TOKENS (mini cards en una línea) -->
@@ -71,7 +75,7 @@
         </div>
 
         <div class="pie-grid">
-          <canvas id="chartPie" width="220" height="160" aria-label="Gráfica de pastel mint"></canvas>
+          <canvas id="chartPie" width="200" height="150" aria-label="Gráfica de pastel mint"></canvas>
           <div class="pie-bar" id="pieBar" aria-label="Leyenda de mint"></div>
         </div>
       </div>
@@ -82,7 +86,7 @@
           <div class="t">Aura: emisión por epoch</div>
           <button class="icon-btn mini" type="button" data-action="open-aura" aria-label="Abrir aura">↗</button>
         </div>
-        <canvas id="chartAura" width="360" height="160" aria-label="Gráfica aura"></canvas>
+        <canvas id="chartAura" width="360" height="130" aria-label="Gráfica aura"></canvas>
         <div class="small muted">Decay + piso mínimo.</div>
       </div>
 
@@ -92,7 +96,7 @@
           <div class="t">ALEM: emisión por señal</div>
           <button class="icon-btn mini" type="button" data-action="open-alem" aria-label="Abrir alem">↗</button>
         </div>
-        <canvas id="chartAlem" width="360" height="160" aria-label="Gráfica alem"></canvas>
+        <canvas id="chartAlem" width="360" height="130" aria-label="Gráfica alem"></canvas>
         <div class="small muted">Solo eventos calificados.</div>
       </div>
 
@@ -102,7 +106,7 @@
           <div class="t">Aura cap dinámico</div>
           <button class="icon-btn mini" type="button" data-action="open-cap" aria-label="Abrir cap">↗</button>
         </div>
-        <canvas id="chartCap" width="360" height="160" aria-label="Gráfica cap"></canvas>
+        <canvas id="chartCap" width="360" height="130" aria-label="Gráfica cap"></canvas>
         <div class="small muted">Cap crece con el pool.</div>
       </div>
     </section>

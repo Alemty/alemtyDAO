@@ -1,11 +1,11 @@
 
 /* =====================================================
-   DeFi — UI v5 (DAO-soft + PNG canvases)
-   - Misma suavidad que DAO: sin drop-shadow externo
+   DeFi — UI v5 (DAO-soft + PNG canvases) — FINAL
+   - DAO-soft: sin drop-shadow externo
    - Bordes hairline + inset
-   - Charts grandes tipo pools (2 por fila)
-   - Mint Pie y Line charts: canvas transparente (JS también)
-   - Tipografía “nativa” y compacta (nada se sale)
+   - Charts compactos (line) + canvas transparente
+   - Pie legend: % junto al nombre
+   - Pie card: sin hueco en desktop (span 1)
    - Topbar fixed + modal offset
 ===================================================== */
 
@@ -60,6 +60,7 @@ html.light .defi-root{
   --defi-text: rgba(14,26,24,.92);
   --defi-muted: rgba(14,26,24,.58);
   --defi-hair: rgba(0,0,0,.06);
+  --defi-emerald: #0db9a6; /* ✅ FIX: menos brillante en light */
 }
 
 /* -----------------------------
@@ -74,7 +75,7 @@ html.light .defi-root{
     radial-gradient(680px 420px at 18% 0%, rgba(0,255,213,.16), transparent 62%),
     radial-gradient(540px 320px at 82% 18%, rgba(0,163,255,.13), transparent 60%),
     var(--bg);
-} /* existe en index DeFi [2](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!scab846db2d6c4d6da9638b33bd97dfa5) */
+}
 
 .defi-root .container{
   background: transparent !important;
@@ -82,7 +83,7 @@ html.light .defi-root{
   z-index: 1;
   padding-top: var(--defi-topbar-h);
   padding-bottom: 96px; /* aire por bottom-nav fixed del shell */
-} /* main.container existe [2](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!scab846db2d6c4d6da9638b33bd97dfa5) */
+}
 
 /* H1 look */
 .defi-root .h1{
@@ -90,6 +91,32 @@ html.light .defi-root{
   letter-spacing: -0.02em;
 }
 .defi-root .muted{ color: var(--defi-muted); }
+
+/* =========================
+   Brand H1: DeFi.alemty.eth como shell
+   - DeFi. y eth en esmeralda
+   - alemty en color base (blanco en dark / negro en light)
+========================= */
+.defi-root .h1.defi-brand{
+  font-weight: 1000;
+  letter-spacing: -0.02em;
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+/* ✅ esmeralda para DeFi + puntos + eth */
+.defi-root .h1.defi-brand .defi-brand-em{
+  color: var(--defi-emerald);
+  text-shadow: 0 0 18px rgba(0,255,213,.18);
+}
+
+/* ✅ “alemty” hereda el color del tema (blanco en dark / negro en light) */
+.defi-root .h1.defi-brand .defi-brand-base{
+  color: var(--defi-text);
+  text-shadow: none;
+}
 
 /* -----------------------------
    3) Topbar / Bottom nav fixed
@@ -151,21 +178,21 @@ html.light .defi-root{
   display:grid;
   grid-template-columns: repeat(4, minmax(0,1fr));
   gap: var(--defi-gap);
-} /* row4 existe [2](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!scab846db2d6c4d6da9638b33bd97dfa5) */
+}
 
 .defi-row2{
   display:grid;
   grid-template-columns: repeat(2, minmax(0,1fr));
   gap: var(--defi-gap);
-} /* row2 existe [2](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!scab846db2d6c4d6da9638b33bd97dfa5) */
+}
 
-/* charts big grid (2 por fila) */
+/* Charts grid */
 .defi-charts{
   display:grid;
   grid-template-columns: repeat(4, minmax(0,1fr));
   gap: var(--defi-gap);
   grid-auto-flow: row dense;
-} /* defi-charts existe [2](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!scab846db2d6c4d6da9638b33bd97dfa5) */
+}
 
 /* -----------------------------
    6) Mini cards (tokens/pools)
@@ -221,7 +248,7 @@ html.light .defi-root{
 .mini-tag{
   border-radius: 999px;
   border: 1px solid color-mix(in oklab, var(--defi-border), transparent 35%);
-  background: transparent; /* ✅ tags transparentes (resalta fondo) */
+  background: transparent; /* ✅ tags transparentes */
   padding: 5px 9px;
   font-size: var(--defi-fs-tag);
   font-weight: 900;
@@ -268,8 +295,15 @@ html.light .defi-root{
   color:#061018;
   background: linear-gradient(135deg,var(--defi-emerald),var(--defi-azure));
 }
-html.light .btn{ color: rgba(14,26,24,.92); background: rgba(13,185,166,.14); border-color: rgba(13,185,166,.40); }
-html.light .btn.primary{ color:#fff; background: linear-gradient(135deg,#0db9a6,#0aa0ff); }
+html.light .btn{
+  color: rgba(14,26,24,.92);
+  background: rgba(13,185,166,.14);
+  border-color: rgba(13,185,166,.40);
+}
+html.light .btn.primary{
+  color:#fff;
+  background: linear-gradient(135deg,#0db9a6,#0aa0ff);
+}
 
 /* icon buttons */
 .icon-btn{
@@ -287,18 +321,24 @@ html.light .btn.primary{ color:#fff; background: linear-gradient(135deg,#0db9a6,
 .icon-btn.mini{ width:34px; height:34px; border-radius:12px; }
 
 /* -----------------------------
-   8) Chart cards BIG (nativo, canvases transparentes)
+   8) Chart cards (compactos + canvases transparentes)
 ------------------------------ */
 .chart-card{
-  padding: 10px 10px 10px;
+  padding: 10px;
   cursor:pointer;
   user-select:none;
   display:flex;
   flex-direction:column;
-  gap: 8px;
+  gap: 6px;
   min-width:0;
 
-  /* BIG size como pools */
+  /* ✅ compactos (líneas) */
+  grid-column: span 1;
+  min-height: 0;
+}
+
+/* Pie por defecto (móvil/tablet lo ajustan los @media) */
+.chart-pie{
   grid-column: span 2;
   min-height: 220px;
 }
@@ -311,7 +351,7 @@ html.light .btn.primary{ color:#fff; background: linear-gradient(135deg,#0db9a6,
 }
 .chart-head > div{ min-width:0; }
 
-/* ✅ texto “nativo” (sin efectos raros, igual entre charts) */
+/* Texto “nativo” */
 .t{
   font-weight: 950;
   color: var(--defi-text);
@@ -327,23 +367,34 @@ html.light .btn.primary{ color:#fff; background: linear-gradient(135deg,#0db9a6,
 }
 .small.muted{ color: var(--defi-muted) !important; }
 
-/* ✅ canvas “PNG”: sin fondo, sin borde, sin frame */
-.chart-card canvas{
+
+/* ✅ Canvas estable SOLO para line charts (evita deformar el pie) */
+.chart-card canvas:not(#chartPie):not(#modalPie):not(#modalPie2){
   width: 100%;
   max-width: 100%;
   height: auto;
+  aspect-ratio: 360 / 160;
+  min-height: 128px;
+  flex: 1 1 auto;
   background: transparent !important;
   border-radius: 0 !important;
   box-shadow: none !important;
 }
 
-/* -----------------------------
-   9) Mint Pie — PNG look + tight box (sin achicar)
------------------------------- */
-.chart-pie{
-  grid-column: span 2;
-  min-height: 220px;
+
+/* ✅ Mantén el layout vertical consistente */
+.chart-card{
+  justify-content: flex-start;
 }
+
+/* ✅ El texto (nota) se queda al fondo y no “sube” el canvas */
+.chart-card .small.muted{
+  margin-top: auto;
+}
+
+/* -----------------------------
+   9) Mint Pie — layout + legend
+------------------------------ */
 .pie-grid{
   display:grid;
   grid-template-columns: minmax(220px, 240px) minmax(0, 1fr);
@@ -351,41 +402,63 @@ html.light .btn.primary{ color:#fff; background: linear-gradient(135deg,#0db9a6,
   align-items:center;
   min-width:0;
 }
+
 #mintPieWrap canvas,
 #chartPie{
   background: transparent !important;
   border-radius: 0 !important;
   box-shadow: none !important;
 }
+
 #chartPie{
   justify-self:center;
   align-self:center;
   width: 220px;
   max-width:100%;
 }
+
 #mintPieWrap #pieBar,
 #mintPieWrap .pie-left,
 .pie-bar, .pie-left{ min-width:0; }
-.pie-bar{ display:flex; flex-direction:column; gap:6px; }
-.pie-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; }
-.pie-left{ display:flex; align-items:center; gap:8px; min-width:0; }
-.pie-name{
+
+.pie-bar{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+/* ✅ legend: % junto al nombre */
+.pie-row{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:8px;
+  min-width:0;
+}
+
+.pie-left{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+
+.pie-pct{
   font-weight: 950;
   font-size: 12px;
-  color: var(--defi-text);
+  color: var(--defi-muted);
+  opacity: .95;
+  flex: 0 0 auto;
+}
+
+.pie-name{
   min-width:0;
   max-width:100%;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
 }
-.pie-val{
-  font-weight: 950;
-  font-size: 12px;
-  color: var(--defi-text);
-  opacity:.92;
-  flex:0 0 auto;
-}
+
 .swatch{
   width:12px; height:12px;
   border-radius:999px;
@@ -393,15 +466,38 @@ html.light .btn.primary{ color:#fff; background: linear-gradient(135deg,#0db9a6,
   flex:0 0 auto;
 }
 
+/* ✅ Pie card: no estirar raro */
+#mintPieWrap{
+  justify-self: start;
+}
+
+/* =========================
+   Pie card: sin espacio vacío en desktop
+========================= */
+@media (min-width: 901px){
+  /* ✅ en desktop NO reservas 2 columnas (evita hueco) */
+  #mintPieWrap.chart-pie{
+    grid-column: span 1;
+    justify-self: start;
+    max-width: 520px;
+    width: 100%;
+  }
+
+  /* Mantiene buena proporción interna */
+  #mintPieWrap .pie-grid{
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 12px;
+  }
+}
+
 /* -----------------------------
-   10) “Sub-cards” internas transparentes (sobre otra card)
-   (modal-chart, y cualquier bloque interno tipo panel)
+   10) “Sub-cards” internas transparentes (modal-chart)
 ------------------------------ */
 .modal-chart{
   border-radius: 18px;
   padding: 12px;
   margin-top: 10px;
-  background: transparent; /* ✅ transparente como sub-cards DAO */
+  background: transparent;
   border: 1px solid color-mix(in oklab, var(--defi-border), transparent 35%);
   box-shadow: inset 0 0 0 1px var(--defi-hair);
 }
@@ -420,7 +516,11 @@ html.light .modal-chart{
   z-index:120;
 }
 .modal.open{ display:block; }
-.modal-backdrop{ position:absolute; inset:0; background: rgba(0,0,0,.45); }
+.modal-backdrop{
+  position:absolute;
+  inset:0;
+  background: rgba(0,0,0,.45);
+}
 
 .modal-card{
   position: relative;
@@ -455,6 +555,7 @@ html.light .modal-chart{
   -webkit-overflow-scrolling: touch;
 }
 
+
 /* -----------------------------
    12) Responsive
 ------------------------------ */
@@ -464,13 +565,32 @@ html.light .modal-chart{
   .defi-charts{ grid-template-columns: repeat(2, minmax(0,1fr)); }
   .chart-card, .chart-pie{ grid-column: span 1; }
 }
+
 @media (max-width: 820px){
   .defi-charts{ grid-template-columns: 1fr; }
-  .chart-card, .chart-pie{ grid-column: span 1; min-height:0; }
+
+  /* ✅ Pie: mantiene presencia (no colapsa) */
+  .chart-pie{
+    grid-column: span 1;
+    min-height: 220px; /* 👈 importante: que “cuadre” como los otros */
+  }
+
+  /* ✅ Line charts: NO colapsar, conservar altura “correcta” */
+  .chart-card{
+    grid-column: span 1;
+    min-height: 190px;
+  }
+
+  /* ✅ Canvas protegido en móvil */
+  .chart-card canvas{
+    min-height: 140px;
+  }
+
   .pie-grid{ grid-template-columns: 1fr; }
   #chartPie{ width: 220px; }
   .mini-actions{ grid-template-columns: 1fr; }
 }
+
 @media (max-width: 520px){
   .defi-row4{ grid-template-columns: 1fr; }
   .defi-row2{ grid-template-columns: 1fr; }
@@ -478,4 +598,64 @@ html.light .modal-chart{
   .mini-actions{ grid-template-columns: 1fr; }
 }
 
+/* =========================================
+   FIX FINAL: El pie + leyenda usan el ALTO REAL de la card
+   (como los otros grafos), sin dejar espacio abajo al ampliar.
+========================================= */
+
+/* ✅ NO forzamos align-items:start en el grid (déjalo estirar) */
+/* (El grid por defecto estira las cards en alto, y eso es lo que quieres) */
+
+/* 1) La card del pie se vuelve layout flex para “llenar” vertical */
+#mintPieWrap.chart-pie{
+  display: flex;
+  flex-direction: column;
+}
+
+/* 2) El bloque interno (pie-grid) toma el alto disponible de la card */
+#mintPieWrap .pie-grid{
+  flex: 1 1 auto;         /* 👈 ocupa el alto real */
+  min-height: 0;          /* evita overflow raro en flex */
+  align-items: stretch;   /* permite que la leyenda también use el alto */
+}
+
+/* 3) La leyenda puede ocupar alto y centrarse en el espacio disponible */
+#mintPieWrap .pie-bar{
+  align-self: stretch;
+  justify-content: center; /* centra verticalmente dentro del alto real */
+}
+
+/* 4) El canvas del pie se centra dentro de su columna sin “subirse” */
+#mintPieWrap #chartPie{
+  align-self: center;
+  justify-self: center;
+  width: 220px;           /* tu tamaño base */
+  max-width: 100%;
+  height: auto;
+}
+
+
+/* =========================
+   Modal Pie: mismo layout que card (izq pie / der distribución)
+========================= */
+.modal-pie .modal-pie-grid{
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  align-items: center;
+}
+
+.modal-pie #modalPie{
+  width: 360px;
+  max-width: 100%;
+  justify-self: center;
+}
+
+@media (max-width: 820px){
+  .modal-pie .modal-pie-grid{
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .modal-pie #modalPie{
+    width: 280px;
+  }
+}
 
