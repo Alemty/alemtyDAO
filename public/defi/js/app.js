@@ -124,14 +124,15 @@ function auraCapFromPool(alemInPool){
   Canvas drawing (DAO-ish: grid + grad line)
 ===================================================== */
 
+
 function drawLineChart(canvas, series, opts = {}){
   const ctx = canvas.getContext("2d");
   const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0,0,W,H);
 
+  ctx.clearRect(0,0,W,H);
   // ✅ SIN fillRect => fondo transparente (PNG look)
 
-  const pad = 22;
+  const pad = opts.pad ?? 14;          // antes 22 (muy grande para mini)
   const plotW = W - pad*2;
   const plotH = H - pad*2;
 
@@ -139,23 +140,28 @@ function drawLineChart(canvas, series, opts = {}){
   const maxY = (opts.maxY != null) ? opts.maxY : Math.max(...series);
   const dy = Math.max(1e-9, maxY - minY);
 
-  // grid (suave)
-  ctx.strokeStyle = "rgba(255,255,255,0.10)";
-  ctx.lineWidth = 1;
-  for(let i=0;i<=3;i++){
-    const y = pad + (plotH * i/3);
-    ctx.beginPath();
-    ctx.moveTo(pad, y);
-    ctx.lineTo(pad+plotW, y);
-    ctx.stroke();
+  // ✅ Grid opcional (por defecto apagado)
+  if (opts.grid === true){
+    ctx.strokeStyle = "rgba(255,255,255,0.10)";
+    ctx.lineWidth = 1;
+    for(let i=0;i<=3;i++){
+      const y = pad + (plotH * i/3);
+      ctx.beginPath();
+      ctx.moveTo(pad, y);
+      ctx.lineTo(pad+plotW, y);
+      ctx.stroke();
+    }
   }
 
   // line gradient
   const grad = ctx.createLinearGradient(0, pad, W, pad);
   grad.addColorStop(0, "rgba(0,255,213,0.95)");
   grad.addColorStop(1, "rgba(0,163,255,0.92)");
+
   ctx.strokeStyle = grad;
   ctx.lineWidth = 2.6;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
 
   ctx.beginPath();
   series.forEach((v,i) => {
@@ -167,13 +173,14 @@ function drawLineChart(canvas, series, opts = {}){
   });
   ctx.stroke();
 
-  // label (opcional)
+  // label opcional (si lo quieres, déjalo; si no, no lo mandes)
   if(opts.label){
     ctx.fillStyle = "rgba(255,255,255,0.86)";
     ctx.font = "900 12px Inter, system-ui, sans-serif";
     ctx.fillText(opts.label, pad, 14);
   }
 }
+
 
 
 function drawPieChart(canvas, alloc, total){
@@ -183,8 +190,8 @@ function drawPieChart(canvas, alloc, total){
 
   // ✅ SIN fillRect => fondo transparente
 
-  const cx = Math.floor(W*0.50);
-  const cy = Math.floor(H*0.52);
+  const cx = Math.floor(W*0.46);
+  const cy = Math.floor(H*0.50);
 
   // tamaño “normal” (como antes, sin tocar bordes)
   const r = Math.min(W, H) * 0.42;
@@ -299,13 +306,33 @@ function renderMintLegend(){
   bar.innerHTML = ALEM_DISTRIBUTION.map(seg => {
     const amount = Math.round(ALEM_MAX_SUPPLY * seg.pct);
     const pct = Math.round(seg.pct*1000)/10;
+    
+return `
+  <div class="pie-row">
+    <div class="pie-left">
+      <span class="swatch" style="background:${seg.color}"></span>
+      <span class="pie-name">${esc(seg.key)}</span>
+      <span class="pie-pct">${pct}%</span>
+    </div>
+  </div>
+
+    `;
+  }).join("");
+}
+
+function renderMintLegendTo(barEl, totalEl){
+  if(!barEl || !totalEl) return;
+  totalEl.textContent = `Total ALEM: ${ALEM_MAX_SUPPLY.toLocaleString("es-MX")}`;
+
+  barEl.innerHTML = ALEM_DISTRIBUTION.map(seg => {
+    const pct = Math.round(seg.pct * 1000) / 10;
     return `
       <div class="pie-row">
         <div class="pie-left">
           <span class="swatch" style="background:${seg.color}"></span>
           <span class="pie-name">${esc(seg.key)}</span>
+          <span class="pie-pct">${pct}%</span>
         </div>
-        <span class="pie-val">${pct}%</span>
       </div>
     `;
   }).join("");
@@ -316,9 +343,11 @@ function renderMintLegend(){
 ===================================================== */
 function renderSmallCharts(){
   drawPieChart($("chartPie"), ALEM_DISTRIBUTION, ALEM_MAX_SUPPLY);
-  drawLineChart($("chartAura"), SERIES.auraSmall, { label: "AuraPerEvent(e)" });
-  drawLineChart($("chartAlem"), SERIES.alemSmall, { label: "ALEM semanal (conceptual)" });
-  drawLineChart($("chartCap"), SERIES.capSmall, { label: "Aura_max_circ (conceptual)" });
+  
+drawLineChart($("chartAura"), SERIES.auraSmall, { pad: 14 });
+drawLineChart($("chartAlem"), SERIES.alemSmall, { pad: 14 });
+drawLineChart($("chartCap"), SERIES.capSmall, { pad: 14 });
+
 
   renderMintLegend();
 }
@@ -328,24 +357,40 @@ function renderSmallCharts(){
   - Redibuja la MISMA gráfica en tamaño grande
 ===================================================== */
 function openChartModal(kind){
-  if(kind === "mintPie"){
-    openModal("Mint: división + total", `
-      <div class="h2">Mint ALEM (inmutable)</div>
-      <p class="muted">
-        Supply máximo: <strong>${ALEM_MAX_SUPPLY.toLocaleString("es-MX")}</strong> ALEM.
-        Distribución canónica por segmento (porcentaje y tokens) está fijada.
-      </p>
-      <div class="modal-chart">
-        <canvas id="modalPie" width="840" height="320"></canvas>
-        <div class="small muted" style="margin-top:10px;">
-          Segmentos: Comunidad 50% · Reserva 20% · Equipo 15% · Tesorería 10% · Growth/Grants 5%.
+  
+if(kind === "mintPie"){
+  openModal("Mint: división + total", `
+    <div class="h2">Mint ALEM (inmutable)</div>
+    <p class="muted">
+      Supply máximo: <strong>${ALEM_MAX_SUPPLY.toLocaleString("es-MX")}</strong> ALEM.
+      Distribución canónica por segmento está fijada.
+    </p>
+
+    <div class="modal-chart modal-pie">
+      <div class="chart-head" style="margin-bottom:8px;">
+        <div>
+          <div class="t">Distribución</div>
+          <div class="small muted" id="modalMintTotalText">—</div>
         </div>
       </div>
-    `);
-    // draw large
-    drawPieChart(document.getElementById("modalPie"), ALEM_DISTRIBUTION, ALEM_MAX_SUPPLY);
-    return;
-  }
+
+      <!-- ✅ MISMO LAYOUT que la card: pie izquierda + distribución derecha -->
+      <div class="pie-grid modal-pie-grid">
+        <canvas id="modalPie" width="420" height="320" aria-label="Gráfica de pastel mint (modal)"></canvas>
+        <div class="pie-bar" id="modalPieBar" aria-label="Leyenda de mint (modal)"></div>
+      </div>
+    </div>
+  `);
+
+  // draw + legend (lado derecho)
+  const c = document.getElementById("modalPie");
+  const bar = document.getElementById("modalPieBar");
+  const total = document.getElementById("modalMintTotalText");
+  drawPieChart(c, ALEM_DISTRIBUTION, ALEM_MAX_SUPPLY);
+  renderMintLegendTo(bar, total);
+  return;
+}
+
 
   if(kind === "aura"){
     openModal("Aura: emisión por epoch", `

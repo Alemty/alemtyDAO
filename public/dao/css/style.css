@@ -1812,3 +1812,36 @@ html.light .dao-root #daoModal #daoModalBody .sheet-item{
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch;
 }
+
+/* =========================
+   DAO Brand H1: DAO.alemty.eth (igual que shell/DeFi)
+   - DAO. y eth en esmeralda
+   - alemty. en color base (blanco en dark / negro en light)
+========================= */
+.dao-root .h1.dao-brand{
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  flex-wrap: wrap;
+
+  /* ✅ fuerza que el título completo NO sea esmeralda */
+  color: var(--dao-text) !important;
+  text-shadow: none !important;
+}
+
+/* ✅ esmeralda (usa el token que ya cambia bien en light/dark) */
+.dao-root .h1.dao-brand .dao-brand-em{
+  color: var(--dao-title) !important;
+  text-shadow: 0 0 16px rgba(0,255,213,.14);
+}
+
+/* ✅ base (blanco/negro según tema) */
+.dao-root .h1.dao-brand .dao-brand-base{
+  color: var(--dao-text) !important;
+  text-shadow: none !important;
+}
+
+/* En tema claro: quita glow para que no se “lave” */
+html.light .dao-root .h1.dao-brand .dao-brand-em{
+  text-shadow: none !important;
+}
