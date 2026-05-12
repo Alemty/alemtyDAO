@@ -28,6 +28,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
 </head>
 
+
 <body>
 
 <!-- ==================================================
@@ -70,13 +71,45 @@
 })();
 </script>
 
-
-
-
 <header id="topbar"></header>
 <nav id="navbar"></nav>
 
 <main id="pageIdentity">
+
+  
+<!-- ================= CREDENCIALES MODAL ================= -->
+<div class="modal" id="credsModal" aria-hidden="true">
+  <div class="modal-backdrop" id="credsBackdrop"></div>
+
+  <div class="modal-card creds-card">
+    <div class="modal-headbar">
+      <strong>Mis Credenciales</strong>
+      <button class="icon-btn" id="credsClose" type="button" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="creds-body">
+      <div class="poap-head">
+        <strong>POAPs</strong>
+        <span class="small muted">Carrusel</span>
+      </div>
+      <!-- ✅ IDs iguales a los que usa la lógica del carrusel -->
+      <div class="poap-strip" id="poapStrip"></div>
+
+      <div class="cred-head" style="margin-top:14px;">
+        <strong>Acreditaciones</strong>
+        <span class="small muted">Por categoría</span>
+      </div>
+
+      <div class="cert-tabs" id="certTabs"></div>
+      <div class="cert-strip" id="certStrip"></div>
+
+      <div class="cert-detail" id="certDetail">
+        <div class="t">Selecciona una acreditación</div>
+        <div class="m small muted">Al pulsar una medalla verás el detalle aquí.</div>
+      </div>
+    </div>
+  </div>
+</div>
 
   <!-- ================= HERO ================= -->
   <section class="hero" style="padding:48px 0 20px;position:relative;overflow:hidden;">
@@ -109,13 +142,18 @@
       </a>
     </p>
 
-    <div class="pubkey">
-      <code id="pubkey" data-full="0x6a202f991c4c1df079449be9847b1dac3f51854f">
-        0x6a20…1854f
-      </code>
-      <button class="copy-btn" id="copyBtn" type="button">Copiar</button>
-      <span id="copyOk" class="copy-ok" hidden>¡Copiado!</span>
-    </div>
+    
+<div class="pubkey">
+  <code id="pubkey" data-full="0x6a202f991c4c1df079449be9847b1dac3f51854f">0x6a20…1854f</code>
+
+  <button class="copy-btn" id="copyBtn" type="button">Copiar</button>
+
+  <!-- ✅ NUEVO -->
+  <button class="copy-btn cred-btn" id="credsBtn" type="button">🏅 Credenciales</button>
+
+  <span id="copyOk" class="copy-ok" hidden>¡Copiado!</span>
+</div>
+
   </section>
 
   <!-- ================= LIBRO ================= -->
@@ -161,6 +199,7 @@
   <div class="bottom-safe-space"></div>
 
 </main>
+
 
 <!-- ================= APP JS ================= -->
 <script type="module" src="/js/app.js"></script>
