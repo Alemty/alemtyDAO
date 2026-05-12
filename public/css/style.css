@@ -743,3 +743,25 @@ html.light #pageIdentity .social-card::after{
   opacity: .42;
   filter: blur(12px);
 }
+
+
+/* ===== Credenciales button (igual que Copiar) ===== */
+/* NO redefinas background/color/border para que herede .copy-btn */
+#pageIdentity .cred-btn{
+  /* si quieres, solo ajustes de layout */
+  white-space: nowrap;
+}
+
+/* ===== Modal body spacing ===== */
+.creds-body{
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* (opcional) ancho cómodo */
+.creds-card{
+  width: min(980px, 92vw);
+}
+

@@ -1,5 +1,5 @@
 
-import { mountShell } from '../../shared/js/shell.js'
+import { mountShell, mountCreds } from '../../shared/js/shell.js'
 import { $ } from '../../shared/js/core.js'
 
 mountShell()
@@ -22,6 +22,45 @@ $('#copyBtn')?.addEventListener('click', async () => {
     }
   } catch {}
 })
+
+// ================================
+// ✅ Credenciales Modal (ID)
+// ================================
+const credsBtn = $('#credsBtn')
+const credsModal = document.getElementById('credsModal')
+const credsBackdrop = document.getElementById('credsBackdrop')
+const credsClose = document.getElementById('credsClose')
+
+let credsLoaded = false
+
+function openCreds () {
+  if (!credsModal) return
+  credsModal.classList.add('open')
+  credsModal.setAttribute('aria-hidden', 'false')
+
+  // ✅ monta carruseles 1 sola vez
+  if (!credsLoaded) {
+    // Montamos dentro del modal (scope = modal)
+    mountCreds(credsModal)
+    credsLoaded = true
+  }
+}
+
+function closeCreds () {
+  if (!credsModal) return
+  credsModal.classList.remove('open')
+  credsModal.setAttribute('aria-hidden', 'true')
+}
+
+credsBtn?.addEventListener('click', openCreds)
+credsBackdrop?.addEventListener('click', closeCreds)
+credsClose?.addEventListener('click', closeCreds)
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return
+  if (credsModal?.classList.contains('open')) closeCreds()
+})
+
 
 // ---------- Social links ----------
 const LINKS = [
