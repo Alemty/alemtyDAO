@@ -1845,3 +1845,48 @@ html.light .dao-root #daoModal #daoModalBody .sheet-item{
 html.light .dao-root .h1.dao-brand .dao-brand-em{
   text-shadow: none !important;
 }
+
+.comment-author {
+  font-weight: 700;
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+.comment-headrow > div {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+/* ✅ Comments: headrow igual que posts (evita saltos del kebab) */
+.comment-headrow{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.comment-headrow > div{
+  flex: 1 1 auto;
+  min-width: 0;
+  display:flex;
+  gap:8px;
+  align-items:baseline;
+  flex-wrap:wrap;
+}
+
+/* ✅ El menú kebab debe posicionarse relativo al comentario */
+.comment{
+  position: relative;
+}
+
+/* Ajuste fino para replies */
+.comment.comment-l2 .kebab-menu{
+  right: 8px;
+  top: 38px;
+}
+
+/* ✅ Garantiza que hidden funcione aunque alguien ponga display:block en .kebab-menu */
+.kebab-menu[hidden]{
+  display: none !important;
+}
