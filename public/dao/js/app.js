@@ -6,13 +6,22 @@ mountShell();
 // API base (DEV vs PROD)
 // =========================
 
+
 const isENS = location.hostname.endsWith(".eth.limo");
 const isLocal =
   location.hostname === "localhost" ||
   location.hostname === "127.0.0.1";
 
+const isPages = location.hostname.endsWith(".pages.dev");
+const isWorkers = location.hostname.endsWith(".workers.dev");
+
 const API_WORKER = "https://alemtydao.alejandrogtzz93.workers.dev";
-const API_BASE = (isENS || isLocal) ? API_WORKER : "";
+
+// ✅ regla simple:
+// - Si estás en Workers (mismo origin), usa "" (rutas relativas)
+// - En ENS/IPFS/Pages/Local, usa el Worker explícito
+const API_BASE = isWorkers ? "" : API_WORKER;
+
 
 
 // JWT (guardado por SIWE)
@@ -54,17 +63,23 @@ function normAddr(a) {
 }
 
 
+
 function getViewerAddress() {
-  // 1) Si guardas address explícito al hacer SIWE, úsalo primero
+  // 1) Preferidos: DID/address guardados por el flujo SIWE del shell
+  const did = localStorage.getItem('alemty.did') || localStorage.getItem('did');
+  if (did) return normAddr(did);
+
+  // 2) Compat: si en algún punto guardas address explícito
   const a = localStorage.getItem('alemty.address');
   if (a) return normAddr(a);
 
-  // 2) Fallback: lo que ya tengas como userId (si es address)
+  // 3) Fallback: getUserId (si existe y trae address)
   const u = getUserId?.() || '';
   if (u && u !== 'visitor') return normAddr(u);
 
   return 'visitor';
 }
+
 
 
 
@@ -246,6 +261,7 @@ const mapped = rawComments.map((c) => {
         if (parent) {
           parent.replies = parent.replies || [];
           
+
 parent.replies.push({
   id: c.id,
   ts: c.ts,
@@ -254,7 +270,9 @@ parent.replies.push({
   points: c.points,
   myLike: !!c.myLike,
   myPoints: Number(c.myPoints ?? 0),
+  author: c.author ?? null, // ✅ FIX: conservar autor
 });
+
 
           continue; // NO va como top-level
         }
@@ -445,14 +463,20 @@ function commentKebabMenuHTML({ postId, comment, isReply = false, parentId = nul
 // =========================
 // Kebab UI (FASE 4.1)
 // =========================
+
 function closeAllKebabs(){
   document.querySelectorAll('[data-kebab-menu]').forEach(m => {
     m.hidden = true;
+    m.style.display = 'none'; // ✅ fuerza por si CSS anula hidden
   });
 }
 
+
+
+
 function toggleKebabFromButton(btn){
   const host =
+    btn.closest('.comment') ||
     btn.closest('[data-open-post]') ||
     btn.closest('.car-card') ||
     btn.closest('#latestCard') ||
@@ -466,9 +490,17 @@ function toggleKebabFromButton(btn){
   if(!menu) return;
 
   const isOpen = !menu.hidden;
+
+  // Cierra todo primero (con display:none forzado)
   closeAllKebabs();
-  menu.hidden = isOpen;
+
+  // Si estaba cerrado, abrir este
+  if (!isOpen) {
+    menu.hidden = false;
+    menu.style.display = ''; // ✅ limpia inline para que CSS controle
+  }
 }
+
 
 
 // =========================
@@ -478,26 +510,32 @@ const UI_KEY = 'alemty.dao.ui.v1'; // guarda UI state (reply target, expand)
 function loadUI(){ return loadJSON(UI_KEY, { replyTo:null, expand:{} }); }
 function saveUI(v){ saveJSON(UI_KEY, v); }
 
-
 function ensureCommentSchema(c){
   if (!c || typeof c !== 'object') return null;
   return {
-    id: c.id || uid(),
-    ts: c.ts || now(),
-    text: c.text || '',
-    likes: Number(c.likes || 0),
-    points: Number(c.points || 0),
+    id: c.id ?? uid(),
+    ts: c.ts ?? now(),
+    text: c.text ?? '',
+    likes: Number(c.likes ?? 0),
+    points: Number(c.points ?? 0),
+    myLike: !!c.myLike,
+    myPoints: Number(c.myPoints ?? 0),
+    author: c.author ?? null, // ✅ FIX: conservar autor
     replies: Array.isArray(c.replies)
       ? c.replies.map(r => ({
-          id: r.id || uid(),
-          ts: r.ts || now(),
-          text: r.text || '',
-          likes: Number(r.likes || 0),
-          points: Number(r.points || 0),
+          id: r.id ?? uid(),
+          ts: r.ts ?? now(),
+          text: r.text ?? '',
+          likes: Number(r.likes ?? 0),
+          points: Number(r.points ?? 0),
+          myLike: !!r.myLike,
+          myPoints: Number(r.myPoints ?? 0),
+          author: r.author ?? null, // ✅ FIX: conservar autor en replies
         }))
       : []
   };
 }
+
 
 function ensurePostSchema(p){
   if (!p || typeof p !== 'object') return p;
@@ -568,6 +606,7 @@ async function openEditPostModal(postId) {
 
   document.getElementById('daoModalTitle').textContent = 'Editar post';
   document.getElementById('daoModalBody').innerHTML = `
+  
     <div class="sheet-item">
       <div class="t">Título</div>
       <input id="editPostTitle" value="${esc(title)}" />
@@ -633,6 +672,9 @@ async function openReportPostModal(postId) {
 ========================= */
 
 let __lastPointerTs = 0;
+let __modalJustOpenedTs = 0;
+let __kebabSuppressUntil = 0;
+
 
 // Define qué elementos consideramos "accionables"
 function isActionableTarget(t){
@@ -787,17 +829,48 @@ if (repBtn) {
     return;
   }
 
+// ✅ evita que un click residual abra kebabs justo al abrir el modal
+if (Date.now() - __modalJustOpenedTs < 250) {
+  if (e.target.closest('[data-kebab]')) {
+    e.preventDefault?.();
+    e.stopPropagation?.();
+    return;
+  }
+}
+
 // =========================
 // KEBAB TOGGLE (FASE 4.1)
 // =========================
 
+
+
 const kb = e.target.closest('[data-kebab]');
+
 if (kb) {
+  // ✅ Si el botón está "lockeado" (opcional), no permitas toggle
+  if (kb.dataset.kebabLock === "1") {
+    e.preventDefault?.();
+    e.stopPropagation?.();
+    return;
+  }
+
+  const now = Date.now();
+  const isInModal = !!kb.closest('#daoModalBody');
+
+  // ✅ si el modal acaba de abrir, ignora cualquier toggle “fantasma”
+  if (now < __kebabSuppressUntil || (isInModal && (now - __modalJustOpenedTs) < 450)) {
+    e.preventDefault?.();
+    e.stopPropagation?.();
+    return;
+  }
+
   e.preventDefault?.();
   e.stopPropagation?.();
   toggleKebabFromButton(kb);
   return;
 }
+
+
 
 
 // =========================
@@ -854,10 +927,20 @@ if (item) {
       return;
     }
 
-    if (action === 'c-delete') {
-      alert('Eliminar comentario (FASE 5.2.4)');
-      return;
-    }
+    
+if (action === 'c-delete') {
+  if (!confirm('¿Eliminar este comentario?')) return;
+
+  try {
+    await API.deleteComment(postId, commentId, replyId);
+    await openPostModal(postId);
+    await renderAll();
+  } catch (e) {
+    alert('Error eliminando comentario');
+  }
+  return;
+}
+
 
     if (action === 'c-report') {
       alert('Reportar comentario (FASE 5.2.4)');
@@ -1236,12 +1319,30 @@ if (send) {
       const c = findComment(post, replying.commentId);
       if (!c) return post;
       c.replies = c.replies || [];
-      c.replies.push({ id: uid(), ts: now(), text: textRaw, likes: 0, points: 0 });
+      
+c.replies.push({
+  id: uid(),
+  ts: now(),
+  text: textRaw,
+  likes: 0,
+  points: 0,
+  author: getViewerAddress(), // ✅ FIX
+});
+
       return post;
     }
 
     post.comments = post.comments || [];
-    post.comments.push({ id: uid(), ts: now(), text: textRaw, likes: 0, points: 0, replies: [] });
+    
+post.comments.push({
+  id: uid(),
+  ts: now(),
+  text: textRaw,
+  likes: 0,
+  points: 0,
+  replies: [],
+  author: getViewerAddress(), // ✅ FIX
+});
     post.commentsCount = (post.commentsCount || 0) + 1;
     return post;
   });
@@ -2117,21 +2218,37 @@ function renderReplies(comment, postId){
   const visible = expanded ? replies : replies.slice(0, 2);
 
   const items = visible.map(r => `
-    <
 <div class="comment comment-l2" data-reply-id="${esc(r.id)}">
-  <div class="comment-headrow">
-    <span class="muted small">${esc(fmt(r.ts))}</span>
-    <button class="kebab-btn" type="button" data-kebab="${esc(r.id)}" aria-label="Opciones">⋮</button>
-    ${commentKebabMenuHTML({
-      postId,
-      comment: r,
-      isReply: true,
-      parentId: comment.id
-    })}
+  
+<div class="comment-headrow">
+  <div>
+    <span class="comment-author">
+      ${authorLinkHTML(r.author)}
+    </span>
+    <span class="muted small">
+      ${esc(fmt(r.ts))}
+    </span>
   </div>
-      <div class="comment-head">
-        <span class="muted small">${esc(fmt(r.ts))}</span>
-      </div>
+
+  <button
+    class="kebab-btn"
+    type="button"
+    data-kebab="${esc(r.id)}"
+    aria-label="Opciones"
+  >
+    ⋮
+  </button>
+
+  ${commentKebabMenuHTML({
+    postId,
+    comment: r,
+    isReply: true,
+    parentId: comment.id
+  })}
+</div>
+
+      
+
       <p>${esc(r.text)}</p>
       <div class="post-tags">
         <span class="pill like" data-action="c-like" data-post-id="${esc(postId)}" data-comment-id="${esc(comment.id)}" data-reply-id="${esc(r.id)}">
@@ -2169,15 +2286,30 @@ function renderComments(post){
   return comments.map(c => `
     
 <div class="comment comment-l1" data-comment-id="${esc(c.id)}">
-  <div class="comment-headrow">
-    <span class="muted small">${esc(fmt(c.ts))}</span>
-    <button class="kebab-btn" type="button" data-kebab="${esc(c.id)}" aria-label="Opciones">⋮</button>
-    ${commentKebabMenuHTML({ postId: post.id, comment: c })}
+  
+<div class="comment-headrow">
+  <div>
+    <span class="comment-author">
+      ${authorLinkHTML(c.author)}
+    </span>
+    <span class="muted small">
+      ${esc(fmt(c.ts))}
+    </span>
   </div>
 
-      <div class="comment-head">
-        <span class="muted small">${esc(fmt(c.ts))}</span>
-      </div>
+  <button
+    class="kebab-btn"
+    type="button"
+    data-kebab="${esc(c.id)}"
+    aria-label="Opciones"
+  >
+    ⋮
+  </button>
+
+  ${commentKebabMenuHTML({ postId: post.id, comment: c })}
+</div>
+
+
       <p>${esc(c.text)}</p>
 
       <div class="post-tags">
@@ -2309,9 +2441,22 @@ async function openPostModal(postId) {
     </div>
   `;
 
-  openModal();
-  applyActionState();
-  updateModalPostCounts(idStr);
+
+
+openModal();
+
+__modalJustOpenedTs = Date.now();
+__kebabSuppressUntil = Date.now() + 350;
+
+// ✅ Un solo cierre garantizado post-reflow
+setTimeout(() => {
+  closeAllKebabs();
+}, 0);
+
+applyActionState();
+updateModalPostCounts(idStr);
+
+
 }
 
 
