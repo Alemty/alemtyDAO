@@ -2,7 +2,7 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
 
   <!-- ================= THEME INIT (igual que dominio base) ================= -->
   <script>
@@ -16,22 +16,23 @@
     })();
   </script>
 
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=yes" />
+  <meta name="color-scheme" content="dark light" />
   <title>alemty.eth · DEX</title>
 
-  <!-- ✅ CSS GLOBAL (mismo patrón del dominio base) -->
-  <link rel="stylesheet" href="/settings/theme.css">
-  <link rel="stylesheet" href="/shared/css/module.css">
-  <link rel="stylesheet" href="/shared/css/shell.css">
-  <link rel="stylesheet" href="/css/style.css">
+  <!-- ✅ CSS GLOBAL (mismo patrón que tus subapps, ej DAO) -->
+  <link rel="stylesheet" href="/settings/theme.css" />
+  <link rel="stylesheet" href="/shared/css/module.css" />
+  <link rel="stylesheet" href="/shared/css/shell.css" />
+  <link rel="stylesheet" href="/css/style.css" />
 
   <!-- ✅ CSS del DEX -->
-  <link rel="stylesheet" href="/dex/css/style.css">
+  <link rel="stylesheet" href="/dex/css/style.css" />
 
   <!-- ✅ Fuente Inter (igual que dominio base) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet" />
 </head>
 
 <body data-app="dex">
@@ -40,20 +41,144 @@
   <nav id="navbar"></nav>
 
   <main id="pageDex" class="container" style="max-width:1100px;margin:0 auto;padding:18px;">
+    <div class="h1 dao-brand" aria-label="dex.alemty.eth">
+  <span class="dao-brand-em">dex</span><span class="dao-brand-em">.</span><span class="dao-brand-base">alemty</span><span class="dao-brand-base">.</span><span class="dao-brand-em">eth</span>
+</div>
     <div class="dex-wrap">
-      <section class="glass" style="padding:18px;">
-        <h1 style="margin:0 0 8px;">DEX</h1>
-        <p class="muted" style="margin:0;">
-          Placeholder. Integraremos: Aura/ALEM (interno) + ALEM/ETH (Velodrome).
-        </p>
+
+      <!-- ===================== SWAP ===================== -->
+      <section class="glass dex-card" id="swapCard">
+        <div class="dex-card-head">
+          <div>
+            <h1 class="dex-title">Swap</h1>
+            <p class="dex-sub muted">Interno (Aura/ALEM) o Externo (ALEM/ETH en Velodrome).</p>
+          </div>
+
+          <div class="dex-seg" role="tablist" aria-label="Modo Swap">
+            <button class="dex-seg-btn active" data-mode="internal" type="button">Interno</button>
+            <button class="dex-seg-btn" data-mode="external" type="button">Externo</button>
+          </div>
+        </div>
+
+        <div class="dex-swap-grid">
+          <div class="dex-field">
+            <label class="dex-label" for="swapAmount">De</label>
+            <div class="dex-input-row">
+              <select class="dex-select" id="swapFrom">
+                <option value="AURA">AURA</option>
+                <option value="ALEM">ALEM</option>
+                <option value="ETH">ETH</option>
+              </select>
+              <input class="dex-input" id="swapAmount" inputmode="decimal" placeholder="0.0" />
+            </div>
+            <div class="dex-hint" id="swapFromHint">Pool interno Aura ↔ ALEM (simulado)</div>
+          </div>
+
+          <div class="dex-mid">
+            <button class="dex-icon" id="swapFlip" type="button" aria-label="Invertir">⇅</button>
+          </div>
+
+          <div class="dex-field">
+            <label class="dex-label" for="swapOut">A</label>
+            <div class="dex-input-row">
+              <select class="dex-select" id="swapTo">
+                <option value="ALEM">ALEM</option>
+                <option value="AURA">AURA</option>
+                <option value="ETH">ETH</option>
+              </select>
+              <input class="dex-input" id="swapOut" placeholder="—" disabled />
+            </div>
+            <div class="dex-hint" id="swapToHint">Salida (quote pronto)</div>
+          </div>
+
+          <div class="dex-actions">
+            <button class="dex-btn primary" id="btnQuote" type="button">Quote</button>
+            <button class="dex-btn" id="btnSwap" type="button" disabled>Swap (SOON)</button>
+          </div>
+
+          <div class="dex-note">
+            <span class="pill">🔒 Sin tokens minteados aún</span>
+            <span class="pill">✅ UI + wiring</span>
+            <span class="pill">🧠 Luego conectamos Velodrome</span>
+          </div>
+        </div>
       </section>
 
-      <section class="glass" style="padding:18px;">
-        <h2 style="margin:0 0 8px;">Velodrome (Externo)</h2>
-        <p class="muted" style="margin:0;">
-          Próximo paso: cargar addresses ($ALEM, WETH) y preparar encoding del Universal Router.
-        </p>
+      <!-- ===================== POOLS ===================== -->
+      <section class="glass dex-card" id="poolsCard">
+        <div class="dex-card-head">
+          <div>
+            <h2 class="dex-title">Pools</h2>
+            <p class="dex-sub muted">Administra liquidez y monitorea pools clave de la DAO.</p>
+          </div>
+
+          <div class="dex-tools">
+            <input class="dex-search" id="poolSearch" placeholder="Buscar pool…" />
+            <select class="dex-select" id="poolFilter">
+              <option value="all">Todos</option>
+              <option value="internal">Internos</option>
+              <option value="external">Externos</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="dex-pool-list" id="poolList">
+          <article class="dex-pool" data-kind="internal" data-name="aura alem">
+            <div class="dex-pool-left">
+              <div class="dex-pair">
+                <span class="chip aura">AURA</span>
+                <span class="sep">/</span>
+                <span class="chip alem">ALEM</span>
+              </div>
+              <div class="dex-pool-meta">
+                <span class="tag">Interno</span>
+                <span class="muted">AMM social (tokenomics)</span>
+              </div>
+            </div>
+            <div class="dex-pool-right">
+              <div class="dex-metric">
+                <div class="k muted">TVL</div>
+                <div class="v">—</div>
+              </div>
+              <div class="dex-metric">
+                <div class="k muted">APR</div>
+                <div class="v">—</div>
+              </div>
+              <button class="dex-btn" type="button" disabled>Agregar Liquidez (SOON)</button>
+            </div>
+          </article>
+
+          <article class="dex-pool" data-kind="external" data-name="alem eth velodrome">
+            <div class="dex-pool-left">
+              <div class="dex-pair">
+                <span class="chip alem">ALEM</span>
+                <span class="sep">/</span>
+                <span class="chip eth">ETH</span>
+              </div>
+              <div class="dex-pool-meta">
+                <span class="tag ext">Externo</span>
+                <span class="muted">Velodrome (Base)</span>
+              </div>
+            </div>
+            <div class="dex-pool-right">
+              <div class="dex-metric">
+                <div class="k muted">TVL</div>
+                <div class="v">—</div>
+              </div>
+              <div class="dex-metric">
+                <div class="k muted">APR</div>
+                <div class="v">—</div>
+              </div>
+              <button class="dex-btn" type="button" disabled>Ir a Pool (SOON)</button>
+            </div>
+          </article>
+        </div>
+
+        <div class="dex-foot muted">
+          Próximo: conectar datos reales (quotes/TVL) cuando existan contratos y pools.
+        </div>
       </section>
+
     </div>
 
     <div class="bottom-safe-space"></div>

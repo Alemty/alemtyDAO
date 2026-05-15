@@ -172,4 +172,242 @@ html.light body[data-app="dex"] .bottom-nav::after{
   }
 }
 
+/* =========================================================
+   DEX UI (Swap + Pools) — agrega al FINAL
+========================================================= */
+
+body[data-app="dex"] .dex-card{ padding:18px; }
+body[data-app="dex"] .dex-card-head{
+  display:flex; gap:14px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;
+}
+
+body[data-app="dex"] .dex-title{
+  margin:0; font-size:1.25rem; font-weight:950; letter-spacing:-.3px;
+}
+body[data-app="dex"] .dex-sub{ margin:.25rem 0 0; max-width:70ch; }
+
+body[data-app="dex"] .dex-seg{
+  display:inline-flex; gap:6px; padding:6px;
+  border-radius:16px; border:1px solid var(--border);
+  background: rgba(255,255,255,.04);
+}
+body[data-app="dex"] .dex-seg-btn{
+  border:1px solid transparent;
+  background:transparent;
+  color:inherit;
+  border-radius:12px;
+  padding:8px 12px;
+  font-weight:900;
+  cursor:pointer;
+  opacity:.75;
+}
+body[data-app="dex"] .dex-seg-btn.active{
+  opacity:1;
+  background: linear-gradient(135deg,var(--primary),var(--accent));
+  color:#08101a;
+  border-color: rgba(255,255,255,.18);
+}
+
+body[data-app="dex"] .dex-swap-grid{
+  margin-top:14px;
+  display:grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap:12px;
+  align-items:end;
+}
+@media (max-width:820px){
+  body[data-app="dex"] .dex-swap-grid{ grid-template-columns:1fr; }
+  body[data-app="dex"] .dex-mid{ display:none; }
+}
+
+body[data-app="dex"] .dex-field{ display:flex; flex-direction:column; gap:8px; }
+body[data-app="dex"] .dex-label{ font-size:12px; font-weight:900; opacity:.85; }
+body[data-app="dex"] .dex-input-row{
+  display:flex; gap:10px; align-items:center;
+  border-radius:16px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.04);
+  padding:10px;
+}
+body[data-app="dex"] .dex-select{
+  border-radius:12px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  color:inherit;
+  padding:10px 10px;
+  font-weight:900;
+}
+body[data-app="dex"] .dex-input{
+  flex:1;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:inherit;
+  font-size:1.05rem;
+  font-weight:950;
+}
+body[data-app="dex"] .dex-input:disabled{ opacity:.7; }
+
+body[data-app="dex"] .dex-hint{
+  font-size:12px; opacity:.7;
+}
+
+body[data-app="dex"] .dex-mid{ display:flex; justify-content:center; }
+body[data-app="dex"] .dex-icon{
+  width:46px; height:46px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  cursor:pointer;
+  font-size:18px;
+  font-weight:900;
+}
+body[data-app="dex"] .dex-icon:hover{ box-shadow:0 0 0 1px rgba(0,255,213,.25), 0 0 18px rgba(0,255,213,.18); }
+
+body[data-app="dex"] .dex-actions{
+  grid-column: 1 / -1;
+  display:flex; gap:10px; flex-wrap:wrap;
+  margin-top:6px;
+}
+body[data-app="dex"] .dex-btn{
+  border-radius:14px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  color:inherit;
+  padding:10px 14px;
+  font-weight:950;
+  cursor:pointer;
+}
+body[data-app="dex"] .dex-btn.primary{
+  background: linear-gradient(135deg,var(--primary),var(--accent));
+  color:#08101a;
+}
+body[data-app="dex"] .dex-btn:disabled{
+  opacity:.55; cursor:not-allowed;
+}
+
+body[data-app="dex"] .dex-note{ grid-column: 1 / -1; display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+body[data-app="dex"] .pill{
+  border-radius:999px;
+  padding:6px 10px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.04);
+  font-weight:900;
+  font-size:12px;
+}
+
+/* Pools */
+body[data-app="dex"] .dex-tools{ display:flex; gap:10px; flex-wrap:wrap; }
+body[data-app="dex"] .dex-search{
+  border-radius:14px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.05);
+  color:inherit;
+  padding:10px 12px;
+  min-width:240px;
+  font-weight:800;
+}
+body[data-app="dex"] .dex-pool-list{ margin-top:14px; display:flex; flex-direction:column; gap:12px; }
+body[data-app="dex"] .dex-pool{
+  display:flex; justify-content:space-between; gap:14px; align-items:center; flex-wrap:wrap;
+  border-radius:18px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  padding:12px;
+}
+body[data-app="dex"] .dex-pool-left{ display:flex; flex-direction:column; gap:8px; }
+body[data-app="dex"] .dex-pair{ display:flex; gap:8px; align-items:center; font-weight:950; }
+body[data-app="dex"] .chip{
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.04);
+  font-weight:950;
+  font-size:12px;
+}
+body[data-app="dex"] .chip.aura{ box-shadow:0 0 0 2px rgba(24,149,171,.35) inset; }
+body[data-app="dex"] .chip.alem{ box-shadow:0 0 0 2px rgba(240,189,4,.35) inset; }
+body[data-app="dex"] .chip.eth{ box-shadow:0 0 0 2px rgba(160,140,255,.35) inset; }
+
+body[data-app="dex"] .tag{
+  display:inline-flex; align-items:center;
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.04);
+  font-weight:900;
+  font-size:12px;
+}
+body[data-app="dex"] .tag.ext{ border-color: rgba(0,163,255,.25); }
+
+body[data-app="dex"] .dex-pool-right{
+  display:flex; gap:14px; align-items:center; flex-wrap:wrap;
+}
+body[data-app="dex"] .dex-metric .k{ font-size:11px; font-weight:900; }
+body[data-app="dex"] .dex-metric .v{ font-size:14px; font-weight:950; }
+
+body[data-app="dex"] .dex-foot{ margin-top:10px; font-size:12px; }
+
+/* =========================================================
+   DEX Brand (reusa markup dao-brand)
+   - Dark: base blanco + esmeralda neón
+   - Light: base negro + esmeralda oscuro
+   Scope: SOLO DEX
+========================================================= */
+
+body[data-app="dex"]{
+  /* Tokens del brand en DARK (default) */
+  --dex-brand-base: rgba(239,255,251,.94); /* blanco suave */
+  --dex-brand-em: var(--primary);          /* esmeralda neón */
+  --dex-brand-glow: rgba(0,255,213,.22);
+}
+
+/* LIGHT: negro + esmeralda oscuro (menos neón) */
+html.light body[data-app="dex"]{
+  --dex-brand-base: rgba(8,16,26,.92); /* negro / charcoal */
+  /* oscurece el primary en light: mezcla con negro */
+  --dex-brand-em: var(--primary);
+  --dex-brand-glow: rgba(13,185,166,.14);
+}
+
+/* Contenedor del título */
+body[data-app="dex"] .dao-brand{
+  margin: 6px 0 12px;
+  font-weight: 1000;
+  letter-spacing: -0.6px;
+  line-height: 1.05;
+  font-size: clamp(1.55rem, 3.8vw, 2.15rem);
+  user-select: none;
+}
+
+/* Partes del brand */
+body[data-app="dex"] .dao-brand-base{
+  color: var(--dex-brand-base);
+}
+
+body[data-app="dex"] .dao-brand-em{
+  color: var(--dex-brand-em);
+  /* glow sutil (neón en dark, tenue en light) */
+  text-shadow: 0 0 18px var(--dex-brand-glow);
+}
+
+/* En light, reduce glow para que sea “iOS / elegante” */
+html.light body[data-app="dex"] .dao-brand-em{
+  text-shadow: 0 0 10px var(--dex-brand-glow);
+}
+
+/* =========================================
+   SWAP ICON (⇅) — color dinámico por tema
+========================================= */
+
+/* Default (dark) */
+body[data-app="dex"] .dex-icon{
+  color: rgba(239,255,251,.9); /* casi blanco */
+}
+
+/* LIGHT: usar el mismo esmeralda del sistema */
+html.light body[data-app="dex"] .dex-icon{
+  color: var(--primary);
+}
+
 
