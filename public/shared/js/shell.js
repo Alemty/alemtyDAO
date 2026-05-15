@@ -415,55 +415,57 @@ drawer.innerHTML = `
 
   <div class="drawer-body">
 
-    <!-- =========================
-         IDENTIDAD (DID / SIWE)
-         ========================= -->
-    <div class="acc open" data-acc="did">
-      <button class="acc-h" type="button" data-open="did" aria-expanded="true">
-        <span>Identidad (DID)</span>
-        <span class="chev">▾</span>
-      </button>
+    
+<!-- =========================
+IDENTIDAD DID (minimal)
+========================= -->
+<div class="acc open" data-acc="did">
+  <button class="acc-h" type="button" data-open="did" aria-expanded="true">
+    <span>Identidad DID</span>
+    <span class="chev">▾</span>
+  </button>
 
-      <div class="acc-p" id="accDid">
-        <div class="did-box">
-
-          <div class="did-row">
-            <span class="k">Estado</span>
-            <span class="v code" id="didStatus">${esc(formatDidStatus())}</span>
-          </div>
-
-          <div class="did-row">
-            <span class="k">DID</span>
-            <span class="v code" id="didAddress">—</span>
-          </div>
-
-          <div class="did-row">
-            <span class="k">SIWE</span>
-            <!-- ⛔ NO tocar este texto desde HTML -->
-            <!-- ✅ Se actualiza dinámicamente vía JS + localStorage -->
-            <span class="v code" id="siweStatus">DID ⚠️</span>
-          </div>
-
-        </div>
-
-        <div class="did-actions">
-          <button class="drawer-link" id="connectBtn" type="button">🦊 Conectar MetaMask</button>
-          <button class="drawer-link" id="disconnectBtn" type="button">⛔ Desconectar</button>
-          
-
-          <!-- Dispara el flujo SIWE -->
-          <button class="drawer-link" id="siweBtn" type="button">✅ Verificar SIWE</button>
-        </div>
-
-        <div class="small muted" style="margin-top:10px;">
-          MetaMask valida conexión. SIWE valida identidad (firma + verificación).
-        </div>
+  <div class="acc-p" id="accDid">
+    <div class="did-mini">
+      <div class="did-mini-row">
+        <span class="k">Estado:</span>
+        <span class="v code" id="didStatus">Desconectado</span>
       </div>
-    </div>
+
+      <div class="did-mini-row">
+        <span class="k">DID - SIWE:</span>
+        <span class="v code" id="siweStatus">⚠️ DID-SIWE</span>
       </div>
+
+      <!-- mantiene DID accesible (tooltip/copy/compat), pero ya no ocupa UI -->
+      <span class="v code" id="didAddress" hidden>—</span>
     </div>
+
+    <div class="did-actions grid2">
+      
+<button class="drawer-link did-blue" id="connectBtn" type="button">🦊 Inciar Sesión</button>
+
+<a class="drawer-link did-blue" id="registerBtn"
+   href="https://chromewebstore.google.com/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn?hl=es"
+   target="_blank" rel="noopener noreferrer">
+  🦊 Registrarse
+</a>
+
+<button class="drawer-link did-blue" id="siweBtn" type="button">✅ Firma SIWE</button>
+<button class="drawer-link did-blue" id="disconnectBtn" type="button">⛔ Cerrar Sesión</button>
+
+    </div>
+
+    <!-- fuera de la card / minimal -->
+    
+<a class="drawer-link did-blue did-yt" id="tutorialLink" href="#" target="_blank" rel="noopener noreferrer">
+  <img class="yt-ico" src="/assets/icons/youtube.svg" alt="" aria-hidden="true">
+  Tutorial Registro Metamask
+</a>
 
   </div>
+</div>
+
 `;
 
 
@@ -661,40 +663,48 @@ function shortHex(addr, start = 6, end = 4){
 }
 
 // Sync del estado DID en el drawer
+
 function syncDid(){
   const a = getDid();
 
-  // Estado (arriba)
+  // Estado: Conectado / Desconectado + short
   didStatus.textContent = a
     ? `Conectado: ${shortHex(a)}`
-    : 'No conectado';
+    : 'Desconectado';
 
-  // DID (fila dedicada)
-  if(a){
-    didAddress.textContent = shortHex(a);
-    didAddress.title = a; // tooltip con la address completa
-  } else {
-    didAddress.textContent = '—';
-    didAddress.removeAttribute('title');
+  // DID hidden (solo para compat/tooltip)
+  const didAddressEl = drawer.querySelector("#didAddress");
+  if (didAddressEl) {
+    if (a) {
+      didAddressEl.textContent = a;
+      didAddressEl.title = a;
+    } else {
+      didAddressEl.textContent = "—";
+      didAddressEl.removeAttribute("title");
+    }
   }
 
-  // El estado SIWE (DID ⚠️ / SIWE ✅) lo maneja esta función
-  // (si ya la pegaste como te indiqué antes)
-  if (typeof updateSiweStatus === 'function') {
-    updateSiweStatus();
-  }
+  // SIWE status
+  updateSiweStatus();
 }
+
+
 
 
 function updateSiweStatus() {
   const el = document.getElementById("siweStatus");
   if (!el) return;
 
+  const did = (localStorage.getItem("alemty.did") || localStorage.getItem("did") || "").toLowerCase();
   const siweOk = localStorage.getItem("alemty.siwe") === "ok";
-  const did = localStorage.getItem("alemty.did") || localStorage.getItem("did");
 
-  el.textContent = (siweOk && did) ? "SIWE ✅" : "DID ⚠️";
+  const ok = !!did && siweOk;
+
+  el.textContent = ok ? "✅ DID-SIWE" : "⚠️ DID-SIWE";
+  el.classList.toggle("ok", ok);
+  el.classList.toggle("warn", !ok);
 }
+
 
 
 
