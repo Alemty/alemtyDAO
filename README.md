@@ -3,7 +3,7 @@
   <img src="assets/banner-alemtydao.svg" alt="alemtyDAO — Consultora Web Espacial" width="92%" />
 </p>
 
-# alemty.eth — DAO v0.6
+# alemty.eth — DAO v0.8
 
 **Estado:** Activo / En desarrollo  **Enfoque:** Identidad · Coordinación · Economía sostenible · Gobernanza auditable  **Principio rector:** *El mérito no se compra. El valor circula. El poder se bloquea.*
 
