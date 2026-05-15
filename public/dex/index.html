@@ -2,30 +2,59 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AlemtyDAO · DEX</title>
+  <meta charset="utf-8">
 
-  <!-- CSS global del Shell -->
-  <link rel="stylesheet" href="/shared/css/shell.css" />
-  <link rel="stylesheet" href="/shared/css/module.css" />
+  <!-- ================= THEME INIT (igual que dominio base) ================= -->
+  <script>
+    (function () {
+      try {
+        const saved = localStorage.getItem('theme');
+        const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+        const theme = saved || (prefersLight ? 'light' : 'dark');
+        if (theme === 'light') document.documentElement.classList.add('light');
+      } catch {}
+    })();
+  </script>
 
-  <!-- CSS propio del DEX (por ahora placeholder) -->
-  <link rel="stylesheet" href="/dex/css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=yes">
+  <title>alemty.eth · DEX</title>
+
+  <!-- ✅ CSS GLOBAL (mismo patrón del dominio base) -->
+  <link rel="stylesheet" href="/settings/theme.css">
+  <link rel="stylesheet" href="/shared/css/module.css">
+  <link rel="stylesheet" href="/shared/css/shell.css">
+  <link rel="stylesheet" href="/css/style.css">
+
+  <!-- ✅ CSS del DEX -->
+  <link rel="stylesheet" href="/dex/css/style.css">
+
+  <!-- ✅ Fuente Inter (igual que dominio base) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
 </head>
 
-<body>
+<body data-app="dex">
   <!-- Requeridos por mountShell() -->
   <header id="topbar"></header>
-  <div id="navbar"></div>
+  <nav id="navbar"></nav>
 
-  <main class="container" style="max-width:1100px;margin:0 auto;padding:18px;">
-    <section class="glass" style="padding:18px;">
-      <h1 style="margin:0 0 8px;">DEX</h1>
-      <p class="muted" style="margin:0;">
-        Placeholder. Integraremos: Aura/ALEM (interno) + ALEM/ETH (Velodrome).
-      </p>
-    </section>
+  <main id="pageDex" class="container" style="max-width:1100px;margin:0 auto;padding:18px;">
+    <div class="dex-wrap">
+      <section class="glass" style="padding:18px;">
+        <h1 style="margin:0 0 8px;">DEX</h1>
+        <p class="muted" style="margin:0;">
+          Placeholder. Integraremos: Aura/ALEM (interno) + ALEM/ETH (Velodrome).
+        </p>
+      </section>
+
+      <section class="glass" style="padding:18px;">
+        <h2 style="margin:0 0 8px;">Velodrome (Externo)</h2>
+        <p class="muted" style="margin:0;">
+          Próximo paso: cargar addresses ($ALEM, WETH) y preparar encoding del Universal Router.
+        </p>
+      </section>
+    </div>
 
     <div class="bottom-safe-space"></div>
   </main>
