@@ -2,93 +2,41 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=0.7, maximum-scale=1, user-scalable=yes">
-  <title>dex.alemty.eth · DEX</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AlemtyDAO · DEX</title>
 
-  <!-- CSS GLOBAL -->
-  <link rel="stylesheet" href="/settings/theme.css">
-  <link rel="stylesheet" href="/shared/css/module.css">
-  <link rel="stylesheet" href="/shared/css/shell.css">
+  <!-- CSS global del Shell -->
+  <link rel="stylesheet" href="/shared/css/shell.css" />
+  <link rel="stylesheet" href="/shared/css/module.css" />
 
-  <!-- DEX CSS -->
-  <link rel="stylesheet" href="/dex/css/style.css">
-
-  <!-- Fuente -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
+  <!-- CSS propio del DEX (por ahora placeholder) -->
+  <link rel="stylesheet" href="/dex/css/style.css" />
 </head>
 
-<body class="dex-root">
-  <!-- Shell -->
+<body>
+  <!-- Requeridos por mountShell() -->
   <header id="topbar"></header>
-  <nav id="navbar"></nav>
+  <div id="navbar"></div>
 
-  <!-- Fondo vivo (clave para glass real) -->
-  <div class="dex-bg"></div>
-
-  <main class="container" style="margin-top:16px;">
-    <!-- Header -->
-    <section class="card dex-hero">
-      <div class="h1">DEX · alemty.eth</div>
-      <p class="muted">Swap · Pools · LP · Stake · Bridge · Analytics</p>
-
-      <!-- Barra de botones (pequeños, no encimados) -->
-      <div class="dex-tabs" role="tablist" aria-label="DEX Tabs">
-        <button class="dex-tab active" data-tab="swap" type="button" role="tab" aria-selected="true">Swap</button>
-        <button class="dex-tab" data-tab="pools" type="button" role="tab" aria-selected="false">Pools</button>
-        <button class="dex-tab" data-tab="liquidity" type="button" role="tab" aria-selected="false">Liquidity</button>
-        <button class="dex-tab" data-tab="stake" type="button" role="tab" aria-selected="false">Stake</button>
-        <button class="dex-tab" data-tab="bridge" type="button" role="tab" aria-selected="false">Bridge</button>
-        <button class="dex-tab" data-tab="analytics" type="button" role="tab" aria-selected="false">Analytics</button>
-      </div>
+  <main class="container" style="max-width:1100px;margin:0 auto;padding:18px;">
+    <section class="glass" style="padding:18px;">
+      <h1 style="margin:0 0 8px;">DEX</h1>
+      <p class="muted" style="margin:0;">
+        Placeholder. Integraremos: Aura/ALEM (interno) + ALEM/ETH (Velodrome).
+      </p>
     </section>
 
-    <!-- Panel fijo que cambia según tab (aquí va la descripción, NO en botones) -->
-    <section class="card dex-panel">
-      <div class="dex-panel-top">
-        <div>
-          <div class="h2" id="panelTitle">Swap</div>
-          <p class="small muted" id="panelDesc">Intercambia tokens. Ejemplo: AURA ↔ ALEM.</p>
-        </div>
-        <button class="btn primary" id="openAction" type="button">Abrir</button>
-      </div>
-
-      <!-- Mini “resumen” (cambia también) -->
-      <div class="dex-summary" id="panelSummary"></div>
-    </section>
-
-    <footer class="small muted" style="margin-top:24px;">
-      DEX · alemty.eth
-    </footer>
+    <div class="bottom-safe-space"></div>
   </main>
 
-  <!-- MODAL (sheet tipo Apple, igual al perfil) -->
-  <div class="modal" id="dexModal" aria-hidden="true">
-    <div class="modal-backdrop" data-close="dexModal"></div>
-    <div class="modal-card profile-card">
-      <div class="modal-headbar">
-        <strong id="dexModalTitle">Detalle</strong>
-        <button class="icon-btn" data-close="dexModal" type="button">✕</button>
-      </div>
-      <div class="modal-body" id="dexModalBody"></div>
-    </div>
-  </div>
-
-  <!-- Theme init -->
-  <script>
-    (function () {
-      try {
-        const saved = localStorage.getItem('theme');
-        const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-        const theme = saved || (prefersLight ? 'light' : 'dark');
-        if (theme === 'light') document.documentElement.classList.add('light');
-      } catch {}
-    })();
+  <!-- Shell compartido -->
+  <script type="module">
+    import { mountShell } from "/shared/js/shell.js";
+    mountShell();
   </script>
 
-  <!-- DEX JS -->
-  <script type="module" src="/dex/js/app.js"></script>
+  <!-- JS del DEX -->
+  <script type="module" src="/dex/js/dex.js"></script>
 </body>
 </html>

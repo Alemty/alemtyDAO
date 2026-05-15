@@ -7,7 +7,7 @@ const ROUTES = [
   { key:"id",    label:"ID",    ico:"🪪", href:"/" },
   { key:"dao",   label:"DAO",   ico:"🏛️", href:"/dao/" },
   { key:"defi", label:"DEFI", ico:"🧩", href:"/defi/" },
-  { key:"dex",   label:"DEX",   ico:"🔁", href:"#" },
+  { key:"dex",   label:"DEX",   ico:"🔁", href:"/dex/" },
   { key:"ia",    label:"IA",    ico:"🤖", href:"#" },
   { key:"ar",    label:"AR",    ico:"🕶️", href:"#" }
 ];
