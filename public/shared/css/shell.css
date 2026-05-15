@@ -1358,3 +1358,376 @@ button.notif-item:hover{
 .mod-item .t{ font-weight:1000; }
 
 
+/* =========================
+IDENTIDAD DID (minimal) — drawer
+========================= */
+.did-mini{
+  padding: 10px 10px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.03);
+}
+
+.did-mini-row{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
+  padding: 4px 0;
+}
+
+.did-mini .k{
+  opacity:.78;
+  font-size:12px;
+  font-weight:800;
+}
+
+.did-mini .v{
+  font-size:12px;
+  font-weight:900;
+}
+
+#siweStatus.ok{
+  color: var(--primary);
+}
+
+#siweStatus.warn{
+  color: rgba(255, 205, 120, .95);
+}
+
+/* 2x2 botones */
+.did-actions.grid2{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap:10px;
+  margin-top: 10px;
+}
+
+
+
+/* =========================================================
+   IDENTIDAD DID — UNIFIED THEME BLOCK (FINAL OVERRIDE)
+   - Dark: azules armonizados con glass (sin contraste duro)
+   - Light: esmeraldas armonizadas (sin blanco feo sobre gris)
+   Pegar AL FINAL de /shared/css/shell.css
+========================================================= */
+
+/* ---------- Tokens (Dark default) ---------- */
+:root{
+  /* Superficies glass (dark) */
+  --did-card: rgba(10, 20, 26, 0.40);
+  --did-card-2: rgba(10, 20, 26, 0.30);
+  --did-head: rgba(255,255,255,.035);
+
+  /* Bordes */
+  --did-br: rgba(255,255,255,.12);
+  --did-br-soft: rgba(255,255,255,.10);
+
+  /* Acento (Dark = azul) */
+  --did-a1: rgba(0,163,255,.14);
+  --did-a2: rgba(0,163,255,.07);
+  --did-a-br: rgba(0,163,255,.22);
+  --did-a-glow: rgba(0,163,255,.14);
+
+  /* Texto */
+  --did-text: rgba(239,255,251,.92);
+  --did-muted: rgba(239,255,251,.70);
+}
+
+/* ---------- Tokens (Light = esmeralda) ---------- */
+html.light{
+  /* Superficies glass (light) — sin blanco sólido */
+  --did-card: rgba(255,255,255,.52);
+  --did-card-2: rgba(255,255,255,.42);
+  --did-head: rgba(255,255,255,.48);
+
+  /* Bordes (light) */
+  --did-br: rgba(13,185,166,.18);
+  --did-br-soft: rgba(0,0,0,.08);
+
+  /* Acento (Light = esmeralda) */
+  --did-a1: rgba(13,185,166,.14);
+  --did-a2: rgba(13,185,166,.08);
+  --did-a-br: rgba(13,185,166,.26);
+  --did-a-glow: rgba(13,185,166,.14);
+
+  /* Texto (light) */
+  --did-text: rgba(14,26,24,.92);
+  --did-muted: rgba(14,26,24,.62);
+}
+
+/* =========================================================
+   CARD PRINCIPAL: acordeón Identidad DID
+========================================================= */
+.drawer .acc[data-acc="did"]{
+  background: var(--did-card);
+  border: 1px solid var(--did-br);
+  border-radius: 18px;
+  overflow: hidden;
+
+  /* misma vibra glass del drawer */
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+
+  /* profundidad mínima (sin sombra pesada) */
+  box-shadow: 0 0 0 1px rgba(255,255,255,.04) inset;
+}
+
+.drawer .acc[data-acc="did"] .acc-h{
+  background: var(--did-head);
+  border: 0;
+  color: var(--did-text);
+}
+
+.drawer .acc[data-acc="did"] .acc-h .chev{
+  opacity: .75;
+}
+
+.drawer .acc[data-acc="did"] .acc-p{
+  padding: 12px;
+}
+
+/* =========================================================
+   SUB-CARD: estado (did-mini)
+========================================================= */
+#accDid .did-mini{
+  background: var(--did-card-2);
+  border: 1px solid var(--did-br-soft);
+  border-radius: 16px;
+  padding: 10px;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.04) inset;
+}
+
+#accDid .did-mini-row{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
+  padding: 4px 0;
+}
+
+#accDid .did-mini .k{
+  color: var(--did-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+#accDid .did-mini .v{
+  color: var(--did-text);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+/* Status (SIWE) */
+#siweStatus.ok{ color: rgba(0,255,213,.92); }
+html.light #siweStatus.ok{ color: rgba(13,185,166,.95); }
+
+#siweStatus.warn{ color: rgba(255,205,120,.95); }
+html.light #siweStatus.warn{ color: rgba(180,120,30,.90); }
+
+/* =========================================================
+   BOTONES DID: misma armonía (y dedito para todos)
+========================================================= */
+#accDid .did-actions.grid2{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap:10px;
+  margin-top: 10px;
+}
+
+/* Base común de botones/links dentro de DID */
+#accDid .drawer-link{
+  width: 100%;
+  justify-content: center;
+  cursor: pointer;                 /* ✅ dedito (button + a) */
+  user-select: none;
+  text-decoration: none;
+
+  color: var(--did-text);
+  background: var(--did-card-2);
+  border: 1px solid var(--did-br-soft);
+  border-radius: 14px;
+
+  box-shadow: 0 0 0 1px rgba(255,255,255,.04) inset;
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    filter .18s ease,
+    background .18s ease,
+    border-color .18s ease;
+}
+
+#accDid .drawer-link:hover{
+  transform: translateY(-1px);
+  filter: saturate(112%) brightness(1.02);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.06) inset,
+    0 0 12px rgba(0,0,0,.14);
+}
+
+/* Variante ACCIÓN (Dark=azul / Light=esmeralda) */
+#accDid .drawer-link.did-blue{
+  background: linear-gradient(180deg, var(--did-a1), var(--did-a2));
+  border-color: var(--did-a-br);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.00) inset;
+}
+
+#accDid .drawer-link.did-blue:hover{
+  border-color: color-mix(in oklab, var(--did-a-br), rgba(255,255,255,.10) 30%);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.06) inset,
+    0 0 14px var(--did-a-glow);
+}
+
+#accDid .drawer-link:active{
+  transform: translateY(0);
+}
+
+/* =========================================================
+   CENTRADO PERFECTO (icono + texto)
+   (si usas spans did-ico / did-lbl)
+========================================================= */
+#accDid .did-btn{
+  justify-content: center;
+  width: 100%;
+}
+
+#accDid .did-ico{
+  width: 22px; /* ancho fijo => centrado real */
+  display:inline-flex;
+  justify-content:center;
+  align-items:center;
+}
+
+#accDid .did-lbl{
+  display:inline-block;
+  text-align:center;
+}
+
+/* =========================================================
+   BOTÓN TUTORIAL (YouTube) como botón, no link feo
+========================================================= */
+#accDid .drawer-link.did-yt{
+  margin-top: 10px;
+  gap: 10px;
+}
+
+#accDid .drawer-link.did-yt .yt-ico{
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  opacity: .92;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,.16));
+}
+
+/* En light, baja todavía más el “blanco” para que no contraste feo */
+html.light .drawer .acc[data-acc="did"]{
+  box-shadow: 0 0 0 1px rgba(13,185,166,.08) inset;
+}
+
+html.light #accDid .did-mini{
+  box-shadow: 0 0 0 1px rgba(13,185,166,.06) inset;
+}
+
+html.light #accDid .drawer-link:hover{
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.06) inset,
+    0 0 12px rgba(13,185,166,.10);
+}
+
+/* =========================================================
+   LIGHT THEME — Drawer backdrop + Drawer surface
+   Objetivo: mismo glow que modal/topbar/navbar, sin gris sucio
+   Pegar AL FINAL de shell.css
+========================================================= */
+
+/* 1) Backdrop en light: menos negro → menos “gris” */
+html.light .drawer-backdrop{
+  background: rgba(0,0,0,.32);   /* antes .55 (muy pesado) */
+}
+
+/* 2) Drawer en light: misma “caja glass” que modales */
+html.light .drawer{
+  /* fuerza el surface claro (más parecido a modal) */
+  background: var(--glass-light-2) !important;  /* antes podía verse gris */
+  border-left: 1px solid rgba(13,185,166,.12) !important;
+
+  /* quita sombra dark pesada y usa una más limpia */
+  box-shadow:
+    0 18px 50px rgba(0,0,0,.14),
+    0 0 0 1px rgba(13,185,166,.10) inset !important;
+
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+}
+
+/* Head del drawer en light: coherente */
+html.light .drawer-head{
+  border-bottom: 1px solid rgba(0,0,0,.08) !important;
+}
+
+/* 3) Glow del drawer en light: mismo estilo que modal/topbar/navbar */
+html.light .drawer::after{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  pointer-events:none;
+  border-radius:inherit;
+
+  /* emerald + blue igual que tu sistema de glow */
+  background:
+    radial-gradient(420px 220px at 15% 0%, rgba(13,185,166,.18), transparent 65%),
+    radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.14), transparent 70%);
+
+  opacity:.55;          /* un poco menos para que no “lave” */
+  filter: blur(14px);
+}
+
+/* 4) Opcional: que las secciones/acordeones dentro del drawer no se vean blancas duras */
+html.light .drawer .acc,
+html.light .drawer-section{
+  background: rgba(255,255,255,.42) !important;   /* antes .55 podía verse “plateado” */
+  border-color: rgba(0,0,0,.08) !important;
+}
+
+/* =========================================================
+   LIGHT — Identidad DID: contorno esmeralda leve (para que no se pierda)
+   Pegar AL FINAL de shell.css
+========================================================= */
+
+html.light .drawer .acc[data-acc="did"]{
+  /* contorno esmeralda sutil */
+  border: 1px solid rgba(13,185,166,.26) !important;
+
+  /* separa del fondo sin volverlo “pesado” */
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.55) inset,
+    0 0 0 2px rgba(13,185,166,.10) inset !important;
+
+  /* un poquito más “glass” pero sin blanquear */
+  background: rgba(255,255,255,.44) !important;
+}
+
+/* Header de la card DID: mantiene coherencia y separación */
+html.light .drawer .acc[data-acc="did"] .acc-h{
+  background: rgba(255,255,255,.50) !important;
+  border-bottom: 1px solid rgba(13,185,166,.12) !important;
+}
+
+/* Hover: borde más vivo (sin neón) */
+html.light .drawer .acc[data-acc="did"]:hover{
+  border-color: rgba(13,185,166,.34) !important;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.60) inset,
+    0 0 0 2px rgba(13,185,166,.14) inset,
+    0 0 14px rgba(13,185,166,.10) !important;
+}
+
+/* Cuando está abierta: se siente “activa” */
+html.light .drawer .acc.open[data-acc="did"]{
+  border-color: rgba(13,185,166,.38) !important;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.62) inset,
+    0 0 0 2px rgba(13,185,166,.16) inset,
+    0 0 16px rgba(13,185,166,.12) !important;
+}
