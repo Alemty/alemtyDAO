@@ -411,3 +411,55 @@ html.light body[data-app="dex"] .dex-icon{
 }
 
 
+
+/* =========================================
+   FIX MOBILE WIDTH (topbar / navbar full screen)
+========================================= */
+
+/* Evita overflow horizontal global */
+html,
+body[data-app="dex"]{
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* ✅ Fuerza ancho completo SIN usar 100vw (evita scroll fantasma) */
+body[data-app="dex"] #topbar,
+body[data-app="dex"] #navbar,
+body[data-app="dex"] .topbar,
+body[data-app="dex"] .bottom-nav{
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* ✅ Asegura posiciones correctas */
+body[data-app="dex"] .topbar{
+  top: 0;
+  z-index: 1000;
+}
+
+body[data-app="dex"] .bottom-nav{
+  bottom: 0;
+  z-index: 1000;
+}
+
+/* ✅ Soporte safe-area (iPhone notch / Android) */
+body[data-app="dex"] .topbar,
+body[data-app="dex"] .bottom-nav{
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* ✅ FIX extra para navegadores móviles raros */
+@supports (padding: max(0px)) {
+  body[data-app="dex"] .topbar,
+  body[data-app="dex"] .bottom-nav {
+    padding-left: max(env(safe-area-inset-left), 0px);
+    padding-right: max(env(safe-area-inset-right), 0px);
+  }
+}
+
