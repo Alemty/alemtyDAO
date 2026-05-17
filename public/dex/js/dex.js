@@ -63,7 +63,7 @@ function applyMode(next) {
     fromSel.innerHTML = `<option value="ALEM">ALEM</option><option value="ETH">ETH</option>`;
     toSel.innerHTML   = `<option value="ETH">ETH</option><option value="ALEM">ALEM</option>`;
     hintFrom.textContent = "(Base) — ALEM ↔ ETH";
-    hintTo.textContent = "Salida (quote velodrome pronto)";
+    hintTo.textContent = "Salida (quote base pronto)";
   }
 
   // default coherente
