@@ -1,4 +1,3 @@
-
 import { initVelodrome } from "./velodrome.js";
 import { initInternalAmm } from "./alem-amm.js";
 
@@ -9,9 +8,11 @@ console.log("[DEX] phase: cards (swap + pools)");
 ========================= */
 function syncTopbarOffset() {
   const tb = document.getElementById("topbar");
-  const h = tb ? tb.offsetHeight : 0;
-  const safe = h > 0 ? h : 72;
-  document.documentElement.style.setProperty("--app-topbar-h", `${safe}px`);
+  const nb = document.getElementById("navbar");
+  const tbH = tb ? tb.offsetHeight : 0;
+  const nbH = nb ? nb.offsetHeight : 0;
+  document.documentElement.style.setProperty("--app-topbar-h", `${tbH > 0 ? tbH : 72}px`);
+  document.documentElement.style.setProperty("--app-bottomnav-h", `${nbH > 0 ? nbH : 78}px`);
 }
 
 function bootTopbarOffset() {
@@ -61,7 +62,7 @@ function applyMode(next) {
     // Solo Alem <-> Eth
     fromSel.innerHTML = `<option value="ALEM">ALEM</option><option value="ETH">ETH</option>`;
     toSel.innerHTML   = `<option value="ETH">ETH</option><option value="ALEM">ALEM</option>`;
-    hintFrom.textContent = "Velodrome (Base) — ALEM ↔ ETH";
+    hintFrom.textContent = "(Base) — ALEM ↔ ETH";
     hintTo.textContent = "Salida (quote velodrome pronto)";
   }
 
