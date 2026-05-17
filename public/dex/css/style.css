@@ -1,12 +1,13 @@
-
 /* =========================================================
-   DEX · Final Theme Pack (Dark + Light iOS emerald glow)
-   - Glow SIEMPRE cubre viewport completo (fix corte)
-   - Light: menos sombra + wash esmeralda desvanecido
-   - Fuente Inter aplicada por var(--font)
-   - Compensa topbar fixed con --app-topbar-h
+   DEX · STYLE (Refactor completo)
+   - Congruente con DAO: glass + glow + modales mobile sin recorte
+   - No rompe shell global
+   - Dark/Light consistentes
 ========================================================= */
 
+/* -----------------------------
+   0) TOKENS + FALLBACKS
+----------------------------- */
 :root{
   --app-topbar-h: 72px;
 
@@ -14,13 +15,16 @@
   --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
   --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 
-  /* Tokens fallback */
+  /* Fallback tokens (si global no define) */
   --bg: #08101a;
   --panel: rgba(10, 20, 26, 0.72);
   --border: rgba(255,255,255,.14);
   --primary: #00FFD5;
   --accent: #00A3FF;
   --shadow: 0 24px 60px rgba(0,0,0,.55);
+
+  /* Bottom nav alto aproximado (shell usa padding-bottom:78px) */
+  --app-bottomnav-h: 78px;
 }
 
 /* Light theme fallback */
@@ -33,44 +37,36 @@ html.light{
   --shadow: 0 18px 50px rgba(0,0,0,.14);
 }
 
-/* =========================================================
-   ✅ FIX ROOT HEIGHT: evita que “se corte” el glow
-========================================================= */
-html, body{
-  min-height: 100%;
-}
+/* -----------------------------
+   1) BASE DEX (layout + fondo)
+----------------------------- */
+html, body{ min-height: 100%; }
 
 body[data-app="dex"]{
   min-height: 100vh;
   background: var(--bg);
   color: rgba(239,255,251,.92);
   font-family: var(--font);
-  /* Asegura stacking limpio para pseudo-elementos */
   position: relative;
   z-index: 0;
   isolation: isolate;
+  overflow-x: hidden;
 }
 
 html.light body[data-app="dex"]{
   color: rgba(14,26,24,.92);
 }
 
-/* Asegura que el main también sea full-height */
+/* Compensar topbar fija (evita que tape contenido) */
 body[data-app="dex"] #pageDex{
   min-height: 100vh;
-  /* ✅ FIX overlay topbar fixed */
   padding-top: calc(var(--app-topbar-h) + 14px) !important;
 }
 
-/* =========================================================
-   ✅ GLOW iOS FULL VIEWPORT (no se corta)
-   Nota: shell.css trae body::before fijo global 【1-ff65b5】
-   Aquí lo “overrideamos” SOLO para DEX y lo hacemos 100vh.
-========================================================= */
+/* Glow iOS full viewport (no se corta) */
 body[data-app="dex"]::before{
   content:"";
   position: fixed;
-  /* usar vh evita bordes raros por % */
   inset: -20vh;
   z-index: -1;
   pointer-events: none;
@@ -80,7 +76,6 @@ body[data-app="dex"]::before{
   opacity: .95;
 }
 
-/* Light: esmeralda suave + azul, tipo iOS */
 html.light body[data-app="dex"]::before{
   background:
     radial-gradient(820px 420px at 12% 10%, rgba(0,203,176,.22), transparent 68%),
@@ -89,7 +84,7 @@ html.light body[data-app="dex"]::before{
   opacity: 1;
 }
 
-/* (Opcional) grano súper ligero para “iOS glass” */
+/* Grano sutil */
 body[data-app="dex"]::after{
   content:"";
   position: fixed;
@@ -100,31 +95,65 @@ body[data-app="dex"]::after{
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* =========================================================
-   Layout
-========================================================= */
+/* Layout cards */
 body[data-app="dex"] .dex-wrap{
   display: grid;
   gap: 14px;
   margin-top: 14px;
 }
 
-/* Asegura espacio al final (ya tienes bottom-safe-space en shell.css) 【1-ff65b5】 */
+/* Safe space bottom (ya existe en shell, reforzamos) */
 body[data-app="dex"] .bottom-safe-space{
   height: 140px;
   pointer-events:none;
 }
 
-/* =========================================================
-   Glass cards: Light menos sombra, más wash
-   shell.css define .glass con halo 【1-ff65b5】
-========================================================= */
+/* -----------------------------
+   2) BRAND (markup dao-brand reutilizado)
+----------------------------- */
+body[data-app="dex"]{
+  --dex-brand-base: rgba(239,255,251,.94);
+  --dex-brand-em: var(--primary);
+  --dex-brand-glow: rgba(0,255,213,.22);
+}
+
+html.light body[data-app="dex"]{
+  --dex-brand-base: rgba(8,16,26,.92);
+  --dex-brand-em: var(--primary);
+  --dex-brand-glow: rgba(13,185,166,.14);
+}
+
+body[data-app="dex"] .dao-brand{
+  margin: 6px 0 12px;
+  font-weight: 1000;
+  letter-spacing: -0.6px;
+  line-height: 1.05;
+  font-size: clamp(1.55rem, 3.8vw, 2.15rem);
+  user-select:none;
+}
+
+body[data-app="dex"] .dao-brand-base{
+  color: var(--dex-brand-base);
+}
+
+body[data-app="dex"] .dao-brand-em{
+  color: var(--dex-brand-em);
+  text-shadow: 0 0 18px var(--dex-brand-glow);
+}
+
+html.light body[data-app="dex"] .dao-brand-em{
+  text-shadow: none;
+}
+
+/* -----------------------------
+   3) GLASS (Light polish, congruente con DAO)
+----------------------------- */
 html.light body[data-app="dex"] .glass{
   background: rgba(255,255,255,.82) !important;
-  border: 1px solid rgba(13, 185, 165, 0.348) !important;
+  border: 1px solid rgba(13,185,166,.18) !important;
   box-shadow:
-    0 14px 34px rgba(0, 0, 0, 0.027),
-    0 0 0 1px rgba(13, 185, 165, 0.108) inset !important;
+    0 14px 34px rgba(0,0,0,.06),
+    0 0 0 1px rgba(13,185,166,.08) inset !important;
   backdrop-filter: blur(16px) saturate(140%) !important;
   -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
 }
@@ -137,60 +166,38 @@ html.light body[data-app="dex"] .glass::after{
     radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.14), transparent 70%) !important;
 }
 
-/* =========================================================
-   Topbar / Bottom nav: fuente + glass light suave
-   (tu global /css/style.css fuerza topbar fixed) 【2-b78de2】
-========================================================= */
-body[data-app="dex"] #topbar.topbar,
-body[data-app="dex"] #navbar.navbar,
-body[data-app="dex"] .bottom-nav,
-body[data-app="dex"] .drawer{
-  font-family: var(--font) !important;
-}
-
-html.light body[data-app="dex"] .topbar,
-html.light body[data-app="dex"] .bottom-nav{
-  background: rgba(255,255,255,.70) !important;
-  border-color: rgba(13,185,166,.14) !important;
-  backdrop-filter: blur(18px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
-}
-
-html.light body[data-app="dex"] .topbar::after,
-html.light body[data-app="dex"] .bottom-nav::after{
-  opacity: .42 !important;
-  filter: blur(12px) !important;
-  background:
-    radial-gradient(420px 220px at 15% 0%, rgba(13,185,166,.18), transparent 65%),
-    radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.14), transparent 70%) !important;
-}
-
-/* Mobile hardening */
-@media (max-width: 520px){
-  body[data-app="dex"] #pageDex{
-    padding-top: calc(var(--app-topbar-h) + 10px) !important;
-  }
-}
-
-/* =========================================================
-   DEX UI (Swap + Pools) — agrega al FINAL
-========================================================= */
-
+/* -----------------------------
+   4) DEX UI (Swap + Pools)
+----------------------------- */
 body[data-app="dex"] .dex-card{ padding:18px; }
+
 body[data-app="dex"] .dex-card-head{
-  display:flex; gap:14px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;
+  display:flex;
+  gap:14px;
+  align-items:flex-start;
+  justify-content:space-between;
+  flex-wrap:wrap;
 }
 
 body[data-app="dex"] .dex-title{
-  margin:0; font-size:1.25rem; font-weight:950; letter-spacing:-.3px;
+  margin:0;
+  font-size:1.25rem;
+  font-weight:950;
+  letter-spacing:-.3px;
 }
+
 body[data-app="dex"] .dex-sub{ margin:.25rem 0 0; max-width:70ch; }
 
+/* Segment control */
 body[data-app="dex"] .dex-seg{
-  display:inline-flex; gap:6px; padding:6px;
-  border-radius:16px; border:1px solid var(--border);
+  display:inline-flex;
+  gap:6px;
+  padding:6px;
+  border-radius:16px;
+  border:1px solid var(--border);
   background: rgba(255,255,255,.04);
 }
+
 body[data-app="dex"] .dex-seg-btn{
   border:1px solid transparent;
   background:transparent;
@@ -201,6 +208,7 @@ body[data-app="dex"] .dex-seg-btn{
   cursor:pointer;
   opacity:.75;
 }
+
 body[data-app="dex"] .dex-seg-btn.active{
   opacity:1;
   background: linear-gradient(135deg,var(--primary),var(--accent));
@@ -208,6 +216,7 @@ body[data-app="dex"] .dex-seg-btn.active{
   border-color: rgba(255,255,255,.18);
 }
 
+/* Swap grid */
 body[data-app="dex"] .dex-swap-grid{
   margin-top:14px;
   display:grid;
@@ -215,6 +224,7 @@ body[data-app="dex"] .dex-swap-grid{
   gap:12px;
   align-items:end;
 }
+
 @media (max-width:820px){
   body[data-app="dex"] .dex-swap-grid{ grid-template-columns:1fr; }
   body[data-app="dex"] .dex-mid{ display:none; }
@@ -222,13 +232,17 @@ body[data-app="dex"] .dex-swap-grid{
 
 body[data-app="dex"] .dex-field{ display:flex; flex-direction:column; gap:8px; }
 body[data-app="dex"] .dex-label{ font-size:12px; font-weight:900; opacity:.85; }
+
 body[data-app="dex"] .dex-input-row{
-  display:flex; gap:10px; align-items:center;
+  display:flex;
+  gap:10px;
+  align-items:center;
   border-radius:16px;
   border:1px solid var(--border);
   background: rgba(255,255,255,.04);
   padding:10px;
 }
+
 body[data-app="dex"] .dex-select{
   border-radius:12px;
   border:1px solid var(--border);
@@ -237,6 +251,7 @@ body[data-app="dex"] .dex-select{
   padding:10px 10px;
   font-weight:900;
 }
+
 body[data-app="dex"] .dex-input{
   flex:1;
   border:0;
@@ -246,29 +261,42 @@ body[data-app="dex"] .dex-input{
   font-size:1.05rem;
   font-weight:950;
 }
+
 body[data-app="dex"] .dex-input:disabled{ opacity:.7; }
+body[data-app="dex"] .dex-hint{ font-size:12px; opacity:.7; }
 
-body[data-app="dex"] .dex-hint{
-  font-size:12px; opacity:.7;
-}
-
+/* Swap flip icon */
 body[data-app="dex"] .dex-mid{ display:flex; justify-content:center; }
+
 body[data-app="dex"] .dex-icon{
-  width:46px; height:46px;
+  width:46px;
+  height:46px;
   border-radius:14px;
   border:1px solid var(--border);
   background: rgba(255,255,255,.06);
   cursor:pointer;
   font-size:18px;
   font-weight:900;
+  color: rgba(239,255,251,.9);
 }
-body[data-app="dex"] .dex-icon:hover{ box-shadow:0 0 0 1px rgba(0,255,213,.25), 0 0 18px rgba(0,255,213,.18); }
 
+html.light body[data-app="dex"] .dex-icon{
+  color: var(--primary);
+}
+
+body[data-app="dex"] .dex-icon:hover{
+  box-shadow:0 0 0 1px rgba(0,255,213,.25), 0 0 18px rgba(0,255,213,.18);
+}
+
+/* Actions */
 body[data-app="dex"] .dex-actions{
   grid-column: 1 / -1;
-  display:flex; gap:10px; flex-wrap:wrap;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
   margin-top:6px;
 }
+
 body[data-app="dex"] .dex-btn{
   border-radius:14px;
   border:1px solid var(--border);
@@ -278,15 +306,22 @@ body[data-app="dex"] .dex-btn{
   font-weight:950;
   cursor:pointer;
 }
+
 body[data-app="dex"] .dex-btn.primary{
   background: linear-gradient(135deg,var(--primary),var(--accent));
   color:#08101a;
 }
-body[data-app="dex"] .dex-btn:disabled{
-  opacity:.55; cursor:not-allowed;
+
+body[data-app="dex"] .dex-btn:disabled{ opacity:.55; cursor:not-allowed; }
+
+body[data-app="dex"] .dex-note{
+  grid-column: 1 / -1;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:6px;
 }
 
-body[data-app="dex"] .dex-note{ grid-column: 1 / -1; display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
 body[data-app="dex"] .pill{
   border-radius:999px;
   padding:6px 10px;
@@ -298,6 +333,7 @@ body[data-app="dex"] .pill{
 
 /* Pools */
 body[data-app="dex"] .dex-tools{ display:flex; gap:10px; flex-wrap:wrap; }
+
 body[data-app="dex"] .dex-search{
   border-radius:14px;
   border:1px solid var(--border);
@@ -307,16 +343,28 @@ body[data-app="dex"] .dex-search{
   min-width:240px;
   font-weight:800;
 }
-body[data-app="dex"] .dex-pool-list{ margin-top:14px; display:flex; flex-direction:column; gap:12px; }
+
+body[data-app="dex"] .dex-pool-list{
+  margin-top:14px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
 body[data-app="dex"] .dex-pool{
-  display:flex; justify-content:space-between; gap:14px; align-items:center; flex-wrap:wrap;
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  align-items:center;
+  flex-wrap:wrap;
   border-radius:18px;
   border:1px solid var(--border);
   background: rgba(255,255,255,.03);
   padding:12px;
 }
-body[data-app="dex"] .dex-pool-left{ display:flex; flex-direction:column; gap:8px; }
+
 body[data-app="dex"] .dex-pair{ display:flex; gap:8px; align-items:center; font-weight:950; }
+
 body[data-app="dex"] .chip{
   padding:6px 10px;
   border-radius:999px;
@@ -325,12 +373,14 @@ body[data-app="dex"] .chip{
   font-weight:950;
   font-size:12px;
 }
+
 body[data-app="dex"] .chip.aura{ box-shadow:0 0 0 2px rgba(24,149,171,.35) inset; }
 body[data-app="dex"] .chip.alem{ box-shadow:0 0 0 2px rgba(240,189,4,.35) inset; }
 body[data-app="dex"] .chip.eth{ box-shadow:0 0 0 2px rgba(160,140,255,.35) inset; }
 
 body[data-app="dex"] .tag{
-  display:inline-flex; align-items:center;
+  display:inline-flex;
+  align-items:center;
   padding:4px 10px;
   border-radius:999px;
   border:1px solid var(--border);
@@ -338,85 +388,19 @@ body[data-app="dex"] .tag{
   font-weight:900;
   font-size:12px;
 }
+
 body[data-app="dex"] .tag.ext{ border-color: rgba(0,163,255,.25); }
 
-body[data-app="dex"] .dex-pool-right{
-  display:flex; gap:14px; align-items:center; flex-wrap:wrap;
-}
 body[data-app="dex"] .dex-metric .k{ font-size:11px; font-weight:900; }
 body[data-app="dex"] .dex-metric .v{ font-size:14px; font-weight:950; }
 
 body[data-app="dex"] .dex-foot{ margin-top:10px; font-size:12px; }
 
-/* =========================================================
-   DEX Brand (reusa markup dao-brand)
-   - Dark: base blanco + esmeralda neón
-   - Light: base negro + esmeralda oscuro
-   Scope: SOLO DEX
-========================================================= */
-
-body[data-app="dex"]{
-  /* Tokens del brand en DARK (default) */
-  --dex-brand-base: rgba(239,255,251,.94); /* blanco suave */
-  --dex-brand-em: var(--primary);          /* esmeralda neón */
-  --dex-brand-glow: rgba(0,255,213,.22);
-}
-
-/* LIGHT: negro + esmeralda oscuro (menos neón) */
-html.light body[data-app="dex"]{
-  --dex-brand-base: rgba(8,16,26,.92); /* negro / charcoal */
-  /* oscurece el primary en light: mezcla con negro */
-  --dex-brand-em: var(--primary);
-  --dex-brand-glow: rgba(13,185,166,.14);
-}
-
-/* Contenedor del título */
-body[data-app="dex"] .dao-brand{
-  margin: 6px 0 12px;
-  font-weight: 1000;
-  letter-spacing: -0.6px;
-  line-height: 1.05;
-  font-size: clamp(1.55rem, 3.8vw, 2.15rem);
-  user-select: none;
-}
-
-/* Partes del brand */
-body[data-app="dex"] .dao-brand-base{
-  color: var(--dex-brand-base);
-}
-
-body[data-app="dex"] .dao-brand-em{
-  color: var(--dex-brand-em);
-  /* glow sutil (neón en dark, tenue en light) */
-  text-shadow: 0 0 18px var(--dex-brand-glow);
-}
-
-/* En light, reduce glow para que sea “iOS / elegante” */
-html.light body[data-app="dex"] .dao-brand-em{
-  text-shadow: 0 0 10px var(--dex-brand-glow);
-}
-
-/* =========================================
-   SWAP ICON (⇅) — color dinámico por tema
-========================================= */
-
-/* Default (dark) */
-body[data-app="dex"] .dex-icon{
-  color: rgba(239,255,251,.9); /* casi blanco */
-}
-
-/* LIGHT: usar el mismo esmeralda del sistema */
-html.light body[data-app="dex"] .dex-icon{
-  color: var(--primary);
-}
-
-
-
-/* =========================================
-   FIX MOBILE WIDTH (topbar / navbar full screen)
-========================================= */
-
-/* Evita overflow horizontal global */
+/* -----------------------------
+   5) MOBILE FULL WIDTH NAV
+   Shell ya maneja topbar/bottom-nav fijas.
+   Solo forzamos width:100% para DEX específicamente.
+----------------------------- */
 html,
 body[data-app="dex"]{
   width: 100%;
@@ -424,7 +408,6 @@ body[data-app="dex"]{
   overflow-x: hidden;
 }
 
-/* ✅ Fuerza ancho completo SIN usar 100vw (evita scroll fantasma) */
 body[data-app="dex"] #topbar,
 body[data-app="dex"] #navbar,
 body[data-app="dex"] .topbar,
@@ -436,7 +419,6 @@ body[data-app="dex"] .bottom-nav{
   max-width: 100% !important;
 }
 
-/* ✅ Asegura posiciones correctas */
 body[data-app="dex"] .topbar{
   top: 0;
   z-index: 1000;
@@ -447,19 +429,122 @@ body[data-app="dex"] .bottom-nav{
   z-index: 1000;
 }
 
-/* ✅ Soporte safe-area (iPhone notch / Android) */
 body[data-app="dex"] .topbar,
 body[data-app="dex"] .bottom-nav{
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
 }
 
-/* ✅ FIX extra para navegadores móviles raros */
-@supports (padding: max(0px)) {
-  body[data-app="dex"] .topbar,
-  body[data-app="dex"] .bottom-nav {
-    padding-left: max(env(safe-area-inset-left), 0px);
-    padding-right: max(env(safe-area-inset-right), 0px);
+/* -----------------------------
+   6) MOBILE — Cards DEX compactas
+   Los modales/topbar/nav los maneja shell.css globalmente.
+   Aquí solo reducimos el contenido propio del DEX en pantallas pequeñas.
+----------------------------- */
+@media (pointer:coarse) and (max-width:520px){
+
+  /* Cards de contenido más compactas */
+  body[data-app="dex"] .dex-card{
+    padding: 12px;
+  }
+
+  body[data-app="dex"] .dex-title{
+    font-size: 1rem;
+  }
+
+  body[data-app="dex"] .dex-sub{
+    font-size: 11px;
+  }
+
+  body[data-app="dex"] .dex-card-head{
+    gap: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* Segment control más pequeño */
+  body[data-app="dex"] .dex-seg{
+    padding: 4px;
+    gap: 4px;
+  }
+  body[data-app="dex"] .dex-seg-btn{
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  /* Swap: 1 columna */
+  body[data-app="dex"] .dex-swap-grid{
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  body[data-app="dex"] .dex-mid{ display: none; }
+
+  /* Inputs */
+  body[data-app="dex"] .dex-input-row{
+    padding: 8px;
+    border-radius: 12px;
+  }
+  body[data-app="dex"] .dex-select{
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  body[data-app="dex"] .dex-input{
+    font-size: 0.9rem;
+  }
+  body[data-app="dex"] .dex-label{ font-size: 11px; }
+  body[data-app="dex"] .dex-hint{ font-size: 10px; }
+
+  /* Botones */
+  body[data-app="dex"] .dex-btn{
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  body[data-app="dex"] .pill{
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+
+  /* Pools */
+  body[data-app="dex"] .dex-pool{
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 14px;
+  }
+  body[data-app="dex"] .dex-pool-right{
+    width: 100%;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  body[data-app="dex"] .dex-metric .k{ font-size: 10px; }
+  body[data-app="dex"] .dex-metric .v{ font-size: 12px; }
+  body[data-app="dex"] .chip{ font-size: 10px; padding: 4px 8px; }
+  body[data-app="dex"] .tag{ font-size: 10px; padding: 3px 8px; }
+
+  body[data-app="dex"] .dex-search{
+    min-width: 0;
+    width: 100%;
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+  body[data-app="dex"] .dex-tools{
+    width: 100%;
+    flex-direction: column;
+  }
+  body[data-app="dex"] .dex-select{ width: 100%; }
+
+  /* Header de página */
+  body[data-app="dex"] .dao-brand{
+    font-size: clamp(1.1rem, 5vw, 1.5rem);
+    margin: 4px 0 8px;
+  }
+
+  body[data-app="dex"] #pageDex{
+    padding-top: calc(var(--app-topbar-h) + 10px) !important;
+    padding-left: 12px;
+    padding-right: 12px;
   }
 }
 

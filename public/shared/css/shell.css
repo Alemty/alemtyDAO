@@ -1,4 +1,3 @@
-
 body::before{
 content:"";
 position:fixed;
@@ -157,8 +156,119 @@ border-radius:18px;border:1px solid var(--border);background:rgba(255,255,255,.0
 .dex-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}
 @media (max-width:520px){.dex-grid{grid-template-columns:1fr}}
 
+/* ===============================
+   Mobile density — escala solo barras y modales (px explícitos)
+   SIN zoom ni font-size global para que vw/modales no se rompan
+   Aplica a TODOS los subdominios por igual
+   =============================== */
 @media (pointer:coarse) and (max-width:520px){
-html{zoom:.7}
+
+  /* — Topbar — */
+  .topbar-inner{
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .icon-btn{
+    width: 30px;
+    height: 27px;
+    font-size: 13px;
+    border-radius: 10px;
+  }
+
+  /* — Bottom nav — */
+  .bottom-nav-inner{
+    padding: 5px 6px 7px;
+    gap: 4px;
+  }
+  .bottom-btn{
+    padding: 5px 3px;
+    gap: 3px;
+    border-radius: 10px;
+  }
+  .bottom-btn .ico{ font-size: 13px; }
+  .bottom-btn .lbl{ font-size: 8px; }
+
+  /* — Drawer — */
+  .drawer-link{ font-size: 9px; padding: 7px 8px; }
+  .drawer-section h4{ font-size: 9px; }
+
+  /* — Modal: igual en todos los subdominios —
+     El modal es fixed inset:0, la card arranca pegada a la topbar real */
+  .modal.open{
+    display: flex !important;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .modal.open .modal-backdrop{
+    position: fixed !important;
+    inset: 0 !important;
+  }
+  .modal.open .modal-card{
+    margin-top: var(--app-topbar-h, 56px) !important;
+    margin-bottom: var(--app-bottomnav-h, 64px) !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px) !important;
+    max-height: calc(100vh - var(--app-topbar-h, 56px) - var(--app-bottomnav-h, 64px) - 8px) !important;
+    border-radius: 20px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    box-shadow: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .modal.open .modal-headbar{
+    flex: 0 0 auto !important;
+    padding: 10px 12px !important;
+    font-size: 13px;
+  }
+
+  /* — Perfil: 1 columna en mobile — */
+  .profile-grid{
+    grid-template-columns: 1fr !important;
+    min-height: auto !important;
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .profile-left{
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--border) !important;
+    padding: 12px !important;
+    gap: 8px !important;
+  }
+  .profile-right{
+    padding: 12px !important;
+    gap: 8px !important;
+  }
+  .profile-avatar{ width: 56px !important; height: 56px !important; }
+  .profile-level .lvl{ font-size: 15px !important; }
+  .profile-level .rank{ font-size: 12px !important; }
+  .profile-addr{ font-size: 10px !important; }
+  .profile-slots{ flex-direction: row !important; flex-wrap: wrap !important; gap: 6px !important; }
+  .profile-tabs .tab-btn{ font-size: 10px !important; padding: 5px 8px !important; }
+  .pf-balances{ grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }
+  .pf-balances > div{ padding: 8px !important; font-size: 11px !important; }
+  .bar-track{ height: 8px !important; }
+  .profile-content{ min-height: 100px !important; padding: 10px !important; font-size: 12px !important; }
+
+  /* — Notif / Mod scroll — */
+  #notifBody, #modBody{
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    font-size: 12px;
+  }
+  .notif-card, .mod-card{
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px) !important;
+  }
 }
 
 /* ========================= */
@@ -912,14 +1022,7 @@ html.light .cert-tab.active{
     0 0 0 1px rgba(255,255,255,.65) inset;
 }
 
-/* ===============================
-   Mobile density (70%)
-   =============================== */
-@media (max-width: 480px){
-  html{
-    font-size: 70%;
-  }
-}
+/* Mobile density: gestionado arriba con pointer:coarse */
 
 /* =========================================
    Fix global: scroll lateral fantasma

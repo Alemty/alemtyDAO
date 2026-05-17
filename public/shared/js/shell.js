@@ -1,4 +1,3 @@
-
 import{loadTheme,toggleTheme,shortAddr}from"./core.js";
 import{connectDid,clearDid,getDid,bindEthereumAccountsChanged,formatDidStatus}from"./wallet.js";
 
@@ -66,6 +65,21 @@ function closeModal(id){
   const m=document.getElementById(id);
   if(m){m.classList.remove("open");m.setAttribute("aria-hidden","true");}
 }
+
+function closeAllPanels(){
+  // Cierra modales
+  ["profileModal","notifModal","modModal"].forEach(id => closeModal(id));
+
+  // Cierra drawer sin depender de closeDrawer (scope)
+  const d = document.getElementById("drawer");
+  const b = document.getElementById("drawerBackdrop");
+  if (d){
+    d.classList.remove("open");
+    d.setAttribute("aria-hidden","true");
+  }
+  if (b) b.classList.remove("show");
+}
+
 
 async function fetchFirstJson(urls){
   for(const u of urls){
@@ -392,6 +406,16 @@ topbar.innerHTML="";
 topbar.append(topInner);
 navbar.innerHTML="";
 
+/* Sync --app-topbar-h y --app-bottomnav-h para todos los subdominios */
+function syncShellHeights(){
+  const tb=document.getElementById("topbar");
+  const nb=document.getElementById("bottomNav");
+  if(tb&&tb.offsetHeight>0) document.documentElement.style.setProperty("--app-topbar-h",tb.offsetHeight+"px");
+  if(nb&&nb.offsetHeight>0) document.documentElement.style.setProperty("--app-bottomnav-h",nb.offsetHeight+"px");
+}
+[0,50,120,300].forEach(ms=>setTimeout(syncShellHeights,ms));
+window.addEventListener("resize",syncShellHeights);
+
 const bottomNav=el("nav",{class:"bottom-nav",id:"bottomNav"});
 const bottomInner=el("div",{class:"bottom-nav-inner"});
 ROUTES.forEach(r=>{
@@ -633,7 +657,17 @@ h&&h.setAttribute("aria-expanded",open?"true":"false");
 drawer.querySelectorAll(".acc-h").forEach(btn=>btn.addEventListener("click",()=>openAcc(btn.getAttribute("data-open"))));
 
 themeBtn.addEventListener("click",toggleTheme);
-menuBtn.addEventListener("click",()=>drawer.classList.contains("open")?closeDrawer():openDrawer());
+
+menuBtn.addEventListener("click", () => {
+  const d = document.getElementById("drawer");
+  const wasOpen = !!d && d.classList.contains("open");
+
+  closeAllPanels();
+  if (wasOpen) return; // ✅ si estaba abierto, ya lo cerró y no reabre
+
+  openDrawer();        // ✅ si no estaba abierto, abre
+
+});
 drawer.querySelector("#drawerClose")?.addEventListener("click",closeDrawer);
 drawerBackdrop.addEventListener("click",closeDrawer);
 document.addEventListener("keydown", e => {
@@ -1422,6 +1456,7 @@ async function openNotifModal() {
 async function openModerationModal() {
   const modBody = document.getElementById("modBody");
   if (!modBody) return;
+  closeModal("notifModal");
 
   if (!isModOrAdminNow()) {
     modBody.innerHTML = `<div class="small muted">No tienes permisos de moderación.</div>`;
@@ -1486,9 +1521,17 @@ async function openModerationModal() {
   }
 }
 
+
 notifBtn.addEventListener("click", async () => {
+  const nm = document.getElementById("notifModal");
+  const wasOpen = !!nm && nm.classList.contains("open");
+
+  closeAllPanels();
+  if (wasOpen) return;  // ✅ toggle real
+
   await openNotifModal();
 });
+
 
 /* =========================
    Listeners del PERFIL modal
@@ -1504,11 +1547,19 @@ profileModal.querySelectorAll("#pfTabs .tab-btn").forEach((b) =>
   })
 );
 
-// ✅ Al abrir el perfil, refresca antes de mostrar
+// ✅ Al abrir el perfil, cierra otros paneles y refresca antes de mostrar
+
 profileBtn.addEventListener("click", async () => {
+  const pm = document.getElementById("profileModal");
+  const wasOpen = !!pm && pm.classList.contains("open");
+
+  closeAllPanels();
+  if (wasOpen) return;   // ✅ toggle: si estaba abierto, ya quedó cerrado
+
   await syncProfile();
   openModal("profileModal");
 });
+
 
 // ✅ Cuando cambia DID, refresca perfil + badge
 window.addEventListener("did:changed", async () => {
@@ -1525,4 +1576,3 @@ void updateNotifUI();
 
 
 }
-
