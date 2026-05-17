@@ -61,39 +61,53 @@
         </div>
 
         <div class="dex-swap-grid">
-          <div class="dex-field">
-            <label class="dex-label" for="swapAmount">De</label>
-            <div class="dex-input-row">
-              <select class="dex-select" id="swapFrom">
-                <option value="AURA">AURA</option>
-                <option value="ALEM">ALEM</option>
-                <option value="ETH">ETH</option>
-              </select>
-              <input class="dex-input" id="swapAmount" inputmode="decimal" placeholder="0.0" />
-            </div>
-            <div class="dex-hint" id="swapFromHint">Pool interno Aura ↔ ALEM (simulado)</div>
-          </div>
+          
+<div class="dex-field">
+  <label class="dex-label sr-only" for="swapAmount">De</label>
+
+  <div class="dex-input-row">
+    <span class="dex-prefix" aria-hidden="true">De</span>
+
+    <select class="dex-select" id="swapFrom" aria-label="Token de entrada">
+      <option value="AURA">AURA</option>
+      <option value="ALEM">ALEM</option>
+      <option value="ETH">ETH</option>
+    </select>
+
+    <input class="dex-input" id="swapAmount" inputmode="decimal" placeholder="0.0" aria-label="Cantidad de entrada" />
+  </div>
+
+  <div class="dex-hint" id="swapFromHint">Pool interno Aura ↔ ALEM (simulado)</div>
+</div>
+
 
           <div class="dex-mid">
             <button class="dex-icon" id="swapFlip" type="button" aria-label="Invertir">⇅</button>
           </div>
 
-          <div class="dex-field">
-            <label class="dex-label" for="swapOut">A</label>
-            <div class="dex-input-row">
-              <select class="dex-select" id="swapTo">
-                <option value="ALEM">ALEM</option>
-                <option value="AURA">AURA</option>
-                <option value="ETH">ETH</option>
-              </select>
-              <input class="dex-input" id="swapOut" placeholder="—" disabled />
-            </div>
-            <div class="dex-hint" id="swapToHint">Salida (quote pronto)</div>
-          </div>
+          
+<div class="dex-field">
+  <label class="dex-label sr-only" for="swapOut">A</label>
+
+  <div class="dex-input-row">
+    <span class="dex-prefix" aria-hidden="true">A</span>
+
+    <select class="dex-select" id="swapTo" aria-label="Token de salida">
+      <option value="ALEM">ALEM</option>
+      <option value="AURA">AURA</option>
+      <option value="ETH">ETH</option>
+    </select>
+
+    <input class="dex-input" id="swapOut" placeholder="—" disabled aria-label="Cantidad de salida" />
+  </div>
+
+  <div class="dex-hint" id="swapToHint">Salida (quote pronto)</div>
+</div>
+
 
           <div class="dex-actions">
             <button class="dex-btn primary" id="btnQuote" type="button">Quote</button>
-            <button class="dex-btn" id="btnSwap" type="button" disabled>Swap (SOON)</button>
+            <button class="dex-btn" id="btnSwap" type="button" disabled>Swap</button>
           </div>
 
           <div class="dex-note">
@@ -144,7 +158,7 @@
                 <div class="k muted">APR</div>
                 <div class="v">—</div>
               </div>
-              <button class="dex-btn" type="button" disabled>Agregar Liquidez (SOON)</button>
+              <button class="dex-btn" type="button" disabled>Agregar Liquidez</button>
             </div>
           </article>
 
@@ -157,7 +171,7 @@
               </div>
               <div class="dex-pool-meta">
                 <span class="tag ext">Externo</span>
-                <span class="muted"> (Base)</span>
+                <span class="muted">Ethereum (Base)</span>
               </div>
             </div>
             <div class="dex-pool-right">
@@ -169,7 +183,7 @@
                 <div class="k muted">APR</div>
                 <div class="v">—</div>
               </div>
-              <button class="dex-btn" type="button" disabled>Ir a Pool (SOON)</button>
+              <button class="dex-btn" type="button" disabled>Agregar Liquidez</button>
             </div>
           </article>
         </div>
