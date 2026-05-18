@@ -14,4 +14,4 @@ jobs:
         run: |
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage \
           -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-          -d text="🚀 ALEMty DAO Deploy\n\n✅ Status: SUCCESS\n👤 Actor: ${{ github.actor }}\n🌿 Branch: ${{ github.ref_name }}\n🧩 Commit: ${{ github.sha }}\n\n🔗 https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+          -d text="🚀 alemtyDAO Deploy\n\n✅ Status: SUCCESS\n👤 Actor: ${{ github.actor }}\n🌿 Branch: ${{ github.ref_name }}\n🧩 Commit: ${{ github.sha }}\n\n🔗 https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
