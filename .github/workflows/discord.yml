@@ -1,0 +1,48 @@
+
+name: AlemtyDAO Discord Bot
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [closed]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Discord notification
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            curl -H "Content-Type: application/json" \
+            -d "{
+              \"embeds\": [{
+                \"title\": \"🚀 AlemtyDAO Update\",
+                \"color\": 5763719,
+                \"fields\": [
+                  {\"name\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"inline\": true},
+                  {\"name\": \"Autor\", \"value\": \"${{ github.actor }}\", \"inline\": true},
+                  {\"name\": \"Commit\", \"value\": \"${{ github.event.head_commit.message }}\"}
+                ]
+              }]
+            }" \
+            ${{ secrets.DISCORD_WEBHOOK_URL }}
+          fi
+
+          if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+            curl -H "Content-Type: application/json" \
+            -d "{
+              \"embeds\": [{
+                \"title\": \"✅ PR MERGED\",
+                \"color\": 3066993,
+                \"fields\": [
+                  {\"name\": \"Branch\", \"value\": \"${{ github.event.pull_request.head.ref }} → main\"},
+                  {\"name\": \"Autor\", \"value\": \"${{ github.actor }}\", \"inline\": true},
+                  {\"name\": \"Link\", \"value\": \"${{ github.event.pull_request.html_url }}\"}
+                ]
+              }]
+            }" \
+            ${{ secrets.DISCORD_WEBHOOK_URL }}
+          fi
