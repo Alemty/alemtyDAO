@@ -1834,3 +1834,166 @@ html.light .drawer .acc.open[data-acc="did"]{
     0 0 0 2px rgba(13,185,166,.16) inset,
     0 0 16px rgba(13,185,166,.12) !important;
 }
+
+
+
+/* =========================================
+   WEB3 DISCLAIMER (debajo del NAVBAR)
+   Objetivo:
+   [ NAVBAR ]
+   [ DISCLAIMER ]
+========================================= */
+
+:root{
+  --web3-disc-h: 22px;  /* alto del disclaimer (desktop) */
+}
+
+/* 1) Disclaimer pegado al fondo */
+.web3-disclaimer{
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;                 /* ✅ siempre hasta abajo */
+  height: var(--web3-disc-h);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 10px;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  text-align: center;
+
+  color: rgba(239,255,251,.62);
+  background: color-mix(in oklab, var(--bg), transparent 25%);
+  border-top: 1px solid var(--border);
+
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+
+  z-index: 55;               /* debajo del navbar */
+}
+
+/* Light */
+html.light .web3-disclaimer{
+  color: rgba(8,16,26,.70);
+  background: rgba(255,255,255,.70);
+  border-top: 1px solid rgba(0,0,0,.08);
+}
+
+/* 2) Mover NAVBAR arriba del disclaimer */
+.bottom-nav{
+  bottom: var(--web3-disc-h) !important;   /* ✅ navbar arriba del disclaimer */
+}
+
+/* 3) Dar espacio extra al contenido para que no se tape abajo */
+body{
+  padding-bottom: calc(78px + var(--web3-disc-h)) !important;
+}
+
+/* Mobile tuning: un poco más bajo */
+@media (pointer:coarse) and (max-width:520px){
+  :root{ --web3-disc-h: 18px; }
+  .web3-disclaimer{
+    font-size: 9px;
+    letter-spacing: .06em;
+  }
+  body{
+    padding-bottom: calc(64px + var(--web3-disc-h)) !important;
+  }
+}
+
+/* =========================================
+   FIX: Disclaimer siempre visible sobre el Drawer
+   (manteniendo layout: NAVBAR arriba / DISCLAIMER abajo)
+========================================= */
+
+/* Asegura capa correcta: drawer(90) / backdrop(80) → disclaimer arriba */
+.web3-disclaimer{
+  z-index: 95 !important; /* > 90 (drawer) y > 80 (backdrop) */
+}
+
+/* El drawer NO debe cubrir el disclaimer: recortamos su altura */
+.drawer{
+  height: auto !important;
+  top: 0 !important;
+  bottom: var(--web3-disc-h, 22px) !important;
+}
+
+/* (Opcional) si quieres que el backdrop tampoco “toque” el disclaimer visualmente,
+   deja esto comentado. Normalmente con z-index 95 ya basta. */
+/*
+.drawer-backdrop{
+  z-index: 80;
+}
+*/
+
+/* =========================================
+   ABOUT (Acerca de) — botón "Documentación oficial"
+   Estilo idéntico a Identidad DID (did-blue)
+========================================= */
+
+/* Asegura que el botón en Acerca de se comporte como CTA */
+#accAbout .drawer-link.about-doc{
+  width: 100%;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  user-select: none;
+}
+
+/* Si quieres que “Acerca de” tenga el mismo look interno que DID */
+.drawer .acc[data-acc="about"]{
+  background: var(--did-card);
+  border: 1px solid var(--did-br);
+  border-radius: 18px;
+  overflow: hidden;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.04) inset;
+}
+
+.drawer .acc[data-acc="about"] .acc-h{
+  background: var(--did-head);
+  border: 0;
+  color: var(--did-text);
+}
+
+.drawer .acc[data-acc="about"] .acc-p{
+  padding: 12px;
+}
+
+/* Texto más legible dentro de About */
+#accAbout .small.muted{
+  color: var(--did-muted) !important;
+}
+
+/* Tema claro: sube contraste de lectura (más oscuro) */
+html.light #accAbout .small.muted{
+  color: rgba(14,26,24,.70) !important;
+}
+
+/* El botón ya trae did-blue (usa los mismos tokens y hover/glow del DID) */
+#accAbout .drawer-link.did-blue{
+  background: linear-gradient(180deg, var(--did-a1), var(--did-a2));
+  border-color: var(--did-a-br);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.00) inset;
+}
+
+#accAbout .drawer-link.did-blue:hover{
+  transform: translateY(-1px);
+  filter: saturate(112%) brightness(1.02);
+  border-color: color-mix(in oklab, var(--did-a-br), rgba(255,255,255,.10) 30%);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.06) inset,
+    0 0 14px var(--did-a-glow);
+}
+
+#accAbout .drawer-link.did-blue:active{
+  transform: translateY(0);
+}
+
+
