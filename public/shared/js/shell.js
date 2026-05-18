@@ -431,6 +431,8 @@ const drawerBackdrop=el("div",{class:"drawer-backdrop",id:"drawerBackdrop"});
 const drawer=el("aside",{class:"drawer",id:"drawer","aria-hidden":"true"});
 
 
+
+
 drawer.innerHTML = `
   <div class="drawer-head">
     <strong class="code">Menú</strong>
@@ -439,58 +441,85 @@ drawer.innerHTML = `
 
   <div class="drawer-body">
 
-    
-<!-- =========================
-IDENTIDAD DID (minimal)
-========================= -->
-<div class="acc open" data-acc="did">
-  <button class="acc-h" type="button" data-open="did" aria-expanded="true">
-    <span>Identidad DID</span>
-    <span class="chev">▾</span>
-  </button>
+    <!-- =========================
+    IDENTIDAD DID (minimal)
+    ========================= -->
+    <div class="acc open" data-acc="did">
+      <button class="acc-h" type="button" data-open="did" aria-expanded="true">
+        <span>Identidad DID</span>
+        <span class="chev">▾</span>
+      </button>
 
-  <div class="acc-p" id="accDid">
-    <div class="did-mini">
-      <div class="did-mini-row">
-        <span class="k">Estado:</span>
-        <span class="v code" id="didStatus">Desconectado</span>
+      <div class="acc-p" id="accDid">
+        <div class="did-mini">
+          <div class="did-mini-row">
+            <span class="k">Estado:</span>
+            <span class="v code" id="didStatus">Desconectado</span>
+          </div>
+
+          <div class="did-mini-row">
+            <span class="k">DID - SIWE:</span>
+            <span class="v code" id="siweStatus">⚠️ DID-SIWE</span>
+          </div>
+
+          <!-- mantiene DID accesible (tooltip/copy/compat), pero ya no ocupa UI -->
+          <span class="v code" id="didAddress" hidden>—</span>
+        </div>
+
+        <div class="did-actions grid2">
+          <button class="drawer-link did-blue" id="connectBtn" type="button">🦊 Inciar Sesión</button>
+
+          <a class="drawer-link did-blue" id="registerBtn"
+             href="https://chromewebstore.google.com/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn?hl=es"
+             target="_blank" rel="noopener noreferrer">
+            🦊 Registrarse
+          </a>
+
+          <button class="drawer-link did-blue" id="siweBtn" type="button">✅ Firma SIWE</button>
+          <button class="drawer-link did-blue" id="disconnectBtn" type="button">⛔ Cerrar Sesión</button>
+        </div>
+
+        <!-- fuera de la card / minimal -->
+        <a class="drawer-link did-blue did-yt" id="tutorialLink" href="#" target="_blank" rel="noopener noreferrer">
+          <img class="yt-ico" src="/assets/icons/youtube.svg" alt="" aria-hidden="true">
+          Tutorial de registro en Metamask
+        </a>
       </div>
-
-      <div class="did-mini-row">
-        <span class="k">DID - SIWE:</span>
-        <span class="v code" id="siweStatus">⚠️ DID-SIWE</span>
-      </div>
-
-      <!-- mantiene DID accesible (tooltip/copy/compat), pero ya no ocupa UI -->
-      <span class="v code" id="didAddress" hidden>—</span>
     </div>
 
-    <div class="did-actions grid2">
-      
-<button class="drawer-link did-blue" id="connectBtn" type="button">🦊 Inciar Sesión</button>
+    <!-- =========================
+    ACERCA DE (Resumen + Docs)
+    ========================= -->
+    <div class="acc" data-acc="about">
+      <button class="acc-h" type="button" data-open="about" aria-expanded="false">
+        <span>Acerca de</span>
+        <span class="chev">▾</span>
+      </button>
 
-<a class="drawer-link did-blue" id="registerBtn"
-   href="https://chromewebstore.google.com/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn?hl=es"
+      <div class="acc-p" id="accAbout">
+        <div class="small muted" style="margin:0 0 10px;">
+          Proyecto Web3 experimental. La DAO no es entidad legal; los tokens no son valores ni equity.
+          Participación bajo propio riesgo.
+        </div>
+
+        <div class="small muted" style="margin:0 0 12px;">
+          Derechos de autor / IP: salvo acuerdo explícito por escrito, la propiedad intelectual del proyecto pertenece al fundador.
+        </div>
+
+        
+<a class="drawer-link did-blue about-doc"
+   href="https://github.com/Alemty/alemtyDAO/tree/main/docs"
    target="_blank" rel="noopener noreferrer">
-  🦊 Registrarse
+  📚 Documentación oficial
 </a>
 
-<button class="drawer-link did-blue" id="siweBtn" type="button">✅ Firma SIWE</button>
-<button class="drawer-link did-blue" id="disconnectBtn" type="button">⛔ Cerrar Sesión</button>
-
+      </div>
     </div>
-
-    <!-- fuera de la card / minimal -->
-    
-<a class="drawer-link did-blue did-yt" id="tutorialLink" href="#" target="_blank" rel="noopener noreferrer">
-  <img class="yt-ico" src="/assets/icons/youtube.svg" alt="" aria-hidden="true">
-  Tutorial Registro Metamask
-</a>
 
   </div>
-</div>
-
 `;
+
+
 
 
 document.body.append(drawerBackdrop, drawer);
