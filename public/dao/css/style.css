@@ -1,1105 +1,491 @@
+/* ==========================================================
+   dao.alemty.eth — Estilos del subdominio DAO
+   Archivo: public/dao/css/style.css
 
-/* =====================================================
-   DAO Comunidad · estilo Reddit/Taringa con UI tipo DEX
-   (fondo vivo root + cards glass + chips + modales)
-   ===================================================== */
+   REGLAS DE ESTE ARCHIVO:
+   · Todo selector que afecte shell (topbar, bottom-nav, modal,
+     container, card, btn) DEBE ir prefijado con .dao-root
+   · Tokens propios van en .dao-root { } — NUNCA en :root { }
+   · Los tokens globales (--bg, --primary, --topbar-h, --blur-lg,
+     --radius-card) vienen de settings/theme.css — no redefinas aquí
+   ========================================================== */
 
-/* Root + fondo vivo (igual al patrón que ya te funciona) */
-.dao-root{
+/* ----------------------------------------------------------
+   1. TOKENS PROPIOS DEL DAO
+      Solo los que NO tienen equivalente en theme.css.
+      Usa var(--topbar-h), var(--blur-lg), var(--radius-card)
+      en lugar de --dao-topbar-h, --dao-ui-blur, --dao-r-card.
+   ---------------------------------------------------------- */
+.dao-root {
+
+  /* Acento propio (alias de los globales, para legibilidad interna) */
+  --dao-emerald:   #00ffd5;
+  --dao-emerald-2: #00a3ff;
+
+  /* Tipografía DAO — dark default */
+  --dao-text:   rgba(255, 255, 255, .92);
+  --dao-muted:  rgba(255, 255, 255, .68);
+  --dao-title:  rgba(0, 255, 213, .92);
+
+  /* Bordes y contornos */
+  --dao-border:       rgba(255, 255, 255, .14);
+  --dao-border-soft:  rgba(255, 255, 255, .10);
+  --dao-edge:         rgba(0, 255, 213, .38);
+  --dao-edge-soft:    rgba(0, 255, 213, .22);
+  --dao-edge-emerald: rgba(0, 255, 213, .18);
+
+  /* Relieves internos */
+  --dao-inset-hi: rgba(255, 255, 255, .06);
+  --dao-inset-lo: rgba(0, 0, 0, .30);
+
+  /* Superficies glass */
+  --dao-surface: rgba(255, 255, 255, .01);
+
+  /* Glow de ambiente (para ::after de cards y topbar scoped) */
+  --dao-glow-a: rgba(0, 255, 213, .22);
+  --dao-glow-b: rgba(0, 163, 255, .18);
+
+  /* Superficies topbar/panel en dark */
+  --dao-ui-surface: rgba(10, 20, 26, .62);
+  --dao-ui-border:  rgba(0, 255, 213, .18);
+  --dao-ui-inset:   rgba(0, 255, 213, .10);
+
+  /* Kebab menu */
+  --dao-kebab-bg:    rgba(10, 20, 26, .70);
+  --dao-kebab-hover: rgba(0, 255, 213, .10);
+  --dao-kebab-glow:  rgba(0, 255, 213, .20);
+
+  /* Radio propio (ligeramente más grande que el global 22px) */
+  --dao-r-card: 26px;
+  --dao-r-sub:  20px;
+}
+
+/* Light overrides */
+html.light .dao-root {
+  --dao-text:   rgba(14, 26, 24, .92);
+  --dao-muted:  rgba(14, 26, 24, .58);
+  --dao-title:  #0db9a6;
+
+  --dao-edge:         rgba(13, 185, 166, .85);
+  --dao-edge-soft:    rgba(13, 185, 166, .45);
+  --dao-edge-emerald: rgba(13, 185, 166, .25);
+
+  --dao-inset-hi: rgba(255, 255, 255, .45);
+  --dao-inset-lo: rgba(13, 185, 166, .18);
+
+  --dao-surface: rgba(13, 185, 166, .02);
+
+  --dao-ui-surface: rgba(255, 255, 255, .82);
+  --dao-ui-border:  rgba(13, 185, 166, .18);
+  --dao-ui-inset:   rgba(13, 185, 166, .10);
+
+  --dao-kebab-bg:   rgba(255, 255, 255, .86);
+}
+
+/* ----------------------------------------------------------
+   2. FONDO VIVO (DAO-BG)
+   ---------------------------------------------------------- */
+.dao-root {
   background: var(--bg);
   min-height: 100vh;
   position: relative;
 }
-.dao-bg{
+
+.dao-bg {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background:
-    radial-gradient(600px 400px at 20% 0%, rgba(0,255,213,.15), transparent 60%),
-    radial-gradient(500px 300px at 80% 20%, rgba(0,163,255,.12), transparent 60%),
-    var(--bg);
   pointer-events: none;
+  background:
+    radial-gradient(600px 400px at 20% 0%, rgba(0, 255, 213, .15), transparent 60%),
+    radial-gradient(500px 300px at 80% 20%, rgba(0, 163, 255, .12), transparent 60%),
+    var(--bg);
 }
-.container{
+
+/* ----------------------------------------------------------
+   3. CONTAINER — scoped para no pisar el global de theme.css
+   ---------------------------------------------------------- */
+.dao-root .container {
   background: transparent !important;
   position: relative;
   z-index: 1;
 }
 
-/* Cards glass */
-.card{
-  border-radius: 24px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,.04);
-  backdrop-filter: blur(14px) saturate(120%);
-  -webkit-backdrop-filter: blur(14px) saturate(120%);
-  box-shadow:
-    0 18px 60px rgba(0,0,0,.38),
-    0 0 0 1px rgba(0,255,213,.10) inset;
+/* Offset por topbar fija (usa token global --topbar-h de theme.css) */
+.dao-root main.container {
+  padding-top: var(--topbar-h);
+}
+
+/* ----------------------------------------------------------
+   4. TOPBAR Y BOTTOM-NAV — scoped al .dao-root
+      El topbar del shell ya es position:sticky en shell.css.
+      DAO lo convierte en fixed y le aplica su estilo glass.
+   ---------------------------------------------------------- */
+.dao-root .topbar,
+.dao-root .bottom-nav {
+  backdrop-filter: var(--blur-lg) !important;
+  -webkit-backdrop-filter: var(--blur-lg) !important;
+  background-image: none !important;
   position: relative;
+  overflow: visible;
 }
-.card.clickable{ cursor:pointer; transition: transform .2s ease, box-shadow .2s ease; }
-.card.clickable:hover{
-  transform: translateY(-2px);
+
+/* Dark */
+html:not(.light) .dao-root .topbar,
+html:not(.light) .dao-root .bottom-nav {
+  background: var(--dao-ui-surface) !important;
+  border: 1px solid var(--dao-ui-border) !important;
+  box-shadow: inset 0 0 0 1px var(--dao-ui-inset) !important;
+}
+
+/* Light */
+html.light .dao-root .topbar,
+html.light .dao-root .bottom-nav {
+  background: var(--dao-ui-surface) !important;
+  border: 1px solid var(--dao-ui-border) !important;
+  box-shadow: inset 0 0 0 1px var(--dao-ui-inset) !important;
+}
+
+/* Topbar fija en DAO (shell la pone sticky; DAO la sobreescribe a fixed) */
+.dao-root .topbar {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.dao-root .bottom-nav {
+  position: fixed !important;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+/* Glow de ambiente — SOLO en DAO (scoped) */
+.dao-root .topbar::after,
+.dao-root .bottom-nav::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(420px 220px at 15% 0%,   var(--dao-glow-a), transparent 65%),
+    radial-gradient(420px 220px at 85% 100%, var(--dao-glow-b), transparent 70%);
+  opacity: .45;
+  filter: blur(14px);
+}
+
+/* ----------------------------------------------------------
+   5. CARDS CONTENEDORAS (card, dao-panel)
+   ---------------------------------------------------------- */
+.dao-root .card,
+.dao-root .dao-panel {
+  background: var(--dao-ui-surface) !important;
+  border-radius: var(--dao-r-card);
+  border: 1px solid var(--dao-ui-border) !important;
   box-shadow:
-    0 22px 70px rgba(0,0,0,.45),
-    0 0 0 1px rgba(0,255,213,.18) inset;
+    inset 0 0 0 1px var(--dao-ui-inset),
+    inset 0 1px 0 var(--dao-inset-hi),
+    inset 0 -1px 0 var(--dao-inset-lo) !important;
+  backdrop-filter: var(--blur-lg);
+  -webkit-backdrop-filter: var(--blur-lg);
+  position: relative;
+  overflow: visible;
 }
 
-/* ======================
-   Tabs (chips) tipo DEX
-   ====================== */
-.dao-tabs{
-  margin-top: 12px;
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
+.dao-root .card::before { content: none !important; }
+
+/* Sin elevación en hover (pegado al viewport) */
+.dao-root .card:hover,
+.dao-root .dao-panel:hover {
+  transform: none !important;
 }
-.dao-tab{
-  padding: 8px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,.06);
-  color: var(--text);
-  font-weight: 900;
-  font-size: 12px;
+
+/* Glow ambiente en cards */
+.dao-root .card::after,
+.dao-root .dao-panel::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(420px 220px at 15% 0%,   var(--dao-glow-a), transparent 65%),
+    radial-gradient(420px 220px at 85% 100%, var(--dao-glow-b), transparent 70%);
+  opacity: .45;
+  filter: blur(14px);
+}
+
+/* Cards clickeables */
+.dao-root .card.clickable {
   cursor: pointer;
-  line-height: 1;
+  transition: transform .2s ease, box-shadow .2s ease;
 }
-.dao-tab:hover{
-  transform: translateY(-1px);
-  box-shadow: 0 0 0 1px rgba(0,255,213,.22), 0 0 18px rgba(0,255,213,.12);
-}
-.dao-tab.active{
-  border: 0;
-  color: #08101a;
-  background: linear-gradient(135deg,var(--primary),var(--accent));
-  box-shadow: 0 12px 26px rgba(0,255,213,.25);
+.dao-root .card.clickable:hover {
+  transform: translateY(-2px) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 255, 213, .28),
+    0 22px 70px rgba(0, 0, 0, .45) !important;
 }
 
-/* Panel superior como en DEX */
-.dao-panel{ margin-top:16px; padding:14px; }
-.dao-panel-top{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:12px;
-  flex-wrap:wrap;
+/* Light: cards con fondo semiopaco */
+html.light .dao-root .card,
+html.light .dao-root .dao-panel {
+  background: rgba(255, 255, 255, .58) !important;
+  border-color: rgba(13, 185, 166, .18) !important;
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, .10),
+    0 0 0 1px rgba(255, 255, 255, .55) inset !important;
 }
-.dao-panel-actions{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-/* Botones (mejor contraste dark/light) */
-.btn{
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  padding: 10px 12px;
-  background: rgba(255,255,255,.06);
-  color: var(--text);
-  font-weight: 950;
-  cursor:pointer;
-}
-.btn:hover{
-  box-shadow: 0 0 0 1px rgba(0,255,213,.20), 0 0 18px rgba(0,255,213,.12);
-  transform: translateY(-1px);
-}
-.btn.primary{
-  border:0;
-  color:#08101a;
-  background: linear-gradient(135deg,var(--primary),var(--accent));
-}
-html.light .btn{
-  background: rgba(0,0,0,.06);
-  border-color: rgba(0,0,0,.12);
-  color:#08101a;
+html.light .dao-root .card.clickable:hover {
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, .12),
+    0 0 0 1px rgba(255, 255, 255, .65) inset !important;
 }
 
-/* ======================
-   Carousel (top 5)
-   ====================== */
-.carousel{
-  margin-top: 12px;
-  display:grid;
-  grid-template-columns: 44px 1fr 44px;
-  gap: 10px;
-  align-items:center;
-}
-.car-btn{
-  width:44px;height:44px;
-  border-radius:16px;
-  border:1px solid var(--border);
-  background: rgba(255,255,255,.06);
-  color: var(--text);
-  font-weight: 1000;
-  cursor:pointer;
-}
-.car-btn:hover{ box-shadow: 0 0 0 1px rgba(0,255,213,.20), 0 0 18px rgba(0,255,213,.12); }
-
-.car-viewport{
-  overflow:hidden;
-  border-radius:18px;
-  border:1px solid var(--border);
-  background: rgba(255,255,255,.03);
-}
-.car-track{
-  display:flex;
-  gap:10px;
-  padding:10px;
-  transform: translateX(0px);
-  transition: transform .25s ease;
-  will-change: transform;
-}
-.car-card{
-  min-width: min(520px, 86vw);
-  border-radius:18px;
-  border:1px solid var(--border);
-  background: rgba(255,255,255,.03);
-  padding:12px;
-  cursor:pointer;
-}
-.car-card:hover{ box-shadow: 0 0 0 1px rgba(0,255,213,.18) inset; }
-.car-title{ font-weight: 1000; margin: 2px 0 6px; }
-.car-meta{ font-size:12px; opacity:.75; }
-.car-snippet{ margin-top:6px; opacity:.9; white-space:normal; }
-.car-kpis{ margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
-
-.car-dots{
-  display:flex;
-  gap:6px;
-  justify-content:center;
-  margin-top:10px;
-}
-.dot{
-  width:8px; height:8px; border-radius:99px;
-  border:1px solid var(--border);
-  background: rgba(255,255,255,.10);
-  opacity:.65;
-}
-.dot.active{
-  opacity:1;
-  background: linear-gradient(135deg,var(--primary),var(--accent));
-  border:0;
+/* ----------------------------------------------------------
+   6. SUB-CARDS (post, mini, car-card, car-viewport)
+      Totalmente transparentes: el color viene del dao-bg
+   ---------------------------------------------------------- */
+.dao-root .post,
+.dao-root .mini,
+.dao-root .car-card,
+.dao-root .car-viewport {
+  backdrop-filter: var(--blur-md);
+  -webkit-backdrop-filter: var(--blur-md);
+  background: transparent !important;
+  background-image: none !important;
+  border: 1px solid color-mix(in oklab, var(--border), transparent 40%) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06) !important;
+  position: relative;
+  overflow: hidden;
 }
 
+.dao-root .post::before,
+.dao-root .mini::before,
+.dao-root .car-card::before { content: none !important; }
 
-/* ======================
-   Crear post + último post (con jerarquía)
-   ====================== */
-.form{ margin-top:10px; display:flex; flex-direction:column; gap:10px; }
-.form .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-
-input, textarea, select{
-  width:100%;
-  border-radius:14px;
-  border:1px solid var(--border);
-  background: rgba(255,255,255,.04);
-  color: var(--text);
-  padding: 10px 12px;
-  outline:none;
-}
-textarea{ resize: vertical; }
-input:focus, textarea:focus, select:focus{
-  box-shadow: 0 0 0 4px rgba(0,255,213,.10);
-  border-color: rgba(0,255,213,.35);
-}
-
-/* ====== Post raíz (nivel 0) ====== */
-.post-root .latest-title{
-  font-weight: 1000;
-  font-size: 1.15rem;
-  margin-top: 10px;
-  letter-spacing: -0.01em;
-}
-.post-root .latest-snippet{
-  margin-top: 6px;
-  font-size: .95rem;
-  line-height: 1.55;
-  opacity: .86;
-}
-.post-root .latest-kpis{
-  margin-top: 12px;
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
+/* Glow muy tenue en sub-cards */
+.dao-root .post::after,
+.dao-root .mini::after,
+.dao-root .car-card::after,
+.dao-root .car-viewport::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(420px 220px at 15% 0%,   var(--dao-glow-a), transparent 65%),
+    radial-gradient(420px 220px at 85% 100%, var(--dao-glow-b), transparent 70%);
+  opacity: .22;
+  filter: blur(14px);
 }
 
-/* Pills base (mantienes tu identidad) */
-.pill{
-  border-radius:999px;
-  border:1px solid var(--border);
-  background: rgba(255,255,255,.06);
-  padding:6px 10px;
-  font-size:12px;
-  font-weight:900;
+/* Sin elevación en hover */
+.dao-root .post:hover,
+.dao-root .mini:hover,
+.dao-root .car-card:hover { transform: none !important; }
+
+/* Light: sub-cards con micro-tinte esmeralda */
+html.light .dao-root .post,
+html.light .dao-root .mini,
+html.light .dao-root .car-card {
+  background: linear-gradient(
+    180deg,
+    rgba(47, 216, 179, .045),
+    rgba(255, 255, 255, .60)
+  ) !important;
+  border-color: rgba(47, 216, 179, .10) !important;
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, .08),
+    0 0 0 1px rgba(255, 255, 255, .55) inset !important;
+}
+html.light .dao-root .car-viewport {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .06) !important;
+}
+html.light .dao-root .post:hover,
+html.light .dao-root .mini:hover,
+html.light .dao-root .car-card:hover {
+  transform: translateY(-1.5px) !important;
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, .10),
+    0 0 0 1px rgba(255, 255, 255, .65) inset,
+    0 6px 18px rgba(47, 216, 179, .16) !important;
 }
 
-/* ====== Comentarios preview ====== */
-.comment-preview{ margin-top: 8px; }
+/* ----------------------------------------------------------
+   7. TIPOGRAFÍA
+   ---------------------------------------------------------- */
+.dao-root { color: var(--dao-text); }
 
-/* Nivel 1: Comentario */
-.comment.comment-l1{
-  margin-top: 12px;
-  padding-left: 12px;
-  border-left: 2px solid rgba(255,255,255,.12);
-  font-size: .90rem;
-}
-.comment.comment-l1 .comment-head{
-  font-size: .80rem;
-  opacity: .82;
-  display:flex;
-  gap:8px;
-  align-items:baseline;
-}
-.comment.comment-l1 p{
-  margin: 4px 0 0;
-  line-height: 1.45;
-  opacity: .92;
+.dao-root .muted,
+.dao-root .small.muted { color: var(--dao-muted) !important; }
+
+.dao-root .h1,
+.dao-root .h2,
+.dao-root .post-title,
+.dao-root .car-title,
+.dao-root .mini .t {
+  color: var(--dao-title);
+  text-shadow: 0 0 18px rgba(0, 0, 0, .22);
 }
 
-/* Nivel 2: Respuesta (más pequeña y más tenue) */
-.comment.comment-l2{
-  margin-top: 8px;
-  margin-left: 14px;
-  padding-left: 10px;
-  border-left: 1px dashed rgba(255,255,255,.10);
-  font-size: .82rem;
-  opacity: .86;
-}
-.comment.comment-l2 .comment-head{
-  font-size: .76rem;
-  opacity: .78;
-}
-.comment.comment-l2 p{
-  margin: 2px 0 0;
-  line-height: 1.40;
-  opacity: .90;
+html:not(.light) .dao-root .h2,
+html:not(.light) .dao-root .car-title {
+  text-shadow: 0 0 18px rgba(0, 0, 0, .30), 0 0 14px rgba(0, 255, 213, .10);
 }
 
-/* Acciones bajan de jerarquía en respuestas */
-.comment.comment-l1 .pill{ font-size: .75rem; opacity: .88; }
-.comment.comment-l2 .pill{ font-size: .70rem; opacity: .75; }
-
-
-/* ======================
-   Feed tipo Reddit
-   ====================== */
-.dao-feed-head{
-  display:flex;
-  justify-content:space-between;
-  gap:12px;
-  align-items:center;
-  flex-wrap:wrap;
-}
-.dao-feed-tools{ display:flex; gap:8px; align-items:center; }
-#search{ min-width: 220px; }
-
-.feed{
-  margin-top:12px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-
-.post {
-  display: block;
-  padding: 12px;
-  border-radius: 18px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,.03);
-}
-
-.vote{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:8px;
-}
-.vbtn{
-  width:40px;height:40px;
-  border-radius:16px;
-  border:1px solid var(--border);
-  background: rgba(255,255,255,.06);
-  cursor:pointer;
-  font-weight:1000;
-}
-
-.vnum{
-  font-weight: 1000;
-  opacity: .9;
-}
-
-.post-body{
-  cursor: pointer;
-}
-
-/* Título del post */
-.post-title{
-  font-weight: 1000;
-  margin: 0 0 2px;
-}
-
-/* Meta: tema + fecha */
-.post-meta{
-  font-size: 12px;
-  opacity: .75;
-  margin-top: 2px;
-}
-
-/* Snippet del cuerpo (SIN sangría, SIN espacios fantasmas) */
-.post-snippet{
-  white-space: pre-line;
-  margin-top: 4px;
-}
-
-/* Contenedor de pills */
-.post-tags{
-  margin-top: 10px;
-  display: flex;
-  gap: 8px;
+/* Brand H1: dao.alemty.eth */
+.dao-root .h1.dao-brand {
+  display: inline-flex;
+  align-items: baseline;
   flex-wrap: wrap;
+  color: var(--dao-text) !important;
+  text-shadow: none !important;
 }
+.dao-root .h1.dao-brand .dao-brand-em {
+  color: var(--dao-title) !important;
+  text-shadow: 0 0 16px rgba(0, 255, 213, .14);
+}
+.dao-root .h1.dao-brand .dao-brand-base {
+  color: var(--dao-text) !important;
+  text-shadow: none !important;
+}
+html.light .dao-root .h1.dao-brand .dao-brand-em { text-shadow: none !important; }
 
-/* Pills genéricas */
-.tag{
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,.05);
-  padding: 6px 10px;
-  font-size: 12px;
+/* ----------------------------------------------------------
+   8. BOTONES — scoped al DAO
+   ---------------------------------------------------------- */
+.dao-root .btn {
+  border-radius: 16px;
+  border: 1px solid rgba(0, 255, 213, .35);
+  background: rgba(0, 255, 213, .08);
+  color: var(--dao-text);
   font-weight: 900;
-  opacity: .9;
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  box-shadow: none !important;
+  transition: transform .18s ease, background .18s ease, border-color .18s ease;
+}
+.dao-root .btn:hover {
+  transform: translateY(-1px);
+  background: rgba(0, 255, 213, .12);
+  border-color: rgba(0, 255, 213, .55);
+}
+.dao-root .btn.primary {
+  border: 0;
+  color: #061018;
+  background: linear-gradient(135deg, var(--dao-emerald), var(--dao-emerald-2));
 }
 
-
-/* ======================
-   Mini grids (Top 4) 2x2
-   ====================== */
-.mini-grid{
-  margin-top: 12px;
-  display:grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap:10px;
+html.light .dao-root .btn {
+  color: rgba(14, 26, 24, .92);
+  background: rgba(13, 185, 166, .14);
+  border-color: rgba(13, 185, 166, .40);
 }
-.mini{
-  border-radius:18px;
-  border:1px solid var(--border);
-  background: rgba(255,255,255,.03);
-  padding:12px;
-  cursor:pointer;
-}
-.mini:hover{ box-shadow: 0 0 0 1px rgba(0,255,213,.16) inset; }
-.mini .t{ font-weight:1000; }
-.mini .m{ font-size:12px; opacity:.75; margin-top:4px; }
-.mini .k{ margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
-
-/* Modal body padding (por si acaso) */
-.modal-body{ padding:16px; }
-
-/* Responsive */
-@media (max-width: 720px){
-  .carousel{ grid-template-columns: 40px 1fr 40px; }
-  .car-btn{ width:40px;height:40px; }
-  #search{ min-width: 180px; }
+html.light .dao-root .btn.primary {
+  color: #ffffff;
+  background: linear-gradient(135deg, #0db9a6, #0aa0ff);
 }
 
-/* =========================================
-   BOTONES ACTIVOS: Backrooms / Temas
-   ========================================= */
-
-.dao-panel-actions .btn{
+/* Botones .glow (Backrooms / Temas activos) */
+.dao-root .dao-panel-actions .btn {
   position: relative;
   border-radius: 999px;
   font-weight: 950;
   padding: 10px 14px;
   transition: all .25s ease;
 }
-
-/* Estado encendido */
-.dao-panel-actions .btn.glow{
+.dao-root .dao-panel-actions .btn.glow {
   border: 0;
   color: #08101a;
-  background: linear-gradient(
-    135deg,
-    var(--primary),
-    var(--accent)
-  );
+  background: linear-gradient(135deg, var(--dao-emerald), var(--dao-emerald-2));
   box-shadow:
-    0 0 0 1px rgba(0,255,213,.35),
-    0 10px 30px rgba(0,255,213,.35),
-    0 0 40px rgba(0,163,255,.25);
+    0 0 0 1px rgba(0, 255, 213, .35),
+    0 10px 30px rgba(0, 255, 213, .35),
+    0 0 40px rgba(0, 163, 255, .25);
 }
-
-/* Efecto aura */
-.dao-panel-actions .btn.glow::after{
+.dao-root .dao-panel-actions .btn.glow::after {
   content: "";
   position: absolute;
   inset: -6px;
   border-radius: inherit;
-  background:
-    radial-gradient(
-      60% 60% at 50% 50%,
-      rgba(0,255,213,.35),
-      transparent 70%
-    );
+  background: radial-gradient(60% 60% at 50% 50%, rgba(0, 255, 213, .35), transparent 70%);
   opacity: .7;
   filter: blur(12px);
   pointer-events: none;
 }
-
-/* Hover */
-.dao-panel-actions .btn.glow:hover{
+.dao-root .dao-panel-actions .btn.glow:hover {
   transform: translateY(-1px) scale(1.02);
   box-shadow:
-    0 0 0 1px rgba(0,255,213,.45),
-    0 16px 40px rgba(0,255,213,.45),
-    0 0 60px rgba(0,163,255,.35);
+    0 0 0 1px rgba(0, 255, 213, .45),
+    0 16px 40px rgba(0, 255, 213, .45),
+    0 0 60px rgba(0, 163, 255, .35);
 }
-
-/* ===== Light theme ===== */
-html.light .dao-panel-actions .btn.glow{
-  color: #ffffff;
-  background: linear-gradient(
-    135deg,
-    #0db9a6,
-    #0aa0ff
-  );
-  box-shadow:
-    0 0 0 1px rgba(0,0,0,.12),
-    0 10px 24px rgba(0,163,255,.25);
-}
-
-/* =====================================================
-   DAO · LIGHT THEME – Apple / VisionOS style
-   ===================================================== */
-
-html.light{
-  /* Fondo general (NO blanco puro) */
-  --bg: #f4f6f7;
-
-  /* Panel base */
-  --panel: rgba(255,255,255,.72);
-
-  /* Bordes muy suaves */
-  --border: rgba(0,0,0,.06);
-
-  /* Texto */
-  --text: #0e1a18;
-  --muted: rgba(14,26,24,.55);
-
-  /* Acentos esmeralda */
-  --primary: #2fd8b3;
-  --accent: #4fe6c1;
-}
-
-/* =========================
-   CARDS DAO (light)
-   ========================= */
-html.light .card{
-  background: rgba(255,255,255,.72);
-  backdrop-filter: blur(18px) saturate(120%);
-  -webkit-backdrop-filter: blur(18px) saturate(120%);
-  border: 1px solid rgba(0,0,0,.06);
-
-  box-shadow:
-    0 8px 30px rgba(0,0,0,.08),
-    0 0 0 1px rgba(255,255,255,.55) inset;
-}
-
-/* Cards clickeables: elevación suave */
-html.light .card.clickable:hover{
-  box-shadow:
-    0 14px 40px rgba(0,0,0,.12),
-    0 0 0 1px rgba(255,255,255,.65) inset;
-}
-
-/* =========================
-   PANEL SUPERIOR DAO
-   ========================= */
-html.light .dao-panel{
-  background: rgba(255,255,255,.78);
-}
-
-/* =========================
-   BOTONES DAO
-   ========================= */
-html.light .dao-panel-actions .btn{
-  background: rgba(255,255,255,.65);
-  border: 1px solid rgba(0,0,0,.06);
-  color: #0e1a18;
-
-  box-shadow:
-    0 4px 14px rgba(0,0,0,.08),
-    0 0 0 1px rgba(255,255,255,.55) inset;
-}
-
-/* Botones encendidos (Backrooms / Temas) */
-html.light .dao-panel-actions .btn.glow{
-  background: linear-gradient(135deg,#2fd8b3,#4fe6c1);
+html.light .dao-root .dao-panel-actions .btn.glow {
+  background: linear-gradient(135deg, #2fd8b3, #4fe6c1);
   color: #05312a;
-
-  box-shadow:
-    0 8px 22px rgba(47,216,179,.35),
-    0 0 0 1px rgba(255,255,255,.75) inset;
+  box-shadow: 0 8px 22px rgba(47, 216, 179, .35), 0 0 0 1px rgba(255, 255, 255, .75) inset;
 }
 
-/* =========================
-   TABS DAO
-   ========================= */
-html.light .dao-tab{
-  background: rgba(255,255,255,.65);
-  border: 1px solid rgba(0,0,0,.06);
-  color: rgba(14,26,24,.75);
+/* ----------------------------------------------------------
+   9. TABS (chips)
+   ---------------------------------------------------------- */
+.dao-tabs {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
-
-html.light .dao-tab.active{
-  background: linear-gradient(135deg,#2fd8b3,#4fe6c1);
-  color: #05312a;
-  box-shadow:
-    0 8px 22px rgba(47,216,179,.35);
-}
-
-/* =========================
-   FEED / POSTS
-   ========================= */
-html.light .post,
-html.light .mini,
-html.light .car-card{
-  background: rgba(255,255,255,.68);
-  border: 1px solid rgba(0,0,0,.06);
-
-  box-shadow:
-    0 6px 18px rgba(0,0,0,.08);
-}
-
-/* =========================
-   MODAL (alineado a Apple)
-   ========================= */
-html.light .modal-card{
-  background: rgba(255,255,255,.82);
-  backdrop-filter: blur(22px) saturate(120%);
-  -webkit-backdrop-filter: blur(22px) saturate(120%);
-  box-shadow:
-    0 24px 60px rgba(0,0,0,.18);
-}
-
-/* =====================================================
-   DAO · GLASS MÁS TRANSPARENTE (Apple-like)
-   ===================================================== */
-
-/* Cards y ventanas principales */
-html.light .card,
-html.light .post,
-html.light .mini,
-html.light .car-card,
-html.light .dao-panel{
-  background: rgba(255,255,255,.58); /* antes ~.72 */
-  backdrop-filter: blur(22px) saturate(140%);
-  -webkit-backdrop-filter: blur(22px) saturate(140%);
-
-  border: 1px solid rgba(255,255,255,.45);
-
-  box-shadow:
-    0 10px 28px rgba(0,0,0,.10),
-    0 0 0 1px rgba(255,255,255,.55) inset;
-}
-
-/* Cards muy cercanas entre sí: menos sombra */
-html.light .card + .card,
-html.light .post + .post{
-  box-shadow:
-    0 6px 18px rgba(0,0,0,.08),
-    0 0 0 1px rgba(255,255,255,.6) inset;
-}
-
-
-/* =====================================================
-   DAO · POST CARDS – GLASS ESMERALDA PROFESIONAL
-   (Light theme, Apple-like)
-   ===================================================== */
-
-/* ===== Estado base ===== */
-html.light .post,
-html.light .mini,
-html.light .car-card{
-  background:
-    linear-gradient(
-      180deg,
-      rgba(47, 216, 179, 0.045),  /* esmeralda ambiental */
-      rgba(255,255,255, 0.60)
-    );
-
-  backdrop-filter: blur(22px) saturate(135%);
-  -webkit-backdrop-filter: blur(22px) saturate(135%);
-
-  border: 1px solid rgba(47,216,179,0.10);
-
-  box-shadow:
-    0 6px 20px rgba(0,0,0,0.08),           /* elevación base */
-    0 0 0 1px rgba(255,255,255,0.55) inset;
-
-  transition:
-    transform .22s cubic-bezier(.22,.61,.36,1),
-    box-shadow .22s cubic-bezier(.22,.61,.36,1),
-    background .22s ease;
-}
-
-/* ===== Hover (selección suave, no dura) ===== */
-html.light .post:hover,
-html.light .mini:hover,
-html.light .car-card:hover{
-  transform: translateY(-1.5px);
-
-  background:
-    linear-gradient(
-      180deg,
-      rgba(47, 216, 179, 0.075), /* apenas más luz */
-      rgba(255,255,255, 0.62)
-    );
-
-  box-shadow:
-    0 10px 28px rgba(0,0,0,0.10),          /* sombra neutra */
-    0 0 0 1px rgba(255,255,255,0.65) inset,
-    0 6px 18px rgba(47,216,179,0.16);      /* halo esmeralda suave */
-}
-
-
-
-/* =====================================================
-   DAO · ACTION BUTTONS
-   Likes / Comments / Points
-   Light + Dark theme (Apple-like glass)
-   ===================================================== */
-
-/* =========================
-   BASE (ambos temas)
-   ========================= */
-.pill.like,
-.pill.comment,
-.pill.points,
-.vbtn.like,
-.vbtn.comment,
-.vbtn.points{
+.dao-tab {
+  padding: 8px 12px;
   border-radius: 999px;
-  font-weight: 900;
-  transition:
-    background .18s ease,
-    box-shadow .18s ease,
-    transform .18s ease,
-    color .18s ease;
-}
-
-
-/* =====================================================
-   INTERACCIONES (TODO clickeable y tap-friendly)
-   ===================================================== */
-
-/* Tap/click consistente en mobile */
-.pill, .car-card, .post, .mini, .vbtn, .post-body{
-  touch-action: manipulation;
-}
-
-/* Asegura que los elementos interactivos estén arriba */
-.pill{
-  position: relative;
-  z-index: 5;
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-/* El post body sí debe recibir tap para abrir modal */
-.post-body{
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-/* Botones de voto SIEMPRE clickeables */
-.vbtn{
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-/* =====================================================
-   CONGRUENCIA con backend/JS (NO uses .vbtn.like/.points)
-   - Like:  button.vbtn[data-like]   (▲)
-   - Points: button.vbtn[data-point] (✨)
-   - Comment: pill.comment (no hay vbtn para comment en tu HTML)
-   ===================================================== */
-
-/* BASE común (ambos temas) */
-.pill.like,
-.pill.comment,
-.pill.points,
-.vbtn[data-like],
-.vbtn[data-point]{
-  border-radius: 999px;
-  font-weight: 900;
-  transition:
-    background .18s ease,
-    box-shadow .18s ease,
-    transform .18s ease,
-    color .18s ease;
-}
-
-/* =====================================================
-   LIGHT THEME
-   ===================================================== */
-
-/* 💚 LIKE */
-html.light .pill.like,
-html.light .vbtn[data-like]{
-  background: rgba(47,216,179,0.12);
-  color: rgba(14,60,50,0.85);
-  border: 1px solid rgba(47,216,179,0.22);
-}
-
-/* 💬 COMMENT (solo pill) */
-html.light .pill.comment{
-  background: rgba(64,163,255,0.10);
-  color: rgba(20,40,80,0.85);
-  border: 1px solid rgba(64,163,255,0.22);
-}
-
-/* ✨ POINTS */
-html.light .pill.points,
-html.light .vbtn[data-point]{
-  background: rgba(255,205,120,0.14);
-  color: rgba(90,60,10,0.85);
-  border: 1px solid rgba(255,205,120,0.28);
-}
-
-/* Hover light */
-html.light .pill.like:hover,
-html.light .vbtn[data-like]:hover{
-  box-shadow:
-    0 6px 16px rgba(47,216,179,0.24),
-    0 0 0 1px rgba(255,255,255,0.6) inset;
-  transform: translateY(-1px);
-}
-
-html.light .pill.comment:hover{
-  box-shadow:
-    0 6px 16px rgba(64,163,255,0.24),
-    0 0 0 1px rgba(255,255,255,0.6) inset;
-  transform: translateY(-1px);
-}
-
-html.light .pill.points:hover,
-html.light .vbtn[data-point]:hover{
-  box-shadow:
-    0 6px 16px rgba(255,205,120,0.26),
-    0 0 0 1px rgba(255,255,255,0.6) inset;
-  transform: translateY(-1px);
-}
-
-/* Active light (esto se activa desde JS con classList.toggle en pills) */
-html.light .pill.like.active{ background: rgba(47,216,179,0.20); }
-html.light .pill.comment.active{ background: rgba(64,163,255,0.18); }
-html.light .pill.points.active{ background: rgba(255,205,120,0.22); }
-
-/* =====================================================
-   DARK THEME
-   ===================================================== */
-
-/* ❤️ LIKE */
-html:not(.light) .pill.like,
-html:not(.light) .vbtn[data-like]{
-  background: rgba(255,70,90,0.18);
-  color: rgba(255,220,225,0.95);
-  border: 1px solid rgba(255,70,90,0.35);
-}
-
-/* 💬 COMMENT (solo pill) */
-html:not(.light) .pill.comment{
-  background: rgba(90,160,255,0.18);
-  color: rgba(210,225,255,0.95);
-  border: 1px solid rgba(90,160,255,0.35);
-}
-
-/* ✨ POINTS */
-html:not(.light) .pill.points,
-html:not(.light) .vbtn[data-point]{
-  background: rgba(255,190,90,0.20);
-  color: rgba(255,235,200,0.95);
-  border: 1px solid rgba(255,190,90,0.35);
-}
-
-/* Hover dark */
-html:not(.light) .pill.like:hover,
-html:not(.light) .vbtn[data-like]:hover{
-  box-shadow:
-    0 0 18px rgba(255,70,90,0.35),
-    0 0 0 1px rgba(255,255,255,0.08) inset;
-  transform: translateY(-1px);
-}
-
-html:not(.light) .pill.comment:hover{
-  box-shadow:
-    0 0 18px rgba(90,160,255,0.35),
-    0 0 0 1px rgba(255,255,255,0.08) inset;
-  transform: translateY(-1px);
-}
-
-html:not(.light) .pill.points:hover,
-html:not(.light) .vbtn[data-point]:hover{
-  box-shadow:
-    0 0 18px rgba(255,190,90,0.38),
-    0 0 0 1px rgba(255,255,255,0.08) inset;
-  transform: translateY(-1px);
-}
-
-/* Active dark */
-html:not(.light) .pill.like.active{ background: rgba(255,70,90,0.30); }
-html:not(.light) .pill.comment.active{ background: rgba(90,160,255,0.28); }
-html:not(.light) .pill.points.active{ background: rgba(255,190,90,0.32); }
-
-
-/* =====================================================
-   DAO — UNIFIED GLASS (TRANSPARENTE) + CONTRASTE + ESMERALDA
-   Reemplaza TODO el bloque "CONGRUENCIA... + iOS glass system + polish patch"
-   ===================================================== */
-
-/* ------------------------------
-   0) TOKENS (solo DAO)
--------------------------------- */
-.dao-root{
-  /* Acento principal */
-  --dao-emerald: #00ffd5;
-  --dao-emerald-2: #00a3ff;
-
-  /* Texto (dark default) */
-  --dao-text: rgba(255,255,255,.92);
-  --dao-muted: rgba(255,255,255,.68);
-  --dao-title: rgba(255,255,255,.96);
-
-  /* Hairlines */
-  --dao-border: rgba(255,255,255,.14);
-  --dao-border-soft: rgba(255,255,255,.10);
-  
-/* ✅ Contorno visible (doble capa) */
-  --dao-edge: rgba(255,255,255,.26);        /* borde principal (más visible) */
-  --dao-edge-soft: rgba(255,255,255,.14);   /* segunda línea suave */
-  --dao-edge-emerald: rgba(0,255,213,.10);  /* toque esmeralda muy sutil */
-
-  /* ✅ separación interna (no sombra externa) */
-  --dao-inset-hi: rgba(255,255,255,.08);    /* brillo interno arriba */
-  --dao-inset-lo: rgba(0,0,0,.20);          /* sombra interna abajo */
-
-
-  /* Glass (TRANSPARENTE, color viene del dao-bg) */
-  --dao-surface: rgba(255,255,255,.01); /* casi transparente para compat */
-  --dao-blur-lg: blur(24px) saturate(150%);
-  --dao-blur-md: blur(18px) saturate(140%);
-  --dao-blur-sm: blur(12px) saturate(130%);
-
-  /* Radius */
-  --dao-r-card: 26px;
-  --dao-r-sub: 20px;
-}
-
-
-html.light .dao-root{
-  --dao-text: rgba(14,26,24,.92);
-  --dao-muted: rgba(14,26,24,.58);
-
-  /* títulos */
-  --dao-title: #0db9a6;
-
-  /* 🔥 EDGE = ES EL CONTORNO */
-  --dao-edge: rgba(13,185,166,.85);       /* contorno fuerte */
-  --dao-edge-soft: rgba(13,185,166,.45);  /* segunda línea */
-  --dao-edge-emerald: rgba(13,185,166,.25);
-
-  /* ✅ glass casi invisible con micro tinte */
-  --dao-surface: rgba(13,185,166,.02);
-
-  /* relieve interno (NO sombra) */
-  --dao-inset-hi: rgba(255,255,255,.45);
-  --dao-inset-lo: rgba(13,185,166,.18);
-}
-
-
-/* ------------------------------
-   1) TIPOGRAFÍA / CONTRASTE
--------------------------------- */
-.dao-root,
-.dao-root .muted{ color: var(--dao-text); }
-
-.dao-root .muted,
-.dao-root .small.muted{ color: var(--dao-muted) !important; }
-
-/* títulos y textos fuertes */
-.dao-root .h1,
-.dao-root .h2,
-.dao-root .post-title,
-.dao-root .car-title,
-.dao-root .mini .t{
-  color: var(--dao-title);
-  text-shadow: 0 0 18px rgba(0,0,0,.22);
-}
-
-/* en dark: una pizca de emerald en títulos (muy sutil) */
-html:not(.light) .dao-root .h2,
-html:not(.light) .dao-root .car-title{
-  text-shadow:
-    0 0 18px rgba(0,0,0,.30),
-    0 0 14px rgba(0,255,213,.10);
-}
-
-/* ------------------------------
-   2) SUPERFICIES TRANSPARENTES (contenedores + cards + posts)
-   ✅ Todo transparente: el color viene del .dao-bg
-   ✅ Sin sombras externas (no "ventana debajo")
--------------------------------- */
-
-/* Contenedor general */
-.dao-root .container{
-  background: transparent !important;
-}
-
-/* Cards contenedoras (panel, crear post, top, feed card, etc.) */
-.dao-root .card,
-.dao-root .dao-panel{
-  background: var(--dao-surface) !important;
-  border-radius: var(--dao-r-card);
-  
-/* antes: border: .5px solid var(--dao-border); */
-  border: 1px solid transparent;
-
-  /* ✅ doble línea + separación interna (sin sombra externa) */
-  box-shadow:
-    inset 0 0 0 1px var(--dao-edge),
-    inset 0 0 0 2px var(--dao-edge-soft),
-    inset 0 1px 0 var(--dao-inset-hi),
-    inset 0 -1px 0 var(--dao-inset-lo),
-    0 0 0 1px var(--dao-edge-emerald) !important;
-
-  backdrop-filter: var(--dao-blur-lg);
-  -webkit-backdrop-filter: var(--dao-blur-lg);
-  position: relative;
-  overflow: hidden;
-
-}
-
-/* ✅ Quita cualquier gloss que esté “lavando” el texto */
-.dao-root .card::before{ content: none !important; }
-
-/* Sub-cards (posts, minis, carrusel cards) */
-.dao-root .post,
-.dao-root .mini,
-.dao-root .car-card{
-  background: var(--dao-surface) !important;
-  border-radius: var(--dao-r-sub);
-  
-/* antes: border: .5px solid var(--dao-border-soft); */
-  border: 1px solid transparent;
-
-  box-shadow:
-    inset 0 0 0 1px var(--dao-edge-soft),
-    inset 0 1px 0 var(--dao-inset-hi),
-    inset 0 -1px 0 var(--dao-inset-lo),
-    0 0 0 1px rgba(0,0,0,0) !important; /* no “drop shadow”, solo mantiene consistencia */
-
-  backdrop-filter: var(--dao-blur-md);
-  -webkit-backdrop-filter: var(--dao-blur-md);
-  position: relative;
-  overflow: hidden;
-
-}
-.dao-root .post::before,
-.dao-root .mini::before,
-.dao-root .car-card::before{ content: none !important; }
-
-/* viewport del carrusel transparente */
-
-.dao-root .car-viewport{
-  background: transparent !important;
-  border-radius: 22px;
-  border: 1px solid transparent;
-
-  box-shadow:
-    inset 0 0 0 1px var(--dao-edge),
-    inset 0 0 0 2px var(--dao-edge-soft),
-    inset 0 1px 0 var(--dao-inset-hi),
-    inset 0 -1px 0 var(--dao-inset-lo),
-    0 0 0 1px var(--dao-edge-emerald);
-
-  overflow: hidden;
-}
-
-
-/* ------------------------------
-   3) BOTONES ESMERALDA (default)
-   ✅ Todos los botones del DAO se ven esmeralda
--------------------------------- */
-.dao-root .btn{
-  border-radius: 16px;
-  border: 1px solid rgba(0,255,213,.35);
-  background: rgba(0,255,213,.08);
+  border: 1px solid rgba(0, 255, 213, .28);
+  background: rgba(0, 255, 213, .06);
   color: var(--dao-text);
   font-weight: 900;
-  backdrop-filter: var(--dao-blur-sm);
-  -webkit-backdrop-filter: var(--dao-blur-sm);
-  box-shadow: none !important;
-  transition: transform .18s ease, background .18s ease, border-color .18s ease, opacity .18s ease;
-}
-.dao-root .btn:hover{
-  transform: translateY(-1px);
-  background: rgba(0,255,213,.12);
-  border-color: rgba(0,255,213,.55);
-}
-.dao-root .btn.primary{
-  border: 0;
-  color: #061018;
-  background: linear-gradient(135deg, var(--dao-emerald), var(--dao-emerald-2));
-}
-
-/* Light theme botones */
-html.light .dao-root .btn{
-  color: rgba(14,26,24,.92);
-  background: rgba(13,185,166,.14);
-  border-color: rgba(13,185,166,.40);
-}
-html.light .dao-root .btn.primary{
-  color: #ffffff;
-  background: linear-gradient(135deg, #0db9a6, #0aa0ff);
-}
-
-/* ------------------------------
-   4) TABS (pills) legibles + esmeralda
--------------------------------- */
-.dao-root .dao-tab{
-  border-radius: 999px;
-  border: 1px solid rgba(0,255,213,.28);
-  background: rgba(0,255,213,.06);
-  color: var(--dao-text);
-  font-weight: 900;
+  font-size: 12px;
+  cursor: pointer;
+  line-height: 1;
   box-shadow: none !important;
   transition: transform .18s ease, background .18s ease, border-color .18s ease;
 }
-.dao-root .dao-tab:hover{
+.dao-tab:hover {
   transform: translateY(-1px);
-  background: rgba(0,255,213,.10);
-  border-color: rgba(0,255,213,.45);
+  background: rgba(0, 255, 213, .10);
+  border-color: rgba(0, 255, 213, .45);
 }
-.dao-root .dao-tab.active{
+.dao-tab.active {
   border: 0;
   color: #061018;
   background: linear-gradient(135deg, var(--dao-emerald), var(--dao-emerald-2));
 }
 
-/* ------------------------------
-   5) PILLS / VBTN con colores semánticos (sin pisarse)
-   ✅ Like rojo, Comment azul, Points dorado
-   ✅ En ambos temas con contraste suave
--------------------------------- */
-.pill.like,
-.pill.comment,
-.pill.points,
-.vbtn[data-like],
-.vbtn[data-point]{
+html.light .dao-tab {
+  background: rgba(255, 255, 255, .65);
+  border-color: rgba(0, 0, 0, .06);
+  color: rgba(14, 26, 24, .75);
+}
+html.light .dao-tab.active {
+  background: linear-gradient(135deg, #2fd8b3, #4fe6c1);
+  color: #05312a;
+  box-shadow: 0 8px 22px rgba(47, 216, 179, .35) !important;
+}
+
+/* ----------------------------------------------------------
+   10. PILLS — like, comment, points
+   ---------------------------------------------------------- */
+.dao-root .pill.like,
+.dao-root .pill.comment,
+.dao-root .pill.points,
+.dao-root .vbtn[data-like],
+.dao-root .vbtn[data-point] {
   border-radius: 999px;
   font-weight: 900;
   backdrop-filter: blur(8px) saturate(135%);
@@ -1108,309 +494,300 @@ html.light .dao-root .btn.primary{
   transition: background .18s ease, border-color .18s ease, transform .18s ease, color .18s ease;
 }
 
-/* DARK */
+/* Dark */
 html:not(.light) .dao-root .pill.like,
-html:not(.light) .dao-root .vbtn[data-like]{
-  background: rgba(255,70,90,0.20);
-  color: rgba(255,230,235,0.95);
-  border: 1px solid rgba(255,70,90,0.40);
+html:not(.light) .dao-root .vbtn[data-like] {
+  background: rgba(255, 70, 90, .20); color: rgba(255, 230, 235, .95);
+  border: 1px solid rgba(255, 70, 90, .40);
 }
-html:not(.light) .dao-root .pill.comment{
-  background: rgba(90,160,255,0.20);
-  color: rgba(220,235,255,0.95);
-  border: 1px solid rgba(90,160,255,0.40);
+html:not(.light) .dao-root .pill.comment {
+  background: rgba(90, 160, 255, .20); color: rgba(220, 235, 255, .95);
+  border: 1px solid rgba(90, 160, 255, .40);
 }
 html:not(.light) .dao-root .pill.points,
-html:not(.light) .dao-root .vbtn[data-point]{
-  background: rgba(255,190,90,0.22);
-  color: rgba(255,242,220,0.95);
-  border: 1px solid rgba(255,190,90,0.42);
+html:not(.light) .dao-root .vbtn[data-point] {
+  background: rgba(255, 190, 90, .22); color: rgba(255, 242, 220, .95);
+  border: 1px solid rgba(255, 190, 90, .42);
 }
-
-/* hover dark */
 html:not(.light) .dao-root .pill.like:hover,
 html:not(.light) .dao-root .pill.comment:hover,
 html:not(.light) .dao-root .pill.points:hover,
 html:not(.light) .dao-root .vbtn[data-like]:hover,
-html:not(.light) .dao-root .vbtn[data-point]:hover{
-  transform: translateY(-1px);
-  opacity: .95;
-}
+html:not(.light) .dao-root .vbtn[data-point]:hover { transform: translateY(-1px); opacity: .95; }
 
-/* active dark */
-html:not(.light) .dao-root .pill.like.active{ background: rgba(255,70,90,0.32); }
-html:not(.light) .dao-root .pill.comment.active{ background: rgba(90,160,255,0.30); }
-html:not(.light) .dao-root .pill.points.active{ background: rgba(255,190,90,0.34); }
+html:not(.light) .dao-root .pill.like.active    { background: rgba(255, 70, 90, .32); }
+html:not(.light) .dao-root .pill.comment.active { background: rgba(90, 160, 255, .30); }
+html:not(.light) .dao-root .pill.points.active  { background: rgba(255, 190, 90, .34); }
 
-/* LIGHT */
+/* Light */
 html.light .dao-root .pill.like,
-html.light .dao-root .vbtn[data-like]{
-  background: rgba(255,70,90,0.10);
-  color: rgba(90,20,30,0.88);
-  border: 1px solid rgba(255,70,90,0.22);
+html.light .dao-root .vbtn[data-like] {
+  background: rgba(255, 70, 90, .10); color: rgba(90, 20, 30, .88);
+  border: 1px solid rgba(255, 70, 90, .22);
 }
-html.light .dao-root .pill.comment{
-  background: rgba(64,163,255,0.10);
-  color: rgba(20,40,90,0.86);
-  border: 1px solid rgba(64,163,255,0.22);
+html.light .dao-root .pill.comment {
+  background: rgba(64, 163, 255, .10); color: rgba(20, 40, 90, .86);
+  border: 1px solid rgba(64, 163, 255, .22);
 }
 html.light .dao-root .pill.points,
-html.light .dao-root .vbtn[data-point]{
-  background: rgba(255,205,120,0.12);
-  color: rgba(90,60,10,0.86);
-  border: 1px solid rgba(255,205,120,0.26);
+html.light .dao-root .vbtn[data-point] {
+  background: rgba(255, 205, 120, .12); color: rgba(90, 60, 10, .86);
+  border: 1px solid rgba(255, 205, 120, .26);
 }
+html.light .dao-root .pill.like.active    { background: rgba(255, 70, 90, .20); }
+html.light .dao-root .pill.comment.active { background: rgba(64, 163, 255, .18); }
+html.light .dao-root .pill.points.active  { background: rgba(255, 205, 120, .22); }
 
-/* ------------------------------
-   6) CARRUSEL — flechas overlay transparentes (no ocupan margen)
--------------------------------- */
-.dao-root .carousel{
+/* ----------------------------------------------------------
+   11. PANEL SUPERIOR
+   ---------------------------------------------------------- */
+.dao-panel { margin-top: 16px; padding: 14px; }
+.dao-panel-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.dao-panel-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+html.light .dao-root .dao-panel { background: rgba(255, 255, 255, .78) !important; }
+
+/* ----------------------------------------------------------
+   12. CARRUSEL
+   ---------------------------------------------------------- */
+.dao-root .carousel {
   position: relative;
   display: block;
   margin-top: 12px;
 }
-.dao-root .car-viewport{
-  width: 100%;
-}
+.dao-root .car-viewport { width: 100%; }
+.dao-root .car-track { display: flex; gap: 10px; padding: 0 !important; transform: translateX(0); transition: transform .25s ease; will-change: transform; }
+.dao-root .car-card { min-width: 100% !important; width: 100% !important; border-radius: 22px; padding: 12px; padding-left: 35px; padding-right: 35px; cursor: pointer; }
+.dao-root .car-title { font-weight: 1000; margin: 2px 0 6px; }
+.dao-root .car-meta  { font-size: 12px; opacity: .75; }
+.dao-root .car-snippet { margin-top: 6px; opacity: .9; white-space: normal; }
+.dao-root .car-kpis { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+
+
 .dao-root .car-btn{
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 10;
-  width: 44px;
-  height: 44px;
-  border-radius: 16px;
-  background: rgba(0,255,213,.08);
-  border: 1px solid rgba(0,255,213,.25);
+
+  /* más hacia afuera */
+  width: 48px;
+  height: 48px;
+
+  /* ← clave: sácalas del contenido */
+  margin: 0 -12px;
+
+  border-radius: 18px;
+
+  /* sólido elegante */
+  background: #0b1820; /* color sólido base */
+  border: 1px solid rgba(0, 255, 213, .35);
+
   color: var(--dao-text);
-  opacity: .70;
+  opacity: 1;
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  box-shadow:
+    0 0 0 1px rgba(0,255,213,.18) inset,
+    0 12px 28px rgba(0,0,0,.45);
+
+  z-index: 20;
 }
-.dao-root #carPrev.car-btn{ left: 10px; }
-.dao-root #carNext.car-btn{ right: 10px; }
+
+
+.dao-root #carPrev.car-btn{
+  left: -8px;   /* ← fuera del card */
+}
+
+.dao-root #carNext.car-btn{
+  right: -8px;  /* ← fuera del card */
+}
+
+/* hover más claro */
 .dao-root .car-btn:hover{
-  opacity: .95;
-  background: rgba(0,255,213,.14);
+  background: #0e222c;
+  box-shadow:
+    0 0 0 1px rgba(0,255,213,.28) inset,
+    0 14px 34px rgba(0,0,0,.5);
 }
 
-/* Carrusel full width */
-.dao-root .car-track{ padding: 0 !important; }
-.dao-root .car-card{
-  min-width: 100% !important;
-  width: 100% !important;
-  border-radius: 22px;
+.dao-root .car-dots { display: flex; gap: 6px; justify-content: center; margin-top: 10px; }
+.dao-root .dot { width: 8px; height: 8px; border-radius: 99px; border: 1px solid var(--border); background: rgba(255,255,255,.10); opacity: .65; }
+.dao-root .dot.active { opacity: 1; background: linear-gradient(135deg, var(--dao-emerald), var(--dao-emerald-2)); border: 0; }
+
+@media (max-width: 720px) {
+  .dao-root .car-btn { width: 40px; height: 40px; }
 }
 
+/* ----------------------------------------------------------
+   13. FEED (posts, votes, snippets)
+   ---------------------------------------------------------- */
+.dao-feed-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; }
+.dao-feed-tools { display: flex; gap: 8px; align-items: center; }
+#search { min-width: 220px; }
+@media (max-width: 720px) { #search { min-width: 180px; } }
 
+.feed { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
 
-
-/* ------------------------------
-   7) MODAL DAO — premium iOS (FIX REAL + GLOW)
-   - Items del modal feed 100% transparentes (SIN backdrop-filter)
-   - Bordes esmeralda (light + dark)
-   - Títulos esmeralda (light + dark)
-   - Glow esmeralda leve al hover (ambos temas)
--------------------------------- */
-
-/* El modal SIEMPRE cubre la pantalla */
-.dao-root .modal{
-  overflow: hidden;
-}
-
-
-
-/* =====================================
-   MODAL BODY — scroll + spacing
-   ===================================== */
-.dao-root #daoModalBody{
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-
-  display: flex;
-  flex-direction: column;
-
-  gap: 6px;          /* separación compacta */
-  padding-right: 4px;
-}
-
-/* =====================================
-   MODAL FEED — sheet-item 100% TRANSPARENTE REAL
-   CLAVE: backdrop-filter NONE (evita velo blanco)
-   ===================================== */
-.dao-root #daoModal #daoModalBody .sheet-item,
-.dao-root #daoModal #daoModalBody .sheet-item:hover,
-.dao-root #daoModal #daoModalBody .sheet-item:active,
-.dao-root #daoModal #daoModalBody .sheet-item:focus,
-.dao-root #daoModal #daoModalBody .sheet-item:focus-within{
-  margin: 0;
-  border-radius: var(--dao-r-sub);
+.post {
+  display: block;
   padding: 12px;
-  cursor: pointer;
-
-  /* ✅ TRANSPARENCIA 100% SIEMPRE */
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
-
-  /* ✅ FIX REAL del “brillo blanco” */
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-
-  border: 1px solid transparent;
-
-  filter: none !important;
-
-  transition: transform .18s ease, box-shadow .18s ease;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, .03);
+  position: relative;
 }
+.post-body    { cursor: pointer; pointer-events: auto; }
+.post-title   { font-weight: 1000; margin: 0 0 2px; }
+.post-meta    { font-size: 12px; opacity: .75; margin-top: 2px; }
+.post-snippet { white-space: pre-line; margin-top: 8px; display: block; }
+.post-tags    { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
 
-/* Apaga overlays si un CSS global los mete */
-.dao-root #daoModal #daoModalBody .sheet-item::before,
-.dao-root #daoModal #daoModalBody .sheet-item::after{
-  content: none !important;
-}
-
-/* =====================================
-   BORDES (LIGHT) — esmeralda
-   ===================================== */
-html.light .dao-root #daoModal #daoModalBody .sheet-item{
-  box-shadow:
-    inset 0 0 0 1px var(--dao-edge),
-    inset 0 0 0 2px var(--dao-edge-soft),
-    0 0 0 1px var(--dao-edge-emerald);
-}
-
-/* Hover LIGHT — borde + glow esmeralda leve (SIN fondo) */
-html.light .dao-root #daoModal #daoModalBody .sheet-item:hover{
-  transform: translateY(-1px);
-  box-shadow:
-    inset 0 0 0 1px rgba(13,185,166,.90),
-    inset 0 0 0 2px rgba(13,185,166,.50),
-    0 0 0 1px rgba(13,185,166,.30),
-    0 10px 28px rgba(13,185,166,.16); /* ✨ glow externo sutil */
-}
-
-/* =====================================
-   BORDES (DARK) — esmeralda claro (NO blanco)
-   ===================================== */
-html:not(.light) .dao-root #daoModal #daoModalBody .sheet-item{
-  box-shadow:
-    inset 0 0 0 1px rgba(0,255,213,.26),
-    inset 0 0 0 2px rgba(0,255,213,.14),
-    0 0 0 1px rgba(0,255,213,.18);
-}
-
-/* Hover DARK — borde + glow esmeralda leve (SIN fondo) */
-html:not(.light) .dao-root #daoModal #daoModalBody .sheet-item:hover{
-  transform: translateY(-1px);
-  box-shadow:
-    inset 0 0 0 1px rgba(0,255,213,.40),
-    inset 0 0 0 2px rgba(0,255,213,.22),
-    0 0 0 1px rgba(0,255,213,.28),
-    0 12px 32px rgba(0,255,213,.14); /* ✨ glow externo sutil */
-}
-
-/* =====================================
-   TÍTULOS — esmeralda en DAO y en modal feed (light + dark)
-   ===================================== */
-.dao-root .post-title,
-.dao-root #daoModal #daoModalBody .sheet-item .t{
-  color: var(--dao-title) !important;
-  font-weight: 900;
-  letter-spacing: -0.01em;
-}
-
-/* ===============================
-   DARK — títulos y bordes ESMERALDA (override)
-   (Esto asegura que en dark TODO título se vea esmeralda)
-   =============================== */
-html:not(.light) .dao-root{
-  --dao-title: rgba(0,255,213,.92);
-
-  --dao-edge: rgba(0,255,213,.38);
-  --dao-edge-soft: rgba(0,255,213,.22);
-  --dao-edge-emerald: rgba(0,255,213,.18);
-
-  --dao-inset-hi: rgba(255,255,255,.06);
-  --dao-inset-lo: rgba(0,0,0,.30);
-}
-
-/* CSS Post autor kebab */
-.post-author{
+.post-author {
   margin-top: 4px;
   font-size: 12px;
   opacity: .9;
-  font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-family: var(--mono);
 }
-
-.post-author-link{
+.post-author-link {
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;
   opacity: .95;
 }
-.post-author-link:hover{
-  opacity: 1;
-  text-decoration-thickness: 2px;
-}
+.post-author-link:hover { opacity: 1; text-decoration-thickness: 2px; }
 
-.car-author{
-  margin-top: 6px;
+.vote         { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.vnum         { font-weight: 1000; opacity: .9; }
+.vbtn         { width: 40px; height: 40px; border-radius: 16px; border: 1px solid var(--border); background: rgba(255,255,255,.06); cursor: pointer; font-weight: 1000; pointer-events: auto; }
+
+/* ----------------------------------------------------------
+   14. MINI-GRIDS
+   ---------------------------------------------------------- */
+.mini-grid { margin-top: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.mini { border-radius: 18px; border: 1px solid var(--border); background: rgba(255,255,255,.03); padding: 12px; cursor: pointer; }
+.mini .t  { font-weight: 1000; }
+.mini .m  { font-size: 12px; opacity: .75; margin-top: 4px; }
+.mini .k  { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+.mini-snippet { margin-top: 8px; font-size: 12px; opacity: .86; line-height: 1.35; }
+
+/* ----------------------------------------------------------
+   15. PILLS GENÉRICAS
+   ---------------------------------------------------------- */
+.pill {
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, .06);
+  padding: 6px 10px;
   font-size: 12px;
-  opacity: .9;
-  font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace);
-}
-
-
-
-/* =========================
-   KEBAB MENU (FASE 4.1) + FIX LAYOUT
-   - Sin duplicados
-   - Evita que el header empuje el snippet
-   - El menú no mete espacio (absolute)
-========================= */
-
-/* Tokens locales (para no repetir colores) */
-:root{
-  --kebab-bg-dark: rgba(10,20,26,.70);
-  --kebab-bg-light: rgba(255,255,255,.86);
-  --kebab-hover: rgba(0,255,213,.10);
-  --kebab-glow: rgba(0,255,213,.20);
-  --kebab-glow2: rgba(0,255,213,.12);
-}
-
-/* Asegura que el card pueda posicionar el menú */
-.post,
-.car-card,
-.mini,
-#daoModalBody .sheet-item{
+  font-weight: 900;
   position: relative;
+  z-index: 5;
+  pointer-events: auto;
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
-/* Header row: alinea título/autor/meta con kebab sin empujar contenido */
+.tag {
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, .05);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  opacity: .9;
+}
+
+/* ----------------------------------------------------------
+   16. FORMULARIOS (crear post)
+   ---------------------------------------------------------- */
+.form { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+.form .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+.dao-root input,
+.dao-root textarea,
+.dao-root select {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, .04);
+  color: var(--text);
+  padding: 10px 12px;
+  outline: none;
+}
+.dao-root textarea { resize: vertical; }
+.dao-root input:focus,
+.dao-root textarea:focus,
+.dao-root select:focus {
+  box-shadow: 0 0 0 4px rgba(0, 255, 213, .10);
+  border-color: rgba(0, 255, 213, .35);
+}
+
+/* ----------------------------------------------------------
+   17. COMENTARIOS
+   ---------------------------------------------------------- */
+.comment-preview { margin-top: 8px; }
+.comment { position: relative; }
+
+.comment.comment-l1 {
+  margin-top: 12px;
+  padding-left: 12px;
+  border-left: 2px solid rgba(255, 255, 255, .12);
+  font-size: .90rem;
+}
+.comment.comment-l1 .comment-head { font-size: .80rem; opacity: .82; display: flex; gap: 8px; align-items: baseline; }
+.comment.comment-l1 p             { margin: 4px 0 0; line-height: 1.45; opacity: .92; }
+.comment.comment-l1 .pill         { font-size: .75rem; opacity: .88; }
+
+.comment.comment-l2 {
+  margin-top: 8px;
+  margin-left: 14px;
+  padding-left: 10px;
+  border-left: 1px dashed rgba(255, 255, 255, .10);
+  font-size: .82rem;
+  opacity: .86;
+}
+.comment.comment-l2 .comment-head { font-size: .76rem; opacity: .78; }
+.comment.comment-l2 p             { margin: 2px 0 0; line-height: 1.40; opacity: .90; }
+.comment.comment-l2 .pill         { font-size: .70rem; opacity: .75; }
+.comment.comment-l2 .kebab-menu   { right: 8px; top: 38px; }
+
+.comment-author     { font-weight: 700; margin-right: 8px; cursor: pointer; }
+.comment-headrow    { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.comment-headrow > div { flex: 1 1 auto; min-width: 0; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+
+/* Post headrow (kebab alineado) */
 .post-headrow,
-.car-headrow{
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-/* El bloque izquierdo (texto) debe poder crecer sin forzar wraps raros */
+.car-headrow { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .post-headrow > div,
-.car-headrow > div{
-  flex: 1 1 auto;
-  min-width: 0; /* clave: evita que el texto empuje/rompa layout */
-}
+.car-headrow  > div { flex: 1 1 auto; min-width: 0; }
 
-/* Botón kebab */
-.kebab-btn{
+.car-author { margin-top: 6px; font-size: 12px; opacity: .9; font-family: var(--mono); }
+
+/* ----------------------------------------------------------
+   18. KEBAB MENU
+   ---------------------------------------------------------- */
+.dao-root .post,
+.dao-root .car-card,
+.dao-root .mini,
+.dao-root #daoModalBody .sheet-item { position: relative; }
+
+.kebab-btn {
   flex: 0 0 auto;
   width: 34px;
   height: 34px;
   margin-left: 8px;
   border-radius: 14px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,.06);
+  background: rgba(255, 255, 255, .06);
   color: inherit;
   display: inline-flex;
   align-items: center;
@@ -1418,23 +795,12 @@ html:not(.light) .dao-root{
   font-weight: 1000;
   cursor: pointer;
   z-index: 20;
-  transform: translateY(0);
   transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
 }
+.kebab-btn:hover { box-shadow: 0 0 0 1px var(--dao-kebab-glow), 0 0 18px rgba(0,255,213,.12); transform: translateY(-1px); }
+.kebab-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(0, 255, 213, .22); }
 
-.kebab-btn:hover{
-  box-shadow: 0 0 0 1px var(--kebab-glow), 0 0 18px var(--kebab-glow2);
-  transform: translateY(-1px);
-}
-
-/* Accesibilidad (keyboard) */
-.kebab-btn:focus-visible{
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(0,255,213,.22);
-}
-
-/* Contenedor del menú (SIEMPRE fuera del flujo para no meter espacios) */
-.kebab-menu{
+.kebab-menu {
   position: absolute;
   right: 12px;
   top: 44px;
@@ -1442,451 +808,601 @@ html:not(.light) .dao-root{
   padding: 6px;
   border-radius: 16px;
   border: 1px solid var(--border);
-  background: var(--kebab-bg-dark);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  background: var(--dao-kebab-bg);
+  backdrop-filter: var(--blur-md);
+  -webkit-backdrop-filter: var(--blur-md);
   z-index: 30;
 }
+.kebab-menu[hidden] { display: none !important; }
 
-html.light .kebab-menu{
-  background: var(--kebab-bg-light);
-}
-
-/* Items del menú */
-.kebab-item{
+.kebab-item {
   width: 100%;
   text-align: left;
   border: 0;
   background: transparent;
   color: inherit;
-  padding: 10px 10px;
+  padding: 10px;
   border-radius: 12px;
   font-weight: 900;
   cursor: pointer;
-  transition: background .15s ease, transform .15s ease;
+  transition: background .15s ease;
+}
+.kebab-item:hover { background: var(--dao-kebab-hover); }
+
+/* ----------------------------------------------------------
+   19. MODAL DEL DAO
+   ---------------------------------------------------------- */
+.dao-root .modal { overflow: hidden; }
+
+/* Layout centrado con offset del topbar */
+.dao-root #daoModal.modal { display: none; position: fixed; inset: 0; z-index: 2000; }
+.dao-root #daoModal.modal.open {
+  display: flex !important;
+  justify-content: center;
+  align-items: flex-start;
+  padding: calc(var(--topbar-h) + 16px) 12px 18px;
+}
+.dao-root #daoModal .modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(0, 0, 0, .62) !important;
 }
 
-.kebab-item:hover{
-  background: var(--kebab-hover);
-}
-
-/* FIX: el snippet debe verse pegado al header, no “brincar” o desaparecer */
-.post-snippet{
-  display: block;
-  margin-top: 8px; /* baja este valor a 4px si lo quieres más compacto */
-}
-
-/* Evita cortes raros por overflow si algún estilo global lo fuerza */
-.post-body,
-.post,
-.mini{
-  overflow: visible;
-}
-
-.mini-snippet{
-  margin-top: 8px;
-  font-size: 12px;
-  opacity: .86;
-  line-height: 1.35;
-}
-
-
-
-
-
-/* =====================================================
-   DAO — FORCE MODAL LOOK EVERYWHERE (NO DROP SHADOW + TRANSPARENT SUBCARDS)
-   (Topbar / Bottom-nav / Cards / Posts / Panels)
-   Pegar AL FINAL de dao/css/style.css (REEMPLAZA el bloque anterior)
-===================================================== */
-
-/* 1) Tokens: copiamos el look del modal DAO */
-:root{
-  --dao-ui-blur: blur(22px) saturate(140%);
-  --dao-ui-glow-a: rgba(0,255,213,.22);
-  --dao-ui-glow-b: rgba(0,163,255,.18);
-
-  /* Dark (igual al modal) */
-  --dao-ui-surface-dark: rgba(10,20,26,.62);
-  --dao-ui-border-dark: rgba(0,255,213,.18);
-  --dao-ui-inset-dark: rgba(0,255,213,.10);
-
-  /* Light (igual al modal) */
-  --dao-ui-surface-light: rgba(255,255,255,.82);
-  --dao-ui-border-light: rgba(13,185,166,.18);
-  --dao-ui-inset-light: rgba(13,185,166,.10);
-
-  /* ✅ Altura topbar (para offsets consistentes) */
-  --dao-topbar-h: 72px;
-}
-
-/* =====================================================
-   A) SUPERFICIES PRINCIPALES (cards contenedoras)
-   ✅ SIN SOMBRA EXTERNA (pegadas al viewport)
-===================================================== */
-.dao-root .card,
-.dao-root .dao-panel,
-.topbar,
-.bottom-nav{
-  backdrop-filter: var(--dao-ui-blur) !important;
-  -webkit-backdrop-filter: var(--dao-ui-blur) !important;
-  background-image: none !important;
-  position: relative;
-  overflow: visible;
-}
-
-/* DARK: main containers */
-html:not(.light) .dao-root .card,
-html:not(.light) .dao-root .dao-panel,
-html:not(.light) .topbar,
-html:not(.light) .bottom-nav{
-  background: var(--dao-ui-surface-dark) !important;
-  border: 1px solid var(--dao-ui-border-dark) !important;
-
-  /* ✅ solo contorno/inset (NO drop shadow) */
-  box-shadow:
-    inset 0 0 0 1px var(--dao-ui-inset-dark) !important;
-}
-
-/* LIGHT: main containers */
-html.light .dao-root .card,
-html.light .dao-root .dao-panel,
-html.light .topbar,
-html.light .bottom-nav{
-  background: var(--dao-ui-surface-light) !important;
-  border: 1px solid var(--dao-ui-border-light) !important;
-
-  /* ✅ solo contorno/inset (NO drop shadow) */
-  box-shadow:
-    inset 0 0 0 1px var(--dao-ui-inset-light) !important;
-}
-
-/* Glow para contenedores principales (más sutil para que se “pegue”) */
-.dao-root .card::after,
-.dao-root .dao-panel::after,
-.topbar::after,
-.bottom-nav::after{
-  content:"";
-  position:absolute;
-  inset:-1px;
-  pointer-events:none;
-  border-radius:inherit;
-  background:
-    radial-gradient(420px 220px at 15% 0%, var(--dao-ui-glow-a), transparent 65%),
-    radial-gradient(420px 220px at 85% 100%, var(--dao-ui-glow-b), transparent 70%);
-  opacity:.45;             /* ✅ más bajo (antes .65) */
-  filter:blur(14px);
-}
-
-/* Quita elevación por hover (pegado al viewport) */
-.dao-root .card:hover,
-.dao-root .dao-panel:hover{
+/* Modal card glass */
+.dao-root #daoModal .modal-card {
+  margin: 0 !important;
+  width: min(980px, calc(100vw - 24px)) !important;
+  max-height: calc(100vh - var(--topbar-h) - 34px) !important;
+  border-radius: 26px !important;
+  overflow: hidden !important;
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  backdrop-filter: var(--blur-lg) !important;
+  -webkit-backdrop-filter: var(--blur-lg) !important;
+  box-shadow: none !important;
   transform: none !important;
 }
-
-/* =====================================================
-   B) SUB-CARDS (cards sobre otras cards)
-   ✅ TOTALMENTE TRANSPARENTES para que resalte el fondo vivo
-   (post, mini, car-card, car-viewport)
-===================================================== */
-.dao-root .post,
-.dao-root .mini,
-.dao-root .car-card,
-.dao-root .car-viewport{
-  backdrop-filter: var(--dao-ui-blur) !important;
-  -webkit-backdrop-filter: var(--dao-ui-blur) !important;
-
-  /* ✅ transparente real (sin “panel” sólido) */
-  background: transparent !important;
-  background-image: none !important;
-
-  /* borde sutil para separar sin sombra */
-  border: 1px solid color-mix(in oklab, var(--border), transparent 40%) !important;
-
-  /* sin sombra externa; solo hairline interno */
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06) !important;
-
-  position: relative;
-  overflow: hidden; /* aquí sí recortamos halo interno */
+html:not(.light) .dao-root #daoModal .modal-card {
+  background: rgba(10, 20, 26, .48) !important;
+  border: 1px solid rgba(0, 255, 213, .10) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06) !important;
+}
+html.light .dao-root #daoModal .modal-card {
+  background: rgba(255, 255, 255, .74) !important;
+  border: 1px solid rgba(13, 185, 166, .10) !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .06) !important;
 }
 
-/* Light: borde un poco más visible sin “plateado” */
+/* Halo muy tenue */
+.dao-root #daoModal .modal-card::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(420px 220px at 15% 0%,   rgba(0, 255, 213, .18), transparent 65%),
+    radial-gradient(420px 220px at 85% 100%, rgba(0, 163, 255, .14), transparent 70%);
+  opacity: .18 !important;
+  filter: blur(14px);
+}
+
+/* Header y body transparentes */
+.dao-root #daoModal .modal-headbar  { flex: 0 0 auto !important; background: transparent !important; border-bottom: 1px solid rgba(255,255,255,.10) !important; }
+html.light .dao-root #daoModal .modal-headbar { border-bottom-color: rgba(0,0,0,.08) !important; }
+.dao-root #daoModal .modal-body     { background: transparent !important; }
+
+/* Body scrollable */
+.dao-root #daoModalBody {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 4px;
+}
+
+/* Sheet items del modal — transparentes sin backdrop */
+.dao-root #daoModal #daoModalBody .sheet-item {
+  margin: 0;
+  border-radius: var(--dao-r-sub);
+  padding: 12px;
+  cursor: pointer;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid transparent;
+  filter: none !important;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.dao-root #daoModal #daoModalBody .sheet-item::before,
+.dao-root #daoModal #daoModalBody .sheet-item::after { content: none !important; }
+
+/* Bordes de sheet-item light */
+html.light .dao-root #daoModal #daoModalBody .sheet-item {
+  box-shadow: inset 0 0 0 1px var(--dao-edge), inset 0 0 0 2px var(--dao-edge-soft), 0 0 0 1px var(--dao-edge-emerald);
+}
+html.light .dao-root #daoModal #daoModalBody .sheet-item:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 0 0 1px rgba(13,185,166,.90), inset 0 0 0 2px rgba(13,185,166,.50),
+    0 0 0 1px rgba(13,185,166,.30), 0 10px 28px rgba(13,185,166,.16);
+}
+
+/* Bordes de sheet-item dark */
+html:not(.light) .dao-root #daoModal #daoModalBody .sheet-item {
+  box-shadow: inset 0 0 0 1px rgba(0,255,213,.26), inset 0 0 0 2px rgba(0,255,213,.14), 0 0 0 1px rgba(0,255,213,.18);
+}
+html:not(.light) .dao-root #daoModal #daoModalBody .sheet-item:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 0 0 1px rgba(0,255,213,.40), inset 0 0 0 2px rgba(0,255,213,.22),
+    0 0 0 1px rgba(0,255,213,.28), 0 12px 32px rgba(0,255,213,.14);
+}
+
+/* Offset del modal genérico del shell (para cuando no es #daoModal) */
+.dao-root .modal.open .modal-card {
+  margin-top: calc(var(--topbar-h) + 16px) !important;
+}
+.dao-root .modal-card {
+  max-height: calc(100vh - var(--topbar-h) - 28px) !important;
+}
+
+/* Títulos dentro del modal */
+.dao-root .post-title,
+.dao-root #daoModal #daoModalBody .sheet-item .t {
+  color: var(--dao-title) !important;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+/* ----------------------------------------------------------
+   20. LIGHT THEME — DAO (Apple / VisionOS)
+      Solo sobreescribe lo que no está cubierto por los bloques
+      html.light anteriores.
+   ---------------------------------------------------------- */
+html.light {
+  --bg:      #f4f6f7;
+  --panel:   rgba(255, 255, 255, .72);
+  --border:  rgba(0, 0, 0, .06);
+  --text:    #0e1a18;
+  --muted:   rgba(14, 26, 24, .55);
+}
+
+/* ----------------------------------------------------------
+   21. TOUCH / POINTER
+   ---------------------------------------------------------- */
+.pill, .car-card, .post, .mini, .vbtn, .post-body { touch-action: manipulation; }
+.post-body, .vbtn { pointer-events: auto; cursor: pointer; }
+.dao-root .post, .dao-root .mini { overflow: visible; }
+
+/* ----------------------------------------------------------
+   22. MODAL BODY GLOBAL (por si lo usa el shell)
+   ---------------------------------------------------------- */
+.dao-root .modal-body { padding: 16px; }
+
+/* ========================================= 
+ FIX ENS BRAND: elimina caja del punto "." 
+ ========================================= */
+
+/* El brand NO debe comportarse como flex */
+.brand-link{
+  display: inline !important;
+}
+
+/* El contenedor tipográfico es inline */
+.brand{
+  display: inline !important;
+}
+
+/* El punto NO debe ser “chip” ni ítem con caja */
+.brand .dot{
+  display: inline !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+/* Seguridad: sin pseudo-elementos */
+.brand .dot::before,
+.brand .dot::after{
+  content: none !important;
+}
+
+/* =========================================
+   DAO — FIX bordes “dobles” (border + inset)
+   Objetivo: que topbar/navbar no se vean gruesos
+   y que empaten con el disclaimer
+========================================= */
+
+/* 1) TOPBAR: deja solo una línea (abajo) y quita el inset que engrosa */
+html:not(.light) .dao-root .topbar{
+  border: 0 !important;
+  border-bottom: 1px solid rgba(255,255,255,.10) !important;
+  box-shadow: none !important; /* <- quita inset 0 0 0 1px */
+}
+
+html.light .dao-root .topbar{
+  border: 0 !important;
+  border-bottom: 1px solid rgba(0,0,0,.08) !important;
+  box-shadow: none !important;
+}
+
+/* 2) BOTTOM NAV: deja solo una línea (arriba) y quita el inset */
+html:not(.light) .dao-root .bottom-nav{
+  border: 0 !important;
+  border-top: 1px solid rgba(255,255,255,.10) !important;
+  box-shadow: none !important;
+}
+
+html.light .dao-root .bottom-nav{
+  border: 0 !important;
+  border-top: 1px solid rgba(0,0,0,.08) !important;
+  box-shadow: none !important;
+}
+
+
+/* =========================================
+   DAO — LIGHT POLISH (VisionOS)
+   - Flechas claras (no cajas negras)
+   - Cards más transparentes
+   - Borde esmeralda suave
+   - Sombras mínimas (sin contraste feo)
+========================================= */
+
+/* 1) Flechas del carrusel: claras + legibles en light */
+html.light .dao-root .car-btn{
+  background: rgba(255,255,255,.86) !important;
+  border: 1px solid rgba(13,185,166,.22) !important;
+  color: rgba(14,26,24,.92) !important; /* flecha visible */
+  box-shadow:
+    0 10px 22px rgba(0,0,0,.10),
+    0 0 0 1px rgba(13,185,166,.08) inset !important;
+}
+
+html.light .dao-root .car-btn:hover{
+  background: rgba(255,255,255,.94) !important;
+  border-color: rgba(13,185,166,.30) !important;
+  box-shadow:
+    0 12px 26px rgba(0,0,0,.12),
+    0 0 0 1px rgba(13,185,166,.12) inset !important;
+}
+
+/* 2) Cards principales (card / dao-panel): MUY transparentes + borde esmeralda leve */
+html.light .dao-root .card,
+html.light .dao-root .dao-panel{
+  background: rgba(255,255,255,.42) !important; /* más transparente */
+  border: 1px solid rgba(13,185,166,.14) !important;
+  box-shadow:
+    0 10px 26px rgba(0,0,0,.06),
+    0 0 0 1px rgba(255,255,255,.55) inset !important;
+}
+
+/* Hover de cards clickeables: sin sombras agresivas */
+html.light .dao-root .card.clickable:hover{
+  box-shadow:
+    0 14px 32px rgba(0,0,0,.08),
+    0 0 0 1px rgba(13,185,166,.10) inset !important;
+}
+
+/* 3) Sub-cards (post/mini/car-card/car-viewport): casi glass, con borde suave */
 html.light .dao-root .post,
 html.light .dao-root .mini,
 html.light .dao-root .car-card,
 html.light .dao-root .car-viewport{
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,.06) !important;
+  background: rgba(255,255,255,.38) !important; /* antes ~.60 */
+  border: 1px solid rgba(13,185,166,.12) !important;
+  box-shadow:
+    0 8px 18px rgba(0,0,0,.05),
+    0 0 0 1px rgba(13,185,166,.06) inset !important;
 }
 
-/* Glow para sub-cards MUY tenue (para que no se sienta otra capa) */
-.dao-root .post::after,
-.dao-root .mini::after,
-.dao-root .car-card::after,
-.dao-root .car-viewport::after{
-  content:"";
-  position:absolute;
-  inset:-1px;
-  pointer-events:none;
-  border-radius:inherit;
-  background:
-    radial-gradient(420px 220px at 15% 0%, var(--dao-ui-glow-a), transparent 65%),
-    radial-gradient(420px 220px at 85% 100%, var(--dao-ui-glow-b), transparent 70%);
-  opacity:.22;            /* ✅ mucho más bajo para que “no flote” */
-  filter:blur(14px);
+/* Hover sub-cards: lift mínimo y sombra muy leve */
+html.light .dao-root .post:hover,
+html.light .dao-root .mini:hover,
+html.light .dao-root .car-card:hover{
+  box-shadow:
+    0 10px 22px rgba(0,0,0,.06),
+    0 0 0 1px rgba(13,185,166,.08) inset !important;
 }
 
-/* Sub-cards sin elevación */
-.dao-root .post:hover,
-.dao-root .mini:hover,
-.dao-root .car-card:hover{
-  transform: none !important;
-}
-
-/* =====================================================
-   C) TOPBAR / BOTTOM NAV SIEMPRE FIJAS
-===================================================== */
-.topbar{
-  position: fixed !important;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-}
-.bottom-nav{
-  position: fixed !important;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-}
-
-/* Compensa altura topbar */
-.dao-root main.container{
-  padding-top: var(--dao-topbar-h);
-}
-
-/* =====================================================
-   D) MODAL debajo de TOPBAR (offset)
-===================================================== */
-.modal.open .modal-card{
-  margin-top: calc(var(--dao-topbar-h) + 16px) !important;
-}
-.dao-root #daoModal .modal-card{
-  max-height: calc(100vh - var(--dao-topbar-h) - 28px) !important;
+/* 4) (Opcional) bajar aún más el “halo” en light para que no ensucie */
+html.light .dao-root .postafter,
+html.light .dao-root .miniafter,
+html.light .dao-root .car-cardafter,
+html.light .dao-root .car-viewportafter{
+  opacity: .12 !important;
 }
 
 
-/* =====================================================
-   DAO — MODAL POSTS (FIX REAL)
-   - Centrado perfecto (flex)
-   - Sin sombras externas (pegado al viewport)
-   - Borde suave (no esmeralda agresivo)
-   - Transparente tipo glass (resalta dao-bg)
-   Pegar AL FINAL de /dao/css/style.css
-===================================================== */
-
-/* El modal del DAO: layout centrado real */
-.dao-root #daoModal.modal{
-  display: none; /* base */
-  position: fixed;
-  inset: 0;
-  z-index: 2000; /* 🔥 arriba del topbar (si lo quieres debajo, baja a 120) */
+/* =========================================
+   DAO — mantener identidad esmeralda SIN tocar tokens globales
+========================================= */
+html.light .dao-root{
+  --dao-emerald: #2fd8b3;
+  --dao-emerald-2: #4fe6c1;
 }
 
-/* Cuando abre */
-.dao-root #daoModal.modal.open{
-  display: flex !important;
-  justify-content: center;
-  align-items: flex-start;
+/* =========================================
+   DAO — MODAL MATCH con SHELL (LIGHT + GLOW)
+   Objetivo: mismo brillo/halo y “glass” que otros modales
+========================================= */
 
-  /* espacio topbar + aire */
-  padding-top: calc(var(--dao-topbar-h, 72px) + 16px);
-  padding-bottom: 18px;
-
-  /* evita “cargarse” a un lado */
-  padding-left: 12px;
-  padding-right: 12px;
+/* 1) Backdrop: usar el mismo “peso” que el shell (no lo aclaramos de más) */
+html.light .dao-root #daoModal .modal-backdrop{
+  background: rgba(0,0,0,.62) !important; /* igual que shell */
 }
 
-/* backdrop full */
-.dao-root #daoModal .modal-backdrop{
-  position: fixed !important;
-  inset: 0 !important;
-  background: rgba(0,0,0,.62) !important;
-}
-
-/* ===== Modal card: glass suave, sin drop-shadow ===== */
-.dao-root #daoModal .modal-card{
-  margin: 0 !important;        /* ya no dependemos de margin auto del shell */
-  width: min(980px, calc(100vw - 24px)) !important;
-  max-height: calc(100vh - var(--dao-topbar-h, 72px) - 34px) !important;
-
-  border-radius: 26px !important;
-  overflow: hidden !important;
-  position: relative !important;
-
-  /* blur */
-  backdrop-filter: blur(22px) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(22px) saturate(140%) !important;
-
-  /* 🔥 sin sombra externa */
-  box-shadow: none !important;
-
-  /* evita “corrimientos” por transforms antiguos */
-  transform: none !important;
-  left: auto !important;
-  right: auto !important;
-}
-
-/* DARK: más transparente + borde suave */
-html:not(.light) .dao-root #daoModal .modal-card{
-  background: rgba(10,20,26,.48) !important;              /* más transparente */
-  border: 1px solid rgba(0,255,213,.10) !important;       /* borde suave */
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06) !important; /* hairline */
-}
-
-/* LIGHT: transparente + borde suave */
+/* 2) Modal card en LIGHT: glass natural (más sólido, menos gris sucio) */
 html.light .dao-root #daoModal .modal-card{
-  background: rgba(255,255,255,.74) !important;
-  border: 1px solid rgba(13,185,166,.10) !important;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,.06) !important;
+  background: var(--glass-light-2, rgba(255,255,255,.82)) !important;
+  border: 1px solid var(--border) !important;
+  /* deja que el modal se sienta como el resto (sin “none”) */
+  box-shadow:
+    0 24px 60px rgba(0,0,0,.16),
+    0 0 0 1px rgba(0,0,0,.06) inset !important;
 }
 
-/* halo MUY tenue (sin levantar) */
+/* 3) Halo / Glow EXACTO del shell (esto es lo que se te perdió) */
 .dao-root #daoModal .modal-card::after{
+  content:"" !important;
+  position:absolute !important;
+  inset:-1px !important;
+  pointer-events:none !important;
+  border-radius:inherit !important;
+  background:
+    radial-gradient(420px 220px at 15% 0%, rgba(0,255,213,.22), transparent 65%),
+    radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.18), transparent 70%) !important;
+  opacity:.65 !important;
+  filter: blur(14px) !important;
+}
+
+/* 4) Headbar consistente (divider suave en light como el shell) */
+html.light .dao-root #daoModal .modal-headbar{
+  border-bottom: 1px solid rgba(0,0,0,.08) !important;
+}
+
+/* =========================================
+   DAO — Modal en LIGHT: más luminoso (como los otros modales)
+   Mantiene glow/halo y recupera “blanco natural”
+========================================= */
+
+/* 1) Backdrop en LIGHT: un toque menos pesado (sin perder profundidad) */
+html.light .dao-root #daoModal .modal-backdrop{
+  background: rgba(0, 0, 0, .52) !important; /* antes se sentía muy oscuro */
+}
+
+/* 2) Modal card en LIGHT: glass más blanco / luminoso */
+html.light .dao-root #daoModal .modal-card{
+  background: rgba(255, 255, 255, .92) !important; /* <- esto da la “luz” */
+  border: 1px solid rgba(13, 185, 166, .10) !important; /* borde suave esmeralda */
+  box-shadow:
+    0 18px 46px rgba(0,0,0,.12),
+    0 0 0 1px rgba(255,255,255,.70) inset !important;
+}
+
+/* 3) Highlight superior tipo vidrio (sube la luminosidad percibida) */
+html.light .dao-root #daoModal .modal-card::before{
   content:"";
   position:absolute;
-  inset:-1px;
+  inset:0;
   pointer-events:none;
   border-radius:inherit;
   background:
-    radial-gradient(420px 220px at 15% 0%, rgba(0,255,213,.18), transparent 65%),
-    radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.14), transparent 70%);
-  opacity:.18 !important;
-  filter: blur(14px);
+    radial-gradient(ellipse 95% 70% at 50% -14%, rgba(255,255,255,.85), transparent 72%);
+  opacity:.95;
 }
 
-/* headbar/body 100% transparentes */
-.dao-root #daoModal .modal-headbar{
-  background: transparent !important;
-  border-bottom: 1px solid rgba(255,255,255,.10) !important;
-}
-html.light .dao-root #daoModal .modal-headbar{
-  border-bottom-color: rgba(0,0,0,.08) !important;
+/* 4) Glow/halo: NO lo bajamos (si lo bajas, “muere” el look)
+   Lo dejamos con la fórmula intensa que ya usa el sistema */
+html.light .dao-root #daoModal .modal-card::after{
+  opacity: .65 !important;
+  filter: blur(14px) !important;
 }
 
-.dao-root #daoModal .modal-body{
-  background: transparent !important;
-}
-
-/* Items dentro del modal: transparentes (sin “tarjetitas viejas”) */
-.dao-root #daoModal #daoModalBody .sheet-item{
-  background: transparent !important;
-  border: 1px solid rgba(255,255,255,.08) !important;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06) !important;
-}
-html.light .dao-root #daoModal #daoModalBody .sheet-item{
-  border-color: rgba(0,0,0,.08) !important;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,.06) !important;
-}
-
-/* =====================================================
-   FIX: Scroll real dentro del modal del DAO (Feed / Post)
-   ===================================================== */
-
-/* 1) La tarjeta del modal debe ser layout en columna */
-.dao-root #daoModal .modal-card{
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-/* 2) Header fijo, no debe crecer */
-.dao-root #daoModal .modal-headbar{
-  flex: 0 0 auto !important;
-}
-
-/* 3) El body es el área scroll: necesita ocupar el resto */
-.dao-root #daoModalBody{
-  flex: 1 1 auto !important;
-  min-height: 0 !important;            /* CLAVE para que overflow funcione en flex */
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* =========================
-   DAO Brand H1: DAO.alemty.eth (igual que shell/DeFi)
-   - DAO. y eth en esmeralda
-   - alemty. en color base (blanco en dark / negro en light)
-========================= */
-.dao-root .h1.dao-brand{
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0;
-  flex-wrap: wrap;
-
-  /* ✅ fuerza que el título completo NO sea esmeralda */
-  color: var(--dao-text) !important;
-  text-shadow: none !important;
-}
-
-/* ✅ esmeralda (usa el token que ya cambia bien en light/dark) */
-.dao-root .h1.dao-brand .dao-brand-em{
-  color: var(--dao-title) !important;
-  text-shadow: 0 0 16px rgba(0,255,213,.14);
-}
-
-/* ✅ base (blanco/negro según tema) */
-.dao-root .h1.dao-brand .dao-brand-base{
-  color: var(--dao-text) !important;
-  text-shadow: none !important;
-}
-
-/* En tema claro: quita glow para que no se “lave” */
-html.light .dao-root .h1.dao-brand .dao-brand-em{
-  text-shadow: none !important;
-}
-
-.comment-author {
-  font-weight: 700;
-  margin-right: 8px;
-  cursor: pointer;
-}
-
-.comment-headrow > div {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-}
-
-/* ✅ Comments: headrow igual que posts (evita saltos del kebab) */
-.comment-headrow{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:10px;
-}
-
-.comment-headrow > div{
-  flex: 1 1 auto;
-  min-width: 0;
-  display:flex;
-  gap:8px;
-  align-items:baseline;
-  flex-wrap:wrap;
-}
-
-/* ✅ El menú kebab debe posicionarse relativo al comentario */
-.comment{
+/* 5) Asegura que el contenido quede encima del highlight/glow */
+html.light .dao-root #daoModal .modal-card > *{
   position: relative;
+  z-index: 2;
 }
 
-/* Ajuste fino para replies */
-.comment.comment-l2 .kebab-menu{
-  right: 8px;
-  top: 38px;
+/* =========================================================
+   DAO — FIX: Temas (dark) legibles + Inputs con fuente global
+========================================================= */
+
+/* -----------------------------------------
+1) Inputs/Select/Textareas: misma fuente que el body
+----------------------------------------- */
+.dao-root input,
+.dao-root textarea,
+.dao-root select,
+.dao-root button{
+  font-family: var(--font) !important;
+  font-variation-settings: inherit;
+  letter-spacing: inherit;
 }
 
-/* ✅ Garantiza que hidden funcione aunque alguien ponga display:block en .kebab-menu */
-.kebab-menu[hidden]{
+.dao-root input::placeholder,
+.dao-root textarea::placeholder{
+  font-family: inherit !important;
+}
+
+/* -----------------------------------------
+2) SELECT (dropdown nativo) en DARK: fondo oscuro + texto blanco
+   (en algunos browsers option/optgroup sí aplica, en otros limita)
+----------------------------------------- */
+html:not(.light) .dao-root select{
+  background: rgba(10, 20, 26, .62) !important;
+  color: rgba(239,255,251,.92) !important;
+  border-color: rgba(0,255,213,.22) !important;
+}
+
+html:not(.light) .dao-root select option,
+html:not(.light) .dao-root select optgroup{
+  background: #0b1820 !important;
+  color: rgba(239,255,251,.92) !important;
+}
+
+/* -----------------------------------------
+3) MODAL “Temas”: estilo glass azul + glow esmeralda (dark)
+   Usaremos clases .topic-group y .topic-item que añadiremos en app.js
+----------------------------------------- */
+html:not(.light) .dao-root #daoModalBody .topic-group{
+  margin: 10px 0 8px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(0,255,213,.22);
+  background: linear-gradient(135deg, rgba(0,163,255,.18), rgba(0,255,213,.14));
+  color: rgba(239,255,251,.92);
+  font-weight: 1000;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+html:not(.light) .dao-root #daoModalBody .sheet-item.topic-item{
+  background: linear-gradient(135deg, rgba(0,163,255,.12), rgba(0,255,213,.08)) !important;
+  border: 1px solid rgba(0,255,213,.18) !important;
+  box-shadow: 0 0 0 1px rgba(0,255,213,.10) inset !important;
+}
+
+html:not(.light) .dao-root #daoModalBody .sheet-item.topic-item .t{
+  color: rgba(239,255,251,.92) !important;
+}
+
+html:not(.light) .dao-root #daoModalBody .sheet-item.topic-item .m{
+  color: rgba(239,255,251,.70) !important;
+}
+
+html:not(.light) .dao-root #daoModalBody .sheet-item.topic-item:hover{
+  transform: translateY(-1px);
+  box-shadow:
+    0 14px 32px rgba(0,0,0,.35),
+    0 0 0 1px rgba(0,255,213,.18) inset !important;
+}
+
+
+/* =========================================
+   DAO — UI cleanup: ocultar botón "Temas" del panel superior
+   Ya existe "📚 Elegir tema" dentro de Crear Post
+========================================= */
+.dao-root #openTopics{
   display: none !important;
+}
+
+/* =========================================
+   DAO — UI cleanup: ocultar botón "Backrooms" del panel Relevantes
+   Ya existe en la card "Salas"
+========================================= */
+.dao-root #openRooms{
+  display: none !important;
+}
+
+
+
+/* =========================================================
+   DAO — Modal: bordes finos (sin grosor) + Topic header light pill azul con texto negro
+   - Sheet items (posts/cards del modal): esmeralda visible, 1px REAL (sin inset extra)
+   - Topic group (header de sección): NO línea; pill completo como dark, pero texto negro y borde azul más oscuro
+========================================================= */
+
+/* ---------------------------------------------------------
+1) Cards del modal (sheet-item): borde esmeralda DELGADO (1px) y visible
+   Importante: quitamos el inset para que no se vea “grueso”
+--------------------------------------------------------- */
+.dao-root #daoModalBody .sheet-item{
+  box-shadow: none !important;             /* elimina “segunda línea” */
+  border: 1px solid transparent !important; /* 1px real */
+}
+
+/* Dark: esmeralda visible pero elegante */
+html:not(.light) .dao-root #daoModalBody .sheet-item{
+  border-color: rgba(0,255,213,.24) !important;
+}
+
+/* Light: esmeralda visible pero no neón */
+html.light .dao-root #daoModalBody .sheet-item{
+  border-color: rgba(13,185,166,.22) !important;
+}
+
+/* Hover: apenas sube (sigue siendo 1px, no se vuelve grueso) */
+html:not(.light) .dao-root #daoModalBody .sheet-item:hover{
+  border-color: rgba(0,255,213,.30) !important;
+}
+html.light .dao-root #daoModalBody .sheet-item:hover{
+  border-color: rgba(13,185,166,.28) !important;
+}
+
+
+/* ---------------------------------------------------------
+2) Topic-group (header de sección) en LIGHT:
+   pill completo (no línea), azul suave más oscuro y texto NEGRO
+   -> “misma función” estética que dark (padding + background + border + radius)
+--------------------------------------------------------- */
+html.light .dao-root #daoModalBody .topic-group{
+  display: block;
+  margin: 10px 0 8px;
+  padding: 10px 12px;
+
+  border-radius: 16px !important;
+  border: 1px solid rgba(0,163,255,.34) !important; /* azul un toque más oscuro */
+  
+  background: linear-gradient(
+    135deg,
+    rgba(0,163,255,.16),
+    rgba(0,255,213,.12)
+  ) !important;
+
+  color: rgba(14,26,24,.92) !important; /* texto negro */
+  font-weight: 1000;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-size: 11px;
+
+  /* depth suave para que no se vea plano ni “línea” */
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.62),
+    0 10px 22px rgba(0,0,0,.06) !important;
+}
+
+/* Hover: micro realce (sigue pill, no cambia a línea) */
+html.light .dao-root #daoModalBody .topic-group:hover{
+  border-color: rgba(0,163,255,.42) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.68),
+    0 12px 26px rgba(0,0,0,.08) !important;
+}
+/* =========================================
+   DAO — Side card (debajo de "Último post")
+   2 botones centrados, bonitos y responsivos
+========================================= */
+
+.dao-root .dao-side-card{
+  margin-top: 12px;
+}
+
+.dao-root .dao-side-actions{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.dao-root .dao-side-actions .btn{
+  min-width: 180px;
+  justify-content: center;
+}
+
+@media (max-width: 720px){
+  .dao-root .dao-side-actions .btn{
+    width: 100%;
+    min-width: 0;
+  }
 }
