@@ -329,14 +329,115 @@ parent.replies.push({
 const DB_KEY = 'alemty.dao.posts.v1';
 const ROOMS_KEY = 'alemty.dao.rooms.v1';
 const TOPICS_KEY = 'alemty.dao.topics.v1';
+// =========================
+// Rooms (Backrooms + Gobernanza) — Keys
+// =========================
+const GOV_ROOMS_KEY = 'alemty.dao.govrooms.v1';
+const BACKROOMS_KEY = 'alemty.dao.backrooms.v1'; // <- nuevo (separa de ROOMS_KEY legacy)
 
-const DEFAULT_TOPICS = [
-  '🔬 Ciencia y Tecnología',
-  '🤖 IA & Agentes',
-  '🧱 Web3 & DAOs',
-  '🕶️ AR/VR',
-  '💬 Off Topic'
+
+const DEFAULT_TOPIC_GROUPS = [
+  {
+    label: '🌐 WEB3 & TECNOLOGÍA',
+    items: 
+[
+  '🤖 IA & Agentes Autónomos',
+  '🧑‍💻 Dev & Herramientas IA (GPT/Copilot/Claude)',
+  '🧱 Web3, Smart Contracts & Infraestructura DAO',
+  '🧾 Tokenomics, Incentivos & Gobernanza',
+  '🪪 ENS v2 & Identidad Descentralizada (DID/VC)',
+  '🧿 zkID, Pruebas de Persona & Privacidad',
+  '💧 DeFi: Lending, Stablecoins & Yield',
+  '🔁 DEX & AMMs (Pools, LP, Fees, Slippage)',
+  '🌉 L2 / Rollups & OP Stack (Base, Optimism)',
+  '🧰 Wallets, Account Abstraction (ERC-4337) & Onboarding',
+  '📈 Oráculos, Indexing (The Graph) & Data Pipelines',
+  '🧲 MEV, Mempool, Sandwich & Protección',
+  '🛰️ DePIN, Infra Física & Redes Comunitarias',
+  '🧬 Ciencia Descentralizada (DeSci)',
+  '🐧 Sistemas, Kernels & Código Abierto',
+  '📡 Hardware Libre & Telecomunicaciones',
+  '🔐 Criptografía & Ciberseguridad',
+]
+
+  },
+
+  {
+    label: '🩺 BIOHACKING, SALUD & NUTRICIÓN',
+    items: [
+      '🧑‍⚕️ Medicina, Longevidad & Optimización Humana',
+      '⚡ Bioenergética, Meridianos & Interferencias',
+      '🥩 Nutrición Evolutiva & Protocolos Metabólicos',
+      '🍳 Cocina & Preparación',
+      '🧠 Salud Mental, Neuroplasticidad & Sueño',
+      '🌿 Fitoterapia & Medicina Herbal',
+    ],
+  },
+
+  {
+    label: '🏛️ FILOSOFÍA, CONTRACULTURA & HISTORIA',
+    items: [
+      '🧠 Filosofía & Metafísica',
+      '🔮 Gnosticismo, Hermetismo & Teología',
+      '🗿 Historia Alternativa & Arqueología Prohibida',
+      '🧿 Mitología Comparada & Simbología Antigua',
+      '🎛️ Arte Digital, Glitch & Estética Cyberpunk',
+      '📐 Arquitectura, Geometría Sagrada & Diseño Espacial',
+      '🎚️ Música 432hz & Sintetizadores',
+    ],
+  },
+
+  {
+    label: '🔨 SOBERANÍA, DIY & HÁBITAT',
+    items: [
+      '🧰 DIY & Inteligencia Colectiva',
+      '🏗️ Construcción, Hidráulica & Hogar',
+      '🌱 Botánica, Árboles & Agricultura Urbana',
+      '🕸️ Soberanía Digital, Privacidad & Redes Mesh',
+      '🔋 Off-Grid & Energía Autosustentable',
+      '🪙 Finanzas Personales, Oro & Activos Refugio',
+    ],
+  },
+
+  {
+    label: '🕹️ ENTRETENIMIENTO & CULTURA POP',
+    items: [
+      '🎮 Gaming, MMORPGs & Mecánicas',
+      '🕹️ Emulación, Retro-Gaming & Modding',
+      '🎬 Cine, Anime, Manga & Lore',
+      '🖥️ Hardware Enthusiast, OC & Setups',
+    ],
+  },
+
+  {
+    label: '☕ COMUNIDAD',
+    items: [
+      '☕ Off-Topic — El Café de la DAO',
+      '🧨 Memes & Shitposting',
+      '🤝 Presentaciones & Networking',
+      '🗣️ Anécdotas, Debates & Clasificados',
+    ],
+  },
 ];
+
+function loadTopicsModel(){
+  const raw = loadJSON(TOPICS_KEY, null);
+
+  // Nuevo formato: { version, groups: [...] }
+  if (raw && typeof raw === 'object' && Array.isArray(raw.groups)) return raw;
+
+  // Compat: formato viejo = array plano
+  if (Array.isArray(raw)) {
+    return { version: 1, groups: [{ label: '📦 Temas (Legacy)', items: raw }] };
+  }
+
+  // Default nuevo
+  return { version: 1, groups: DEFAULT_TOPIC_GROUPS };
+}
+
+function saveTopicsModel(model){
+  saveJSON(TOPICS_KEY, model);
+}
 
 function loadJSON(key, fallback){
   try{
@@ -1458,29 +1559,74 @@ async function reactSafe(postId, type) {
   }
 }
 
+
 /* =========================
-   Seed demo
+   Seed demo (ajustado a Topics Groups + compat legacy)
 ========================= */
 async function seedIfEmpty(){
   const posts = await getPostsSafe();
-  if(posts.length) return;
+  if (posts.length) return;
 
+  // ---------------------------------------------------------
+  // Topic helpers (nuevo modelo agrupado + fallback legacy)
+  // ---------------------------------------------------------
+  const FALLBACK_TOPICS = (typeof DEFAULT_TOPICS !== 'undefined' && Array.isArray(DEFAULT_TOPICS))
+    ? DEFAULT_TOPICS
+    : [];
+
+  // Busca un topic por texto dentro del modelo agrupado (si existe)
+  function findTopicInGroups(wanted){
+    try{
+      if (typeof loadTopicsModel !== 'function') return null;
+      const model = loadTopicsModel();
+      const groups = Array.isArray(model?.groups) ? model.groups : [];
+      for (const g of groups){
+        const items = Array.isArray(g?.items) ? g.items : [];
+        const hit = items.find(t => String(t).trim() === String(wanted).trim());
+        if (hit) return hit;
+      }
+      return null;
+    }catch{
+      return null;
+    }
+  }
+
+  // Elige topic preferido (nuevo) o cae al legacy por índice o a "Sin tema"
+  function pickTopic(preferred, legacyIndex = 0){
+    return (
+      findTopicInGroups(preferred) ||
+      FALLBACK_TOPICS[legacyIndex] ||
+      preferred ||
+      'Sin tema'
+    );
+  }
+
+  // Topics “canon” (según tu nueva lista)
+  const TOPIC_WEB3 = pickTopic('Web3, Smart Contracts & Infraestructura DAO', 2);
+  const TOPIC_AI   = pickTopic('Inteligencia Artificial & Agentes Autónomos', 1);
+  const TOPIC_DEV  = pickTopic('Desarrollo de Software & Herramientas IA (Cursor/Claude)', 0);
+
+  // ---------------------------------------------------------
+  // Seed posts
+  // ---------------------------------------------------------
   const seed = [
     {
       id: uid(),
       title: 'Bienvenida a la DAO alemty',
       body: 'Este es un foro estilo Reddit/Taringa con glass UI. Publica ideas, vota y comenta.',
-      topic: DEFAULT_TOPICS[2],
+      topic: TOPIC_WEB3,
       ts: now() - 1000 * 60 * 80,
       likes: 5,
       points: 2,
-      comments: [{ ts: now() - 1000*60*60, text:'Se ve increíble el glass.' }]
+      comments: [
+        { ts: now() - 1000 * 60 * 60, text: 'Se ve increíble el glass.' }
+      ]
     },
     {
       id: uid(),
       title: 'Tokenomics: Aura consumo, Alem salida',
       body: 'Aura = consumo de contenido. Alem = salida a mercado para creadores. Emisión por epochs.',
-      topic: DEFAULT_TOPICS[2],
+      topic: TOPIC_WEB3,
       ts: now() - 1000 * 60 * 160,
       likes: 9,
       points: 4,
@@ -1490,7 +1636,7 @@ async function seedIfEmpty(){
       id: uid(),
       title: 'Backrooms: grupos privados',
       body: 'Propongo backrooms por temas con roles, acceso y reglas simples.',
-      topic: DEFAULT_TOPICS[0],
+      topic: TOPIC_DEV,
       ts: now() - 1000 * 60 * 240,
       likes: 3,
       points: 1,
@@ -1500,7 +1646,7 @@ async function seedIfEmpty(){
       id: uid(),
       title: 'IA como copiloto de gobernanza',
       body: 'IA que resume debates, detecta consenso y sugiere acciones sin mandar.',
-      topic: DEFAULT_TOPICS[1],
+      topic: TOPIC_AI,
       ts: now() - 1000 * 60 * 400,
       likes: 6,
       points: 3,
@@ -1510,12 +1656,36 @@ async function seedIfEmpty(){
 
   saveJSON(DB_KEY, seed);
 
+  // ---------------------------------------------------------
+  // Seed rooms (igual que antes)
+  // ---------------------------------------------------------
   const rooms = loadJSON(ROOMS_KEY, []);
-  if(!rooms.length) saveJSON(ROOMS_KEY, ['Genesis', 'Builders', 'Economía', 'Círculo']);
+  if (!rooms.length) {
+    saveJSON(ROOMS_KEY, ['Genesis', 'Builders', 'Economía', 'Círculo']);
+  }
 
-  const topics = loadJSON(TOPICS_KEY, []);
-  if(!topics.length) saveJSON(TOPICS_KEY, DEFAULT_TOPICS);
+  // ---------------------------------------------------------
+  // Seed topics (nuevo modelo si existe, si no legacy)
+  // ---------------------------------------------------------
+  const storedTopics = loadJSON(TOPICS_KEY, null);
+
+  // Si NO hay topics guardados todavía:
+  if (!storedTopics) {
+    // Si existe el nuevo modelo (DEFAULT_TOPIC_GROUPS / saveTopicsModel) úsalo
+    if (typeof DEFAULT_TOPIC_GROUPS !== 'undefined' && Array.isArray(DEFAULT_TOPIC_GROUPS)) {
+      const model = { version: 1, groups: DEFAULT_TOPIC_GROUPS };
+      if (typeof saveTopicsModel === 'function') {
+        saveTopicsModel(model);
+      } else {
+        saveJSON(TOPICS_KEY, model);
+      }
+    } else {
+      // Fallback legacy: array plano
+      if (FALLBACK_TOPICS.length) saveJSON(TOPICS_KEY, FALLBACK_TOPICS);
+    }
+  }
 }
+
 
 /* =========================
    Ranking / filtros
@@ -1841,15 +2011,66 @@ function getActionEntry(actions, userId, key){
 /* =========================
    Render UI
 ========================= */
+
+/**
+ * Inserta un botón "📚 Elegir tema" junto al select #postTopic
+ * para abrir el modal de temas (scroll controlable).
+ * - No duplica: si ya existe #topicPickerBtn, no vuelve a crear.
+ */
+function enhanceTopicPicker(){
+  const sel = document.getElementById('postTopic');
+  if (!sel) return;
+
+  // Evita duplicar
+  if (document.getElementById('topicPickerBtn')) return;
+
+  // Wrapper para alinear select + botón (sin romper layout)
+  const wrap = document.createElement('div');
+  wrap.style.display = 'flex';
+  wrap.style.gap = '10px';
+  wrap.style.alignItems = 'center';
+  wrap.style.width = '100%';
+
+  // Inserta wrapper antes del select y mueve el select dentro
+  sel.parentNode.insertBefore(wrap, sel);
+  wrap.appendChild(sel);
+
+  // Botón para abrir el modal de temas (UI controlable + scrollbar estilable)
+  const btn = document.createElement('button');
+  btn.id = 'topicPickerBtn';
+  btn.type = 'button';
+  btn.className = 'btn';
+  btn.textContent = '📚 Elegir tema';
+  btn.style.whiteSpace = 'nowrap';
+
+  btn.addEventListener('click', () => {
+    // Usa tu modal ya existente
+    if (typeof openTopicsModal === 'function') openTopicsModal();
+  });
+
+  wrap.appendChild(btn);
+}
+
 function renderTopicsSelect(){
   const sel = document.getElementById('postTopic');
   if(!sel) return;
 
-  const topics = loadJSON(TOPICS_KEY, DEFAULT_TOPICS);
-  
+  const model = loadTopicsModel();
+  const groups = Array.isArray(model.groups) ? model.groups : [];
+
   sel.innerHTML =
     `<option value="">Sin tema</option>` +
-    topics.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    groups.map(g => {
+      const label = esc(g.label);
+      const items = (g.items || [])
+        .map(t => `<option value="${esc(t)}">${esc(t)}</option>`)
+        .join('');
+      return `<optgroup label="${label}">${items}</optgroup>`;
+    }).join('');
+
+  // ✅ Importante: el dropdown nativo no se puede estilizar bien,
+  // así que añadimos el botón que abre el modal (sí estilable)
+  enhanceTopicPicker();
 }
 
 /** Helper: asegura que un contenedor tenga <span class="count">N</span> y lo actualiza */
@@ -2491,42 +2712,534 @@ function mutatePost(id, fn) {
   }
 }
 
+// =========================
+// Rooms API (backend-ready) + fallback localStorage
+// =========================
+async function apiGetRooms(type){
+  // Backend-ready endpoint (cuando lo tengas):
+  // GET /api/rooms?type=backroom | governance
+  try{
+    const r = await fetch(`${API_BASE}/api/rooms?type=${encodeURIComponent(type)}`, {
+      cache: "no-store",
+      headers: authHeadersGet(),
+    });
+    if (r.ok){
+      const data = await r.json().catch(() => ({}));
+      if (Array.isArray(data?.rooms)) return data.rooms;
+    }
+  }catch(e){
+    // offline / no backend
+  }
+  return null;
+}
 
+async function apiCreateRoom(type, name, days = 1){
+  const r = await fetch(`${API_BASE}/api/rooms`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({
+      type,
+      name,
+      durationDays: days   // ✅ NUEVO
+    }),
+  });
+
+  if (!r.ok){
+    const msg = await readErr(r);
+    throw new Error(msg || 'No se pudo crear la sala');
+  }
+
+  return r.json().catch(() => ({}));
+}
+
+
+// Local storage helpers
+function loadRoomsLocal(key){
+  const raw = loadJSON(key, null);
+
+  // Compat legacy: si antes guardabas en ROOMS_KEY
+  if (!raw && key === BACKROOMS_KEY){
+    const legacy = loadJSON(ROOMS_KEY, []);
+    if (Array.isArray(legacy) && legacy.length) return legacy;
+  }
+
+  return Array.isArray(raw) ? raw : [];
+}
+
+function saveRoomsLocal(key, rooms){
+  saveJSON(key, rooms);
+}
 
 /* =========================
    Rooms / Topics modales
 ========================= */
 function openRoomsModal(){
-  const rooms = loadJSON(ROOMS_KEY, []);
-  document.getElementById('daoModalTitle').textContent = 'Backrooms';
-  document.getElementById('daoModalBody').innerHTML = `
-    <p class="muted">Salas (demo local). Luego se conecta a permisos.</p>
-    ${(rooms.length ? rooms : ['Sin salas']).map(r => `
+  // 1) Cargar salas: primero intenta backend (si existe), si no, fallback local
+  //    Nota: tu apiGetRooms ya existe en el archivo
+  const loadRooms = async () => {
+    let rooms = null;
+    try { rooms = await apiGetRooms('backroom'); } catch {}
+    if (Array.isArray(rooms)) return rooms;
+
+    // fallback local: BACKROOMS_KEY (nuevo) -> ROOMS_KEY (legacy)
+    const localNew = loadJSON(BACKROOMS_KEY, null);
+    if (Array.isArray(localNew)) return localNew;
+
+    const legacy = loadJSON(ROOMS_KEY, []);
+    return Array.isArray(legacy) ? legacy : [];
+  };
+
+  // 2) Render async (para poder esperar rooms)
+  (async () => {
+    const rooms = await loadRooms();
+
+    document.getElementById('daoModalTitle').textContent = 'Backrooms';
+    document.getElementById('daoModalBody').innerHTML = `
       <div class="sheet-item">
-        <div class="t">🏚️ ${esc(r)}</div>
-        <div class="m">Backroom · UI lista · backend soon</div>
+        <div class="t">🏚️ Backrooms</div>
+        <div class="m small muted">Crea salas privadas o temáticas para coordinación y equipos.</div>
+        <div class="small muted" style="margin-top:8px;">
+          Costo: <b>100 Aura / día</ (cuando backend esté activo).
+        </div>
+      </div>
+
+      ${(rooms.length ? rooms : ['Sin salas aún']).map(r => `
+        <div class="sheet-item">
+          <div class="t">${esc(r)}</div>
+        </div>
+      `).join('')}
+
+      <div class="sheet-item" style="margin-top:10px;">
+        <div class="t">Crear sala</div>
+        <input id="backroomName" placeholder="Nombre de la sala…" maxlength="48" />
+        
+<input id="backroomDays" type="number" min="1" value="1" placeholder="Días de acceso" />
+
+<div class="small muted" style="margin-top:6px;">
+  Ej: 1 día = 100 Aura · 7 días = 700 Aura
+</div>
+
+        <div class="small muted" style="margin-top:6px;">
+          Ej: “Builders”, “Research”, “Staff”, “Diseño”, “Moderación”.
+        </div>
+      </div>
+
+      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn primary" id="createBackroomBtn" type="button">Crear</button>
+        <button class="btn" type="button" data-close="1">Cerrar</button>
+      </div>
+
+      <div id="backroomStatus" class="small muted" style="margin-top:10px;"></div>
+    `;
+
+    openModal();
+
+    // 3) Handler de crear (igual a gobernanza pero listo para backend + fallback local)
+    const btn = document.getElementById('createBackroomBtn');
+    const status = document.getElementById('backroomStatus');
+
+    if (btn){
+      btn.onclick = async () => {
+        const input = document.getElementById('backroomName');
+        const name = (input?.value || '').trim();
+        if (name.length < 3){
+          if (status) status.textContent = 'Nombre muy corto (mínimo 3 caracteres).';
+          return;
+        }
+
+        // Para que esté listo a Aura/Backend: requiere JWT cuando backend esté activo
+        if (!getJWT()){
+          if (status) status.textContent = 'Necesitas SIWE (JWT) para crear salas.';
+          return;
+        }
+
+        btn.disabled = true;
+        try{
+          if (status) status.textContent = 'Creando sala…';
+
+          // Backend (cuando exista): si falla, fallback local
+          try{
+            
+const days = Number(document.getElementById('backroomDays')?.value || 1);
+const cost = days * 100;
+
+// UI feedback
+if (status) status.textContent = `Costo: ${cost} Aura · Creando sala…`;
+
+await apiCreateRoom('backroom', name, days);
+
+          }catch{
+            // Local: guarda en BACKROOMS_KEY (nuevo)
+            const next = loadJSON(BACKROOMS_KEY, []);
+            if (!next.includes(name)) next.unshift(name);
+            saveJSON(BACKROOMS_KEY, next);
+          }
+
+          if (status) status.textContent = 'Sala creada ✅';
+          // refrescar modal
+          openRoomsModal();
+
+        }catch(err){
+          if (status) status.textContent = err?.message || 'Error creando sala.';
+        }finally{
+          btn.disabled = false;
+        }
+      };
+    }
+  })();
+}
+// =========================
+// GOVERNANZA — Access gate (Nobleza + Moderación + Founder)
+// Basado en docs:
+// - Gobernanza política: veALEMTY (no Aura)
+// - Nobleza: Rey/Príncipe/Duque (calculada sobre veALEMTY activo)
+// Backend debe ENFORCEAR esto; frontend es UX.
+// =========================
+
+// Founder allowlist (tu address)
+const GOVERNANCE_FOUNDERS = new Set([
+  '0x6a202f991c4c1df079449be9847b1dac3f51854f'
+]);
+
+// Lee roles desde localStorage (fallback UX)
+
+function getLocalRoles(){
+  const raw = localStorage.getItem('alemty.roles') || localStorage.getItem('roles') || '';
+  try{
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.map(x => String(x).toLowerCase()) : [];
+  }catch{
+    return String(raw).split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  }
+}
+function isLocalModerator(){
+  const roles = getLocalRoles();
+  return roles.includes('moderator') || roles.includes('mod') || roles.includes('admin');
+}
+function getLocalNobleRank(){
+  const raw =
+    localStorage.getItem('alemty.nobleRank') ||
+    localStorage.getItem('alemty.noble') ||
+    localStorage.getItem('nobleRank') ||
+    '';
+  const v = String(raw || '').trim().toLowerCase();
+  if (!v) return '';
+  return (v === 'príncipe') ? 'principe' : v;
+}
+function getLocalVeAlem(){
+  const raw =
+    localStorage.getItem('alemty.vealem') ||
+    localStorage.getItem('vealem') ||
+    localStorage.getItem('veALEM') ||
+    '0';
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+}
+function getLocalEns(){
+  return String(
+    localStorage.getItem('alemty.ens') ||
+    localStorage.getItem('ens') ||
+    ''
+  ).trim().toLowerCase();
+}
+
+function isFounder(){
+  const me = String(getViewerAddress()).toLowerCase();
+  const ens = getLocalEns();
+  return GOVERNANCE_FOUNDERS.has(me) || ens === 'alemty.eth';
+}
+
+
+/**
+ * getGovernanceAccess()
+ * - okRead: puede VER gobernanza (Rey/Principe/Duque o Moderación o Founder)
+ * - okWrite: puede CREAR salas (Rey/Principe o Moderación o Founder)
+ *
+ * Backend recomendado:
+ * GET /api/me -> { roles:[], nobleRank:'rey|principe|duque', veAlem:number, address, ens }
+ */
+async function getGovernanceAccess(){
+
+  // =========================
+  // 1) Verificar JWT
+  // =========================
+  if (!getJWT()){
+    return {
+      okRead: false,
+      okWrite: false,
+      reason: 'Necesitas SIWE (JWT) para acceder a gobernanza.',
+      isModerator: false,
+      nobleRank: '',
+      veAlem: 0,
+      isFounder: false,
+    };
+  }
+
+  // =========================
+  // 2) Backend (FUENTE REAL)
+  // =========================
+  try{
+    const r = await fetch(`${API_BASE}/api/me`, {
+      headers: authHeadersGet(),
+      cache: 'no-store'
+    });
+
+    // ❌ JWT inválido o expirado
+    if (!r.ok){
+      localStorage.removeItem('alemty.jwt');
+
+      return {
+        okRead: false,
+        okWrite: false,
+        reason: 'Sesión expirada. Inicia SIWE nuevamente.',
+        isModerator: false,
+        nobleRank: '',
+        veAlem: 0,
+        isFounder: false,
+      };
+    }
+
+    const data = await r.json().catch(() => ({}));
+
+    const address = String(data?.address || '').toLowerCase();
+    const ens = String(data?.ens || '').toLowerCase();
+
+    const roles = Array.isArray(data?.roles)
+      ? data.roles.map(x => String(x).toLowerCase())
+      : [];
+
+    const isModerator =
+      roles.includes('moderator') ||
+      roles.includes('mod') ||
+      roles.includes('admin');
+
+    // normalizar nobleza
+    const nobleRaw = String(data?.nobleRank || data?.noble || '').toLowerCase();
+    const nobleRank = nobleRaw === 'príncipe' ? 'principe' : nobleRaw;
+
+    const veAlem = Number(data?.veAlem ?? data?.vealem ?? 0);
+    const veAlemOk = Number.isFinite(veAlem) && veAlem > 0;
+
+    // =========================
+    // 3) Founder (solo backend válido)
+    // =========================
+    const isFounderUser =
+      address === '0x6a202f991c4c1df079449be9847b1dac3f51854f' ||
+      ens === 'alemty.eth';
+
+    if (isFounderUser){
+      return {
+        okRead: true,
+        okWrite: true,
+        reason: '',
+        isModerator: false,
+        nobleRank: 'founder',
+        veAlem,
+        isFounder: true,
+      };
+    }
+
+    // =========================
+    // 4) Nobleza válida
+    // =========================
+    const isNoble =
+      (nobleRank === 'rey' || nobleRank === 'principe' || nobleRank === 'duque') &&
+      veAlemOk;
+
+    // =========================
+    // 5) Permisos
+    // =========================
+    const okRead = isModerator || isNoble;
+
+    const okWrite =
+      isModerator ||
+      (isNoble && (nobleRank === 'rey' || nobleRank === 'principe'));
+
+    return {
+      okRead,
+      okWrite,
+      reason: okRead
+        ? ''
+        : 'Acceso restringido: requiere Moderación o Nobleza (Rey/Príncipe/Duque) con veALEM activo.',
+      isModerator,
+      nobleRank: isNoble ? nobleRank : '',
+      veAlem,
+      isFounder: false,
+    };
+
+  } catch (err){
+
+    // =========================
+    // 6) FALLBACK LOCAL (solo UX DEV)
+    // =========================
+    console.warn('Governance fallback local');
+
+    const isModerator = isLocalModerator();
+    const nobleRank = getLocalNobleRank();
+    const veAlem = getLocalVeAlem();
+
+    const isNoble =
+      (nobleRank === 'rey' || nobleRank === 'principe' || nobleRank === 'duque') &&
+      veAlem > 0;
+
+    const okRead = isModerator || isNoble;
+
+    const okWrite =
+      isModerator ||
+      (isNoble && (nobleRank === 'rey' || nobleRank === 'principe'));
+
+    return {
+      okRead,
+      okWrite,
+      reason: okRead
+        ? ''
+        : 'Modo local (sin backend).',
+      isModerator,
+      nobleRank,
+      veAlem,
+      isFounder: false,
+    };
+  }
+}
+
+async function openGovernanceRoomsModal(){
+  // Rooms: backend-first (cuando exista) -> fallback local
+  let rooms = null;
+  try { rooms = await apiGetRooms('governance'); } catch {}
+  if (!Array.isArray(rooms)) rooms = loadJSON(GOV_ROOMS_KEY, []);
+
+  const access = await getGovernanceAccess();
+
+  document.getElementById('daoModalTitle').textContent = 'Gobernanza';
+  document.getElementById('daoModalBody').innerHTML = `
+    <div class="sheet-item">
+      <div class="t">🗳️ Salas de Gobernanza</div>
+      <div class="m small muted">
+        Propuestas y votaciones de fundadores / stakeholders.
+        Gobernanza política basada en <b>veALEMTY</b> (no Aura).
+      </div>
+
+      <div class="small muted" style="margin-top:8px;">
+        Acceso: <b>Moderación</b> o <b>Nobleza</b> (👑 Rey / 🤴 Príncipe / 🏰 Duque) con veALEMTY activo.
+      </div>
+
+      <div class="small muted" style="margin-top:6px;">
+        Estado: ${access.okRead ? '✅ Autorizado' : '⛔ Restringido'}
+        ${access.isFounder ? '· rol: <b>Founder</b>' : ''}
+        ${access.isModerator ? '· rol: <b>Moderación</b>' : ''}
+        ${access.nobleRank ? `· nobleza: <b>${esc(access.nobleRank)}</b>` : ''}
+        ${access.veAlem ? `· veALEM: <b>${esc(access.veAlem)}</b>` : ''}
+      </div>
+
+      ${!access.okRead ? `
+        <div class="small muted" style="margin-top:8px;">
+          ${esc(access.reason)}
+        </div>
+      ` : ''}
+    </div>
+
+    ${(rooms.length ? rooms : ['Sin salas aún']).map(r => `
+      <div class="sheet-item">
+        <div class="t">${esc(r)}</div>
       </div>
     `).join('')}
-    <button class="btn primary" id="addRoom" type="button">Crear sala</button>
+
+    <div class="sheet-item" style="margin-top:10px; ${access.okWrite ? '' : 'opacity:.55;'}">
+      <div class="t">Crear sala</div>
+      <input id="govRoomName" placeholder="Nombre de la sala…" maxlength="48" ${access.okWrite ? '' : 'disabled'} />
+      <div class="small muted" style="margin-top:6px;">
+        Ej: “Propuestas”, “Votaciones”, “Constitución”.
+      </div>
+
+      ${access.okRead && !access.okWrite ? `
+        <div class="small muted" style="margin-top:8px;">
+          Nota: Duques pueden deliberar/votar, pero la creación de salas está reservada a Rey/Príncipe o Moderación.
+        </div>
+      ` : ''}
+    </div>
+
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn primary" id="createGovRoomBtn" type="button" ${access.okWrite ? '' : 'disabled'}>
+        Crear
+      </button>
+      <button class="btn" type="button" data-close="1">Cerrar</button>
+    </div>
+
+    <div id="govRoomStatus" class="small muted" style="margin-top:10px;"></div>
   `;
+
+  openModal();
+
+  const btn = document.getElementById('createGovRoomBtn');
+  const status = document.getElementById('govRoomStatus');
+
+  if (btn){
+    btn.onclick = async () => {
+      if (!access.okWrite){
+        if (status) status.textContent = 'No tienes permisos para crear salas de gobernanza.';
+        return;
+      }
+
+      const input = document.getElementById('govRoomName');
+      const name = (input?.value || '').trim();
+      if (name.length < 3){
+        if (status) status.textContent = 'Nombre muy corto (mínimo 3 caracteres).';
+        return;
+      }
+
+      btn.disabled = true;
+      try{
+        if (status) status.textContent = 'Creando sala…';
+
+        // ✅ Backend recomendado:
+        // POST /api/rooms { type:'governance', name }
+        // El backend valida: Founder OR Moderación OR (Rey/Principe con veALEM activo).
+        try{
+          await apiCreateRoom('governance', name);
+        }catch{
+          // Fallback local (demo/offline)
+          const next = loadJSON(GOV_ROOMS_KEY, []);
+          if (!next.includes(name)) next.unshift(name);
+          saveJSON(GOV_ROOMS_KEY, next);
+        }
+
+        if (status) status.textContent = 'Sala creada ✅';
+        openGovernanceRoomsModal();
+      }catch(err){
+        if (status) status.textContent = err?.message || 'Error creando sala.';
+      }finally{
+        btn.disabled = false;
+      }
+    };
+  }
+}
+
+
+function openTopicsModal(){
+  const model = loadTopicsModel();
+  const groups = Array.isArray(model?.groups) ? model.groups : [];
+
+  document.getElementById('daoModalTitle').textContent = 'Temas';
+  document.getElementById('daoModalBody').innerHTML = `
+    <p class="muted">Elige un tema y se aplicará al selector de “Crear post”.</p>
+
+    ${groups.map(g => `
+      <div class="topic-group">${esc(g.label)}</div>
+
+      ${(g.items || []).map(t => `
+        <div class="sheet-item topic-item" data-topic-pick="${esc(t)}">
+          <div class="t">${esc(t)}</div>
+        </div>
+      `).join('')}
+    `).join('')}
+
+    <button class="btn primary" id="addTopic" type="button">Crear tema</button>
+  `;
+
   openModal();
 }
 
-function openTopicsModal(){
-  const topics = loadJSON(TOPICS_KEY, DEFAULT_TOPICS);
-  document.getElementById('daoModalTitle').textContent = 'Temas';
-  document.getElementById('daoModalBody').innerHTML = `
-    <p class="muted">Lista de temas. Al elegir, rellena el selector.</p>
-    ${topics.map(t => `
-      <div class="sheet-item" data-topic-pick="${esc(t)}">
-        <div class="t">${esc(t)}</div>
-        <div class="m">Seleccionar tema</div>
-      </div>
-    `).join('')}
-    <button class="btn primary" id="addTopic" type="button">Crear tema</button>
-  `;
-  openModal();
-}
+
 
 function openFeedListModal(){
   // Recalcula lista en vivo para respetar filtros/tabs/búsqueda
@@ -2658,6 +3371,8 @@ function waitForDaoContainer(timeout = 3000) {
 
   daoMain.querySelector('#openRooms')?.addEventListener('click', openRoomsModal);
   daoMain.querySelector('#openTopics')?.addEventListener('click', openTopicsModal);
+daoMain.querySelector('#openGovRoom')?.addEventListener('click', openGovernanceRoomsModal);
+daoMain.querySelector('#openBackrooms2')?.addEventListener('click', openRoomsModal);
 
   // ✅ 5) Carrusel (manual pausa + reanuda)
   daoMain.querySelector('#carPrev')?.addEventListener('click', async () => {
@@ -2737,6 +3452,7 @@ document.addEventListener('click', async (e) => {
 
       carIndex = 0;
       await renderAll();
+      enhanceTopicPicker();
 
       // ✅ (3) Asegura que el autoplay vuelva (por si estaba pausado)
       startCarouselAuto();
