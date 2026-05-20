@@ -1,49 +1,35 @@
-
 import { verifyMessage } from "ethers";
 
-/**
- * ✅ Dominios permitidos dentro del MENSAJE SIWE (EIP-4361)
- * (Esto valida el "domain" dentro del mensaje, NO el Origin HTTP)
- */
+/* =========================
+   ✅ DOMINIOS SIWE (IMPORTANTE)
+========================= */
 const SIWE_ALLOWED_DOMAINS = new Set([
+  "localhost",
+  "127.0.0.1",
   "alemty.eth",
   "alemty.eth.limo",
 ]);
 
-/**
- * ✅ CORS: orígenes permitidos (HTTP Origin)
- * - Permite localhost/127.0.0.1 con CUALQUIER puerto
- * - Permite Pages previews: https://<hash>.alemtydao.pages.dev
- * - Permite prod/ENS/Workers
- */
+/* =========================
+   ✅ CORS
+========================= */
 const CORS_ALLOWLIST = new Set([
-  // Cloudflare Workers (frontend actual)
   "https://alemtydao.alejandrogtzz93.workers.dev",
-
-  // Pages main
   "https://alemtydao.pages.dev",
-
-  // ENS/IPFS gateway
   "https://alemty.eth.limo",
 ]);
 
 function isAllowedOrigin(origin) {
   if (!origin) return false;
 
-  // Exact matches
   if (CORS_ALLOWLIST.has(origin)) return true;
 
   try {
     const u = new URL(origin);
 
-    // Allow any localhost/127.0.0.1 port
     if (u.hostname === "localhost" || u.hostname === "127.0.0.1") return true;
-
-    // Allow Pages preview deploys
     if (u.hostname.endsWith(".alemtydao.pages.dev")) return true;
-  } catch {
-    // ignore invalid origin
-  }
+  } catch {}
 
   return false;
 }
@@ -51,8 +37,6 @@ function isAllowedOrigin(origin) {
 function getCorsHeaders(origin, requestHeaders = "") {
   if (!origin || !isAllowedOrigin(origin)) return {};
 
-  // Si el browser manda Access-Control-Request-Headers, refléjalo
-  // y añade Authorization/Content-Type por defecto.
   const requested = String(requestHeaders || "")
     .split(",")
     .map((s) => s.trim())
@@ -82,6 +66,9 @@ function json(data, status = 200, cors = {}) {
   });
 }
 
+/* =========================
+   ✅ NONCE
+========================= */
 function makeAlphanumericNonce(length = 24) {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const bytes = new Uint8Array(length);
@@ -89,9 +76,9 @@ function makeAlphanumericNonce(length = 24) {
   return Array.from(bytes, (b) => chars[b % chars.length]).join("");
 }
 
-/**
- * ✅ Parser mínimo SIWE (EIP‑4361)
- */
+/* =========================
+   ✅ PARSER SIWE (FIX REAL)
+========================= */
 function parseSiweMessage(message) {
   const m = String(message).replace(/\r\n/g, "\n").trim();
   const lines = m.split("\n");
@@ -128,9 +115,6 @@ function parseSiweMessage(message) {
   const chainId = Number(chainIdStr);
   if (!Number.isFinite(chainId)) return null;
 
-  if (!/^[A-Za-z0-9]{8,}$/.test(nonce)) return null;
-  if (!/^\d{4}-\d{2}-\d{2}T/.test(issuedAt)) return null;
-
   return {
     domain,
     address,
@@ -141,10 +125,9 @@ function parseSiweMessage(message) {
   };
 }
 
-/* =========================================================
-   ✅ JWT (HS256)
-========================================================= */
-
+/* =========================
+   ✅ JWT
+========================= */
 function b64urlEncode(input) {
   const bytes =
     typeof input === "string" ? new TextEncoder().encode(input) : input;
@@ -181,6 +164,9 @@ async function signJwt(payload, secret) {
   return `${data}.${sig}`;
 }
 
+/* =========================================================
+   🚀 MAIN
+========================================================= */
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -188,77 +174,58 @@ export default {
     const acrh = request.headers.get("Access-Control-Request-Headers") || "";
     const cors = getCorsHeaders(origin, acrh);
 
-    /* ===== CORS preflight ===== */
     if (request.method === "OPTIONS") {
-      const allowed = cors["Access-Control-Allow-Origin"];
-      return new Response(null, {
-        status: allowed ? 204 : 403,
-        headers: allowed ? cors : {},
-      });
+      return new Response(null, { status: 204, headers: cors });
     }
 
-    /* ===== NONCE ===== */
     if (url.pathname === "/nonce" && request.method === "GET") {
-      if (!env.SIWE_NONCES) {
-        return json({ ok: false, error: "KV binding missing" }, 500, cors);
-      }
-
       const nonce = makeAlphanumericNonce(24);
-      await env.SIWE_NONCES.put(`nonce:${nonce}`, "1", {
-        expirationTtl: 600,
-      });
-
-      return json({ ok: true, nonce, ttlSeconds: 600 }, 200, cors);
+      await env.SIWE_NONCES.put(`nonce:${nonce}`, "1", { expirationTtl: 600 });
+      return json({ ok: true, nonce }, 200, cors);
     }
 
-    /* ===== VERIFY + JWT ===== */
     if (url.pathname === "/verify" && request.method === "POST") {
-      if (!env.SIWE_NONCES || !env.JWT_SECRET) {
-        return json({ ok: false, error: "Server misconfigured" }, 500, cors);
+      try {
+        const { message, signature } = await request.json();
+
+        const parsed = parseSiweMessage(message);
+        if (!parsed || !SIWE_ALLOWED_DOMAINS.has(parsed.domain)) {
+          return json({ ok: false, error: "Invalid SIWE message" }, 400, cors);
+        }
+
+        const key = `nonce:${parsed.nonce}`;
+        if (!(await env.SIWE_NONCES.get(key))) {
+          return json({ ok: false, error: "Invalid nonce" }, 401, cors);
+        }
+
+        const recovered = verifyMessage(parsed.normalized, signature);
+        if (recovered.toLowerCase() !== parsed.address.toLowerCase()) {
+          return json({ ok: false, error: "Signature mismatch" }, 401, cors);
+        }
+
+        await env.SIWE_NONCES.delete(key);
+
+        const now = Math.floor(Date.now() / 1000);
+        
+const token = await signJwt(
+  {
+    iss: "alemtydao-siwe",
+    aud: "alemtydao-api",   // 🔥 ESTA LÍNEA ES EL FIX
+    sub: parsed.address.toLowerCase(),
+    iat: now,
+    exp: now + 3600,
+  },
+  env.JWT_SECRET
+);
+
+
+        return json({ ok: true, address: parsed.address, token }, 200, cors);
+      } catch (err) {
+        console.error("VERIFY ERROR:", err);
+        return json({ ok: false, error: "internal error" }, 500, cors);
       }
-
-      const { message, signature } = await request.json().catch(() => ({}));
-      if (!message || !signature) {
-        return json(
-          { ok: false, error: "Missing message/signature" },
-          400,
-          cors
-        );
-      }
-
-      const parsed = parseSiweMessage(message);
-      if (!parsed || !SIWE_ALLOWED_DOMAINS.has(parsed.domain)) {
-        return json({ ok: false, error: "Invalid SIWE message" }, 400, cors);
-      }
-
-      const key = `nonce:${parsed.nonce}`;
-      if (!(await env.SIWE_NONCES.get(key))) {
-        return json({ ok: false, error: "Invalid nonce" }, 401, cors);
-      }
-
-      const recovered = verifyMessage(parsed.normalized, signature);
-      if (recovered.toLowerCase() !== parsed.address.toLowerCase()) {
-        return json({ ok: false, error: "Signature mismatch" }, 401, cors);
-      }
-
-      await env.SIWE_NONCES.delete(key);
-
-      const now = Math.floor(Date.now() / 1000);
-      const token = await signJwt(
-        {
-          iss: "alemtydao-siwe",
-          aud: "alemtydao-api",
-          sub: parsed.address.toLowerCase(),
-          iat: now,
-          exp: now + 3600,
-        },
-        env.JWT_SECRET
-      );
-
-      return json({ ok: true, address: parsed.address, token }, 200, cors);
     }
 
     return new Response("Not found", { status: 404, headers: cors });
   },
 };
-
