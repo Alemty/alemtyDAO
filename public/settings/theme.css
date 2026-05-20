@@ -5,47 +5,47 @@
    Ningún subdominio debe redefinir tokens de este archivo;
    solo puede EXTENDER con tokens propios prefijados (--dao-*, --dex-*, etc.)
    ========================================================== */
- 
+
 /* ----------------------------------------------------------
    1. PALETA BASE — Dark (default)
    ---------------------------------------------------------- */
 :root {
- 
+
   /* Color de fondo de página */
   --bg:      #0B1220;
- 
+
   /* Tipografía */
   --text:    #EAF2FF;
   --muted:   #9FB2C7;
- 
+
   /* Acento principal (esmeralda) y secundario (azul) */
   --primary: #00FFD5;
   --accent:  #00A3FF;
- 
+
   /* Superficie de panels/cards */
   --panel:   #18243A;
- 
+
   /* Bordes, sombras, radios, padding */
   --border:  rgba(255, 255, 255, .10);
   --shadow:  0 18px 46px rgba(0, 0, 0, .40);
- 
+
   /* ----------------------------------------------------------
      2. TOKENS DE LAYOUT — un único origen para topbar,
         container y cards en todos los subdominios
      ---------------------------------------------------------- */
- 
+
   /* Altura del topbar sticky (shell.js lo genera con esta altura) */
   --topbar-h:   72px;
- 
+
   /* Radio de cards — todos los subdominios usan este valor */
   --radius-card: 22px;
- 
+
   /* Alias legacy (apunta a --radius-card para no romper refs antiguas) */
   --radius:      22px;
- 
+
   /* Padding interno de cards */
   --pad: 22px;
- 
+
   /* ----------------------------------------------------------
      3. TOKENS DE BLUR / GLASS
         Reemplazan --defi-blur, --dao-ui-blur, --glass-blur
@@ -53,20 +53,20 @@
   --blur-sm: blur(10px) saturate(120%);
   --blur-md: blur(16px) saturate(135%);
   --blur-lg: blur(22px) saturate(140%);
- 
+
   /* Alias legacy (shell.css usa --glass-blur) */
   --glass-blur: blur(18px) saturate(130%);
- 
+
   /* Superficies glass — dark */
   --glass-dark-1: rgba(10, 20, 26, 0.45);
   --glass-dark-2: rgba(10, 20, 26, 0.65);
   --glass-dark-3: rgba(10, 20, 26, 0.82);
- 
+
   /* Superficies glass — light (se activan con html.light) */
   --glass-light-1: rgba(255, 255, 255, 0.65);
   --glass-light-2: rgba(255, 255, 255, 0.82);
   --glass-light-3: rgba(255, 255, 255, 0.94);
- 
+
   /* ----------------------------------------------------------
      4. TIPOGRAFÍA
      ---------------------------------------------------------- */
@@ -74,7 +74,7 @@
   --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
           'Liberation Mono', 'Courier New', monospace;
 }
- 
+
 /* ----------------------------------------------------------
    5. PALETA BASE — Light override
    ---------------------------------------------------------- */
@@ -88,13 +88,13 @@ html.light {
   --border:  rgba(0, 0, 0, .10);
   --shadow:  0 16px 42px rgba(16, 28, 55, .10);
 }
- 
+
 /* ----------------------------------------------------------
    6. RESET MÍNIMO
    ---------------------------------------------------------- */
 html, body { height: 100%; }
 * { box-sizing: border-box; }
- 
+
 body {
   margin: 0;
   background: var(--bg);
@@ -104,28 +104,28 @@ body {
   line-height: 1.5;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
- 
+
   /* Evita scroll horizontal global */
   overflow-x: hidden;
   max-width: 100%;
 }
- 
+
 a { color: inherit; }
- 
+
 img, canvas, svg {
   display: block;
   max-width: 100%;
 }
- 
+
 button { font: inherit; }
- 
+
 /* ----------------------------------------------------------
    7. UTILIDADES GLOBALES
       Solo clases que TODOS los subdominios comparten.
       Cards y botones son los únicos componentes aquí;
       el resto vive en shell.css o en el CSS del subdominio.
    ---------------------------------------------------------- */
- 
+
 /* Container — max-width unificado.
    Los subdominios agregan padding-top para offset del topbar
    usando su propio scope: .defi-root .container { padding-top: ... } */
@@ -134,12 +134,12 @@ button { font: inherit; }
   margin: 0 auto;
   padding: 26px 18px;
 }
- 
+
 /* Brand — logo textual */
 .brand         { font-weight: 900; font-size: 28px; letter-spacing: -.6px; }
 .brand .dot    { opacity: .85; }
 .brand .eth    { color: var(--primary); }
- 
+
 /* H1 genérico */
 .h1 {
   font-weight: 900;
@@ -148,7 +148,7 @@ button { font: inherit; }
   line-height: 1.1;
   margin: 0;
 }
- 
+
 /* Card base — todos los subdominios parten de aquí.
    Pueden sobreescribir con scope propio (.dao-root .card).
    NO cambiar el radio aquí; usar --radius-card. */
@@ -159,17 +159,17 @@ button { font: inherit; }
   box-shadow: var(--shadow);
   padding: var(--pad);
 }
- 
+
 /* Light: card con fondo ligeramente opaco */
 html.light .card {
   background: rgba(255, 255, 255, .70);
 }
- 
+
 /* Tipografía de apoyo */
 .small  { font-size: 12px; opacity: .82; }
 .muted  { opacity: .75; }
 .code   { font-family: var(--mono); font-size: 12px; }
- 
+
 /* Botón base — radio, padding y peso unificados.
    Igual que antes pero normalizado con --radius-card como referencia. */
 .btn {
@@ -193,7 +193,7 @@ html.light .card {
 .btn:hover    { background: rgba(255, 255, 255, .10); }
 .btn:active   { transform: translateY(1px); }
 .btn:disabled { opacity: .6; cursor: not-allowed; pointer-events: none; }
- 
+
 .btn.primary {
   background: linear-gradient(135deg, var(--primary), var(--accent));
   color: #08101a;
@@ -202,7 +202,7 @@ html.light .card {
 .btn.primary:hover {
   filter: brightness(1.06);
 }
- 
+
 html.light .btn {
   background: rgba(0, 0, 0, .05);
 }

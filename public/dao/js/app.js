@@ -420,20 +420,35 @@ const DEFAULT_TOPIC_GROUPS = [
   },
 ];
 
+
 function loadTopicsModel(){
   const raw = loadJSON(TOPICS_KEY, null);
 
-  // Nuevo formato: { version, groups: [...] }
-  if (raw && typeof raw === 'object' && Array.isArray(raw.groups)) return raw;
-
-  // Compat: formato viejo = array plano
-  if (Array.isArray(raw)) {
-    return { version: 1, groups: [{ label: '📦 Temas (Legacy)', items: raw }] };
+  // ✅ si ya es formato nuevo
+  if (raw && typeof raw === 'object' && Array.isArray(raw.groups)) {
+    return raw;
   }
 
-  // Default nuevo
-  return { version: 1, groups: DEFAULT_TOPIC_GROUPS };
+  // 🚨 si es legacy → MIGRAR a nuevo modelo
+  if (Array.isArray(raw)) {
+    console.log('Migrando topics legacy → nuevo modelo');
+
+    const model = {
+      version: 2,
+      groups: DEFAULT_TOPIC_GROUPS
+    };
+
+    saveJSON(TOPICS_KEY, model);
+    return model;
+  }
+
+  // ✅ si no hay nada → usar nuevos
+  return {
+    version: 2,
+    groups: DEFAULT_TOPIC_GROUPS
+  };
 }
+
 
 function saveTopicsModel(model){
   saveJSON(TOPICS_KEY, model);
@@ -1657,14 +1672,6 @@ async function seedIfEmpty(){
   saveJSON(DB_KEY, seed);
 
   // ---------------------------------------------------------
-  // Seed rooms (igual que antes)
-  // ---------------------------------------------------------
-  const rooms = loadJSON(ROOMS_KEY, []);
-  if (!rooms.length) {
-    saveJSON(ROOMS_KEY, ['Genesis', 'Builders', 'Economía', 'Círculo']);
-  }
-
-  // ---------------------------------------------------------
   // Seed topics (nuevo modelo si existe, si no legacy)
   // ---------------------------------------------------------
   const storedTopics = loadJSON(TOPICS_KEY, null);
@@ -2304,9 +2311,8 @@ const cards = visible.map(p => `
       <div class="post-headrow">
         <div>
           <div class="post-title">${esc(p.title)}</div>
-          <div class="post-author">${authorLinkHTML(p.author)}</div>
           <div class="post-meta">
-            ${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}
+            ${authorLinkHTML(p.author)} · ${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}
           </div>
         </div>
 
@@ -2320,19 +2326,16 @@ const cards = visible.map(p => `
       </div>
 
       <div class="post-snippet">
-        ${esc((p.body || '').slice(0, 220))}
-        ${(p.body || '').length > 220 ? '…' : ''}
+        ${esc((p.body || '').slice(0, 220))}${(p.body || '').length > 220 ? '…' : ''}
       </div>
 
       <div class="post-tags">
         <span class="pill like" data-action="like" data-post-id="${esc(p.id)}">
           ♥️ <span class="count">${getLikesCount(p)}</span>
         </span>
-
         <span class="pill points" data-action="points" data-post-id="${esc(p.id)}">
           ⭐ <span class="count">${getPointsCount(p)}</span>
         </span>
-
         <span class="pill comment" data-action="comment" data-post-id="${esc(p.id)}">
           💬 <span class="count">${getCommentsCount(p)}</span>
         </span>
