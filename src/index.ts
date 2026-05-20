@@ -1,23 +1,21 @@
-
 // src/index.ts
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 import { auth } from "./middleware/auth";
 
-// import { signJwt } from "./lib/jwt"; // usado solo en endpoints dev
-import { signJwt } from "./lib/jwt";
-
 // ✅ Router legacy (no tocar)
 import { router } from "./router";
 
-// ✅ Posts router (comments + react + posts)
+// ✅ Posts router
 import { posts } from "./routes/posts";
+
+// ✅ Rooms router
+import { rooms } from "./routes/rooms";
 
 /* =========================
    Tipos
 ========================= */
-
 export type Bindings = {
   DB: D1Database;
   SESSION_SECRET: string;
@@ -25,12 +23,9 @@ export type Bindings = {
   ASSETS: Fetcher;
 };
 
-
-
 export type Vars = {
   address?: string;
 };
-
 
 /* =========================
    App
@@ -39,13 +34,8 @@ const app = new Hono<{ Bindings: Bindings; Variables: Vars }>();
 
 /* =========================
    ✅ CORS GLOBAL (DEV + PROD + Pages Preview + Local ANY PORT)
-   - Permite Authorization (JWT)
-   - Permite previews: https://<hash>.alemtydao.pages.dev
-   - Permite localhost / 127.0.0.1 con CUALQUIER puerto (ej. 51023)
 ========================= */
-
 const CORS_ALLOWLIST = new Set([
-  // PROD
   "https://alemtydao.pages.dev",
   "https://alemtydao.alejandrogtzz93.workers.dev",
   "https://alemty.eth.limo",
@@ -54,16 +44,16 @@ const CORS_ALLOWLIST = new Set([
 function corsOrigin(origin: string | undefined): string | null {
   if (!origin) return null;
 
-  // ✅ Allow exact matches (prod)
+  // ✅ allow exact matches
   if (CORS_ALLOWLIST.has(origin)) return origin;
 
   try {
     const u = new URL(origin);
 
-    // ✅ Allow Pages preview deploys
+    // ✅ allow Pages preview deploys
     if (u.hostname.endsWith(".alemtydao.pages.dev")) return origin;
 
-    // ✅ Allow any localhost/127.0.0.1 port (serve elige puertos dinámicos)
+    // ✅ allow any localhost/127.0.0.1 port
     if (u.hostname === "localhost" || u.hostname === "127.0.0.1") return origin;
   } catch {
     // ignore invalid origin
@@ -95,14 +85,28 @@ app.get("/api/health", (c) =>
   })
 );
 
+/* =========================
+   DEBUG (DEV): confirmar que JWT_SECRET existe (sin exponerlo)
+   Úsalo para diagnosticar "Invalid token"
+========================= */
+app.get("/api/debug/env", (c) => {
+  const jwt = String(c.env.JWT_SECRET || "");
+  const sess = String(c.env.SESSION_SECRET || "");
+  return c.json({
+    ok: true,
+    hasJWTSecret: jwt.length > 0,
+    jwtSecretLen: jwt.length,        // NO imprime el secret
+    hasSessionSecret: sess.length > 0,
+    sessionSecretLen: sess.length,   // NO imprime el secret
+  });
+});
+
 /* =========================================================
    PERFIL / STATS
 ========================================================= */
-
 app.get("/api/me/stats", auth, async (c) => {
   const address = c.get("address");
 
-  // Conteos personales
   const postsRow = await c.env.DB.prepare(
     "SELECT COUNT(*) AS n FROM posts WHERE author = ?"
   )
@@ -141,9 +145,8 @@ app.get("/api/me/stats", auth, async (c) => {
   const pointsReceived = Number((pointsReceivedRow as any)?.n ?? 0);
   const likesReceived = Number((likesReceivedRow as any)?.n ?? 0);
 
-  // ✅ Dharma: por acuerdo: “punto + like recibido”
   const dharma = pointsReceived + likesReceived;
-  const aura = dharma; // 1:1 por ahora
+  const aura = dharma;
 
   return c.json({
     ok: true,
@@ -164,9 +167,10 @@ app.get("/api/me/stats", auth, async (c) => {
 });
 
 /* =========================================================
-   POSTS ROUTER (✅ AQUÍ SE MONTA posts.ts)
+   ROUTERS (montar ANTES del legacy)
 ========================================================= */
 app.route("/api/posts", posts);
+app.route("/api/rooms", rooms);
 
 /* =========================================================
    LEGACY ROUTER (API EXTRA – NO TOCAR)
@@ -185,7 +189,5 @@ app.all("*", async (c) => {
 });
 
 export default app;
-
-
 
 

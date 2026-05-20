@@ -86,4 +86,23 @@ ON posts(created_at);
 CREATE INDEX IF NOT EXISTS idx_comments_post
 ON comments(post_id);
 
+-- =========================
+-- ROOMS (Backrooms / Governance)
+-- =========================
+CREATE TABLE IF NOT EXISTS rooms (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type TEXT NOT NULL,
+  name TEXT NOT NULL,
+  created_by TEXT NOT NULL,
+  duration_days INTEGER,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  expires_at DATETIME,
+  status TEXT DEFAULT 'active',
+  FOREIGN KEY (created_by) REFERENCES users(address)
+);
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_rooms_type_name
+ON rooms(type, name);
+
+CREATE INDEX IF NOT EXISTS idx_rooms_type_expires
+ON rooms(type, expires_at);

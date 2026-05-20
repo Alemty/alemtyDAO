@@ -536,7 +536,19 @@ drawer.querySelector("#siweBtn")?.addEventListener("click", async () => {
       return;
     }
 
-    const API = "https://alemtydao-siwe.alejandrogtzz93.workers.dev";
+    
+// ✅ SIWE API (DEV local vs PROD)
+const isLocalHost =
+  location.hostname === "localhost" || location.hostname === "127.0.0.1";
+
+// En DEV: SIWE local (tu wrangler dev del SIWE)
+const SIWE_API_LOCAL = "http://127.0.0.1:8787";
+
+// En PROD: SIWE remoto
+const SIWE_API_REMOTE = "https://alemtydao-siwe.alejandrogtzz93.workers.dev";
+
+const API = isLocalHost ? SIWE_API_LOCAL : SIWE_API_REMOTE;
+
 
     // 1) Nonce
     console.log("➡️ solicitando nonce");
@@ -1025,20 +1037,20 @@ function getHighestNft(addr) {
 }
 
 
-/**
- * ✅ API base (universal):
- * - ENS/IPFS (eth.limo) -> usa Worker API absoluto
- * - DEV (localhost/127.0.0.1) -> usa Worker API absoluto
- * - PROD en Workers (mismo origin) -> usa rutas relativas ("")
- */
+// ✅ API base (universal): local / prod / workers same-origin
 const isENS = location.hostname.endsWith(".eth.limo");
 const isLocal =
   location.hostname === "localhost" ||
   location.hostname === "127.0.0.1";
+const isWorkers = location.hostname.endsWith(".workers.dev");
 
-const API_WORKER = "https://alemtydao.alejandrogtzz93.workers.dev";
+const API_WORKER_LOCAL = "http://127.0.0.1:8788";
+const API_WORKER_REMOTE = "https://alemtydao.alejandrogtzz93.workers.dev";
 
-const API_BASE = (isENS || isLocal) ? API_WORKER : "";
+// - Workers: rutas relativas
+// - Local: API local
+// - ENS/otros: API remoto
+const API_BASE = isWorkers ? "" : (isLocal ? API_WORKER_LOCAL : API_WORKER_REMOTE);
 
 
 

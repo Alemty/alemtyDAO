@@ -5,8 +5,6 @@ mountShell();
 // =========================
 // API base (DEV vs PROD)
 // =========================
-
-
 const isENS = location.hostname.endsWith(".eth.limo");
 const isLocal =
   location.hostname === "localhost" ||
@@ -15,12 +13,18 @@ const isLocal =
 const isPages = location.hostname.endsWith(".pages.dev");
 const isWorkers = location.hostname.endsWith(".workers.dev");
 
-const API_WORKER = "https://alemtydao.alejandrogtzz93.workers.dev";
+// ✅ endpoints
+const API_WORKER_LOCAL = "http://127.0.0.1:8788"; // API local (wrangler dev)
+const API_WORKER_REMOTE = "https://alemtydao.alejandrogtzz93.workers.dev"; // prod
 
-// ✅ regla simple:
+// ✅ mantenemos compat si algo usa API_WORKER
+const API_WORKER = API_WORKER_REMOTE;
+
+// ✅ regla:
 // - Si estás en Workers (mismo origin), usa "" (rutas relativas)
-// - En ENS/IPFS/Pages/Local, usa el Worker explícito
-const API_BASE = isWorkers ? "" : API_WORKER;
+// - En local: API local
+// - En ENS/Pages/otros: API remoto
+const API_BASE = isWorkers ? "" : (isLocal ? API_WORKER_LOCAL : API_WORKER_REMOTE);
 
 
 
@@ -2776,15 +2780,344 @@ function saveRoomsLocal(key, rooms){
 /* =========================
    Rooms / Topics modales
 ========================= */
-function openRoomsModal(){
-  // 1) Cargar salas: primero intenta backend (si existe), si no, fallback local
-  //    Nota: tu apiGetRooms ya existe en el archivo
+
+// --- helpers room modal (UI-only por ahora) ---
+function roomCfgKey(type, name) {
+  return `alemty.roomcfg.${type}.${String(name).toLowerCase()}`;
+}
+
+function loadRoomCfg(type, name) {
+  try {
+    const raw = localStorage.getItem(roomCfgKey(type, name));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveRoomCfg(type, name, cfg) {
+  localStorage.setItem(roomCfgKey(type, name), JSON.stringify(cfg));
+}
+
+// Modal tipo Discord (estructura editable por owner/founder; UX-only por ahora)
+// --- helpers chat (UI-only por ahora) ---
+function roomChatKey(type, name) {
+  return `alemty.roomchat.${type}.${String(name).toLowerCase()}`;
+}
+function loadRoomChat(type, name) {
+  try {
+    const raw = localStorage.getItem(roomChatKey(type, name));
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+function saveRoomChat(type, name, msgs) {
+  localStorage.setItem(roomChatKey(type, name), JSON.stringify(msgs || []));
+}
+
+// Modal tipo Discord (estructura editable por owner/founder; UX-only por ahora)
+function openRoomModal({ type, name }) {
+  const addr = getViewerAddress(); // ya existe en tu app.js
+  const me = String(addr || "").toLowerCase();
+
+  const FOUNDER = "0x6a202f991c4c1df079449be9847b1dac3f51854f";
+  const isFounder = me === FOUNDER;
+
+  let cfg = loadRoomCfg(type, name);
+  if (!cfg) {
+    // ✅ Secciones por defecto según tipo
+    const defaultSections =
+      type === "governance"
+        ? [
+            { id: "proposals", label: "📄 Propuestas" },
+            { id: "votes", label: "🗳️ Votaciones" },
+            { id: "constitution", label: "📌 Constitución" },
+            { id: "chat", label: "🗨️ Foro libre" }, // ✅ NUEVO
+            { id: "settings", label: "⚙️ Ajustes" },
+          ]
+        : [
+            { id: "general", label: "💬 General" },
+            { id: "announcements", label: "📣 Anuncios" },
+            { id: "chat", label: "🗨️ Foro libre" }, // ✅ también disponible en backrooms
+            { id: "mods", label: "🛡️ Moderación" },
+            { id: "settings", label: "⚙️ Ajustes" },
+          ];
+
+    cfg = {
+      version: 1,
+      type,
+      name,
+      owner: me || "",
+      visibility: "private", // public | private | password (UX-only)
+      sections: defaultSections,
+    };
+    saveRoomCfg(type, name, cfg);
+  }
+
+  const isOwner = (cfg.owner || "").toLowerCase() === me;
+  const canManage = isFounder || isOwner;
+
+  const icon = type === "governance" ? "🗳️" : "🏚️";
+  document.getElementById("daoModalTitle").textContent = `${icon} ${name}`;
+  document.getElementById("daoModalBody").innerHTML = `
+    <div style="display:grid;grid-template-columns:240px 1fr;gap:12px;">
+      <aside style="border:1px solid var(--border);border-radius:16px;padding:10px;background:rgba(255,255,255,.04);">
+        <div class="small muted" style="margin-bottom:10px;">Secciones</div>
+        <div id="roomNav" style="display:flex;flex-direction:column;gap:8px;">
+          ${cfg.sections
+            .map(
+              (s) => `
+              <button class="btn" type="button" data-room-tab="${esc(s.id)}" style="text-align:left;">
+                ${esc(s.label)}
+              </button>
+            `
+            )
+            .join("")}
+        </div>
+
+        <div style="margin-top:12px;">
+          <div class="small muted">Acceso</div>
+          <div class="small" style="margin-top:6px;">
+            <span class="pill">${canManage ? "👑 Admin" : "👤 Miembro"}</span>
+            <span class="pill">${esc((cfg.visibility || "private"))}</span>
+          </div>
+        </div>
+
+        ${
+          canManage
+            ? `
+          <div style="margin-top:12px;">
+            <div class="small muted">Admin</div>
+            <button class="btn primary" type="button" id="roomEditBtn">Editar estructura</button>
+          </div>
+        `
+            : `
+          <div class="small muted" style="margin-top:12px;">Solo creador/founder puede editar.</div>
+        `
+        }
+      </aside>
+
+      <section style="border:1px solid var(--border);border-radius:16px;padding:12px;background:rgba(255,255,255,.04);">
+        <div id="roomTabTitle" class="h2" style="margin:0 0 6px;">${type==="governance" ? "📄 Propuestas" : "💬 General"}</div>
+        <div id="roomTabContent" class="small muted">
+          Contenido de sala — siguiente fase.
+        </div>
+      </section>
+    </div>
+  `;
+
+  openModal();
+
+  const tabTitle = document.getElementById("roomTabTitle");
+  const tabContent = document.getElementById("roomTabContent");
+
+  // --- renderer foro/chat ---
+  function renderChat() {
+    const msgs = loadRoomChat(type, name);
+    const canPost = !!getJWT(); // si no hay JWT, solo lectura/UX
+
+    tabContent.innerHTML = `
+      <div class="sheet-item">
+        <div class="t">🗨️ Foro libre</div>
+        <div class="small muted">Chat estilo foro (guardado local por ahora).</div>
+      </div>
+
+      <div id="roomChatList"
+           style="display:flex; flex-direction:column; gap:10px; max-height:260px; overflow:auto; padding-right:4px; margin-top:10px;">
+        ${
+          msgs.length
+            ? msgs
+                .slice(-200)
+                .map((m) => `
+                  <div class="sheet-item">
+                    <div class="small muted">${esc(m.author || "anon")} · ${esc(m.when || "")}</div>
+                    <div style="white-space:pre-wrap;">${esc(m.text || "")}</div>
+                  </div>
+                `)
+                .join("")
+            : `<div class="small muted" style="padding:6px 2px;">Aún no hay mensajes.</div>`
+        }
+      </div>
+
+      <div class="sheet-item" style="margin-top:10px; ${canPost ? "" : "opacity:.6;"}">
+        <div class="t">Escribir</div>
+        <textarea id="roomChatInput" placeholder="${canPost ? "Escribe un mensaje…" : "Inicia SIWE para escribir"}"
+          style="min-height:90px;" ${canPost ? "" : "disabled"}></textarea>
+        <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn primary" id="roomChatSend" type="button" ${canPost ? "" : "disabled"}>Enviar</button>
+        </div>
+      </div>
+    `;
+
+    // enviar
+    const sendBtn = document.getElementById("roomChatSend");
+    sendBtn?.addEventListener("click", () => {
+      const input = document.getElementById("roomChatInput");
+      const text = String(input?.value || "").trim();
+      if (text.length < 1) return;
+
+      const now = new Date();
+      const entry = {
+        id: (crypto.randomUUID?.() || String(Math.random())).slice(0, 12),
+        author: me ? `${me.slice(0, 6)}…${me.slice(-4)}` : "anon",
+        when: now.toLocaleString("es-MX"),
+        text,
+      };
+
+      const current = loadRoomChat(type, name);
+      current.push(entry);
+      saveRoomChat(type, name, current);
+
+      if (input) input.value = "";
+      renderChat(); // refresh
+      const list = document.getElementById("roomChatList");
+      if (list) list.scrollTop = list.scrollHeight;
+    });
+  }
+
+  function setTab(id) {
+    const sec = cfg.sections.find((x) => x.id === id) || cfg.sections[0];
+    tabTitle.textContent = sec.label;
+
+    // Governance-specific tabs (placeholders por ahora)
+    if (id === "proposals") {
+      tabContent.innerHTML = `
+        <div class="sheet-item">
+          <div class="t">📄 Propuestas</div>
+          <div class="small muted">Aquí irá listado de propuestas (fase siguiente).</div>
+        </div>
+      `;
+      return;
+    }
+    if (id === "votes") {
+      tabContent.innerHTML = `
+        <div class="sheet-item">
+          <div class="t">🗳️ Votaciones</div>
+          <div class="small muted">Aquí irá sistema de votación (fase siguiente).</div>
+        </div>
+      `;
+      return;
+    }
+    if (id === "constitution") {
+      tabContent.innerHTML = `
+        <div class="sheet-item">
+          <div class="t">📌 Constitución</div>
+          <div class="small muted">Aquí irá la constitución / documentos (fase siguiente).</div>
+        </div>
+      `;
+      return;
+    }
+
+    // ✅ NUEVO: chat/foro libre
+    if (id === "chat") {
+      renderChat();
+      return;
+    }
+
+    if (id === "mods") {
+      tabContent.innerHTML = `
+        <div class="sheet-item">
+          <div class="t">🛡️ Moderación</div>
+          <div class="small muted">Lista de mods / permisos (fase siguiente).</div>
+        </div>
+      `;
+      return;
+    }
+
+    if (id === "settings") {
+      tabContent.innerHTML = canManage
+        ? `
+          <div class="sheet-item">
+            <div class="t">Visibilidad</div>
+            <select id="roomVis">
+              <option value="public"${cfg.visibility === "public" ? " selected" : ""}>Pública</option>
+              <option value="private"${cfg.visibility === "private" ? " selected" : ""}>Privada (solo invitados)</option>
+              <option value="password"${cfg.visibility === "password" ? " selected" : ""}>Privada con contraseña</option>
+            </select>
+            <div class="small muted" style="margin-top:6px;">
+              Nota: esto es UX (frontend). La seguridad real se aplicará en backend.
+            </div>
+          </div>
+
+          <div class="sheet-item">
+            <div class="t">Contraseña (solo si password)</div>
+            <input id="roomPass" placeholder="(no guardamos aún en backend)" value="${esc(cfg.passwordHint || "")}" />
+          </div>
+
+          <button class="btn primary" type="button" id="roomSaveCfg">Guardar</button>
+        `
+        : `<div class="small muted">Sin permisos para ajustar esta sala.</div>`;
+      return;
+    }
+
+    tabContent.textContent = "Contenido de sala — siguiente fase.";
+  }
+
+  document.querySelectorAll("[data-room-tab]").forEach((b) => {
+    b.addEventListener("click", () => setTab(b.getAttribute("data-room-tab")));
+  });
+
+  if (canManage) {
+    document.getElementById("roomEditBtn")?.addEventListener("click", () => {
+      tabTitle.textContent = "⚙️ Editar estructura";
+      tabContent.innerHTML = `
+        <div class="sheet-item">
+          <div class="t">Secciones (JSON)</div>
+          <textarea id="roomSectionsJson" style="min-height:160px;">${esc(
+            JSON.stringify(cfg.sections, null, 2)
+          )}</textarea>
+          <div class="small muted" style="margin-top:6px;">
+            Formato: [{ "id": "chat", "label": "🗨️ Foro libre" }, ...]
+          </div>
+        </div>
+        <button class="btn primary" type="button" id="roomApplySections">Aplicar</button>
+      `;
+
+      document.getElementById("roomApplySections")?.addEventListener("click", () => {
+        try {
+          const raw = document.getElementById("roomSectionsJson").value || "[]";
+          const next = JSON.parse(raw);
+          if (!Array.isArray(next) || next.length === 0) throw new Error("sections inválidas");
+          cfg.sections = next;
+          saveRoomCfg(type, name, cfg);
+          openRoomModal({ type, name }); // re-render
+        } catch {
+          alert("JSON inválido para secciones");
+        }
+      });
+    });
+
+    // guardar ajustes (visibilidad/pass) UX-only
+    document.addEventListener(
+      "click",
+      (e) => {
+        if (e.target && e.target.id === "roomSaveCfg") {
+          const v = document.getElementById("roomVis")?.value || "private";
+          cfg.visibility = v;
+          cfg.passwordHint = document.getElementById("roomPass")?.value || "";
+          saveRoomCfg(type, name, cfg);
+          alert("Guardado ✅ (frontend)");
+        }
+      },
+      { once: true }
+    );
+  }
+
+  // default tab
+  if (type === "governance") setTab("proposals");
+  else setTab("general");
+}
+
+// --- modal principal de backrooms ---
+function openRoomsModal() {
+  // 1) Cargar salas: backend-first; si no, fallback local
   const loadRooms = async () => {
     let rooms = null;
-    try { rooms = await apiGetRooms('backroom'); } catch {}
+    try { rooms = await apiGetRooms("backroom"); } catch {}
     if (Array.isArray(rooms)) return rooms;
 
-    // fallback local: BACKROOMS_KEY (nuevo) -> ROOMS_KEY (legacy)
     const localNew = loadJSON(BACKROOMS_KEY, null);
     if (Array.isArray(localNew)) return localNew;
 
@@ -2792,105 +3125,200 @@ function openRoomsModal(){
     return Array.isArray(legacy) ? legacy : [];
   };
 
-  // 2) Render async (para poder esperar rooms)
   (async () => {
-    const rooms = await loadRooms();
+    const rawRooms = await loadRooms();
 
-    document.getElementById('daoModalTitle').textContent = 'Backrooms';
-    document.getElementById('daoModalBody').innerHTML = `
+    // Normaliza strings y quita vacíos
+    const roomsAll = (Array.isArray(rawRooms) ? rawRooms : [])
+      .map(r => String(r || "").trim())
+      .filter(Boolean);
+
+    // Estado UI (persistente opcional)
+    const STATE_KEY = "alemty.ui.backrooms.v1";
+    const state = (() => {
+      try { return JSON.parse(localStorage.getItem(STATE_KEY) || "{}"); } catch { return {}; }
+    })();
+
+    let q = String(state.q || "").trim();
+    let page = Number.isFinite(state.page) ? Number(state.page) : 0;
+
+    // Helpers para guardar estado
+    const saveState = () => {
+      localStorage.setItem(STATE_KEY, JSON.stringify({ q, page }));
+    };
+
+    // Render base del modal (secciones)
+    document.getElementById("daoModalTitle").textContent = "Backrooms";
+    document.getElementById("daoModalBody").innerHTML = `
       <div class="sheet-item">
         <div class="t">🏚️ Backrooms</div>
-        <div class="m small muted">Crea salas privadas o temáticas para coordinación y equipos.</div>
-        <div class="small muted" style="margin-top:8px;">
-          Costo: <b>100 Aura / día</ (cuando backend esté activo).
-        </div>
+        <div class="m small muted">Crea salas temáticas. Toca una sala para abrirla.</div>
       </div>
 
-      ${(rooms.length ? rooms : ['Sin salas aún']).map(r => `
-        <div class="sheet-item">
-          <div class="t">${esc(r)}</div>
-        </div>
-      `).join('')}
-
+      <!-- ✅ Sección: Crear sala (arriba) -->
       <div class="sheet-item" style="margin-top:10px;">
         <div class="t">Crear sala</div>
         <input id="backroomName" placeholder="Nombre de la sala…" maxlength="48" />
-        
-<input id="backroomDays" type="number" min="1" value="1" placeholder="Días de acceso" />
+        <div style="display:flex; gap:10px; margin-top:10px; align-items:center; flex-wrap:wrap;">
+          <input id="backroomDays" type="number" min="1" value="1" placeholder="Días de acceso" style="max-width:160px;" />
+          <button class="btn primary" id="createBackroomBtn" type="button">Crear</button>
+          <button class="btn" type="button" data-close="1">Cerrar</button>
+        </div>
+        <div class="small muted" style="margin-top:8px;">
+          Ej: 1 día = 100 Aura · 7 días = 700 Aura
+        </div>
+        <div id="backroomStatus" class="small muted" style="margin-top:10px;"></div>
+      </div>
 
-<div class="small muted" style="margin-top:6px;">
-  Ej: 1 día = 100 Aura · 7 días = 700 Aura
-</div>
-
+      <!-- ✅ Sección: Buscar -->
+      <div class="sheet-item" style="margin-top:10px;">
+        <div class="t">Buscar salas</div>
+        <input id="roomsSearch" placeholder="Buscar…" value="${esc(q)}" />
         <div class="small muted" style="margin-top:6px;">
-          Ej: “Builders”, “Research”, “Staff”, “Diseño”, “Moderación”.
+          Tip: escribe 2+ caracteres para filtrar.
         </div>
       </div>
 
-      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn primary" id="createBackroomBtn" type="button">Crear</button>
-        <button class="btn" type="button" data-close="1">Cerrar</button>
+      <!-- ✅ Sección: Lista (limitada) -->
+      <div class="sheet-item" style="margin-top:10px;">
+        <div class="t">Salas</div>
+        <div class="small muted" id="roomsMeta"></div>
       </div>
 
-      <div id="backroomStatus" class="small muted" style="margin-top:10px;"></div>
+      <div id="roomsList"
+           style="display:flex; flex-direction:column; gap:8px; max-height:320px; overflow:auto; padding-right:4px;">
+      </div>
+
+      <div id="roomsPager"
+           style="margin-top:12px; display:flex; gap:10px; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+        <button class="btn" id="roomsPrev" type="button">◀ Anterior</button>
+        <div class="small muted" id="roomsPageInfo"></div>
+        <button class="btn" id="roomsNext" type="button">Siguiente ▶</button>
+      </div>
     `;
 
     openModal();
 
-    // 3) Handler de crear (igual a gobernanza pero listo para backend + fallback local)
-    const btn = document.getElementById('createBackroomBtn');
-    const status = document.getElementById('backroomStatus');
+    const statusEl = document.getElementById("backroomStatus");
+    const btnCreate = document.getElementById("createBackroomBtn");
 
-    if (btn){
-      btn.onclick = async () => {
-        const input = document.getElementById('backroomName');
-        const name = (input?.value || '').trim();
-        if (name.length < 3){
-          if (status) status.textContent = 'Nombre muy corto (mínimo 3 caracteres).';
-          return;
-        }
+    const listEl = document.getElementById("roomsList");
+    const metaEl = document.getElementById("roomsMeta");
+    const pageInfoEl = document.getElementById("roomsPageInfo");
+    const prevBtn = document.getElementById("roomsPrev");
+    const nextBtn = document.getElementById("roomsNext");
+    const searchEl = document.getElementById("roomsSearch");
 
-        // Para que esté listo a Aura/Backend: requiere JWT cuando backend esté activo
-        if (!getJWT()){
-          if (status) status.textContent = 'Necesitas SIWE (JWT) para crear salas.';
-          return;
-        }
+    // ✅ Render lista con paginación (máximo 10)
+    const PAGE_SIZE = 10;
 
-        btn.disabled = true;
-        try{
-          if (status) status.textContent = 'Creando sala…';
-
-          // Backend (cuando exista): si falla, fallback local
-          try{
-            
-const days = Number(document.getElementById('backroomDays')?.value || 1);
-const cost = days * 100;
-
-// UI feedback
-if (status) status.textContent = `Costo: ${cost} Aura · Creando sala…`;
-
-await apiCreateRoom('backroom', name, days);
-
-          }catch{
-            // Local: guarda en BACKROOMS_KEY (nuevo)
-            const next = loadJSON(BACKROOMS_KEY, []);
-            if (!next.includes(name)) next.unshift(name);
-            saveJSON(BACKROOMS_KEY, next);
-          }
-
-          if (status) status.textContent = 'Sala creada ✅';
-          // refrescar modal
-          openRoomsModal();
-
-        }catch(err){
-          if (status) status.textContent = err?.message || 'Error creando sala.';
-        }finally{
-          btn.disabled = false;
-        }
-      };
+    function getFiltered() {
+      const needle = q.trim().toLowerCase();
+      if (needle.length >= 2) {
+        return roomsAll.filter(name => name.toLowerCase().includes(needle));
+      }
+      return roomsAll.slice();
     }
+
+    function renderList() {
+      const filtered = getFiltered();
+      const total = filtered.length;
+
+      const maxPage = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
+      page = Math.max(0, Math.min(page, maxPage));
+
+      const start = page * PAGE_SIZE;
+      const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
+      metaEl.textContent = total
+        ? `Mostrando ${Math.min(total, start + 1)}–${Math.min(total, start + pageItems.length)} de ${total}`
+        : "Sin salas aún";
+
+      pageInfoEl.textContent = `Página ${maxPage + 1 ? page + 1 : 0} de ${maxPage + 1}`;
+
+      prevBtn.disabled = page <= 0;
+      nextBtn.disabled = page >= maxPage || total === 0;
+
+      // Lista clickable → abre modal room
+      listEl.innerHTML = pageItems.length
+        ? pageItems.map(name => `
+            <button class="sheet-item room-item" type="button" data-room-open="${esc(name)}">
+              <div class="t">${esc(name)}</div>
+              <div class="small muted">Abrir</div>
+            </button>
+          `).join("")
+        : `<div class="small muted" style="padding:8px 2px;">No hay resultados.</div>`;
+
+      listEl.querySelectorAll("[data-room-open]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const roomName = btn.getAttribute("data-room-open");
+          if (roomName) openRoomModal({ type: "backroom", name: roomName });
+        });
+      });
+
+      saveState();
+    }
+
+    // Listeners paginación
+    prevBtn.addEventListener("click", () => { page = Math.max(0, page - 1); renderList(); });
+    nextBtn.addEventListener("click", () => { page = page + 1; renderList(); });
+
+    // Search (debounce light)
+    let tId = null;
+    searchEl.addEventListener("input", () => {
+      q = String(searchEl.value || "");
+      page = 0;
+      if (tId) clearTimeout(tId);
+      tId = setTimeout(() => renderList(), 120);
+    });
+
+    // ✅ Crear sala (backend-first)
+    btnCreate.onclick = async () => {
+      const input = document.getElementById("backroomName");
+      const name = (input?.value || "").trim();
+
+      if (name.length < 3) {
+        if (statusEl) statusEl.textContent = "Nombre muy corto (mínimo 3 caracteres).";
+        return;
+      }
+
+      if (!getJWT()) {
+        if (statusEl) statusEl.textContent = "Necesitas SIWE (JWT) para crear salas.";
+        return;
+      }
+
+      btnCreate.disabled = true;
+      try {
+        const days = Number(document.getElementById("backroomDays")?.value || 1);
+        const safeDays = Number.isFinite(days) ? Math.max(1, Math.min(365, days)) : 1;
+        const cost = safeDays * 100;
+
+        if (statusEl) statusEl.textContent = `Costo: ${cost} Aura · Creando sala…`;
+
+        try {
+          await apiCreateRoom("backroom", name, safeDays);
+        } catch {
+          // fallback local si backend no está disponible
+          const next = loadJSON(BACKROOMS_KEY, []);
+          if (!next.includes(name)) next.unshift(name);
+          saveJSON(BACKROOMS_KEY, next);
+        }
+
+        if (statusEl) statusEl.textContent = "Sala creada ✅";
+        // refresca modal completo (para jalar lista desde backend)
+        openRoomsModal();
+      } catch (err) {
+        if (statusEl) statusEl.textContent = err?.message || "Error creando sala.";
+      } finally {
+        btnCreate.disabled = false;
+      }
+    };
+
+    // Primer render
+    renderList();
   })();
 }
+
 // =========================
 // GOVERNANZA — Access gate (Nobleza + Moderación + Founder)
 // Basado en docs:
@@ -2961,82 +3389,118 @@ function isFounder(){
  * Backend recomendado:
  * GET /api/me -> { roles:[], nobleRank:'rey|principe|duque', veAlem:number, address, ens }
  */
-async function getGovernanceAccess(){
-
+async function getGovernanceAccess() {
   // =========================
   // 1) Verificar JWT
   // =========================
-  if (!getJWT()){
+  const jwt = getJWT();
+  if (!jwt) {
     return {
       okRead: false,
       okWrite: false,
-      reason: 'Necesitas SIWE (JWT) para acceder a gobernanza.',
+      reason: "Necesitas SIWE (JWT) para acceder a gobernanza.",
       isModerator: false,
-      nobleRank: '',
+      nobleRank: "",
       veAlem: 0,
       isFounder: false,
     };
   }
 
+  // Helpers locales (UX dev)
+  const localIsModerator = isLocalModerator();
+  const localNobleRank = getLocalNobleRank(); // 'rey'|'principe'|'duque'|''
+  const localVeAlem = getLocalVeAlem();
+  const localIsNoble =
+    (localNobleRank === "rey" || localNobleRank === "principe" || localNobleRank === "duque") &&
+    Number(localVeAlem) > 0;
+
+  // Founder local: por address allowlist o ENS en localStorage
+  // (tu allowlist ya existe arriba como GOVERNANCE_FOUNDERS)
+  const meAddr = String(getViewerAddress()).toLowerCase();
+  const localEns = (getLocalEns?.() || "").toLowerCase();
+  const localIsFounder =
+    (typeof GOVERNANCE_FOUNDERS !== "undefined" && GOVERNANCE_FOUNDERS.has(meAddr)) ||
+    localEns === "alemty.eth";
+
+  // Si eres founder por local, por UX ya puedes ver/escribir aunque backend /api/me esté caído
+  const localOkRead = localIsFounder || localIsModerator || localIsNoble;
+  const localOkWrite =
+    localIsFounder ||
+    localIsModerator ||
+    (localIsNoble && (localNobleRank === "rey" || localNobleRank === "principe"));
+
   // =========================
   // 2) Backend (FUENTE REAL)
   // =========================
-  try{
+  try {
     const r = await fetch(`${API_BASE}/api/me`, {
       headers: authHeadersGet(),
-      cache: 'no-store'
+      cache: "no-store",
     });
 
-    // ❌ JWT inválido o expirado
-    if (!r.ok){
-      localStorage.removeItem('alemty.jwt');
-
+    // ✅ Si JWT realmente inválido/expirado: 401/403
+    if (r.status === 401 || r.status === 403) {
+      localStorage.removeItem("alemty.jwt");
       return {
         okRead: false,
         okWrite: false,
-        reason: 'Sesión expirada. Inicia SIWE nuevamente.',
+        reason: "Sesión expirada. Inicia SIWE nuevamente.",
         isModerator: false,
-        nobleRank: '',
+        nobleRank: "",
         veAlem: 0,
         isFounder: false,
       };
     }
 
+    // ✅ Si /api/me NO existe (404) o backend falla (>=500), NO borres JWT.
+    // Usa fallback local para no bloquear UI.
+    if (!r.ok) {
+      console.warn("⚠️ /api/me no disponible. Usando fallback local. Status:", r.status);
+      return {
+        okRead: localOkRead,
+        okWrite: localOkWrite,
+        reason: localOkRead ? "" : "Backend /api/me no disponible aún (modo local).",
+        isModerator: localIsModerator,
+        nobleRank: localIsFounder ? "founder" : (localIsNoble ? localNobleRank : ""),
+        veAlem: Number(localVeAlem) || 0,
+        isFounder: localIsFounder,
+      };
+    }
+
     const data = await r.json().catch(() => ({}));
 
-    const address = String(data?.address || '').toLowerCase();
-    const ens = String(data?.ens || '').toLowerCase();
+    const address = String(data?.address || "").toLowerCase();
+    const ens = String(data?.ens || "").toLowerCase();
 
     const roles = Array.isArray(data?.roles)
-      ? data.roles.map(x => String(x).toLowerCase())
+      ? data.roles.map((x) => String(x).toLowerCase())
       : [];
 
     const isModerator =
-      roles.includes('moderator') ||
-      roles.includes('mod') ||
-      roles.includes('admin');
+      roles.includes("moderator") ||
+      roles.includes("mod") ||
+      roles.includes("admin");
 
     // normalizar nobleza
-    const nobleRaw = String(data?.nobleRank || data?.noble || '').toLowerCase();
-    const nobleRank = nobleRaw === 'príncipe' ? 'principe' : nobleRaw;
+    const nobleRaw = String(data?.nobleRank || data?.noble || "").toLowerCase();
+    const nobleRank = nobleRaw === "príncipe" ? "principe" : nobleRaw;
 
     const veAlem = Number(data?.veAlem ?? data?.vealem ?? 0);
     const veAlemOk = Number.isFinite(veAlem) && veAlem > 0;
 
     // =========================
-    // 3) Founder (solo backend válido)
+    // 3) Founder (backend válido)
     // =========================
     const isFounderUser =
-      address === '0x6a202f991c4c1df079449be9847b1dac3f51854f' ||
-      ens === 'alemty.eth';
+      address === "0x6a202f991c4c1df079449be9847b1dac3f51854f" || ens === "alemty.eth";
 
-    if (isFounderUser){
+    if (isFounderUser) {
       return {
         okRead: true,
         okWrite: true,
-        reason: '',
+        reason: "",
         isModerator: false,
-        nobleRank: 'founder',
+        nobleRank: "founder",
         veAlem,
         isFounder: true,
       };
@@ -3046,175 +3510,265 @@ async function getGovernanceAccess(){
     // 4) Nobleza válida
     // =========================
     const isNoble =
-      (nobleRank === 'rey' || nobleRank === 'principe' || nobleRank === 'duque') &&
+      (nobleRank === "rey" || nobleRank === "principe" || nobleRank === "duque") &&
       veAlemOk;
 
     // =========================
     // 5) Permisos
     // =========================
     const okRead = isModerator || isNoble;
-
     const okWrite =
-      isModerator ||
-      (isNoble && (nobleRank === 'rey' || nobleRank === 'principe'));
+      isModerator || (isNoble && (nobleRank === "rey" || nobleRank === "principe"));
 
     return {
       okRead,
       okWrite,
       reason: okRead
-        ? ''
-        : 'Acceso restringido: requiere Moderación o Nobleza (Rey/Príncipe/Duque) con veALEM activo.',
+        ? ""
+        : "Acceso restringido: requiere Moderación o Nobleza (Rey/Príncipe/Duque) con veALEM activo.",
       isModerator,
-      nobleRank: isNoble ? nobleRank : '',
+      nobleRank: isNoble ? nobleRank : "",
       veAlem,
       isFounder: false,
     };
-
-  } catch (err){
-
+  } catch (err) {
     // =========================
     // 6) FALLBACK LOCAL (solo UX DEV)
     // =========================
-    console.warn('Governance fallback local');
-
-    const isModerator = isLocalModerator();
-    const nobleRank = getLocalNobleRank();
-    const veAlem = getLocalVeAlem();
-
-    const isNoble =
-      (nobleRank === 'rey' || nobleRank === 'principe' || nobleRank === 'duque') &&
-      veAlem > 0;
-
-    const okRead = isModerator || isNoble;
-
-    const okWrite =
-      isModerator ||
-      (isNoble && (nobleRank === 'rey' || nobleRank === 'principe'));
+    console.warn("Governance fallback local (fetch failed):", err);
 
     return {
-      okRead,
-      okWrite,
-      reason: okRead
-        ? ''
-        : 'Modo local (sin backend).',
-      isModerator,
-      nobleRank,
-      veAlem,
-      isFounder: false,
+      okRead: localOkRead,
+      okWrite: localOkWrite,
+      reason: localOkRead ? "" : "Modo local (sin backend).",
+      isModerator: localIsModerator,
+      nobleRank: localIsFounder ? "founder" : (localIsNoble ? localNobleRank : ""),
+      veAlem: Number(localVeAlem) || 0,
+      isFounder: localIsFounder,
     };
   }
 }
 
-async function openGovernanceRoomsModal(){
+async function openGovernanceRoomsModal() {
   // Rooms: backend-first (cuando exista) -> fallback local
   let rooms = null;
-  try { rooms = await apiGetRooms('governance'); } catch {}
+  try { rooms = await apiGetRooms("governance"); } catch {}
   if (!Array.isArray(rooms)) rooms = loadJSON(GOV_ROOMS_KEY, []);
 
-  const access = await getGovernanceAccess();
+  // Permisos (backend / fallback local)
+  const access = await getGovernanceAccess(); // usa okRead/okWrite/reason 
 
-  document.getElementById('daoModalTitle').textContent = 'Gobernanza';
-  document.getElementById('daoModalBody').innerHTML = `
+  // Normaliza strings
+  const roomsAll = (Array.isArray(rooms) ? rooms : [])
+    .map(r => String(r || "").trim())
+    .filter(Boolean);
+
+  // Estado UI (persistente opcional)
+  const STATE_KEY = "alemty.ui.governance.v1";
+  const state = (() => {
+    try { return JSON.parse(localStorage.getItem(STATE_KEY) || "{}"); } catch { return {}; }
+  })();
+
+  let q = String(state.q || "").trim();
+  let page = Number.isFinite(state.page) ? Number(state.page) : 0;
+
+  const saveState = () => {
+    localStorage.setItem(STATE_KEY, JSON.stringify({ q, page }));
+  };
+
+  // Render modal (secciones)
+  document.getElementById("daoModalTitle").textContent = "Gobernanza";
+  document.getElementById("daoModalBody").innerHTML = `
     <div class="sheet-item">
       <div class="t">🗳️ Salas de Gobernanza</div>
       <div class="m small muted">
         Propuestas y votaciones de fundadores / stakeholders.
         Gobernanza política basada en <b>veALEMTY</b> (no Aura).
       </div>
-
       <div class="small muted" style="margin-top:8px;">
         Acceso: <b>Moderación</b> o <b>Nobleza</b> (👑 Rey / 🤴 Príncipe / 🏰 Duque) con veALEMTY activo.
       </div>
-
       <div class="small muted" style="margin-top:6px;">
-        Estado: ${access.okRead ? '✅ Autorizado' : '⛔ Restringido'}
-        ${access.isFounder ? '· rol: <b>Founder</b>' : ''}
-        ${access.isModerator ? '· rol: <b>Moderación</b>' : ''}
-        ${access.nobleRank ? `· nobleza: <b>${esc(access.nobleRank)}</b>` : ''}
-        ${access.veAlem ? `· veALEM: <b>${esc(access.veAlem)}</b>` : ''}
+        Estado: ${access.okRead ? "✅ Autorizado" : "⛔ Restringido"}
+        ${access.isFounder ? "· rol: <b>Founder</b>" : ""}
+        ${access.isModerator ? "· rol: <b>Moderación</b>" : ""}
+        ${access.nobleRank ? `· nobleza: <b>${esc(access.nobleRank)}</b>` : ""}
+        ${access.veAlem ? `· veALEM: <b>${esc(access.veAlem)}</b>` : ""}
       </div>
-
       ${!access.okRead ? `
         <div class="small muted" style="margin-top:8px;">
-          ${esc(access.reason)}
+          ${esc(access.reason || "Acceso restringido.")}
         </div>
-      ` : ''}
+      ` : ""}
     </div>
 
-    ${(rooms.length ? rooms : ['Sin salas aún']).map(r => `
-      <div class="sheet-item">
-        <div class="t">${esc(r)}</div>
+    <!-- ✅ Sección: Buscar (arriba) -->
+    <div class="sheet-item" style="margin-top:10px;">
+      <div class="t">Buscar salas</div>
+      <input id="govSearch" placeholder="Buscar…" value="${esc(q)}" ${access.okRead ? "" : "disabled"} />
+      <div class="small muted" style="margin-top:6px;">
+        Tip: escribe 2+ caracteres para filtrar.
       </div>
-    `).join('')}
+    </div>
 
-    <div class="sheet-item" style="margin-top:10px; ${access.okWrite ? '' : 'opacity:.55;'}">
+    <!-- ✅ Sección: Crear sala (arriba, debajo de búsqueda) -->
+    <div class="sheet-item" style="margin-top:10px; ${access.okWrite ? "" : "opacity:.55;"}">
       <div class="t">Crear sala</div>
-      <input id="govRoomName" placeholder="Nombre de la sala…" maxlength="48" ${access.okWrite ? '' : 'disabled'} />
+      <input id="govRoomName" placeholder="Nombre de la sala…" maxlength="48" ${access.okWrite ? "" : "disabled"} />
       <div class="small muted" style="margin-top:6px;">
         Ej: “Propuestas”, “Votaciones”, “Constitución”.
       </div>
-
       ${access.okRead && !access.okWrite ? `
         <div class="small muted" style="margin-top:8px;">
-          Nota: Duques pueden deliberar/votar, pero la creación de salas está reservada a Rey/Príncipe o Moderación.
+          Nota: Duques pueden deliberar/votar, pero la creación está reservada a Rey/Príncipe o Moderación.
         </div>
-      ` : ''}
+      ` : ""}
+      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn primary" id="createGovRoomBtn" type="button" ${access.okWrite ? "" : "disabled"}>Crear</button>
+        <button class="btn" type="button" data-close="1">Cerrar</button>
+      </div>
+      <div id="govRoomStatus" class="small muted" style="margin-top:10px;"></div>
     </div>
 
-    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
-      <button class="btn primary" id="createGovRoomBtn" type="button" ${access.okWrite ? '' : 'disabled'}>
-        Crear
-      </button>
-      <button class="btn" type="button" data-close="1">Cerrar</button>
+    <!-- ✅ Sección: Lista -->
+    <div class="sheet-item" style="margin-top:10px;">
+      <div class="t">Salas</div>
+      <div class="small muted" id="govRoomsMeta"></div>
     </div>
 
-    <div id="govRoomStatus" class="small muted" style="margin-top:10px;"></div>
+    <div id="govRoomsList"
+         style="display:flex; flex-direction:column; gap:8px; max-height:320px; overflow:auto; padding-right:4px;">
+    </div>
+
+    <div id="govRoomsPager"
+         style="margin-top:12px; display:flex; gap:10px; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+      <button class="btn" id="govPrev" type="button">◀ Anterior</button>
+      <div class="small muted" id="govPageInfo"></div>
+      <button class="btn" id="govNext" type="button">Siguiente ▶</button>
+    </div>
   `;
 
   openModal();
 
-  const btn = document.getElementById('createGovRoomBtn');
-  const status = document.getElementById('govRoomStatus');
+  // Si no puede leer, no renderizamos interactivo
+  const searchEl = document.getElementById("govSearch");
+  const listEl = document.getElementById("govRoomsList");
+  const metaEl = document.getElementById("govRoomsMeta");
+  const pageInfoEl = document.getElementById("govPageInfo");
+  const prevBtn = document.getElementById("govPrev");
+  const nextBtn = document.getElementById("govNext");
 
-  if (btn){
-    btn.onclick = async () => {
-      if (!access.okWrite){
-        if (status) status.textContent = 'No tienes permisos para crear salas de gobernanza.';
+  const statusEl = document.getElementById("govRoomStatus");
+  const createBtn = document.getElementById("createGovRoomBtn");
+
+  const PAGE_SIZE = 10;
+
+  function getFiltered() {
+    const needle = q.trim().toLowerCase();
+    if (needle.length >= 2) {
+      return roomsAll.filter(name => name.toLowerCase().includes(needle));
+    }
+    return roomsAll.slice();
+  }
+
+  function renderList() {
+    const filtered = access.okRead ? getFiltered() : [];
+    const total = filtered.length;
+
+    const maxPage = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
+    page = Math.max(0, Math.min(page, maxPage));
+
+    const start = page * PAGE_SIZE;
+    const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
+    metaEl.textContent = total
+      ? `Mostrando ${Math.min(total, start + 1)}–${Math.min(total, start + pageItems.length)} de ${total}`
+      : (access.okRead ? "Sin salas aún" : "Acceso restringido");
+
+    pageInfoEl.textContent = `Página ${maxPage + 1 ? page + 1 : 0} de ${maxPage + 1}`;
+
+    prevBtn.disabled = !access.okRead || page <= 0;
+    nextBtn.disabled = !access.okRead || page >= maxPage || total === 0;
+
+    listEl.innerHTML = pageItems.length
+      ? pageItems.map(name => `
+          <button class="sheet-item room-item" type="button" data-gov-open="${esc(name)}">
+            <div class="t">${esc(name)}</div>
+            <div class="small muted">Abrir</div>
+          </button>
+        `).join("")
+      : `<div class="small muted" style="padding:8px 2px;">${access.okRead ? "No hay resultados." : "—"}</div>`;
+
+    // Click abre modal Discord-like (usa el mismo openRoomModal)
+    listEl.querySelectorAll("[data-gov-open]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const roomName = btn.getAttribute("data-gov-open");
+        if (roomName) openRoomModal({ type: "governance", name: roomName });
+      });
+    });
+
+    saveState();
+  }
+
+  // Pager
+  prevBtn.addEventListener("click", () => { page = Math.max(0, page - 1); renderList(); });
+  nextBtn.addEventListener("click", () => { page = page + 1; renderList(); });
+
+  // Search
+  let tId = null;
+  if (searchEl) {
+    searchEl.addEventListener("input", () => {
+      q = String(searchEl.value || "");
+      page = 0;
+      if (tId) clearTimeout(tId);
+      tId = setTimeout(() => renderList(), 120);
+    });
+  }
+
+  // Crear sala governance (backend-first + fallback local)
+  if (createBtn) {
+    createBtn.onclick = async () => {
+      if (!access.okWrite) {
+        if (statusEl) statusEl.textContent = "No tienes permisos para crear salas de gobernanza.";
         return;
       }
 
-      const input = document.getElementById('govRoomName');
-      const name = (input?.value || '').trim();
-      if (name.length < 3){
-        if (status) status.textContent = 'Nombre muy corto (mínimo 3 caracteres).';
+      const input = document.getElementById("govRoomName");
+      const name = (input?.value || "").trim();
+      if (name.length < 3) {
+        if (statusEl) statusEl.textContent = "Nombre muy corto (mínimo 3 caracteres).";
         return;
       }
 
-      btn.disabled = true;
-      try{
-        if (status) status.textContent = 'Creando sala…';
+      if (!getJWT()) {
+        if (statusEl) statusEl.textContent = "Necesitas SIWE (JWT) para crear salas.";
+        return;
+      }
 
-        // ✅ Backend recomendado:
-        // POST /api/rooms { type:'governance', name }
-        // El backend valida: Founder OR Moderación OR (Rey/Principe con veALEM activo).
-        try{
-          await apiCreateRoom('governance', name);
-        }catch{
-          // Fallback local (demo/offline)
+      createBtn.disabled = true;
+      try {
+        if (statusEl) statusEl.textContent = "Creando sala…";
+
+        try {
+          await apiCreateRoom("governance", name);
+        } catch {
+          // fallback local
           const next = loadJSON(GOV_ROOMS_KEY, []);
           if (!next.includes(name)) next.unshift(name);
           saveJSON(GOV_ROOMS_KEY, next);
         }
 
-        if (status) status.textContent = 'Sala creada ✅';
-        openGovernanceRoomsModal();
-      }catch(err){
-        if (status) status.textContent = err?.message || 'Error creando sala.';
-      }finally{
-        btn.disabled = false;
+        if (statusEl) statusEl.textContent = "Sala creada ✅";
+        openGovernanceRoomsModal(); // refresh
+      } catch (err) {
+        if (statusEl) statusEl.textContent = err?.message || "Error creando sala.";
+      } finally {
+        createBtn.disabled = false;
       }
     };
   }
+
+  renderList();
 }
 
 
@@ -3467,3 +4021,4 @@ document.addEventListener('click', async (e) => {
     }
   });
 })();
+window.getGovernanceAccess = getGovernanceAccess;

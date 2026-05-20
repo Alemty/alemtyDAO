@@ -11,6 +11,7 @@ type Env = {
 
 export const auth = createMiddleware<{ Bindings: Env; Variables: { address: string } }>(
   async (c, next) => {
+    console.log("JWT SECRET:", c.env.JWT_SECRET);
     const authHeader = c.req.header("Authorization") || "";
     const match = authHeader.match(/^Bearer\s+(.+)$/i);
     if (!match) return c.json({ error: "Missing Bearer token" }, 401);
