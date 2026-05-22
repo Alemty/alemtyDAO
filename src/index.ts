@@ -62,17 +62,22 @@ function corsOrigin(origin: string | undefined): string | null {
   return null;
 }
 
+
 app.use(
   "/*",
   cors({
     origin: (origin) => corsOrigin(origin ?? undefined),
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // ✅ PATCH agregado
     allowHeaders: ["Authorization", "Content-Type"],
     exposeHeaders: ["Content-Type"],
     maxAge: 86400,
     credentials: true,
   })
 );
+
+// ✅ Preflight explícito (evita fallos de PATCH en algunos navegadores)
+app.options("/api/*", (c) => c.body(null, 204));
+
 
 /* =========================
    Health check
@@ -165,7 +170,24 @@ app.get("/api/me/stats", auth, async (c) => {
     },
   });
 });
+// ✅ Perfil básico (requerido por getGovernanceAccess en frontend)
+app.get("/api/me", auth, async (c) => {
+  const address = c.get("address");
 
+  const user: any = await c.env.DB.prepare(
+    "SELECT address FROM users WHERE address = ? LIMIT 1"
+  ).bind(address).first();
+
+  return c.json({
+    ok: true,
+    address,
+    ens: null,
+    roles: [],      // TODO: cuando tengas tabla roles
+    nobleRank: "",  // TODO: nobleza cuando exista en BD
+    veAlem: 0,      // TODO: staking cuando exista
+    userExists: !!user,
+  });
+});
 /* =========================================================
    ROUTERS (montar ANTES del legacy)
 ========================================================= */

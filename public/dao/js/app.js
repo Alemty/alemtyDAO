@@ -50,6 +50,32 @@ function authHeadersGet(extra = {}) {
   };
 }
 
+// ✅ Access info (backend manda)
+// Requiere que el backend exponga:
+// GET /api/rooms/:name/access?type=backroom|governance (con auth JWT)
+async function getRoomAccess(name, type) {
+  try {
+    const token = localStorage.getItem("alemty.jwt");
+    if (!token) return { access: false, visibility: "private", role: "" };
+
+    const url = `${API_BASE}/api/rooms/${encodeURIComponent(name)}/access?type=${encodeURIComponent(type)}`;
+    const res = await fetch(url, {
+      headers: { Authorization: "Bearer " + token },
+      cache: "no-store",
+    });
+
+    const data = await res.json().catch(() => ({}));
+    return {
+      access: data?.access === true,
+      visibility: String(data?.visibility || "private").toLowerCase(),
+      role: String(data?.role || ""),
+    };
+  } catch (e) {
+    console.warn("getRoomAccess error:", e);
+    return { access: false, visibility: "private", role: "" };
+  }
+}
+
 
 async function readErr(r) {
   const ct = r.headers.get('content-type') || '';
@@ -333,39 +359,36 @@ parent.replies.push({
 const DB_KEY = 'alemty.dao.posts.v1';
 const ROOMS_KEY = 'alemty.dao.rooms.v1';
 const TOPICS_KEY = 'alemty.dao.topics.v1';
+
 // =========================
 // Rooms (Backrooms + Gobernanza) — Keys
 // =========================
 const GOV_ROOMS_KEY = 'alemty.dao.govrooms.v1';
 const BACKROOMS_KEY = 'alemty.dao.backrooms.v1'; // <- nuevo (separa de ROOMS_KEY legacy)
 
-
 const DEFAULT_TOPIC_GROUPS = [
   {
     label: '🌐 WEB3 & TECNOLOGÍA',
-    items: 
-[
-  '🤖 IA & Agentes Autónomos',
-  '🧑‍💻 Dev & Herramientas IA (GPT/Copilot/Claude)',
-  '🧱 Web3, Smart Contracts & Infraestructura DAO',
-  '🧾 Tokenomics, Incentivos & Gobernanza',
-  '🪪 ENS v2 & Identidad Descentralizada (DID/VC)',
-  '🧿 zkID, Pruebas de Persona & Privacidad',
-  '💧 DeFi: Lending, Stablecoins & Yield',
-  '🔁 DEX & AMMs (Pools, LP, Fees, Slippage)',
-  '🌉 L2 / Rollups & OP Stack (Base, Optimism)',
-  '🧰 Wallets, Account Abstraction (ERC-4337) & Onboarding',
-  '📈 Oráculos, Indexing (The Graph) & Data Pipelines',
-  '🧲 MEV, Mempool, Sandwich & Protección',
-  '🛰️ DePIN, Infra Física & Redes Comunitarias',
-  '🧬 Ciencia Descentralizada (DeSci)',
-  '🐧 Sistemas, Kernels & Código Abierto',
-  '📡 Hardware Libre & Telecomunicaciones',
-  '🔐 Criptografía & Ciberseguridad',
-]
-
+    items: [
+      '🤖 IA & Agentes Autónomos',
+      '🧑‍💻 Dev & Herramientas IA (GPT/Copilot/Claude)',
+      '🧱 Web3, Smart Contracts & Infraestructura DAO',
+      '🧾 Tokenomics, Incentivos & Gobernanza',
+      '🪪 ENS v2 & Identidad Descentralizada (DID/VC)',
+      '🧿 zkID, Pruebas de Persona & Privacidad',
+      '💧 DeFi: Lending, Stablecoins & Yield',
+      '🔁 DEX & AMMs (Pools, LP, Fees, Slippage)',
+      '🌉 L2 / Rollups & OP Stack (Base, Optimism)',
+      '🧰 Wallets, Account Abstraction (ERC-4337) & Onboarding',
+      '📈 Oráculos, Indexing (The Graph) & Data Pipelines',
+      '🧲 MEV, Mempool, Sandwich & Protección',
+      '🛰️ DePIN, Infra Física & Redes Comunitarias',
+      '🧬 Ciencia Descentralizada (DeSci)',
+      '🐧 Sistemas, Kernels & Código Abierto',
+      '📡 Hardware Libre & Telecomunicaciones',
+      '🔐 Criptografía & Ciberseguridad',
+    ]
   },
-
   {
     label: '🩺 BIOHACKING, SALUD & NUTRICIÓN',
     items: [
@@ -377,7 +400,6 @@ const DEFAULT_TOPIC_GROUPS = [
       '🌿 Fitoterapia & Medicina Herbal',
     ],
   },
-
   {
     label: '🏛️ FILOSOFÍA, CONTRACULTURA & HISTORIA',
     items: [
@@ -390,7 +412,6 @@ const DEFAULT_TOPIC_GROUPS = [
       '🎚️ Música 432hz & Sintetizadores',
     ],
   },
-
   {
     label: '🔨 SOBERANÍA, DIY & HÁBITAT',
     items: [
@@ -402,7 +423,6 @@ const DEFAULT_TOPIC_GROUPS = [
       '🪙 Finanzas Personales, Oro & Activos Refugio',
     ],
   },
-
   {
     label: '🕹️ ENTRETENIMIENTO & CULTURA POP',
     items: [
@@ -412,7 +432,6 @@ const DEFAULT_TOPIC_GROUPS = [
       '🖥️ Hardware Enthusiast, OC & Setups',
     ],
   },
-
   {
     label: '☕ COMUNIDAD',
     items: [
@@ -423,7 +442,6 @@ const DEFAULT_TOPIC_GROUPS = [
     ],
   },
 ];
-
 
 function loadTopicsModel(){
   const raw = loadJSON(TOPICS_KEY, null);
@@ -453,7 +471,6 @@ function loadTopicsModel(){
   };
 }
 
-
 function saveTopicsModel(model){
   saveJSON(TOPICS_KEY, model);
 }
@@ -466,16 +483,22 @@ function loadJSON(key, fallback){
     return fallback;
   }
 }
+
 function saveJSON(key, value){
   localStorage.setItem(key, JSON.stringify(value));
 }
+
 function uid(){
   return Math.random().toString(16).slice(2) + Date.now().toString(16);
 }
+
 function now(){ return Date.now(); }
+
 function fmt(ts){
   const d = new Date(ts);
-  return d.toLocaleString('es-MX', { year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+  return d.toLocaleString('es-MX', {
+    year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit'
+  });
 }
 
 function shortHex(addr, start = 6, end = 4){
@@ -492,13 +515,85 @@ function displayAuthor(addr){
 }
 
 // HTML del link del autor (clickable)
+// ⚠️ requiere esc() definido en tu app.js (ya existe más abajo) 【1-9fbb90】
 function authorLinkHTML(addr){
   const full = String(addr || '').toLowerCase();
   const label = displayAuthor(full);
   return `<a href="#" class="post-author-link" data-profile-open="${esc(full)}">${esc(label)}</a>`;
 }
 
+/* =========================================================
+   ✅ FASE 3.5 — Invitación opción A (SIN backend)
+   - Address Book local: ENS/DID/alias -> 0x...
+   - Genera SQL y comando wrangler para meter a room_members
+   - La “autorización” real sigue siendo: owner/founder (canManage) en UI.
+========================================================= */
 
+const ADDRESSBOOK_KEY = "alemty.addressbook.v1";
+
+function loadAddressBook(){
+  return loadJSON(ADDRESSBOOK_KEY, {});
+}
+
+function saveAddressBook(book){
+  saveJSON(ADDRESSBOOK_KEY, book || {});
+}
+
+function isHexAddress(s){
+  const v = String(s || "").trim();
+  return /^0x[a-fA-F0-9]{40}$/.test(v);
+}
+
+/**
+ * input puede ser:
+ * - 0x... (directo)
+ * - xxx.eth / DID / alias (buscado en AddressBook local)
+ */
+function resolveInviteTarget(input){
+  const raw = String(input || "").trim();
+  if (!raw) return { ok:false, kind:"empty", address:"" };
+
+  if (isHexAddress(raw)) {
+    return { ok:true, kind:"address", address: raw.toLowerCase() };
+  }
+
+  const key = raw.toLowerCase();
+  const book = loadAddressBook();
+  const addr = book[key];
+
+  if (isHexAddress(addr)) {
+    return { ok:true, kind:"alias", address: String(addr).toLowerCase() };
+  }
+
+  return { ok:false, kind:"unknown", address:"" };
+}
+
+function buildInviteSQL({ roomName, roomType, address, role="member" }){
+  const escSql = (s) => String(s || "").replace(/'/g, "''");
+  return `INSERT OR IGNORE INTO room_members(room_id,address,role)
+SELECT id, '${escSql(address)}', '${escSql(role)}'
+FROM rooms
+WHERE name='${escSql(roomName)}' AND type='${escSql(roomType)}'
+LIMIT 1;`;
+}
+
+function buildRevokeSQL({ roomName, roomType, address }){
+  const escSql = (s) => String(s || "").replace(/'/g, "''");
+  return `DELETE FROM room_members
+WHERE address='${escSql(address)}'
+  AND room_id=(SELECT id FROM rooms WHERE name='${escSql(roomName)}' AND type='${escSql(roomType)}' LIMIT 1);`;
+}
+
+function buildWranglerCmd({ remote=false, sql }){
+  const flag = remote ? "--remote" : "--local";
+  const oneLine = String(sql || "").replace(/\s+/g, " ").trim();
+  return `npx wrangler d1 execute DB ${flag} --command "${oneLine}"`;
+}
+
+async function copyText(txt){
+  try { await navigator.clipboard.writeText(String(txt || "")); return true; }
+  catch { return false; }
+}
 
 function kebabMenuHTML(p) {
   const rawId = String(p?.id || '');
@@ -2723,40 +2818,50 @@ function mutatePost(id, fn) {
 // Rooms API (backend-ready) + fallback localStorage
 // =========================
 async function apiGetRooms(type){
-  // Backend-ready endpoint (cuando lo tengas):
-  // GET /api/rooms?type=backroom | governance
   try{
-    const r = await fetch(`${API_BASE}/api/rooms?type=${encodeURIComponent(type)}`, {
-      cache: "no-store",
-      headers: authHeadersGet(),
-    });
-    if (r.ok){
+    const r = await fetch(
+      `${API_BASE}/api/rooms?type=${encodeURIComponent(type)}`,
+      {
+        cache: "no-store",
+        headers: authHeadersGet(),
+      }
+    );
+
+    if (r.ok) {
       const data = await r.json().catch(() => ({}));
+
+      // ✅ Nuevo formato backend (objetos con metadata)
       if (Array.isArray(data?.rooms)) return data.rooms;
+
+      // ✅ Compatibilidad con formato legacy
+      if (Array.isArray(data?.names)) return data.names;
     }
-  }catch(e){
-    // offline / no backend
+  } catch (e) {
+    // backend caído / offline
   }
+
   return null;
 }
 
-async function apiCreateRoom(type, name, days = 1){
+async function apiCreateRoom(type, name, days = 1, visibility = "private", password = ""){
   const r = await fetch(`${API_BASE}/api/rooms`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({
       type,
       name,
-      durationDays: days   // ✅ NUEVO
+      durationDays: days,
+      visibility,
+      password
     }),
   });
 
   if (!r.ok){
     const msg = await readErr(r);
-    throw new Error(msg || 'No se pudo crear la sala');
+    throw new Error(msg || "No se pudo crear la sala");
   }
 
-  return r.json().catch(() => ({}));
+  return await r.json().catch(() => ({}));
 }
 
 
@@ -2817,9 +2922,41 @@ function saveRoomChat(type, name, msgs) {
   localStorage.setItem(roomChatKey(type, name), JSON.stringify(msgs || []));
 }
 
-// Modal tipo Discord (estructura editable por owner/founder; UX-only por ahora)
-function openRoomModal({ type, name }) {
-  const addr = getViewerAddress(); // ya existe en tu app.js
+
+// Modal tipo Discord (estructura editable por owner/founder)
+async function openRoomModal({ type, name }) {
+  // ✅ CONTROL DE ACCESO REAL (backend)
+  const gate = await getRoomAccess(name, type);
+
+  if (!gate.access) {
+    if (gate.visibility === "password") {
+      const pwd = prompt("🔐 Esta sala requiere contraseña:");
+      if (!pwd) return;
+
+      const r = await fetch(
+        `${API_BASE}/api/rooms/${encodeURIComponent(name)}/join?type=${encodeURIComponent(type)}`,
+        {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ password: pwd }),
+        }
+      );
+
+      if (!r.ok) {
+        const msg = await r.text().catch(() => "");
+        alert("❌ Contraseña incorrecta" + (msg ? ` (${msg})` : ""));
+        return;
+      }
+
+      return await openRoomModal({ type, name });
+    }
+
+    alert("⛔ No tienes acceso a esta sala");
+    return;
+  }
+
+  // ✅ NO duplicar variables
+  const addr = getViewerAddress();
   const me = String(addr || "").toLowerCase();
 
   const FOUNDER = "0x6a202f991c4c1df079449be9847b1dac3f51854f";
@@ -2827,20 +2964,19 @@ function openRoomModal({ type, name }) {
 
   let cfg = loadRoomCfg(type, name);
   if (!cfg) {
-    // ✅ Secciones por defecto según tipo
     const defaultSections =
       type === "governance"
         ? [
             { id: "proposals", label: "📄 Propuestas" },
             { id: "votes", label: "🗳️ Votaciones" },
             { id: "constitution", label: "📌 Constitución" },
-            { id: "chat", label: "🗨️ Foro libre" }, // ✅ NUEVO
+            { id: "chat", label: "🗨️ Foro libre" },
             { id: "settings", label: "⚙️ Ajustes" },
           ]
         : [
             { id: "general", label: "💬 General" },
             { id: "announcements", label: "📣 Anuncios" },
-            { id: "chat", label: "🗨️ Foro libre" }, // ✅ también disponible en backrooms
+            { id: "chat", label: "🗨️ Foro libre" },
             { id: "mods", label: "🛡️ Moderación" },
             { id: "settings", label: "⚙️ Ajustes" },
           ];
@@ -2850,13 +2986,14 @@ function openRoomModal({ type, name }) {
       type,
       name,
       owner: me || "",
-      visibility: "private", // public | private | password (UX-only)
+      visibility: "private",
+      passwordHint: "",
       sections: defaultSections,
     };
     saveRoomCfg(type, name, cfg);
   }
 
-  const isOwner = (cfg.owner || "").toLowerCase() === me;
+  const isOwner = String(cfg.owner || "").toLowerCase() === me;
   const canManage = isFounder || isOwner;
 
   const icon = type === "governance" ? "🗳️" : "🏚️";
@@ -2881,7 +3018,7 @@ function openRoomModal({ type, name }) {
           <div class="small muted">Acceso</div>
           <div class="small" style="margin-top:6px;">
             <span class="pill">${canManage ? "👑 Admin" : "👤 Miembro"}</span>
-            <span class="pill">${esc((cfg.visibility || "private"))}</span>
+            <span class="pill">${esc(String(gate.visibility || cfg.visibility || "private"))}</span>
           </div>
         </div>
 
@@ -2900,7 +3037,9 @@ function openRoomModal({ type, name }) {
       </aside>
 
       <section style="border:1px solid var(--border);border-radius:16px;padding:12px;background:rgba(255,255,255,.04);">
-        <div id="roomTabTitle" class="h2" style="margin:0 0 6px;">${type==="governance" ? "📄 Propuestas" : "💬 General"}</div>
+        <div id="roomTabTitle" class="h2" style="margin:0 0 6px;">${
+          type === "governance" ? "📄 Propuestas" : "💬 General"
+        }</div>
         <div id="roomTabContent" class="small muted">
           Contenido de sala — siguiente fase.
         </div>
@@ -2913,10 +3052,9 @@ function openRoomModal({ type, name }) {
   const tabTitle = document.getElementById("roomTabTitle");
   const tabContent = document.getElementById("roomTabContent");
 
-  // --- renderer foro/chat ---
   function renderChat() {
     const msgs = loadRoomChat(type, name);
-    const canPost = !!getJWT(); // si no hay JWT, solo lectura/UX
+    const canPost = !!getJWT();
 
     tabContent.innerHTML = `
       <div class="sheet-item">
@@ -2930,12 +3068,14 @@ function openRoomModal({ type, name }) {
           msgs.length
             ? msgs
                 .slice(-200)
-                .map((m) => `
+                .map(
+                  (m) => `
                   <div class="sheet-item">
                     <div class="small muted">${esc(m.author || "anon")} · ${esc(m.when || "")}</div>
                     <div style="white-space:pre-wrap;">${esc(m.text || "")}</div>
                   </div>
-                `)
+                `
+                )
                 .join("")
             : `<div class="small muted" style="padding:6px 2px;">Aún no hay mensajes.</div>`
         }
@@ -2943,7 +3083,8 @@ function openRoomModal({ type, name }) {
 
       <div class="sheet-item" style="margin-top:10px; ${canPost ? "" : "opacity:.6;"}">
         <div class="t">Escribir</div>
-        <textarea id="roomChatInput" placeholder="${canPost ? "Escribe un mensaje…" : "Inicia SIWE para escribir"}"
+        <textarea id="roomChatInput"
+          placeholder="${canPost ? "Escribe un mensaje…" : "Inicia SIWE para escribir"}"
           style="min-height:90px;" ${canPost ? "" : "disabled"}></textarea>
         <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
           <button class="btn primary" id="roomChatSend" type="button" ${canPost ? "" : "disabled"}>Enviar</button>
@@ -2951,9 +3092,7 @@ function openRoomModal({ type, name }) {
       </div>
     `;
 
-    // enviar
-    const sendBtn = document.getElementById("roomChatSend");
-    sendBtn?.addEventListener("click", () => {
+    document.getElementById("roomChatSend")?.addEventListener("click", () => {
       const input = document.getElementById("roomChatInput");
       const text = String(input?.value || "").trim();
       if (text.length < 1) return;
@@ -2971,94 +3110,202 @@ function openRoomModal({ type, name }) {
       saveRoomChat(type, name, current);
 
       if (input) input.value = "";
-      renderChat(); // refresh
+      renderChat();
       const list = document.getElementById("roomChatList");
       if (list) list.scrollTop = list.scrollHeight;
     });
   }
 
-  function setTab(id) {
-    const sec = cfg.sections.find((x) => x.id === id) || cfg.sections[0];
-    tabTitle.textContent = sec.label;
+  
+function setTab(id) {
+  const sec = cfg.sections.find((x) => x.id === id) || cfg.sections[0];
+  tabTitle.textContent = sec.label;
 
-    // Governance-specific tabs (placeholders por ahora)
-    if (id === "proposals") {
-      tabContent.innerHTML = `
-        <div class="sheet-item">
-          <div class="t">📄 Propuestas</div>
-          <div class="small muted">Aquí irá listado de propuestas (fase siguiente).</div>
-        </div>
-      `;
-      return;
-    }
-    if (id === "votes") {
-      tabContent.innerHTML = `
-        <div class="sheet-item">
-          <div class="t">🗳️ Votaciones</div>
-          <div class="small muted">Aquí irá sistema de votación (fase siguiente).</div>
-        </div>
-      `;
-      return;
-    }
-    if (id === "constitution") {
-      tabContent.innerHTML = `
-        <div class="sheet-item">
-          <div class="t">📌 Constitución</div>
-          <div class="small muted">Aquí irá la constitución / documentos (fase siguiente).</div>
-        </div>
-      `;
-      return;
-    }
+  if (id === "proposals") {
+    tabContent.innerHTML = `
+      <div class="sheet-item">
+        <div class="t">📄 Propuestas</div>
+        <div class="small muted">Aquí irá listado de propuestas (fase siguiente).</div>
+      </div>
+    `;
+    return;
+  }
 
-    // ✅ NUEVO: chat/foro libre
-    if (id === "chat") {
-      renderChat();
-      return;
-    }
+  if (id === "votes") {
+    tabContent.innerHTML = `
+      <div class="sheet-item">
+        <div class="t">🗳️ Votaciones</div>
+        <div class="small muted">Aquí irá sistema de votación (fase siguiente).</div>
+      </div>
+    `;
+    return;
+  }
 
-    if (id === "mods") {
-      tabContent.innerHTML = `
+  if (id === "constitution") {
+    tabContent.innerHTML = `
+      <div class="sheet-item">
+        <div class="t">📌 Constitución</div>
+        <div class="small muted">Aquí irá la constitución / documentos (fase siguiente).</div>
+      </div>
+    `;
+    return;
+  }
+
+  if (id === "chat") {
+    renderChat();
+    return;
+  }
+
+  if (id === "mods") {
+    tabContent.innerHTML = `
+      <div class="sheet-item">
+        <div class="t">🛡️ Moderación</div>
+        <div class="small muted">Lista de mods / permisos (fase siguiente).</div>
+      </div>
+    `;
+    return;
+  }
+
+  // ✅ SETTINGS + INVITACIÓN 3.5 (sin backend)
+  if (id === "settings") {
+    tabContent.innerHTML = canManage
+      ? `
         <div class="sheet-item">
-          <div class="t">🛡️ Moderación</div>
-          <div class="small muted">Lista de mods / permisos (fase siguiente).</div>
+          <div class="t">Visibilidad</div>
+          <select id="roomVis">
+            <option value="public"${cfg.visibility === "public" ? " selected" : ""}>Pública</option>
+            <option value="private"${cfg.visibility === "private" ? " selected" : ""}>Privada (solo invitados)</option>
+            <option value="password"${cfg.visibility === "password" ? " selected" : ""}>Privada con contraseña</option>
+          </select>
         </div>
-      `;
-      return;
-    }
 
-    if (id === "settings") {
-      tabContent.innerHTML = canManage
-        ? `
-          <div class="sheet-item">
-            <div class="t">Visibilidad</div>
-            <select id="roomVis">
-              <option value="public"${cfg.visibility === "public" ? " selected" : ""}>Pública</option>
-              <option value="private"${cfg.visibility === "private" ? " selected" : ""}>Privada (solo invitados)</option>
-              <option value="password"${cfg.visibility === "password" ? " selected" : ""}>Privada con contraseña</option>
-            </select>
-            <div class="small muted" style="margin-top:6px;">
-              Nota: esto es UX (frontend). La seguridad real se aplicará en backend.
-            </div>
+        <div class="sheet-item">
+          <div class="t">Contraseña (solo si password)</div>
+          <input id="roomPass" value="${esc(cfg.passwordHint || "")}" />
+        </div>
+
+        <button class="btn primary" type="button" id="roomSaveCfg">Guardar</button>
+
+        <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;opacity:.6;" />
+
+        <div class="sheet-item">
+          <div class="t">Invitar (Address / ENS / DID)</div>
+          <div class="small muted" style="margin-top:6px;">
+            Sin backend: genera SQL/comando para insertar en <code>room_members</code>.
           </div>
 
-          <div class="sheet-item">
-            <div class="t">Contraseña (solo si password)</div>
-            <input id="roomPass" placeholder="(no guardamos aún en backend)" value="${esc(cfg.passwordHint || "")}" />
+          <input id="inviteTarget" placeholder="0xABC... ó satoshi.eth ó miDID" style="margin-top:10px;" />
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+            <button class="btn" type="button" id="inviteCopySql">Copiar SQL</button>
+            <button class="btn" type="button" id="inviteCopyLocal">Copiar comando (local)</button>
+            <button class="btn" type="button" id="inviteCopyRemote">Copiar comando (remote)</button>
           </div>
 
-          <button class="btn primary" type="button" id="roomSaveCfg">Guardar</button>
-        `
-        : `<div class="small muted">Sin permisos para ajustar esta sala.</div>`;
+          <div class="small muted" style="margin-top:10px;">
+            Address Book local (para resolver ENS/DID):
+          </div>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
+            <input id="abLabel" placeholder="Etiqueta (ej: satoshi.eth / miDID)" style="max-width:240px;" />
+            <input id="abAddr" placeholder="Address 0x..." style="min-width:260px; flex:1;" />
+            <button class="btn" type="button" id="abSave">Guardar</button>
+          </div>
+
+          <div id="inviteStatus" class="small muted" style="margin-top:10px;"></div>
+        </div>
+      `
+      : `<div class="small muted">Sin permisos para ajustar esta sala.</div>`;
+
+
+      if (canManage) {
+        queueMicrotask(() => {
+          const vis = document.getElementById("roomVis");
+          const pass = document.getElementById("roomPass");
+          const btn = document.getElementById("roomSaveCfg");
+          if (!vis || !pass || !btn) return;
+
+          
+// Sync UI password field
+        const sync = () => {
+          const isPwd = vis.value === "password";
+          pass.disabled = !isPwd;
+          pass.placeholder = isPwd ? "Ingresa contraseña" : "(no aplica)";
+          if (!isPwd) pass.value = "";
+        };
+        vis.addEventListener("change", sync);
+        sync();
+
+
+          
+// ✅ Guardar settings (backend)
+        btn.onclick = async () => {
+          const v = vis.value || "private";
+          const p = (pass.value || "").trim();
+
+          if (v === "password" && !p) {
+            alert("Debes ingresar una contraseña");
+            return;
+          }
+
+
+            const r = await fetch(
+              `${API_BASE}/api/rooms/${encodeURIComponent(name)}/settings?type=${encodeURIComponent(type)}`,
+              {
+                method: "PATCH",
+                headers: authHeaders(),
+                body: JSON.stringify({
+                  visibility: v,
+                  password: v === "password" ? p : "",
+                }),
+              }
+            );
+
+            if (!r.ok) {
+              const msg = await r.text().catch(() => "");
+              alert("❌ No se pudo guardar" + (msg ? `: ${msg}` : ""));
+              return;
+            }
+
+            const data = await r.json().catch(() => ({}));
+            cfg.visibility = String(data?.visibility || v);
+            cfg.passwordHint = v === "password" ? p : "";
+            saveRoomCfg(type, name, cfg);
+
+            alert("Guardado ✅ (backend)");
+            await openRoomModal({ type, name });
+          };
+
+
+// ✅ Invitación (sin backend) — listeners
+        const inviteTarget = document.getElementById("inviteTarget");
+        const inviteStatus = document.getElementById("inviteStatus");
+        const btnSql = document.getElementById("inviteCopySql");
+        const btnLocal = document.getElementById("inviteCopyLocal");
+        const btnRemote = document.getElementById("inviteCopyRemote");
+
+        const abLabel = document.getElementById("abLabel");
+        const abAddr = document.getElementById("abAddr");
+        const abSave = document.getElementById("abSave");
+
+        const setInviteStatus = (msg) => {
+          if (inviteStatus) inviteStatus.textContent = String(msg || "");
+          };
+
+        });
+      }
       return;
     }
 
     tabContent.textContent = "Contenido de sala — siguiente fase.";
   }
 
+  // ✅ listeners de navegación (tabs)
   document.querySelectorAll("[data-room-tab]").forEach((b) => {
     b.addEventListener("click", () => setTab(b.getAttribute("data-room-tab")));
   });
 
+  // ✅ Admin: editar estructura (solo si puede)
   if (canManage) {
     document.getElementById("roomEditBtn")?.addEventListener("click", () => {
       tabTitle.textContent = "⚙️ Editar estructura";
@@ -3077,7 +3324,7 @@ function openRoomModal({ type, name }) {
 
       document.getElementById("roomApplySections")?.addEventListener("click", () => {
         try {
-          const raw = document.getElementById("roomSectionsJson").value || "[]";
+          const raw = document.getElementById("roomSectionsJson")?.value || "[]";
           const next = JSON.parse(raw);
           if (!Array.isArray(next) || next.length === 0) throw new Error("sections inválidas");
           cfg.sections = next;
@@ -3088,24 +3335,9 @@ function openRoomModal({ type, name }) {
         }
       });
     });
-
-    // guardar ajustes (visibilidad/pass) UX-only
-    document.addEventListener(
-      "click",
-      (e) => {
-        if (e.target && e.target.id === "roomSaveCfg") {
-          const v = document.getElementById("roomVis")?.value || "private";
-          cfg.visibility = v;
-          cfg.passwordHint = document.getElementById("roomPass")?.value || "";
-          saveRoomCfg(type, name, cfg);
-          alert("Guardado ✅ (frontend)");
-        }
-      },
-      { once: true }
-    );
   }
 
-  // default tab
+  // ✅ default tab (SIEMPRE al final)
   if (type === "governance") setTab("proposals");
   else setTab("general");
 }
@@ -3126,11 +3358,36 @@ function openRoomsModal() {
   };
 
   (async () => {
+    // ✅ Loading state rápido (UX)
+    document.getElementById("daoModalTitle").textContent = "Backrooms";
+    document.getElementById("daoModalBody").innerHTML = `
+      <div class="small muted" style="padding:20px;text-align:center;">
+        Cargando salas…
+      </div>
+    `;
+    openModal();
+
     const rawRooms = await loadRooms();
 
-    // Normaliza strings y quita vacíos
+    // ✅ Normaliza: acepta strings legacy Y objetos nuevos (metadata)
     const roomsAll = (Array.isArray(rawRooms) ? rawRooms : [])
-      .map(r => String(r || "").trim())
+      .map((r) => {
+        if (typeof r === "string") {
+          const n = r.trim();
+          return n ? { id: null, name: n, visibility: "private", created_by: null } : null;
+        }
+        if (r && typeof r === "object") {
+          const n = String(r.name || "").trim();
+          if (!n) return null;
+          return {
+            id: r.id ?? null,
+            name: n,
+            visibility: String(r.visibility || "private"),
+            created_by: r.created_by || null,
+          };
+        }
+        return null;
+      })
       .filter(Boolean);
 
     // Estado UI (persistente opcional)
@@ -3142,12 +3399,11 @@ function openRoomsModal() {
     let q = String(state.q || "").trim();
     let page = Number.isFinite(state.page) ? Number(state.page) : 0;
 
-    // Helpers para guardar estado
     const saveState = () => {
       localStorage.setItem(STATE_KEY, JSON.stringify({ q, page }));
     };
 
-    // Render base del modal (secciones)
+    // Render base del modal
     document.getElementById("daoModalTitle").textContent = "Backrooms";
     document.getElementById("daoModalBody").innerHTML = `
       <div class="sheet-item">
@@ -3155,22 +3411,40 @@ function openRoomsModal() {
         <div class="m small muted">Crea salas temáticas. Toca una sala para abrirla.</div>
       </div>
 
-      <!-- ✅ Sección: Crear sala (arriba) -->
+      <!-- ✅ Crear sala (con select inline) -->
       <div class="sheet-item" style="margin-top:10px;">
         <div class="t">Crear sala</div>
+
         <input id="backroomName" placeholder="Nombre de la sala…" maxlength="48" />
+
+        <div style="margin-top:10px;">
+          <div class="small muted" style="margin-bottom:6px;">Tipo de acceso</div>
+          <select id="backroomVisibility" style="width:100%;">
+            <option value="public">🌐 Pública — cualquiera puede unirse</option>
+            <option value="private" selected>🔒 Privada — solo por invitación</option>
+            <option value="password">🔐 Contraseña — acceso con clave</option>
+          </select>
+        </div>
+
+        <div id="backroomPassWrap" style="margin-top:10px; display:none;">
+          <div class="small muted" style="margin-bottom:6px;">Contraseña de la sala</div>
+          <input id="backroomPass" type="password" placeholder="Ingresa contraseña…" />
+        </div>
+
         <div style="display:flex; gap:10px; margin-top:10px; align-items:center; flex-wrap:wrap;">
           <input id="backroomDays" type="number" min="1" value="1" placeholder="Días de acceso" style="max-width:160px;" />
           <button class="btn primary" id="createBackroomBtn" type="button">Crear</button>
           <button class="btn" type="button" data-close="1">Cerrar</button>
         </div>
+
         <div class="small muted" style="margin-top:8px;">
           Ej: 1 día = 100 Aura · 7 días = 700 Aura
         </div>
+
         <div id="backroomStatus" class="small muted" style="margin-top:10px;"></div>
       </div>
 
-      <!-- ✅ Sección: Buscar -->
+      <!-- ✅ Buscar -->
       <div class="sheet-item" style="margin-top:10px;">
         <div class="t">Buscar salas</div>
         <input id="roomsSearch" placeholder="Buscar…" value="${esc(q)}" />
@@ -3179,7 +3453,7 @@ function openRoomsModal() {
         </div>
       </div>
 
-      <!-- ✅ Sección: Lista (limitada) -->
+      <!-- ✅ Lista -->
       <div class="sheet-item" style="margin-top:10px;">
         <div class="t">Salas</div>
         <div class="small muted" id="roomsMeta"></div>
@@ -3197,11 +3471,15 @@ function openRoomsModal() {
       </div>
     `;
 
-    openModal();
+    // ✅ mostrar/ocultar password según select
+    document.getElementById("backroomVisibility")?.addEventListener("change", (e) => {
+      const wrap = document.getElementById("backroomPassWrap");
+      const v = e.target?.value || "private";
+      if (wrap) wrap.style.display = v === "password" ? "block" : "none";
+    });
 
     const statusEl = document.getElementById("backroomStatus");
     const btnCreate = document.getElementById("createBackroomBtn");
-
     const listEl = document.getElementById("roomsList");
     const metaEl = document.getElementById("roomsMeta");
     const pageInfoEl = document.getElementById("roomsPageInfo");
@@ -3209,15 +3487,18 @@ function openRoomsModal() {
     const nextBtn = document.getElementById("roomsNext");
     const searchEl = document.getElementById("roomsSearch");
 
-    // ✅ Render lista con paginación (máximo 10)
     const PAGE_SIZE = 10;
 
     function getFiltered() {
       const needle = q.trim().toLowerCase();
       if (needle.length >= 2) {
-        return roomsAll.filter(name => name.toLowerCase().includes(needle));
+        return roomsAll.filter((room) => room.name.toLowerCase().includes(needle));
       }
       return roomsAll.slice();
+    }
+
+    function visLabel(v) {
+      return v === "public" ? "🌐 Pública" : v === "password" ? "🔐 Contraseña" : "🔒 Privada";
     }
 
     function renderList() {
@@ -3232,24 +3513,23 @@ function openRoomsModal() {
 
       metaEl.textContent = total
         ? `Mostrando ${Math.min(total, start + 1)}–${Math.min(total, start + pageItems.length)} de ${total}`
-        : "Sin salas aún";
+        : "Aún no hay salas. ¡Crea la primera!";
 
       pageInfoEl.textContent = `Página ${maxPage + 1 ? page + 1 : 0} de ${maxPage + 1}`;
 
       prevBtn.disabled = page <= 0;
       nextBtn.disabled = page >= maxPage || total === 0;
 
-      // Lista clickable → abre modal room
       listEl.innerHTML = pageItems.length
-        ? pageItems.map(name => `
-            <button class="sheet-item room-item" type="button" data-room-open="${esc(name)}">
-              <div class="t">${esc(name)}</div>
-              <div class="small muted">Abrir</div>
+        ? pageItems.map((room) => `
+            <button class="sheet-item room-item" type="button" data-room-open="${esc(room.name)}">
+              <div class="t">${esc(room.name)}</div>
+              <div class="small muted">${visLabel(room.visibility)} · Abrir</div>
             </button>
           `).join("")
         : `<div class="small muted" style="padding:8px 2px;">No hay resultados.</div>`;
 
-      listEl.querySelectorAll("[data-room-open]").forEach(btn => {
+      listEl.querySelectorAll("[data-room-open]").forEach((btn) => {
         btn.addEventListener("click", () => {
           const roomName = btn.getAttribute("data-room-open");
           if (roomName) openRoomModal({ type: "backroom", name: roomName });
@@ -3259,11 +3539,9 @@ function openRoomsModal() {
       saveState();
     }
 
-    // Listeners paginación
     prevBtn.addEventListener("click", () => { page = Math.max(0, page - 1); renderList(); });
     nextBtn.addEventListener("click", () => { page = page + 1; renderList(); });
 
-    // Search (debounce light)
     let tId = null;
     searchEl.addEventListener("input", () => {
       q = String(searchEl.value || "");
@@ -3272,13 +3550,19 @@ function openRoomsModal() {
       tId = setTimeout(() => renderList(), 120);
     });
 
-    // ✅ Crear sala (backend-first)
+    // ✅ Crear sala (SIN prompt)
     btnCreate.onclick = async () => {
-      const input = document.getElementById("backroomName");
-      const name = (input?.value || "").trim();
+      const name = (document.getElementById("backroomName")?.value || "").trim();
+      const visibility = document.getElementById("backroomVisibility")?.value || "private";
+      const password = (document.getElementById("backroomPass")?.value || "").trim();
 
       if (name.length < 3) {
         if (statusEl) statusEl.textContent = "Nombre muy corto (mínimo 3 caracteres).";
+        return;
+      }
+
+      if (visibility === "password" && password.length < 1) {
+        if (statusEl) statusEl.textContent = "Debes ingresar una contraseña.";
         return;
       }
 
@@ -3295,18 +3579,11 @@ function openRoomsModal() {
 
         if (statusEl) statusEl.textContent = `Costo: ${cost} Aura · Creando sala…`;
 
-        try {
-          await apiCreateRoom("backroom", name, safeDays);
-        } catch {
-          // fallback local si backend no está disponible
-          const next = loadJSON(BACKROOMS_KEY, []);
-          if (!next.includes(name)) next.unshift(name);
-          saveJSON(BACKROOMS_KEY, next);
-        }
+        // ✅ Usa tu helper actualizado
+        await apiCreateRoom("backroom", name, safeDays, visibility, visibility === "password" ? password : "");
 
         if (statusEl) statusEl.textContent = "Sala creada ✅";
-        // refresca modal completo (para jalar lista desde backend)
-        openRoomsModal();
+        openRoomsModal(); // refresh modal
       } catch (err) {
         if (statusEl) statusEl.textContent = err?.message || "Error creando sala.";
       } finally {
@@ -3314,7 +3591,6 @@ function openRoomsModal() {
       }
     };
 
-    // Primer render
     renderList();
   })();
 }
@@ -3550,17 +3826,33 @@ async function getGovernanceAccess() {
 }
 
 async function openGovernanceRoomsModal() {
-  // Rooms: backend-first (cuando exista) -> fallback local
-  let rooms = null;
-  try { rooms = await apiGetRooms("governance"); } catch {}
-  if (!Array.isArray(rooms)) rooms = loadJSON(GOV_ROOMS_KEY, []);
+  // Rooms: backend-first → fallback local
+  let rawRooms = null;
+  try { rawRooms = await apiGetRooms("governance"); } catch {}
+  if (!Array.isArray(rawRooms)) rawRooms = loadJSON(GOV_ROOMS_KEY, []);
 
   // Permisos (backend / fallback local)
-  const access = await getGovernanceAccess(); // usa okRead/okWrite/reason 
+  const access = await getGovernanceAccess(); // okRead/okWrite/reason
 
-  // Normaliza strings
-  const roomsAll = (Array.isArray(rooms) ? rooms : [])
-    .map(r => String(r || "").trim())
+  // Normaliza rooms (acepta strings legacy u objetos nuevos)
+  const roomsAll = (Array.isArray(rawRooms) ? rawRooms : [])
+    .map((r) => {
+      if (typeof r === "string") {
+        const n = r.trim();
+        return n ? { id: null, name: n, visibility: "private", created_by: null } : null;
+      }
+      if (r && typeof r === "object") {
+        const n = String(r.name || "").trim();
+        if (!n) return null;
+        return {
+          id: r.id ?? null,
+          name: n,
+          visibility: String(r.visibility || "private"),
+          created_by: r.created_by || null,
+        };
+      }
+      return null;
+    })
     .filter(Boolean);
 
   // Estado UI (persistente opcional)
@@ -3568,32 +3860,23 @@ async function openGovernanceRoomsModal() {
   const state = (() => {
     try { return JSON.parse(localStorage.getItem(STATE_KEY) || "{}"); } catch { return {}; }
   })();
-
   let q = String(state.q || "").trim();
   let page = Number.isFinite(state.page) ? Number(state.page) : 0;
+  const saveState = () => localStorage.setItem(STATE_KEY, JSON.stringify({ q, page }));
 
-  const saveState = () => {
-    localStorage.setItem(STATE_KEY, JSON.stringify({ q, page }));
-  };
-
-  // Render modal (secciones)
+  // Render modal
   document.getElementById("daoModalTitle").textContent = "Gobernanza";
   document.getElementById("daoModalBody").innerHTML = `
     <div class="sheet-item">
       <div class="t">🗳️ Salas de Gobernanza</div>
       <div class="m small muted">
-        Propuestas y votaciones de fundadores / stakeholders.
-        Gobernanza política basada en <b>veALEMTY</b> (no Aura).
+        Propuestas y votaciones. (Acceso por roles / nobleza — backend lo enforceará).
       </div>
       <div class="small muted" style="margin-top:8px;">
-        Acceso: <b>Moderación</b> o <b>Nobleza</b> (👑 Rey / 🤴 Príncipe / 🏰 Duque) con veALEMTY activo.
-      </div>
-      <div class="small muted" style="margin-top:6px;">
         Estado: ${access.okRead ? "✅ Autorizado" : "⛔ Restringido"}
-        ${access.isFounder ? "· rol: <b>Founder</b>" : ""}
-        ${access.isModerator ? "· rol: <b>Moderación</b>" : ""}
-        ${access.nobleRank ? `· nobleza: <b>${esc(access.nobleRank)}</b>` : ""}
-        ${access.veAlem ? `· veALEM: <b>${esc(access.veAlem)}</b>` : ""}
+        ${access.isFounder ? "· Founder" : ""}
+        ${access.isModerator ? "· Moderación" : ""}
+        ${access.nobleRank ? `· Nobleza: <b>${esc(access.nobleRank)}</b>` : ""}
       </div>
       ${!access.okRead ? `
         <div class="small muted" style="margin-top:8px;">
@@ -3602,46 +3885,50 @@ async function openGovernanceRoomsModal() {
       ` : ""}
     </div>
 
-    <!-- ✅ Sección: Buscar (arriba) -->
     <div class="sheet-item" style="margin-top:10px;">
       <div class="t">Buscar salas</div>
       <input id="govSearch" placeholder="Buscar…" value="${esc(q)}" ${access.okRead ? "" : "disabled"} />
-      <div class="small muted" style="margin-top:6px;">
-        Tip: escribe 2+ caracteres para filtrar.
-      </div>
+      <div class="small muted" style="margin-top:6px;">Tip: 2+ caracteres para filtrar.</div>
     </div>
 
-    <!-- ✅ Sección: Crear sala (arriba, debajo de búsqueda) -->
     <div class="sheet-item" style="margin-top:10px; ${access.okWrite ? "" : "opacity:.55;"}">
       <div class="t">Crear sala</div>
+
       <input id="govRoomName" placeholder="Nombre de la sala…" maxlength="48" ${access.okWrite ? "" : "disabled"} />
-      <div class="small muted" style="margin-top:6px;">
-        Ej: “Propuestas”, “Votaciones”, “Constitución”.
+
+      <div style="margin-top:10px;">
+        <div class="small muted" style="margin-bottom:6px;">Tipo de acceso</div>
+        <select id="govVisibility" style="width:100%;" ${access.okWrite ? "" : "disabled"}>
+          <option value="public">🌐 Pública — cualquiera puede unirse</option>
+          <option value="private" selected>🔒 Privada — solo por invitación</option>
+          <option value="password">🔐 Contraseña — acceso con clave</option>
+        </select>
       </div>
-      ${access.okRead && !access.okWrite ? `
-        <div class="small muted" style="margin-top:8px;">
-          Nota: Duques pueden deliberar/votar, pero la creación está reservada a Rey/Príncipe o Moderación.
-        </div>
-      ` : ""}
+
+      <div id="govPassWrap" style="margin-top:10px; display:none;">
+        <div class="small muted" style="margin-bottom:6px;">Contraseña</div>
+        <input id="govPass" type="password" placeholder="Ingresa contraseña…" ${access.okWrite ? "" : "disabled"} />
+      </div>
+
       <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn primary" id="createGovRoomBtn" type="button" ${access.okWrite ? "" : "disabled"}>Crear</button>
         <button class="btn" type="button" data-close="1">Cerrar</button>
       </div>
+
       <div id="govRoomStatus" class="small muted" style="margin-top:10px;"></div>
     </div>
 
-    <!-- ✅ Sección: Lista -->
     <div class="sheet-item" style="margin-top:10px;">
       <div class="t">Salas</div>
       <div class="small muted" id="govRoomsMeta"></div>
     </div>
 
     <div id="govRoomsList"
-         style="display:flex; flex-direction:column; gap:8px; max-height:320px; overflow:auto; padding-right:4px;">
+      style="display:flex; flex-direction:column; gap:8px; max-height:320px; overflow:auto; padding-right:4px;">
     </div>
 
     <div id="govRoomsPager"
-         style="margin-top:12px; display:flex; gap:10px; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+      style="margin-top:12px; display:flex; gap:10px; justify-content:space-between; align-items:center; flex-wrap:wrap;">
       <button class="btn" id="govPrev" type="button">◀ Anterior</button>
       <div class="small muted" id="govPageInfo"></div>
       <button class="btn" id="govNext" type="button">Siguiente ▶</button>
@@ -3650,29 +3937,37 @@ async function openGovernanceRoomsModal() {
 
   openModal();
 
-  // Si no puede leer, no renderizamos interactivo
+  // Toggle password field
+  document.getElementById("govVisibility")?.addEventListener("change", (e) => {
+    const wrap = document.getElementById("govPassWrap");
+    const v = e.target?.value || "private";
+    if (wrap) wrap.style.display = v === "password" ? "block" : "none";
+  });
+
   const searchEl = document.getElementById("govSearch");
   const listEl = document.getElementById("govRoomsList");
   const metaEl = document.getElementById("govRoomsMeta");
   const pageInfoEl = document.getElementById("govPageInfo");
   const prevBtn = document.getElementById("govPrev");
   const nextBtn = document.getElementById("govNext");
-
   const statusEl = document.getElementById("govRoomStatus");
   const createBtn = document.getElementById("createGovRoomBtn");
 
   const PAGE_SIZE = 10;
 
+  function visLabel(v) {
+    return v === "public" ? "🌐 Pública" : v === "password" ? "🔐 Contraseña" : "🔒 Privada";
+  }
+
   function getFiltered() {
-    const needle = q.trim().toLowerCase();
-    if (needle.length >= 2) {
-      return roomsAll.filter(name => name.toLowerCase().includes(needle));
-    }
+    if (!access.okRead) return [];
+    const needle = String(q || "").trim().toLowerCase();
+    if (needle.length >= 2) return roomsAll.filter((r) => r.name.toLowerCase().includes(needle));
     return roomsAll.slice();
   }
 
   function renderList() {
-    const filtered = access.okRead ? getFiltered() : [];
+    const filtered = getFiltered();
     const total = filtered.length;
 
     const maxPage = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
@@ -3683,7 +3978,7 @@ async function openGovernanceRoomsModal() {
 
     metaEl.textContent = total
       ? `Mostrando ${Math.min(total, start + 1)}–${Math.min(total, start + pageItems.length)} de ${total}`
-      : (access.okRead ? "Sin salas aún" : "Acceso restringido");
+      : (access.okRead ? "Aún no hay salas. ¡Crea la primera!" : "Acceso restringido");
 
     pageInfoEl.textContent = `Página ${maxPage + 1 ? page + 1 : 0} de ${maxPage + 1}`;
 
@@ -3691,16 +3986,15 @@ async function openGovernanceRoomsModal() {
     nextBtn.disabled = !access.okRead || page >= maxPage || total === 0;
 
     listEl.innerHTML = pageItems.length
-      ? pageItems.map(name => `
-          <button class="sheet-item room-item" type="button" data-gov-open="${esc(name)}">
-            <div class="t">${esc(name)}</div>
-            <div class="small muted">Abrir</div>
+      ? pageItems.map((room) => `
+          <button class="sheet-item room-item" type="button" data-gov-open="${esc(room.name)}">
+            <div class="t">${esc(room.name)}</div>
+            <div class="small muted">${visLabel(room.visibility)} · Abrir</div>
           </button>
         `).join("")
       : `<div class="small muted" style="padding:8px 2px;">${access.okRead ? "No hay resultados." : "—"}</div>`;
 
-    // Click abre modal Discord-like (usa el mismo openRoomModal)
-    listEl.querySelectorAll("[data-gov-open]").forEach(btn => {
+    listEl.querySelectorAll("[data-gov-open]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const roomName = btn.getAttribute("data-gov-open");
         if (roomName) openRoomModal({ type: "governance", name: roomName });
@@ -3710,63 +4004,55 @@ async function openGovernanceRoomsModal() {
     saveState();
   }
 
-  // Pager
   prevBtn.addEventListener("click", () => { page = Math.max(0, page - 1); renderList(); });
   nextBtn.addEventListener("click", () => { page = page + 1; renderList(); });
 
-  // Search
   let tId = null;
-  if (searchEl) {
-    searchEl.addEventListener("input", () => {
-      q = String(searchEl.value || "");
-      page = 0;
-      if (tId) clearTimeout(tId);
-      tId = setTimeout(() => renderList(), 120);
-    });
-  }
+  searchEl?.addEventListener("input", () => {
+    q = String(searchEl.value || "");
+    page = 0;
+    if (tId) clearTimeout(tId);
+    tId = setTimeout(() => renderList(), 120);
+  });
 
-  // Crear sala governance (backend-first + fallback local)
-  if (createBtn) {
-    createBtn.onclick = async () => {
-      if (!access.okWrite) {
-        if (statusEl) statusEl.textContent = "No tienes permisos para crear salas de gobernanza.";
-        return;
-      }
+  // Crear governance room (SIN prompt)
+  createBtn?.addEventListener("click", async () => {
+    if (!access.okWrite) {
+      if (statusEl) statusEl.textContent = "No tienes permisos para crear salas de gobernanza.";
+      return;
+    }
 
-      const input = document.getElementById("govRoomName");
-      const name = (input?.value || "").trim();
-      if (name.length < 3) {
-        if (statusEl) statusEl.textContent = "Nombre muy corto (mínimo 3 caracteres).";
-        return;
-      }
+    const name = (document.getElementById("govRoomName")?.value || "").trim();
+    const visibility = document.getElementById("govVisibility")?.value || "private";
+    const password = (document.getElementById("govPass")?.value || "").trim();
 
-      if (!getJWT()) {
-        if (statusEl) statusEl.textContent = "Necesitas SIWE (JWT) para crear salas.";
-        return;
-      }
+    if (name.length < 3) {
+      if (statusEl) statusEl.textContent = "Nombre muy corto (mínimo 3 caracteres).";
+      return;
+    }
+    if (visibility === "password" && password.length < 1) {
+      if (statusEl) statusEl.textContent = "Debes ingresar una contraseña.";
+      return;
+    }
+    if (!getJWT()) {
+      if (statusEl) statusEl.textContent = "Necesitas SIWE (JWT) para crear salas.";
+      return;
+    }
 
-      createBtn.disabled = true;
-      try {
-        if (statusEl) statusEl.textContent = "Creando sala…";
+    createBtn.disabled = true;
+    try {
+      if (statusEl) statusEl.textContent = "Creando sala…";
 
-        try {
-          await apiCreateRoom("governance", name);
-        } catch {
-          // fallback local
-          const next = loadJSON(GOV_ROOMS_KEY, []);
-          if (!next.includes(name)) next.unshift(name);
-          saveJSON(GOV_ROOMS_KEY, next);
-        }
+      await apiCreateRoom("governance", name, 1, visibility, visibility === "password" ? password : "");
 
-        if (statusEl) statusEl.textContent = "Sala creada ✅";
-        openGovernanceRoomsModal(); // refresh
-      } catch (err) {
-        if (statusEl) statusEl.textContent = err?.message || "Error creando sala.";
-      } finally {
-        createBtn.disabled = false;
-      }
-    };
-  }
+      if (statusEl) statusEl.textContent = "Sala creada ✅";
+      openGovernanceRoomsModal(); // refresh
+    } catch (err) {
+      if (statusEl) statusEl.textContent = err?.message || "Error creando sala.";
+    } finally {
+      createBtn.disabled = false;
+    }
+  });
 
   renderList();
 }
