@@ -132,14 +132,13 @@
   </section>
 
   <!-- ================= PERFIL ================= -->
-  <section class="profile container" style="margin-top:8px;position:relative;z-index:2;">
+  <section class="profile container" style="margin-top:10px;position:relative;z-index:2;">
     <div class="avatar-wrap">
-      <img class="avatar"
-           src="/assets/avatar.png"
-           alt="Foto de perfil"
-           loading="eager">
-      <div class="aura"></div>
-    </div>
+  <img class="avatar"
+       src="https://gateway.pinata.cloud/ipfs/bafybeihgepunrdzbzj45pfgpmozalnfjgmp2pbkblyxy5sdkhv56v2xsla"
+       onerror="this.src='/assets/avatar.png'"   <!-- fallback local por si falla -->
+  <div class="aura"></div>
+</div>
 
     <h2 class="name">Alejandro Gutierrez Zavala</h2>
 
@@ -164,40 +163,40 @@
   </section>
 
   <!-- ================= LIBRO ================= -->
-  <section class="book-portal" aria-label="Lanzamiento del libro">
-    <div class="book-frame" id="bookFrame">
-      <div class="book-badge" id="bookBadge">NUEVO · Libro</div>
+<section class="book-portal" aria-label="Lanzamiento del libro">
+  <div class="book-frame" id="bookFrame">
+    <div class="book-badge" id="bookBadge">NUEVO · Libro</div>
 
-      <h3 class="book-title">La Simulación del Dragón</h3>
+    <h3 class="book-title">La Simulación del Dragón</h3>
 
-      
-<p class="book-sub">
-  Descarga gratuita directa desde esta web.<br>
-  <span class="book-note">Comprar será una forma opcional de apoyar el trabajo.</span>
-</p>
+    <p class="book-sub">
+      Descarga gratuita directa desde IPFS.<br>
+      <span class="book-note">Comprar será una forma opcional de apoyar el trabajo.</span>
+    </p>
 
+    <div class="book-actions">
+      <a class="btn-primary"
+         id="downloadBook"
+         href="https://gateway.pinata.cloud/ipfs/bafybeifjrhwedvyqnqembrxzrq5nkw5pmc65ew26bctrsojfyjnob5ahbm"
+         download="LaSimulación-del-Dragón-alemty.eth.pdf"
+         target="_blank"
+         rel="noopener noreferrer">
+        Descargar PDF
+      </a>
 
-      <div class="book-actions">
-        <a class="btn-primary"
-           id="downloadBook"
-           href="/assets/data/LaSimulacióndelDragón-alemty.eth.pdf"
-           download>
-          Descargar
-        </a>
-
-        <a class="btn-primary buy-btn"
-           id="buyBtn"
-           href="https://www.amazon.es/dp/B0GS624W3C"
-           target="_blank"
-           rel="noopener noreferrer">
-          <span class="buy-main">Comprar</span>
-          <span class="buy-sub">Amazon</span>
-        </a>
-      </div>
-
-      <div class="book-rune" aria-hidden="true">🐉</div>
+      <a class="btn-primary buy-btn"
+         id="buyBtn"
+         href="https://www.amazon.es/dp/B0GS624W3C"
+         target="_blank"
+         rel="noopener noreferrer">
+        <span class="buy-main">Comprar</span>
+        <span class="buy-sub">Amazon</span>
+      </a>
     </div>
-  </section>
+
+    <div class="book-rune" aria-hidden="true">🐉</div>
+  </div>
+</section>
 
   <!-- ================= SOCIAL ================= -->
   <section class="container">
