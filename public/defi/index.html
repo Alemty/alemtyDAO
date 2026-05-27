@@ -57,6 +57,28 @@
 
     <p class="muted">Reporte visual: emisión, volatilidad y puente hacia DEX.</p>
 
+    <!-- ===== TRADING CHARTS (3 grandes, estilo Binance) ===== -->
+    <section class="trading-section" aria-label="Gráficos de trading">
+      <div class="trading-tabs">
+        <button class="trading-tab active" data-pair="AURA/USD">AURA/USD</button>
+        <button class="trading-tab" data-pair="ALEM/USD">ALEM/USD</button>
+        <button class="trading-tab" data-pair="ETH/USD">ETH/USD</button>
+      </div>
+      <div class="trading-chart-wrap">
+        <canvas id="tradingChart" width="1100" height="400"></canvas>
+        <div class="trading-overlay" id="tradingOverlay">
+          <div class="trading-price" id="tradingPrice">—</div>
+          <div class="trading-change" id="tradingChange">—</div>
+        </div>
+      </div>
+      <div class="trading-stats" id="tradingStats">
+        <div class="trading-stat"><span class="ts-label">24h Vol</span><span class="ts-val" id="tsVol">—</span></div>
+        <div class="trading-stat"><span class="ts-label">24h High</span><span class="ts-val" id="tsHigh">—</span></div>
+        <div class="trading-stat"><span class="ts-label">24h Low</span><span class="ts-val" id="tsLow">—</span></div>
+        <div class="trading-stat"><span class="ts-label">Market Cap</span><span class="ts-val" id="tsMc">—</span></div>
+      </div>
+    </section>
+
     <!-- 4 TOKENS (mini cards en una línea) -->
     <section class="defi-row4" aria-label="Tokens principales">
       <article class="card defi-mini" id="cardDharma"></article>

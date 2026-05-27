@@ -89,6 +89,7 @@ html.light .tab-btn.active {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
 }
 
 @media (max-width: 820px) { .profile-grid { grid-template-columns: 180px 1fr; } }
@@ -185,4 +186,15 @@ html.light .modal .profile-fixed {
   .pf-balances { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 10px; width: 100%; min-width: 0; }
   .pf-balances > div { min-width: 0; width: 100%; white-space: normal; text-align: left; align-items: flex-start; padding: 8px 10px; }
   .profile-fixed { overflow-x: hidden; }
+}
+
+/* ===== Mobile: evitar desborde en tabs de estado ===== */
+@media (max-width: 520px) {
+  .profile-right { min-width: 0; overflow-x: hidden; }
+  .profile-content { min-width: 0; overflow-x: hidden; width: 100%; box-sizing: border-box; }
+  .profile-content .pf-box { width: 100%; box-sizing: border-box; overflow-x: hidden; word-wrap: break-word; }
+  .profile-content .post-tags { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; box-sizing: border-box; }
+  .profile-content .post-tags .pill { flex: 1 1 auto; min-width: 0; max-width: 100%; white-space: normal; word-break: break-word; box-sizing: border-box; text-align: left; }
+  .profile-content .h2 { font-size: 16px; }
+  .profile-content .muted { font-size: 12px; }
 }
