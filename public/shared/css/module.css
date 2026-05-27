@@ -29,12 +29,13 @@ padding:var(--pad);
 .pill{
 display:inline-flex;
 align-items:center;
-gap:8px;
-padding:9px 12px;
+gap:6px;
+padding:5px 10px;
 border-radius:999px;
 border:1px solid var(--border);
 background:color-mix(in oklab,var(--bg),transparent 50%);
-font-weight:800;
+font-weight:700;
+font-size:12px;
 }
 
 /* Buttons */

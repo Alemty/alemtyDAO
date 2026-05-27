@@ -1,161 +1,72 @@
 /* ==========================================================
    defi.alemty.eth — Estilos del subdominio DeFi
-   Archivo: public/defi/css/style.css
-
-   REGLAS DE ESTE ARCHIVO:
-   · Reset global ya vive en theme.css — no se repite aquí
-   · Tokens globales: --bg, --primary, --accent, --topbar-h,
-     --blur-lg, --blur-md, --radius-card vienen de theme.css
-   · Topbar y bottom-nav van scoped con .defi-root prefix
-   · .btn global queda en theme.css; aquí solo el override DeFi
+   Scoped a .defi-root
    ========================================================== */
 
-/* ----------------------------------------------------------
-   1. TOKENS PROPIOS DEL DEFI
-      Solo los que no tienen equivalente en theme.css.
-   ---------------------------------------------------------- */
+/* ---------- TOKENS ---------- */
+.defi-root {
+  --defi-emerald: #00ffd5;
+  --defi-azure: #00a3ff;
+  --defi-fs-h1: clamp(1.6rem, 3.2vw, 2.2rem);
+  --defi-fs-title: clamp(13px, 1.05vw, 15px);
+  --defi-fs-meta: clamp(11px, 0.95vw, 12.5px);
+  --defi-fs-tag: 11px;
+  --defi-fs-btn: 12px;
+  --defi-fs-chart: clamp(12.5px, 1.05vw, 14px);
+  --defi-gap: 10px;
+}
+
+html.light .defi-root {
+  --defi-emerald: #0db9a6;
+  --defi-azure: #0aa0ff;
+}
+
+/* ---------- FONDO VIVO ---------- */
 .defi-root {
   background: var(--bg);
   min-height: 100vh;
   position: relative;
-
-  /* Acento propio (alias legibles; el valor real viene de --primary/--accent) */
-  --defi-emerald: #00ffd5;
-  --defi-azure:   #00a3ff;
-
-  /* Tipografía fluida — exclusiva del DeFi */
-  --defi-fs-h1:    clamp(1.6rem, 3.2vw, 2.2rem);
-  --defi-fs-title: clamp(13px, 1.05vw, 15px);
-  --defi-fs-meta:  clamp(11px, 0.95vw, 12.5px);
-  --defi-fs-tag:   11px;
-  --defi-fs-btn:   12px;
-  --defi-fs-chart: clamp(12.5px, 1.05vw, 14px);
-
-  /* Gap base del grid */
-  --defi-gap: 10px;
-
-  /* Superficies — dark default */
-  --defi-surface: rgba(10, 20, 26, .62);
-  --defi-border:  rgba(0, 255, 213, .18);
-  --defi-inset:   rgba(0, 255, 213, .10);
-  --defi-text:    rgba(255, 255, 255, .92);
-  --defi-muted:   rgba(255, 255, 255, .68);
-  --defi-hair:    rgba(255, 255, 255, .08);
 }
 
-/* Light overrides */
-html.light .defi-root {
-  --defi-emerald: #0db9a6;
-  --defi-azure:   #0aa0ff;
-  --defi-surface: rgba(255, 255, 255, .82);
-  --defi-border:  rgba(13, 185, 166, .18);
-  --defi-inset:   rgba(13, 185, 166, .10);
-  --defi-text:    rgba(14, 26, 24, .92);
-  --defi-muted:   rgba(14, 26, 24, .58);
-  --defi-hair:    rgba(0, 0, 0, .06);
-}
-
-/* ----------------------------------------------------------
-   2. FONDO VIVO
-   ---------------------------------------------------------- */
 .defi-bg {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(680px 420px at 18% 0%, rgba(0, 255, 213, .16), transparent 62%),
-    radial-gradient(540px 320px at 82% 18%, rgba(0, 163, 255, .13), transparent 60%),
+    radial-gradient(680px 420px at 18% 0%, rgba(0,255,213,.16), transparent 62%),
+    radial-gradient(540px 320px at 82% 18%, rgba(0,163,255,.13), transparent 60%),
     var(--bg);
 }
 
-/* ----------------------------------------------------------
-   3. CONTAINER — scoped, usa token global --topbar-h
-   ---------------------------------------------------------- */
+/* Light */
+html.light .defi-bg {
+  background:
+    radial-gradient(820px 500px at 18% -10%, rgba(0,255,213,.28), transparent 60%),
+    radial-gradient(720px 420px at 85% 15%, rgba(0,149,255,.22), transparent 62%),
+    radial-gradient(900px 500px at 50% 110%, rgba(255,255,255,.60), transparent 70%),
+    var(--bg);
+}
+
+/* ---------- CONTAINER ---------- */
 .defi-root .container {
   background: transparent !important;
   position: relative;
   z-index: 1;
-  /* Offset topbar fija + espacio inferior por bottom-nav del shell */
   padding-top: var(--topbar-h);
-  padding-bottom: 96px;
+  padding-bottom: calc(78px + var(--web3-disc-h, 22px));
 }
 
-/* ----------------------------------------------------------
-   4. TOPBAR Y BOTTOM-NAV — scoped, sin pisar otros subdominios
-      Shell los genera como sticky; DeFi los convierte en fixed.
-   ---------------------------------------------------------- */
-.defi-root .topbar {
-  position: fixed !important;
-  top: 0; left: 0; right: 0;
-  z-index: 1000;
-  backdrop-filter: var(--blur-lg) !important;
-  -webkit-backdrop-filter: var(--blur-lg) !important;
-}
-
-.defi-root .bottom-nav {
-  position: fixed !important;
-  bottom: 0; left: 0; right: 0;
-  z-index: 1000;
-  backdrop-filter: var(--blur-lg) !important;
-  -webkit-backdrop-filter: var(--blur-lg) !important;
-}
-
-/* ----------------------------------------------------------
-   5. TIPOGRAFÍA
-   ---------------------------------------------------------- */
-.defi-root .h1 {
-  font-size: var(--defi-fs-h1);
-  letter-spacing: -0.02em;
-}
-.defi-root .muted { color: var(--defi-muted); }
-.defi-root .small.muted { color: var(--defi-muted) !important; }
-
-/* Brand H1: defi.alemty.eth */
-.defi-root .h1.defi-brand {
-  font-weight: 1000;
-  letter-spacing: -0.02em;
-  display: inline-flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-}
-.defi-root .h1.defi-brand .defi-brand-em {
-  color: var(--defi-emerald);
-  text-shadow: 0 0 18px rgba(0, 255, 213, .18);
-}
-html.light .defi-root .h1.defi-brand .defi-brand-em { text-shadow: none; }
-.defi-root .h1.defi-brand .defi-brand-base {
-  color: var(--defi-text);
-  text-shadow: none;
-}
-
-/* Texto nativo en cards */
-.defi-root .t {
-  font-weight: 950;
-  color: var(--defi-text);
-  font-size: var(--defi-fs-chart);
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-  overflow-wrap: anywhere;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  line-clamp: 2;
-  overflow: hidden;
-}
-
-/* ----------------------------------------------------------
-   6. CARD SYSTEM — DAO-soft (sin drop-shadow externo)
-   ---------------------------------------------------------- */
+/* ---------- CARD SYSTEM (DAO-style) ---------- */
 .defi-root .card {
+  background: var(--ui-surface) !important;
+  border: 1px solid var(--ui-border) !important;
   border-radius: var(--radius-card);
-  background: var(--defi-surface);
-  border: 1px solid var(--defi-border);
-  backdrop-filter: var(--blur-lg);
-  -webkit-backdrop-filter: var(--blur-lg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   position: relative;
   overflow: hidden;
-  box-shadow: inset 0 0 0 1px var(--defi-inset);
+  box-shadow: inset 0 0 0 1px var(--ui-inset);
 }
 
 .defi-root .card::after {
@@ -164,417 +75,108 @@ html.light .defi-root .h1.defi-brand .defi-brand-em { text-shadow: none; }
   inset: -1px;
   pointer-events: none;
   border-radius: inherit;
-  background:
-    radial-gradient(420px 220px at 15% 0%,   rgba(0, 255, 213, .18), transparent 65%),
-    radial-gradient(420px 220px at 85% 100%, rgba(0, 163, 255, .14), transparent 70%);
+  background: radial-gradient(420px 220px at 15% 0%, var(--glow-a), transparent 65%),
+              radial-gradient(420px 220px at 85% 100%, var(--glow-b), transparent 70%);
   opacity: .22;
   filter: blur(14px);
 }
 
 .defi-root .card > * { position: relative; z-index: 1; }
 
-/* Sin elevación en hover — estilo DAO-soft */
-.defi-root .card:hover {
-  transform: none;
-  box-shadow: inset 0 0 0 1px var(--defi-inset);
+html.light .defi-root .card {
+  background: var(--glass-light-2) !important;
+  border: 1px solid rgba(0, 120, 200, .14) !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,.08), 0 0 0 1px rgba(255,255,255,.72) inset !important;
 }
 
-/* ----------------------------------------------------------
-   7. BOTONES — scoped al DeFi
-      El .btn de theme.css es la base; este override aplica
-      solo dentro de .defi-root para el estilo esmeralda.
-   ---------------------------------------------------------- */
+/* ---------- MODAL (DAO-style) ---------- */
+.defi-root .modal-card {
+  max-height: calc(100vh - var(--app-topbar-h, var(--topbar-h)) - 28px);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(0,255,213,.18) inset;
+}
+
+html.light .defi-root .modal-card {
+  background: var(--glass-light-2);
+  border: 1px solid rgba(13, 185, 166, .12);
+  box-shadow: 0 24px 60px rgba(0,0,0,.14), 0 0 0 1px rgba(255,255,255,.72) inset;
+}
+
+/* ---------- TIPOGRAFÍA ---------- */
+.defi-root .h1 { font-size: var(--defi-fs-h1); letter-spacing: -0.02em; }
+.defi-root .muted { opacity: .75; }
+.defi-root .small.muted { opacity: .82; }
+
+.defi-root .h1.defi-brand { font-weight: 1000; letter-spacing: -0.02em; display: inline-flex; align-items: baseline; flex-wrap: wrap; }
+.defi-root .h1.defi-brand .defi-brand-em { color: var(--defi-emerald); text-shadow: 0 0 18px rgba(0,255,213,.18); }
+html.light .defi-root .h1.defi-brand .defi-brand-em { text-shadow: none; }
+.defi-root .h1.defi-brand .defi-brand-base { color: var(--text); text-shadow: none; }
+
+.defi-root .t { font-weight: 950; font-size: var(--defi-fs-chart); line-height: 1.15; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+
+/* ---------- BOTONES ---------- */
 .defi-root .btn {
   border-radius: 999px;
-  border: 1px solid rgba(0, 255, 213, .35);
+  border: 1px solid rgba(0,255,213,.35);
   padding: 8px 10px;
-  background: rgba(0, 255, 213, .08);
-  color: var(--defi-text);
+  background: rgba(0,255,213,.08);
   font-weight: 950;
   cursor: pointer;
-  line-height: 1;
-  transition: background .18s ease, border-color .18s ease, opacity .18s ease;
 }
-.defi-root .btn:hover {
-  background: rgba(0, 255, 213, .12);
-  border-color: rgba(0, 255, 213, .55);
-}
-.defi-root .btn.primary {
-  border: 0;
-  color: #061018;
-  background: linear-gradient(135deg, var(--defi-emerald), var(--defi-azure));
-}
-html.light .defi-root .btn {
-  color: rgba(14, 26, 24, .92);
-  background: rgba(13, 185, 166, .14);
-  border-color: rgba(13, 185, 166, .40);
-}
-html.light .defi-root .btn.primary {
-  color: #fff;
-  background: linear-gradient(135deg, #0db9a6, #0aa0ff);
-}
+.defi-root .btn:hover { background: rgba(0,255,213,.12); border-color: rgba(0,255,213,.55); }
+.defi-root .btn.primary { border: 0; color: #061018; background: linear-gradient(135deg, var(--defi-emerald), var(--defi-azure)); }
+html.light .defi-root .btn { color: rgba(14,26,24,.92); background: rgba(13,185,166,.14); border-color: rgba(13,185,166,.40); }
+html.light .defi-root .btn.primary { color: #fff; background: linear-gradient(135deg, #0db9a6, #0aa0ff); }
 
-/* Icon buttons */
-.defi-root .icon-btn {
-  border-radius: 14px;
-  border: 1px solid color-mix(in oklab, var(--defi-border), transparent 35%);
-  background: rgba(255, 255, 255, .06);
-  color: inherit;
-  cursor: pointer;
-  width: 40px;
-  height: 40px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
+/* ---------- LAYOUT ---------- */
+.defi-row4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--defi-gap); }
+.defi-row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--defi-gap); }
+.defi-charts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--defi-gap); grid-auto-flow: row dense; }
+
+.defi-mini { padding: 10px 12px; min-height: 124px; display: flex; flex-direction: column; gap: 10px; justify-content: space-between; }
+.mini-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.mini-title { font-weight: 1000; font-size: var(--defi-fs-title); line-height: 1.12; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.mini-meta { margin-top: 4px; font-size: var(--defi-fs-meta); line-height: 1.22; opacity: .75; }
+.mini-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.mini-tag { border-radius: 999px; border: 1px solid rgba(0,255,213,.15); padding: 5px 9px; font-size: var(--defi-fs-tag); font-weight: 900; }
+.mini-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.mini-actions .btn { width: 100%; font-size: var(--defi-fs-btn); padding: 8px 10px; }
+
+.chart-card { padding: 10px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; min-width: 0; grid-column: span 1; min-height: 0; }
+.chart-pie { grid-column: span 2; min-height: 220px; }
+.chart-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.chart-card canvas:not(#chartPie) { width: 100%; max-width: 100%; height: auto; aspect-ratio: 360 / 160; min-height: 128px; flex: 1 1 auto; }
+
+.pie-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: center; min-width: 0; flex: 1 1 auto; min-height: 0; }
+#chartPie { justify-self: center; align-self: center; width: 220px; max-width: 100%; height: auto; }
+
+@media (min-width: 901px) { #mintPieWrap.chart-pie { grid-column: span 1; max-width: 520px; } }
+@media (max-width: 820px) { .pie-grid { grid-template-columns: 1fr; } }
+
+.pie-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pie-pct { font-weight: 950; font-size: 12px; opacity: .95; flex: 0 0 auto; }
+.pie-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.swatch { width: 12px; height: 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.20); flex: 0 0 auto; }
+
+.modal-chart { border-radius: 18px; padding: 12px; margin-top: 10px; border: 1px solid rgba(0,255,213,.15); }
+
 .defi-root .icon-btn.mini { width: 34px; height: 34px; border-radius: 12px; }
 
-/* ----------------------------------------------------------
-   8. LAYOUT GRIDS
-   ---------------------------------------------------------- */
-.defi-row4 {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--defi-gap);
-}
-.defi-row2 {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--defi-gap);
-}
-.defi-charts {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--defi-gap);
-  grid-auto-flow: row dense;
-}
-
-/* ----------------------------------------------------------
-   9. MINI CARDS (tokens / pools)
-   ---------------------------------------------------------- */
-.defi-mini {
-  padding: 10px 12px;
-  min-height: 124px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  justify-content: space-between;
-}
-.mini-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-.mini-top > div { min-width: 0; }
-
-.mini-title {
-  font-weight: 1000;
-  color: var(--defi-text);
-  font-size: var(--defi-fs-title);
-  line-height: 1.12;
-  letter-spacing: -0.01em;
-  overflow-wrap: anywhere;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  line-clamp: 2;
-  overflow: hidden;
-}
-.mini-meta {
-  margin-top: 4px;
-  color: var(--defi-muted);
-  font-size: var(--defi-fs-meta);
-  line-height: 1.22;
-  overflow-wrap: anywhere;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  line-clamp: 2;
-  overflow: hidden;
-}
-
-.mini-tags { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
-.mini-tag {
-  border-radius: 999px;
-  border: 1px solid color-mix(in oklab, var(--defi-border), transparent 35%);
-  background: transparent;
-  padding: 5px 9px;
-  font-size: var(--defi-fs-tag);
-  font-weight: 900;
-  color: var(--defi-text);
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Acciones en 2 columnas */
-.mini-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-.mini-actions .btn {
-  width: 100%;
-  min-width: 0;
-  font-size: var(--defi-fs-btn);
-  padding: 8px 10px;
-}
-
-/* ----------------------------------------------------------
-   10. CHART CARDS (canvases transparentes)
-   ---------------------------------------------------------- */
-.chart-card {
-  padding: 10px;
-  cursor: pointer;
-  user-select: none;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 6px;
-  min-width: 0;
-  grid-column: span 1;
-  min-height: 0;
-}
-
-/* Pie ocupa 2 columnas por defecto (desktop); responsive lo colapsa */
-.chart-pie { grid-column: span 2; min-height: 220px; }
-
-.chart-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-.chart-head > div { min-width: 0; }
-
-/* Nota al fondo de la card (empuja hacia abajo con auto) */
-.chart-card .small.muted { margin-top: auto; }
-
-/* Canvas line charts — proporción estable */
-.chart-card canvas:not(#chartPie):not(#modalPie):not(#modalPie2) {
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-  aspect-ratio: 360 / 160;
-  min-height: 128px;
-  flex: 1 1 auto;
-  background: transparent !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-}
-
-/* ----------------------------------------------------------
-   11. PIE CHART — FIX: se ajusta al alto de los otros grafos
-       Bug anterior: grid-template-columns con minmax(220px,240px)
-       forzaba desborde en móvil. Ahora usa 1fr / 1fr y colapsa
-       a 1 columna en pantallas pequeñas.
-   ---------------------------------------------------------- */
-.pie-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;   /* ← FIX: antes minmax(220px,240px) 1fr */
-  gap: 12px;
-  align-items: center;
-  min-width: 0;
-  flex: 1 1 auto;   /* ocupa el alto real de la card */
-  min-height: 0;
-}
-
-/* Canvas del pie centrado dentro de su columna */
-#mintPieWrap canvas,
-#chartPie {
-  background: transparent !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-}
-
-#chartPie {
-  justify-self: center;
-  align-self: center;
-  width: 220px;
-  max-width: 100%;
-  height: auto;
-}
-
-#mintPieWrap #pieBar,
-#mintPieWrap .pie-left,
-.pie-bar, .pie-left { min-width: 0; }
-
-/* La card del pie crece en columna para llenar el alto del grid */
-#mintPieWrap.chart-pie {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Leyenda vertical centrada */
-.pie-bar {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-self: stretch;
-  justify-content: center;
-}
-
-/* Pie card en desktop: span 1 (sin hueco en el grid) */
-@media (min-width: 901px) {
-  #mintPieWrap.chart-pie {
-    grid-column: span 1;
-    justify-self: start;
-    max-width: 520px;
-    width: 100%;
-  }
-  #mintPieWrap .pie-grid {
-    grid-template-columns: 220px minmax(0, 1fr);
-    gap: 12px;
-  }
-}
-
-/* Colapso a columna única en móvil */
-@media (max-width: 820px) {
-  .pie-grid {
-    grid-template-columns: 1fr;  /* ← colapsa sin desbordar */
-  }
-  #chartPie { width: 220px; }
-}
-
-/* Filas de leyenda */
-.pie-row {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  min-width: 0;
-}
-.pie-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-.pie-pct {
-  font-weight: 950;
-  font-size: 12px;
-  color: var(--defi-muted);
-  opacity: .95;
-  flex: 0 0 auto;
-}
-.pie-name {
-  min-width: 0;
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.swatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, .20);
-  flex: 0 0 auto;
-}
-#mintPieWrap { justify-self: start; }
-
-/* ----------------------------------------------------------
-   12. SUB-CARDS INTERNAS (modal-chart)
-   ---------------------------------------------------------- */
-.modal-chart {
-  border-radius: 18px;
-  padding: 12px;
-  margin-top: 10px;
-  background: transparent;
-  border: 1px solid color-mix(in oklab, var(--defi-border), transparent 35%);
-  box-shadow: inset 0 0 0 1px var(--defi-hair);
-}
-html.light .modal-chart {
-  background: transparent;
-  border-color: rgba(0, 0, 0, .08);
-}
-
-/* ----------------------------------------------------------
-   13. MODAL — scoped, offset usa --topbar-h global
-   ---------------------------------------------------------- */
-.defi-root .modal {
-  position: fixed;
-  inset: 0;
-  display: none;
-  z-index: 120;
-}
-.defi-root .modal.open { display: block; }
-
-.defi-root .modal-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, .45);
-}
-
-.defi-root .modal-card {
-  position: relative;
-  width: min(920px, 92vw);
-  display: flex;
-  flex-direction: column;
-  border-radius: 26px;
-  overflow: hidden;
-  /* Offset usa el token global en lugar de --defi-topbar-h */
-  margin: calc(var(--topbar-h) + 16px) auto 0;
-  max-height: calc(100vh - var(--topbar-h) - 28px);
-  background: var(--defi-surface);
-  border: 1px solid var(--defi-border);
-  backdrop-filter: var(--blur-lg);
-  -webkit-backdrop-filter: var(--blur-lg);
-  box-shadow: inset 0 0 0 1px var(--defi-inset);
-}
-
-.defi-root .modal-headbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 14px;
-  border-bottom: 1px solid color-mix(in oklab, var(--defi-border), transparent 45%);
-}
-.defi-root .modal-body {
-  padding: 14px;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Modal Pie (ampliado) */
-.modal-pie .modal-pie-grid {
-  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
-  align-items: center;
-}
-.modal-pie #modalPie {
-  width: 360px;
-  max-width: 100%;
-  justify-self: center;
-}
-
-/* ----------------------------------------------------------
-   14. RESPONSIVE
-   ---------------------------------------------------------- */
 @media (max-width: 900px) {
-  .defi-row4    { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .defi-row2    { grid-template-columns: 1fr; }
-  .defi-charts  { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .chart-card,
-  .chart-pie    { grid-column: span 1; }
+  .defi-row4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .defi-row2 { grid-template-columns: 1fr; }
+  .defi-charts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 820px) {
-  .defi-charts  { grid-template-columns: 1fr; }
-  .chart-pie    { grid-column: span 1; min-height: 220px; }
-  .chart-card   { grid-column: span 1; min-height: 190px; }
-  .chart-card canvas { min-height: 140px; }
-  .mini-actions { grid-template-columns: 1fr; }
-
-  .modal-pie .modal-pie-grid { grid-template-columns: 1fr; gap: 14px; }
-  .modal-pie #modalPie       { width: 280px; }
+  .defi-charts { grid-template-columns: 1fr; }
+  .chart-pie { grid-column: span 1; }
 }
 
 @media (max-width: 520px) {
-  .defi-row4    { grid-template-columns: 1fr; }
-  .defi-row2    { grid-template-columns: 1fr; }
-  .defi-charts  { grid-template-columns: 1fr; }
+  .defi-row4, .defi-row2, .defi-charts { grid-template-columns: 1fr; }
   .mini-actions { grid-template-columns: 1fr; }
 }

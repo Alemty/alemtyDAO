@@ -314,3 +314,36 @@ rooms.patch("/:name/settings", auth, async (c) => {
     return c.json({ error: "server error" }, 500);
   }
 });
+
+/* =========================================================
+   ✅ DELETE /api/rooms/:name?type=...
+   Solo el creador o el founder pueden eliminar
+========================================================= */
+rooms.delete("/:name", auth, async (c) => {
+  const address = asLower(c.get("address"));
+  const name = c.req.param("name");
+  const type = normalizeType(c.req.query("type"));
+  if (!type) return c.json({ error: "Invalid room type" }, 400);
+
+  try {
+    const room: any = await c.env.DB.prepare(`
+      SELECT id, created_by FROM rooms WHERE name=? AND type=? LIMIT 1
+    `).bind(name, type).first();
+
+    if (!room) return c.json({ error: "not found" }, 404);
+
+    const isFounder = address === FOUNDER;
+    const isOwner = asLower(room.created_by) === address;
+
+    if (!isFounder && !isOwner) return c.json({ error: "forbidden" }, 403);
+
+    // Eliminar miembros primero (FK)
+    await c.env.DB.prepare(`DELETE FROM room_members WHERE room_id=?`).bind(room.id).run();
+    await c.env.DB.prepare(`DELETE FROM rooms WHERE id=?`).bind(room.id).run();
+
+    return c.json({ ok: true });
+  } catch (err: any) {
+    console.error("❌ rooms DELETE error:", err);
+    return c.json({ error: "server error" }, 500);
+  }
+});
