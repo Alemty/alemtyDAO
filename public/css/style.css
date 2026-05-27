@@ -141,13 +141,13 @@
 #pageIdentity .book-frame::after {
   content: "";
   position: absolute;
-  inset: -1px;
+  inset: -2px;
   pointer-events: none;
   border-radius: inherit;
-  background: radial-gradient(420px 220px at 15% 0%, var(--glow-a), transparent 65%),
-              radial-gradient(420px 220px at 85% 100%, var(--glow-b), transparent 70%);
-  opacity: .65;
-  filter: blur(14px);
+  background: radial-gradient(520px 260px at 15% 10%, rgba(0,255,213,.28), transparent 55%),
+              radial-gradient(520px 260px at 85% 90%, rgba(0,163,255,.22), transparent 60%);
+  opacity: 1;
+  filter: blur(16px);
 }
 
 #pageIdentity .book-frame > * { position: relative; z-index: 2; }
@@ -188,16 +188,15 @@
 #pageIdentity .social-card::before {
   content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
   background:
-    radial-gradient(ellipse 95% 70% at 50% -14%, rgba(255,255,255,.06), transparent 72%),
-    linear-gradient(90deg, var(--glow-a), var(--glow-b), transparent 70%);
-  opacity: .95;
+    radial-gradient(ellipse 95% 70% at 50% -14%, rgba(13,185,166,.08), transparent 72%);
+  opacity: 1;
 }
 
 #pageIdentity .social-card::after {
-  content: ""; position: absolute; inset: -1px; pointer-events: none; border-radius: inherit;
-  background: radial-gradient(420px 220px at 15% 0%, var(--glow-a), transparent 65%),
-              radial-gradient(420px 220px at 85% 100%, var(--glow-b), transparent 70%);
-  opacity: .65; filter: blur(14px);
+  content: ""; position: absolute; inset: -2px; pointer-events: none; border-radius: inherit;
+  background: radial-gradient(520px 260px at 15% 10%, rgba(0,255,213,.28), transparent 55%),
+              radial-gradient(520px 260px at 85% 90%, rgba(0,163,255,.22), transparent 60%);
+  opacity: 1; filter: blur(16px);
 }
 
 #pageIdentity .social-card > * { position: relative; z-index: 1; }

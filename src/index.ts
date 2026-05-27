@@ -150,6 +150,12 @@ app.get("/api/me/stats", auth, async (c) => {
   const pointsReceived = Number((pointsReceivedRow as any)?.n ?? 0);
   const likesReceived = Number((likesReceivedRow as any)?.n ?? 0);
 
+  // Comentarios recibidos en posts del usuario
+  const commentsReceivedRow = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM comments c JOIN posts p ON p.id = c.post_id WHERE p.author = ?"
+  ).bind(address).first();
+  const commentsReceived = Number((commentsReceivedRow as any)?.n ?? 0);
+
   const dharma = pointsReceived + likesReceived;
   const aura = dharma;
 
@@ -163,6 +169,7 @@ app.get("/api/me/stats", auth, async (c) => {
     received: {
       pointsReceived,
       likesReceived,
+      commentsReceived,
     },
     tokenomics: {
       dharma,

@@ -176,7 +176,8 @@ html.light .modal .profile-left,
 html.light .modal .profile-right,
 html.light .modal .profile-content,
 html.light .modal .profile-fixed {
-  background: rgba(255, 255, 255, .72);
+  background: rgba(255, 255, 255, .22);
+  border: 1px solid rgba(0,120,200,.08);
 }
 
 /* ===== Mobile: tokens en grilla 2xN ===== */

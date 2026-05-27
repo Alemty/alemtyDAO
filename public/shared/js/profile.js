@@ -138,7 +138,10 @@ export function buildProfileModal() {
 }
 
 export async function syncProfile() {
-  const addr = getDid();
+  // Soporte para ver perfil de otro usuario (click en dirección)
+  const viewingAddr = localStorage.getItem('alemty.profile.viewing') || '';
+  const addr = viewingAddr || getDid();
+
   const modal = document.getElementById("profileModal");
   if (!modal) return;
 
@@ -148,7 +151,7 @@ export async function syncProfile() {
   const avatarBox = modal.querySelector("#pfAvatarBox");
   const avatarImg = modal.querySelector("#pfAvatar");
 
-  addrEl.textContent = addr ? `${shortAddr(addr)} · alemty.eth` : "Conecta tu wallet (☰)";
+  addrEl.textContent = addr ? `${addr.toLowerCase()} · alemty.eth` : "Conecta tu wallet (☰)";
 
   const url = addr ? (localStorage.getItem(`level.nft.avatar.${addr.toLowerCase()}`) || "") : "";
   if (!url.trim()) {
@@ -232,7 +235,7 @@ function renderEstadoTab(modal) {
   const connectedFor = formatDuration(nowMs() - startedAt);
 
   if (!s) {
-    c.innerHTML = `<div class="pf-box"><div class="h2">Estado</div><p class="muted">Panel MMORPG.</p><div class="post-tags" style="margin-top:10px"><span class="pill">⏱️ Conectado: <span class="count">${connectedFor}</span></span><span class="pill">🧙‍♂️ DID: <span class="count">${shortAddr(addr)}</span></span></div></div>`;
+    c.innerHTML = `<div class="pf-box"><div class="h2">Estado</div><p class="muted">Panel MMORPG.</p><div class="post-tags" style="margin-top:10px"><span class="pill">⏱️ Conectado: <span class="count">${connectedFor}</span></span><span class="pill">🧙‍♂️ DID: <span class="count">${addr.toLowerCase()}</span></span></div></div>`;
     return;
   }
 
@@ -244,7 +247,7 @@ function renderEstadoTab(modal) {
 
   c.innerHTML = `<div class="pf-box"><div class="h2">Estado</div><p class="muted">Panel MMORPG.</p><div class="post-tags" style="margin-top:10px">${[
     `⏱️ Conectado: <span class="count">${connectedFor}</span>`,
-    `🧙‍♂️ DID: <span class="count">${shortAddr(addr)}</span>`
+    `🧙‍♂️ DID: <span class="count">${addr.toLowerCase()}</span>`
   ].map(t => `<span class="pill">${t}</span>`).join('')}</div><div class="post-tags" style="margin-top:10px">${[
     `⭐ Points recibidos: <span class="count">${fmtInt(pointsReceived)}</span>`,
     `♥️ Likes recibidos: <span class="count">${fmtInt(likesReceived)}</span>`,

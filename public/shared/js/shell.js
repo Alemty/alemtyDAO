@@ -247,9 +247,19 @@ export function mountShell() {
     const wasOpen = !!pm && pm.classList.contains("open");
     closeAllPanels();
     if (wasOpen) return;
+    // Clic en botón propio → limpiar viewing y mostrar perfil propio
+    localStorage.removeItem('alemty.profile.viewing');
     await syncProfile();
     openModal("profileModal");
   });
+
+  // Exponer global para abrir perfil desde otros módulos (app.js, notifications.js)
+  window.openProfileModal = async function openProfileModal(addr) {
+    // Guardar la dirección clickeada en localStorage temporal para syncProfile
+    if (addr) localStorage.setItem('alemty.profile.viewing', addr);
+    await syncProfile();
+    openModal("profileModal");
+  };
 
   window.addEventListener("did:changed", async () => { await syncProfile(); void updateNotifUI(); });
 

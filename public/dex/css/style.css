@@ -78,16 +78,23 @@ body[data-app="dex"] .glass::after {
 body[data-app="dex"] .glass > * { position: relative; z-index: 1; }
 
 html.light body[data-app="dex"] .glass {
-  background: var(--glass-light-2) !important;
-  border: 1px solid rgba(0, 120, 200, .14) !important;
-  box-shadow: 0 12px 32px rgba(0,0,0,.08), 0 0 0 1px rgba(255,255,255,.72) inset !important;
+  background: rgba(255,255,255,.55) !important;
+  border: 1px solid rgba(13, 185, 166, .15) !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,.06), 0 0 0 1px rgba(255,255,255,.72) inset !important;
 }
 
 html.light body[data-app="dex"] .glass::after {
-  background: radial-gradient(420px 220px at 15% 0%, rgba(13,185,166,.22), transparent 65%),
-              radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.18), transparent 70%);
-  opacity: .45;
-  filter: blur(12px);
+  background: radial-gradient(420px 220px at 15% 0%, rgba(13,185,166,.18), transparent 65%),
+              radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.14), transparent 70%);
+  opacity: .75;
+  filter: blur(14px);
+}
+
+/* Sub-cards DEX light: transparentes para heredar glow */
+html.light body[data-app="dex"] .dex-card {
+  background: rgba(255,255,255,.22) !important;
+  border: 1px solid rgba(13,185,166,.12) !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,.04), 0 0 0 1px rgba(255,255,255,.5) inset !important;
 }
 
 /* ---------- BRAND ---------- */
@@ -141,6 +148,14 @@ body[data-app="dex"] .dex-tools { display: flex; gap: 10px; flex-wrap: wrap; }
 body[data-app="dex"] .dex-search { border-radius: 14px; border: 1px solid var(--border); background: rgba(255,255,255,.05); color: inherit; padding: 10px 12px; min-width: 240px; font-weight: 800; }
 body[data-app="dex"] .dex-pool-list { display: flex; flex-direction: column; gap: 12px; }
 body[data-app="dex"] .dex-pool { display: flex; justify-content: space-between; gap: 14px; align-items: center; flex-wrap: wrap; border-radius: 18px; border: 1px solid var(--ui-border); background: var(--ui-surface); padding: 12px; }
+
+/* Light: pools transparentes heredan glow */
+html.light body[data-app="dex"] article.dex-pool,
+html.light body[data-app="dex"] .dex-pool-list .dex-pool,
+html.light body[data-app="dex"] [class*="dex-pool"]:not(.dex-pool-list) {
+  background: rgba(255,255,255,.22) !important;
+  border-color: rgba(13,185,166,.12) !important;
+}
 body[data-app="dex"] .dex-pair { display: flex; gap: 8px; align-items: center; font-weight: 950; }
 body[data-app="dex"] .chip { padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border); background: rgba(255,255,255,.04); font-weight: 950; font-size: 12px; }
 body[data-app="dex"] .chip.aura { box-shadow: 0 0 0 2px rgba(24, 149, 171, .35) inset; }
