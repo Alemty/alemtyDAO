@@ -81,16 +81,15 @@ html.light .dao-bg {
 
 html.light .dao-root .card,
 html.light .dao-root .dao-panel {
-  background: var(--glass-light-2) !important;
-  border: 1px solid rgba(0, 120, 200, .14) !important;
-  box-shadow: 0 12px 32px rgba(0,0,0,.08), 0 0 0 1px rgba(255,255,255,.72) inset !important;
+  background: rgba(255,255,255,.55) !important;
+  border: 1px solid rgba(13, 185, 166, .15) !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,.06), 0 0 0 1px rgba(255,255,255,.72) inset !important;
 }
 
 html.light .dao-root .card::after,
 html.light .dao-root .dao-panel::after { opacity: .55; }
 
-.dao-root .card.clickable { cursor: pointer; transition: transform .2s ease, box-shadow .2s ease; }
-.dao-root .card.clickable:hover { transform: translateY(-2px) !important; box-shadow: inset 0 0 0 1px rgba(0,255,213,.28), 0 22px 70px rgba(0,0,0,.45) !important; }
+.dao-root .card.clickable { cursor: pointer; }
 
 /* ---------- SUB-CARDS ---------- */
 .dao-root .post,
@@ -134,9 +133,9 @@ html.light .dao-root .dao-panel::after { opacity: .55; }
 html.light .dao-root .post,
 html.light .dao-root .mini,
 html.light .dao-root .car-card {
-  background: rgba(255,255,255,.55) !important;
-  border: 1px solid rgba(0,120,200,.12) !important;
-  box-shadow: 0 6px 18px rgba(0,0,0,.06), 0 0 0 1px rgba(255,255,255,.65) inset !important;
+  background: rgba(255,255,255,.22) !important;
+  border: 1px solid rgba(13,185,166,.12) !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,.04), 0 0 0 1px rgba(255,255,255,.5) inset !important;
 }
 
 /* ---------- TIPOGRAFÍA ---------- */

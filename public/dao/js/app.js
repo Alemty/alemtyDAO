@@ -464,7 +464,9 @@ function shortHex(addr, start = 6, end = 4){
 // (FASE 3) Por ahora no tienes ENS real en posts; si luego lo agregas,
 // aquí decides si muestra .eth o 0x...
 function displayAuthor(addr){
-  return shortHex(String(addr || '').toLowerCase());
+  const a = String(addr || '');
+  if (!a) return '—';
+  return a.toLowerCase(); // completa, sin truncar
 }
 
 // HTML del link del autor (clickable)
@@ -1301,7 +1303,7 @@ if (less) {
 
 
 // =========================
-// Abrir perfil (SOON) desde autor
+// Abrir perfil desde autor
 // =========================
 const prof = e.target.closest('[data-profile-open]');
 if (prof) {
@@ -1311,17 +1313,25 @@ if (prof) {
   const addr = String(prof.getAttribute('data-profile-open') || '');
   if (!addr) return;
 
-  document.getElementById('daoModalTitle').textContent = 'Perfil';
-  document.getElementById('daoModalBody').innerHTML = `
-    <div class="sheet-item">
-      <div class="t">Usuario</div>
-      <div class="m">${esc(shortHex(addr))}</div>
-      <div class="small muted" style="margin-top:10px;">
-        Perfil público (stats) — SOON.
+  // Cerrar modal de post si está abierto
+  closeModal('daoModal');
+
+  // Abrir modal de perfil compartido con la dirección clickeada
+  if (window.openProfileModal) {
+    window.openProfileModal(addr);
+  } else {
+    // Fallback: mostrar dirección completa inline
+    document.getElementById('daoModalTitle').textContent = 'Perfil';
+    document.getElementById('daoModalBody').innerHTML = `
+      <div class="sheet-item">
+        <div class="m" style="font-family:var(--mono);word-break:break-all;">${esc(addr)}</div>
+        <div class="small muted" style="margin-top:10px;">
+          Perfil público (stats) — SOON.
+        </div>
       </div>
-    </div>
-  `;
-  openModal();
+    `;
+    openModal();
+  }
   return;
 }
 
@@ -2455,6 +2465,7 @@ el.innerHTML = list.map(p => `
     <div class="post-headrow">
       <div>
         <div class="t">${esc(p.title.slice(0,52))}${p.title.length>52?'…':''}</div>
+        <div class="post-author" style="font-size:11px;">${authorLinkHTML(p.author)}</div>
         <div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
       </div>
 
@@ -2801,7 +2812,7 @@ function updateModalPostCounts(postId){
 let CURRENT_MODAL_POST_ID = null;
 let CURRENT_MODAL_POST = null; // guarda el post completo del modal (source of truth para comments/replies)
 
-async function openPostModal(postId) {
+window.openPostModal = async function openPostModal(postId) {
   const idStr = String(postId);
 
   // 1) Source of truth: backend

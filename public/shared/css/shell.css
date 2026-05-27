@@ -22,8 +22,8 @@ body::before {
   --glass-dark-1: rgba(10, 20, 26, 0.45);
   --glass-dark-2: rgba(10, 20, 26, 0.65);
   --glass-dark-3: rgba(10, 20, 26, 0.82);
-  --glass-light-1: rgba(255, 255, 255, 0.65);
-  --glass-light-2: rgba(255, 255, 255, 0.82);
+  --glass-light-1: rgba(255, 255, 255, 0.75);
+  --glass-light-2: rgba(255, 255, 255, 0.92);
   --glass-light-3: rgba(255, 255, 255, 0.94);
 
   /* Glow ambient tokens — single source of truth */
@@ -223,10 +223,36 @@ html.light .topbar {
   box-shadow: 0 1px 0 rgba(255, 255, 255, .60) inset !important;
 }
 
+html.light .topbar::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(520px 260px at 15% 10%, rgba(0,255,213,.28), transparent 55%),
+              radial-gradient(520px 260px at 85% 90%, rgba(0,163,255,.22), transparent 60%);
+  opacity: 1;
+  filter: blur(16px);
+  z-index: -1;
+}
+
 html.light .bottom-nav {
   background: rgba(255, 255, 255, .78) !important;
   border-top: 1px solid rgba(0, 120, 200, .12) !important;
   box-shadow: 0 -1px 0 rgba(255, 255, 255, .60) inset !important;
+}
+
+html.light .bottom-nav::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(520px 260px at 15% 10%, rgba(0,255,213,.28), transparent 55%),
+              radial-gradient(520px 260px at 85% 90%, rgba(0,163,255,.22), transparent 60%);
+  opacity: 1;
+  filter: blur(16px);
+  z-index: -1;
 }
 
 html.light .bottom-btn { background: rgba(0,0,0,.06); color: #08101a; border-color: rgba(0,0,0,.12); box-shadow: 0 0 0 1px rgba(0,0,0,.08) inset, 0 6px 14px rgba(0,0,0,.08); }
@@ -323,9 +349,9 @@ html.light .drawer {
   box-shadow: 0 18px 50px rgba(0,0,0,.14), 0 0 0 1px rgba(13,185,166,.10) inset;
 }
 html.light .drawer::after {
-  background: radial-gradient(420px 220px at 15% 0%, rgba(13,185,166,.18), transparent 65%),
-              radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.14), transparent 70%);
-  opacity: .55;
+  background: radial-gradient(420px 220px at 15% 0%, rgba(0,255,213,.22), transparent 65%),
+              radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.18), transparent 70%);
+  opacity: .65;
   filter: blur(14px);
 }
 html.light .drawer-head { border-bottom: 1px solid rgba(0,0,0,.08); }
@@ -387,7 +413,7 @@ html.light .modal-backdrop {
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   overflow: visible;
-  box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(0,255,213,.10) inset;
+  box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(0,255,213,.18) inset;
   max-height: calc(100vh - var(--app-topbar-h, var(--topbar-h)) - var(--app-bottomnav-h, 78px) - 8px);
   display: flex;
   flex-direction: column;
@@ -408,13 +434,18 @@ html.light .modal-backdrop {
 html.light .modal-card {
   background: var(--glass-light-2);
   border: 1px solid rgba(13, 185, 166, .12);
-  box-shadow: 0 24px 60px rgba(0,0,0,.14), 0 0 0 1px rgba(255,255,255,.72) inset;
+  box-shadow: 0 24px 60px rgba(0,0,0,.14), 0 0 0 1px rgba(0,255,213,.18) inset;
 }
 
 html.light .modal-card::after {
-  background: radial-gradient(420px 220px at 15% 0%, rgba(13,185,166,.18), transparent 65%),
-              radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.14), transparent 70%);
-  opacity: .55;
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(420px 220px at 15% 0%, rgba(0,255,213,.22), transparent 65%),
+              radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.18), transparent 70%);
+  opacity: .65;
   filter: blur(14px);
 }
 
@@ -579,6 +610,20 @@ html.light .drawer .acc[data-acc="did"] .acc-h { background: rgba(255,255,255,.5
 
 html.light .web3-disclaimer { color: rgba(8,16,26,.70); }
 
+/* Glow IOS para disclaimer */
+.web3-disclaimer::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(520px 260px at 15% 10%, rgba(0,255,213,.28), transparent 55%),
+              radial-gradient(520px 260px at 85% 90%, rgba(0,163,255,.22), transparent 60%);
+  opacity: 1;
+  filter: blur(16px);
+  z-index: -1;
+}
+
 .bottom-nav { bottom: var(--web3-disc-h) !important; }
 body { padding-bottom: calc(78px + var(--web3-disc-h)) !important; }
 
@@ -606,22 +651,31 @@ html:not(.theme-ready) * { transition: none !important; }
 /* ===== TYPOGRAPHY ===== */
 body {
   font-family: var(--font-alt), var(--font);
-  font-weight: 400;
-  letter-spacing: -0.008em;
+  font-weight: 450;
+  letter-spacing: -0.006em;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
+html.light body {
+  font-weight: 480;
+  text-shadow: 0 0 0 rgba(0,0,0,.03);
+}
+
 button, .icon-btn, .drawer-link, .tab-btn, .bottom-btn, .cert-cta,
 input, textarea, select, .btn, .kebab-btn, .kebab-item, .pill, .dao-tab {
   font-family: var(--font-alt), var(--font) !important;
-  font-weight: 500;
-  letter-spacing: -0.005em;
+  font-weight: 540;
+  letter-spacing: -0.003em;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+html.light button, html.light .drawer-link, html.light .tab-btn, html.light .bottom-btn, html.light .btn, html.light .kebab-btn, html.light .kebab-item, html.light .pill, html.light .dao-tab {
+  font-weight: 560;
 }
 
 /* ===== SCROLLBARS ===== */

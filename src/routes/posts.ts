@@ -86,6 +86,39 @@ const result = await c.env.DB.prepare(
 });
 
 /* =========================================================
+   NOTIFICACIONES DEL USUARIO
+   GET /api/me/notifications?limit=50
+========================================================= */
+posts.get("/me/notifications", auth, async (c) => {
+  try {
+    const address = c.get("address");
+    const limit = Math.min(Number(c.req.query("limit") || 50), 100);
+
+    // likes: reactions de tipo 'like' en posts del usuario
+    const likesRaw = await c.env.DB.prepare(
+      "SELECT r.address, r.post_id, p.title, r.created_at FROM reactions r JOIN posts p ON p.id = r.post_id WHERE p.author = ? AND r.type = 'like' ORDER BY r.created_at DESC LIMIT ?"
+    ).bind(address, limit).all();
+    const likes = (likesRaw.results || []).map((r: any) => ({ by: r.address, postId: String(r.post_id), postTitle: r.title, ts: r.created_at }));
+
+    // points: reactions de tipo 'point'
+    const ptsRaw = await c.env.DB.prepare(
+      "SELECT r.address, r.post_id, p.title, r.created_at, r.amount FROM reactions r JOIN posts p ON p.id = r.post_id WHERE p.author = ? AND r.type = 'point' ORDER BY r.created_at DESC LIMIT ?"
+    ).bind(address, limit).all();
+    const points = (ptsRaw.results || []).map((r: any) => ({ by: r.address, postId: String(r.post_id), postTitle: r.title, ts: r.created_at, amount: Number(r.amount || 0) }));
+
+    // comments
+    const cmtsRaw = await c.env.DB.prepare(
+      "SELECT c.author, c.post_id, p.title, c.created_at, c.body FROM comments c JOIN posts p ON p.id = c.post_id WHERE p.author = ? ORDER BY c.created_at DESC LIMIT ?"
+    ).bind(address, limit).all();
+    const comments = (cmtsRaw.results || []).map((r: any) => ({ by: r.author, postId: String(r.post_id), postTitle: r.title, ts: r.created_at, body: r.body }));
+
+    return c.json({ ok: true, likes, points, comments });
+  } catch (e) {
+    return c.json({ ok: false, error: String(e) }, 500);
+  }
+});
+
+/* =========================================================
    OBTENER POST
    GET /api/posts/:id
 ========================================================= */

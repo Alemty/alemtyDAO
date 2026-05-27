@@ -84,9 +84,16 @@ html.light .defi-bg {
 .defi-root .card > * { position: relative; z-index: 1; }
 
 html.light .defi-root .card {
-  background: var(--glass-light-2) !important;
-  border: 1px solid rgba(0, 120, 200, .14) !important;
-  box-shadow: 0 12px 32px rgba(0,0,0,.08), 0 0 0 1px rgba(255,255,255,.72) inset !important;
+  background: rgba(255,255,255,.55) !important;
+  border: 1px solid rgba(13, 185, 166, .15) !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,.06), 0 0 0 1px rgba(255,255,255,.72) inset !important;
+}
+
+html.light .defi-root .card::after {
+  background: radial-gradient(420px 220px at 15% 0%, rgba(13,185,166,.10), transparent 65%),
+              radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.10), transparent 70%);
+  opacity: .55;
+  filter: blur(14px);
 }
 
 /* ---------- MODAL (DAO-style) ---------- */
@@ -100,9 +107,24 @@ html.light .defi-root .card {
 }
 
 html.light .defi-root .modal-card {
-  background: var(--glass-light-2);
-  border: 1px solid rgba(13, 185, 166, .12);
-  box-shadow: 0 24px 60px rgba(0,0,0,.14), 0 0 0 1px rgba(255,255,255,.72) inset;
+  background: rgba(255,255,255,1);
+  border: 1px solid rgba(13, 185, 166, .15);
+  box-shadow: 0 24px 60px rgba(0,0,0,.10), 0 0 0 1px rgba(255,255,255,.72) inset;
+}
+
+html.light .defi-root .modal-card::after {
+  background: radial-gradient(420px 220px at 15% 0%, rgba(13,185,166,.22), transparent 60%),
+              radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.18), transparent 65%);
+  opacity: .85;
+  filter: blur(14px);
+}
+
+/* Sub-cards en DEFI light */
+html.light .defi-root .chart-card,
+html.light .defi-root .mini {
+  background: rgba(255,255,255,.22) !important;
+  border: 1px solid rgba(13,185,166,.12) !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,.04), 0 0 0 1px rgba(255,255,255,.5) inset !important;
 }
 
 /* ---------- TIPOGRAFÍA ---------- */
