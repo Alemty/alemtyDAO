@@ -3,6 +3,10 @@ node_modules/
 
 # Local / temp
 _dump/
+.tmp/
+
+# Ignored assets
+public/favicon.ico
 
 # Office temp files
 ~$*.pptx
