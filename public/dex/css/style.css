@@ -1,48 +1,25 @@
 /* ==========================================================
    dex.alemty.eth — Estilos del subdominio DEX
-   Archivo: public/dex/css/style.css
-
-   REGLAS DE ESTE ARCHIVO:
-   · El :root{} original se eliminó — todos sus tokens viven
-     en settings/theme.css (--bg, --primary, --accent, --font,
-     --mono, --topbar-h). No se redefinen aquí.
-   · html.light{} global también se eliminó — vive en theme.css.
-   · html, body reset está en theme.css — no se repite aquí.
-   · Todo lo DEX-específico usa body[data-app="dex"] como scope.
+   Scoped a body[data-app="dex"]
    ========================================================== */
 
-/* ----------------------------------------------------------
-   1. TOKENS PROPIOS DEL DEX — scoped, nunca en :root
-   ---------------------------------------------------------- */
+/* ---------- TOKENS ---------- */
 body[data-app="dex"] {
-  /* Altura del bottom-nav (el topbar usa --topbar-h de theme.css) */
-  --dex-bottomnav-h: 78px;
-
-  /* Brand colors */
-  --dex-brand-base: rgba(239, 255, 251, .94);
-  --dex-brand-em:   var(--primary);
+  --dex-brand-em: var(--primary);
+  --dex-brand-base: var(--text);
   --dex-brand-glow: rgba(0, 255, 213, .22);
-
-  /* Base */
-  min-height: 100vh;
+  --dex-gap: 16px;
   background: var(--bg);
-  color: rgba(239, 255, 251, .92);
-  font-family: var(--font);
+  min-height: 100vh;
+  color: var(--text);
   position: relative;
-  z-index: 0;
-  isolation: isolate;
-  /* overflow-x está en theme.css reset */
 }
 
 html.light body[data-app="dex"] {
-  color: rgba(14, 26, 24, .92);
-  --dex-brand-base: rgba(8, 16, 26, .92);
   --dex-brand-glow: rgba(13, 185, 166, .14);
 }
 
-/* ----------------------------------------------------------
-   2. FONDO VIVO
-   ---------------------------------------------------------- */
+/* ---------- FONDO VIVO ---------- */
 body[data-app="dex"]::before {
   content: "";
   position: fixed;
@@ -50,506 +27,156 @@ body[data-app="dex"]::before {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(740px 360px at 16% 12%, rgba(0, 255, 213, .14), transparent 66%),
-    radial-gradient(640px 340px at 86% 16%, rgba(0, 163, 255, .10), transparent 64%);
-  opacity: .95;
+    radial-gradient(680px 420px at 18% 0%, rgba(0,255,213,.16), transparent 62%),
+    radial-gradient(540px 320px at 82% 18%, rgba(0,163,255,.13), transparent 60%);
+  opacity: 1;
 }
 
 html.light body[data-app="dex"]::before {
   background:
-    radial-gradient(820px 420px at 12% 10%, rgba(0, 203, 176, .22), transparent 68%),
-    radial-gradient(720px 420px at 88% 14%, rgba(0, 163, 255, .16), transparent 70%),
-    radial-gradient(900px 520px at 50% -10%, rgba(255, 255, 255, .55), transparent 72%);
-  opacity: 1;
+    radial-gradient(820px 500px at 18% -10%, rgba(0,255,213,.28), transparent 60%),
+    radial-gradient(720px 420px at 85% 15%, rgba(0,149,255,.22), transparent 62%),
+    radial-gradient(900px 500px at 50% 110%, rgba(255,255,255,.60), transparent 70%);
 }
 
-/* Grano sutil */
-body[data-app="dex"]::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: .025;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-/* ----------------------------------------------------------
-   3. LAYOUT BASE
-   ---------------------------------------------------------- */
-
-/* Offset topbar fija — usa token global */
+/* ---------- CONTAINER ---------- */
 body[data-app="dex"] #pageDex {
-  min-height: 100vh;
-  padding-top: calc(var(--topbar-h) + 14px) !important;
+  padding: calc(var(--app-topbar-h, var(--topbar-h)) + 26px) 18px calc(78px + var(--web3-disc-h, 22px) + 24px);
 }
 
+/* ---------- WRAP: cards vertical stack con gap generoso ---------- */
 body[data-app="dex"] .dex-wrap {
-  display: grid;
-  gap: 14px;
-  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dex-gap);
 }
 
-body[data-app="dex"] .bottom-safe-space {
-  height: 140px;
+/* ---------- CARD SYSTEM (DAO-style, glass unificado) ---------- */
+body[data-app="dex"] .glass {
+  background: var(--ui-surface) !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: var(--radius-card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--ui-inset) !important;
+}
+
+body[data-app="dex"] .glass::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
   pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(420px 220px at 15% 0%, var(--glow-a), transparent 65%),
+              radial-gradient(420px 220px at 85% 100%, var(--glow-b), transparent 70%);
+  opacity: .65;
+  filter: blur(14px);
 }
 
-/* ----------------------------------------------------------
-   4. TOPBAR Y BOTTOM-NAV — scoped al DEX
-      Incluye safe-area para notch/home-bar en iOS.
-   ---------------------------------------------------------- */
-body[data-app="dex"] .topbar {
-  position: fixed !important;
-  top: 0;
-  left: 0 !important;
-  right: 0 !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  z-index: 1000;
-  padding-left:  env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-}
+body[data-app="dex"] .glass > * { position: relative; z-index: 1; }
 
-body[data-app="dex"] .bottom-nav {
-  position: fixed !important;
-  bottom: 0;
-  left: 0 !important;
-  right: 0 !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  z-index: 1000;
-  padding-left:  env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-}
-
-/* ----------------------------------------------------------
-   5. BRAND — dex.alemty.eth
-   ---------------------------------------------------------- */
-body[data-app="dex"] .dao-brand {
-  margin: 6px 0 12px;
-  font-weight: 1000;
-  letter-spacing: -0.6px;
-  line-height: 1.05;
-  font-size: clamp(1.55rem, 3.8vw, 2.15rem);
-  user-select: none;
-}
-
-body[data-app="dex"] .dao-brand-base { color: var(--dex-brand-base); }
-
-body[data-app="dex"] .dao-brand-em {
-  color: var(--dex-brand-em);
-  text-shadow: 0 0 18px var(--dex-brand-glow);
-}
-
-html.light body[data-app="dex"] .dao-brand-em { text-shadow: none; }
-
-/* ----------------------------------------------------------
-   6. GLASS — light polish
-   ---------------------------------------------------------- */
 html.light body[data-app="dex"] .glass {
-  background: rgba(255, 255, 255, .82) !important;
-  border: 1px solid rgba(13, 185, 166, .18) !important;
-  box-shadow:
-    0 14px 34px rgba(0, 0, 0, .06),
-    0 0 0 1px rgba(13, 185, 166, .08) inset !important;
-  backdrop-filter: var(--blur-md) !important;
-  -webkit-backdrop-filter: var(--blur-md) !important;
+  background: var(--glass-light-2) !important;
+  border: 1px solid rgba(0, 120, 200, .14) !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,.08), 0 0 0 1px rgba(255,255,255,.72) inset !important;
 }
 
 html.light body[data-app="dex"] .glass::after {
-  opacity: .42 !important;
-  filter: blur(12px) !important;
-  background:
-    radial-gradient(420px 220px at 15% 0%,   rgba(13, 185, 166, .18), transparent 65%),
-    radial-gradient(420px 220px at 85% 100%, rgba(0, 163, 255, .14),  transparent 70%) !important;
+  background: radial-gradient(420px 220px at 15% 0%, rgba(13,185,166,.22), transparent 65%),
+              radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.18), transparent 70%);
+  opacity: .45;
+  filter: blur(12px);
 }
 
-/* ----------------------------------------------------------
-   7. DEX CARD
-   ---------------------------------------------------------- */
-body[data-app="dex"] .dex-card { padding: 18px; }
-
-body[data-app="dex"] .dex-card-head {
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-  justify-content: space-between;
-  flex-wrap: wrap;
-}
-
-body[data-app="dex"] .dex-title {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 950;
-  letter-spacing: -.3px;
-}
-
-body[data-app="dex"] .dex-sub { margin: .25rem 0 0; max-width: 70ch; }
-
-/* ----------------------------------------------------------
-   8. SEGMENTED CONTROL
-   ---------------------------------------------------------- */
-body[data-app="dex"] .dex-seg {
+/* ---------- BRAND ---------- */
+body[data-app="dex"] .dao-brand {
+  font-weight: 1000;
+  letter-spacing: -0.02em;
   display: inline-flex;
-  gap: 6px;
-  padding: 6px;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, .04);
+  align-items: baseline;
+  flex-wrap: wrap;
+  font-size: clamp(1.6rem, 3.2vw, 2.2rem);
+  margin: 0 0 18px;
+  user-select: none;
 }
+body[data-app="dex"] .dao-brand-base { color: var(--dex-brand-base); }
+body[data-app="dex"] .dao-brand-em { color: var(--dex-brand-em); text-shadow: 0 0 18px var(--dex-brand-glow); }
+html.light body[data-app="dex"] .dao-brand-em { text-shadow: none; }
 
-body[data-app="dex"] .dex-seg-btn {
-  border: 1px solid transparent;
-  background: transparent;
-  color: inherit;
-  border-radius: 12px;
-  padding: 8px 12px;
-  font-weight: 900;
-  cursor: pointer;
-  opacity: .75;
-}
+/* ---------- DEX CARD ---------- */
+body[data-app="dex"] .dex-card { padding: 22px; }
+body[data-app="dex"] .dex-card-head { display: flex; gap: 14px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; margin-bottom: 16px; }
+body[data-app="dex"] .dex-title { margin: 0; font-size: 1.25rem; font-weight: 950; letter-spacing: -.3px; }
+body[data-app="dex"] .dex-sub { margin: .25rem 0 0; max-width: 70ch; opacity: .75; }
 
-body[data-app="dex"] .dex-seg-btn.active {
-  opacity: 1;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  color: #08101a;
-  border-color: rgba(255, 255, 255, .18);
-}
+/* ---------- SEGMENTED ---------- */
+body[data-app="dex"] .dex-seg { display: inline-flex; gap: 6px; padding: 6px; border-radius: 16px; border: 1px solid var(--border); background: rgba(255,255,255,.04); }
+body[data-app="dex"] .dex-seg-btn { border: 1px solid transparent; background: transparent; color: inherit; border-radius: 12px; padding: 8px 12px; font-weight: 900; cursor: pointer; opacity: .75; transition: opacity .15s, background .15s; }
+body[data-app="dex"] .dex-seg-btn.active { opacity: 1; background: linear-gradient(135deg, var(--primary), var(--accent)); color: #08101a; border-color: rgba(255,255,255,.18); }
 
-/* ----------------------------------------------------------
-   9. SWAP GRID + INPUTS
-      FIX MOBILE: .dex-input necesita min-width:0 y flex:1
-      para no desbordarse cuando .dex-select crece.
-   ---------------------------------------------------------- */
-body[data-app="dex"] .dex-swap-grid {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 12px;
-  align-items: end;
-}
-
+/* ---------- SWAP GRID ---------- */
+body[data-app="dex"] .dex-swap-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: end; }
 body[data-app="dex"] .dex-field { display: flex; flex-direction: column; gap: 8px; }
-body[data-app="dex"] .dex-label { font-size: 12px; font-weight: 900; opacity: .85; }
-
-body[data-app="dex"] .dex-input-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, .04);
-  padding: 10px;
-  /* FIX: evita que el contenedor se desborde */
-  min-width: 0;
-  width: 100%;
-}
-
-body[data-app="dex"] .dex-select {
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, .06);
-  color: inherit;
-  padding: 10px;
-  font-weight: 900;
-  /* FIX: no crecer más de lo necesario */
-  flex-shrink: 0;
-}
-
-body[data-app="dex"] .dex-input {
-  flex: 1;
-  min-width: 0;       /* ← FIX CLAVE: evita que empuje fuera del contenedor */
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: inherit;
-  font-size: 1.05rem;
-  font-weight: 950;
-  width: 100%;        /* ← FIX: respeta el flex parent */
-}
-
+body[data-app="dex"] .dex-input-row { display: flex; gap: 10px; align-items: center; border-radius: 16px; border: 1px solid var(--border); background: rgba(255,255,255,.04); padding: 10px; min-width: 0; width: 100%; }
+body[data-app="dex"] .dex-select { border-radius: 12px; border: 1px solid var(--border); background: rgba(255,255,255,.06); color: inherit; padding: 10px; font-weight: 900; flex-shrink: 0; }
+body[data-app="dex"] .dex-input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: inherit; font-size: 1.05rem; font-weight: 950; width: 100%; }
 body[data-app="dex"] .dex-input:disabled { opacity: .7; }
 body[data-app="dex"] .dex-hint { font-size: 12px; opacity: .7; }
-
-/* Flip button ⇅ — siempre visible */
-body[data-app="dex"] .dex-mid {
-  display: flex;
-  justify-content: center;
-}
-
-body[data-app="dex"] .dex-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, .06);
-  cursor: pointer;
-  font-size: 18px;
-  font-weight: 900;
-  color: rgba(239, 255, 251, .9);
-}
-
-html.light body[data-app="dex"] .dex-icon { color: var(--primary); }
-
-body[data-app="dex"] .dex-icon:hover {
-  box-shadow: 0 0 0 1px rgba(0, 255, 213, .25), 0 0 18px rgba(0, 255, 213, .18);
-}
-
-/* Acciones del swap */
-body[data-app="dex"] .dex-actions {
-  grid-column: 1 / -1;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 6px;
-}
-
-body[data-app="dex"] .dex-btn {
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, .06);
-  color: inherit;
-  padding: 10px 14px;
-  font-weight: 950;
-  cursor: pointer;
-}
-
-body[data-app="dex"] .dex-btn.primary {
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  color: #08101a;
-}
-
+body[data-app="dex"] .dex-mid { display: flex; justify-content: center; }
+body[data-app="dex"] .dex-icon { width: 46px; height: 46px; border-radius: 14px; border: 1px solid var(--border); background: rgba(255,255,255,.06); cursor: pointer; font-size: 18px; font-weight: 900; }
+body[data-app="dex"] .dex-actions { grid-column: 1 / -1; display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+body[data-app="dex"] .dex-btn { border-radius: 14px; border: 1px solid var(--border); background: rgba(255,255,255,.06); color: inherit; padding: 10px 14px; font-weight: 950; cursor: pointer; }
+body[data-app="dex"] .dex-btn.primary { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #08101a; border: 0; }
 body[data-app="dex"] .dex-btn:disabled { opacity: .55; cursor: not-allowed; }
+body[data-app="dex"] .dex-note { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
 
-body[data-app="dex"] .dex-note {
-  grid-column: 1 / -1;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 6px;
-}
+body[data-app="dex"] .pill { border-radius: 999px; padding: 6px 10px; border: 1px solid var(--border); background: rgba(255,255,255,.04); font-weight: 900; font-size: 12px; }
+body[data-app="dex"] .dex-prefix { display: inline-flex; align-items: center; padding: 0 8px 0 2px; margin-right: 6px; font-weight: 950; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: color-mix(in oklab, currentColor, transparent 35%); border-right: 1px solid color-mix(in oklab, var(--border), transparent 35%); flex-shrink: 0; }
+body[data-app="dex"] .sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }
 
-body[data-app="dex"] .pill {
-  border-radius: 999px;
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, .04);
-  font-weight: 900;
-  font-size: 12px;
-}
-
-/* ----------------------------------------------------------
-   10. POOLS
-   ---------------------------------------------------------- */
+/* ---------- POOLS ---------- */
 body[data-app="dex"] .dex-tools { display: flex; gap: 10px; flex-wrap: wrap; }
-
-body[data-app="dex"] .dex-search {
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, .05);
-  color: inherit;
-  padding: 10px 12px;
-  min-width: 240px;
-  font-weight: 800;
-}
-
-body[data-app="dex"] .dex-pool-list {
-  margin-top: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-body[data-app="dex"] .dex-pool {
-  display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  align-items: center;
-  flex-wrap: wrap;
-  border-radius: 18px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, .03);
-  padding: 12px;
-}
-
-body[data-app="dex"] .dex-pair {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  font-weight: 950;
-}
-
-body[data-app="dex"] .chip {
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, .04);
-  font-weight: 950;
-  font-size: 12px;
-}
-
+body[data-app="dex"] .dex-search { border-radius: 14px; border: 1px solid var(--border); background: rgba(255,255,255,.05); color: inherit; padding: 10px 12px; min-width: 240px; font-weight: 800; }
+body[data-app="dex"] .dex-pool-list { display: flex; flex-direction: column; gap: 12px; }
+body[data-app="dex"] .dex-pool { display: flex; justify-content: space-between; gap: 14px; align-items: center; flex-wrap: wrap; border-radius: 18px; border: 1px solid var(--ui-border); background: var(--ui-surface); padding: 12px; }
+body[data-app="dex"] .dex-pair { display: flex; gap: 8px; align-items: center; font-weight: 950; }
+body[data-app="dex"] .chip { padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border); background: rgba(255,255,255,.04); font-weight: 950; font-size: 12px; }
 body[data-app="dex"] .chip.aura { box-shadow: 0 0 0 2px rgba(24, 149, 171, .35) inset; }
 body[data-app="dex"] .chip.alem { box-shadow: 0 0 0 2px rgba(240, 189, 4, .35) inset; }
-body[data-app="dex"] .chip.eth  { box-shadow: 0 0 0 2px rgba(160, 140, 255, .35) inset; }
-
-body[data-app="dex"] .tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, .04);
-  font-weight: 900;
-  font-size: 12px;
-}
-
+body[data-app="dex"] .chip.eth { box-shadow: 0 0 0 2px rgba(160, 140, 255, .35) inset; }
+body[data-app="dex"] .tag { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); background: rgba(255,255,255,.04); font-weight: 900; font-size: 12px; }
 body[data-app="dex"] .tag.ext { border-color: rgba(0, 163, 255, .25); }
-
 body[data-app="dex"] .dex-metric .k { font-size: 11px; font-weight: 900; }
 body[data-app="dex"] .dex-metric .v { font-size: 14px; font-weight: 950; }
-body[data-app="dex"] .dex-foot { margin-top: 10px; font-size: 12px; }
+body[data-app="dex"] .dex-foot { margin-top: 10px; font-size: 12px; opacity: .7; }
 
-/* ----------------------------------------------------------
-   11. SELECT — legibilidad en dark
-   ---------------------------------------------------------- */
+/* ---------- SELECT LIGHT ---------- */
 html:not(.light) body[data-app="dex"] .dex-select,
-html:not(.light) body[data-app="dex"] .dex-search {
-  color: rgba(239, 255, 251, .92) !important;
-  background: rgba(15, 27, 25, .142) !important;
-  border-color: rgba(38, 184, 153, .753) !important;
-}
-
+html:not(.light) body[data-app="dex"] .dex-search { color: var(--text); background: rgba(15,27,25,.142); border-color: rgba(38,184,153,.753); }
 html:not(.light) body[data-app="dex"] select option { color: #0e1a18; }
 
-/* ----------------------------------------------------------
-   12. PREFIX "De/A" dentro del token row
-   ---------------------------------------------------------- */
-body[data-app="dex"] .sr-only {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  clip: rect(0, 0, 0, 0) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
-}
-
-body[data-app="dex"] .dex-prefix {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 8px 0 2px;
-  margin-right: 6px;
-  font-weight: 950;
-  font-size: 12px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: color-mix(in oklab, currentColor, transparent 35%);
-  border-right: 1px solid color-mix(in oklab, var(--border), transparent 35%);
-  /* FIX: no empujar al input */
-  flex-shrink: 0;
-}
-
-/* ----------------------------------------------------------
-   13. RESPONSIVE — TABLET (≤ 820px)
-       Colapsa el swap a 1 columna; ⇅ siempre visible
-   ---------------------------------------------------------- */
+/* ---------- RESPONSIVE ---------- */
 @media (max-width: 820px) {
-  body[data-app="dex"] .dex-swap-grid {
-    grid-template-columns: 1fr;
-  }
-  body[data-app="dex"] .dex-mid {
-    padding: 2px 0;
-    align-items: center;
-  }
+  body[data-app="dex"] .dex-swap-grid { grid-template-columns: 1fr; }
+  body[data-app="dex"] .dex-mid { padding: 2px 0; }
+  body[data-app="dex"] .dex-card-head { flex-direction: column; align-items: flex-start; }
 }
 
-/* ----------------------------------------------------------
-   14. RESPONSIVE — MOBILE (≤ 520px, touch)
-       Densidad 70% SOLO en contenido (#pageDex y modales).
-       NO se aplica a topbar ni bottom-nav.
-       FIX: inputs con min-width:0 para no recortarse.
-   ---------------------------------------------------------- */
 @media (pointer: coarse) and (max-width: 520px) {
-
-  /* Densidad visual reducida — solo el contenido DEX */
-  body[data-app="dex"] #pageDex          { font-size: 70%; }
-  body[data-app="dex"] .modal.open .modal-card { font-size: 70%; }
-
-  /* Padding del contenido */
-  body[data-app="dex"] #pageDex {
-    padding-top: calc(var(--topbar-h) + 10px) !important;
-    padding-left: 12px;
-    padding-right: 12px;
-  }
-
-  /* Cards */
-  body[data-app="dex"] .dex-card        { padding: 12px; }
-  body[data-app="dex"] .dex-title       { font-size: 1rem; }
-  body[data-app="dex"] .dex-sub         { font-size: 11px; }
-  body[data-app="dex"] .dex-card-head   { gap: 8px; flex-direction: column; align-items: flex-start; }
-
-  /* Segmented */
-  body[data-app="dex"] .dex-seg         { padding: 4px; gap: 4px; }
-  body[data-app="dex"] .dex-seg-btn     { padding: 6px 10px; font-size: 11px; }
-
-  /* Swap grid */
-  body[data-app="dex"] .dex-swap-grid   { gap: 8px; }
-  body[data-app="dex"] .dex-mid         { padding: 2px 0; justify-content: center; align-items: center; }
-
-  body[data-app="dex"] .dex-icon        { width: 38px; height: 38px; border-radius: 12px; font-size: 16px; touch-action: manipulation; }
-
-  /* Input row — FIX: no desbordarse en móvil */
-  body[data-app="dex"] .dex-input-row   { padding: 8px; border-radius: 12px; min-width: 0; }
-  body[data-app="dex"] .dex-select      { padding: 6px 8px; font-size: 12px; flex-shrink: 0; }
-  body[data-app="dex"] .dex-input       { font-size: 0.95rem; min-width: 0; flex: 1; width: 100%; }
-  body[data-app="dex"] .dex-prefix      { font-size: 10px; padding-right: 6px; margin-right: 6px; flex-shrink: 0; }
-
-  body[data-app="dex"] .dex-label       { font-size: 11px; }
-  body[data-app="dex"] .dex-hint        { font-size: 10px; }
-  body[data-app="dex"] .dex-btn         { padding: 8px 12px; font-size: 12px; }
-  body[data-app="dex"] .pill            { font-size: 10px; padding: 4px 8px; }
-
-  /* Pools */
-  body[data-app="dex"] .dex-pool        { flex-direction: column; align-items: flex-start; gap: 10px; padding: 10px; border-radius: 14px; }
-  body[data-app="dex"] .dex-pool-right  { width: 100%; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  body[data-app="dex"] .dex-metric .k   { font-size: 10px; }
-  body[data-app="dex"] .dex-metric .v   { font-size: 12px; }
-  body[data-app="dex"] .chip            { font-size: 10px; padding: 4px 8px; }
-  body[data-app="dex"] .tag             { font-size: 10px; padding: 3px 8px; }
-
-  body[data-app="dex"] .dex-search      { min-width: 0; width: 100%; font-size: 12px; padding: 8px 10px; }
-  body[data-app="dex"] .dex-tools       { width: 100%; flex-direction: column; }
-  body[data-app="dex"] .dex-tools .dex-select { width: 100%; }
-
-  /* Brand */
-  body[data-app="dex"] .dao-brand       { font-size: clamp(1.1rem, 5vw, 1.5rem); margin: 4px 0 8px; }
-
-  /* Profile modal en DEX */
-  body[data-app="dex"] .profile-grid    { grid-template-columns: 160px 1fr !important; overflow: hidden !important; min-height: 0 !important; }
-  body[data-app="dex"] .profile-left    { padding: 10px !important; gap: 8px !important; border-right: 1px solid var(--border) !important; border-bottom: 0 !important; }
-  body[data-app="dex"] .profile-right   { padding: 10px !important; gap: 8px !important; min-height: 0 !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
-
-  body[data-app="dex"] .profile-tabs    { position: sticky; top: 0; z-index: 5; padding-bottom: 8px; background: color-mix(in oklab, var(--panel), transparent 10%); backdrop-filter: blur(10px) saturate(120%); -webkit-backdrop-filter: blur(10px) saturate(120%); overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-  body[data-app="dex"] .profile-tabs::-webkit-scrollbar { display: none; }
-
-  body[data-app="dex"] .profile-slots   { gap: 6px !important; }
-  body[data-app="dex"] .slot            { min-height: 64px !important; padding: 8px !important; border-radius: 14px !important; }
-  body[data-app="dex"] .slot-k          { font-size: 10px !important; }
-  body[data-app="dex"] .slot-v          { font-size: 11px !important; }
-
-  body[data-app="dex"] .profile-avatar  { width: 52px !important; height: 52px !important; }
-  body[data-app="dex"] .profile-level .lvl  { font-size: 14px !important; }
-  body[data-app="dex"] .profile-level .rank { font-size: 11px !important; }
-  body[data-app="dex"] .profile-addr    { font-size: 10px !important; }
-}
-
-/* ----------------------------------------------------------
-   15. Brand size en topbar (DEX-only)
-   ---------------------------------------------------------- */
-@media (max-width: 500px) {
-  body[data-app="dex"] .brand { font-size: 20px !important; }
+  body[data-app="dex"] #pageDex { font-size: 70%; padding-left: 14px; padding-right: 14px; }
+  body[data-app="dex"] .dex-card { padding: 16px; }
+  body[data-app="dex"] .dex-title { font-size: 1rem; }
+  body[data-app="dex"] .dex-seg { padding: 4px; gap: 4px; }
+  body[data-app="dex"] .dex-seg-btn { padding: 6px 10px; font-size: 11px; }
+  body[data-app="dex"] .dex-input-row { padding: 8px; border-radius: 12px; }
+  body[data-app="dex"] .dex-select { padding: 6px 8px; font-size: 12px; }
+  body[data-app="dex"] .dex-input { font-size: 0.95rem; }
+  body[data-app="dex"] .dex-icon { width: 38px; height: 38px; }
+  body[data-app="dex"] .dex-pool { flex-direction: column; align-items: flex-start; }
+  body[data-app="dex"] .dex-pool-right { width: 100%; display: flex; gap: 10px; flex-wrap: wrap; }
+  body[data-app="dex"] .dex-search { min-width: 0; width: 100%; }
+  body[data-app="dex"] .dex-tools { width: 100%; flex-direction: column; }
+  body[data-app="dex"] .dao-brand { font-size: clamp(1.1rem, 5vw, 1.5rem); }
 }

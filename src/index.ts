@@ -188,6 +188,13 @@ app.get("/api/me", auth, async (c) => {
     userExists: !!user,
   });
 });
+
+// ✅ Verificar JWT (usado por el frontend en verifyAndRestoreSession)
+app.get("/api/me/verify", auth, async (c) => {
+  const address = c.get("address");
+  return c.json({ ok: true, address });
+});
+
 /* =========================================================
    ROUTERS (montar ANTES del legacy)
 ========================================================= */

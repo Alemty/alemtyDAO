@@ -1,54 +1,7 @@
 
 import { mountShell } from '/shared/js/shell.js';
+import { API_BASE, getJWT, authHeaders, authHeadersGet, getDid } from '/shared/js/api.js';
 mountShell();
-
-// =========================
-// API base (DEV vs PROD)
-// =========================
-const isENS = location.hostname.endsWith(".eth.limo");
-const isLocal =
-  location.hostname === "localhost" ||
-  location.hostname === "127.0.0.1";
-
-const isPages = location.hostname.endsWith(".pages.dev");
-const isWorkers = location.hostname.endsWith(".workers.dev");
-
-// ✅ endpoints
-const API_WORKER_LOCAL = "http://127.0.0.1:8788"; // API local (wrangler dev)
-const API_WORKER_REMOTE = "https://alemtydao.alejandrogtzz93.workers.dev"; // prod
-
-// ✅ mantenemos compat si algo usa API_WORKER
-const API_WORKER = API_WORKER_REMOTE;
-
-// ✅ regla:
-// - Si estás en Workers (mismo origin), usa "" (rutas relativas)
-// - En local: API local
-// - En ENS/Pages/otros: API remoto
-const API_BASE = isWorkers ? "" : (isLocal ? API_WORKER_LOCAL : API_WORKER_REMOTE);
-
-
-
-// JWT (guardado por SIWE)
-function getJWT() {
-  return localStorage.getItem("alemty.jwt") || "";
-}
-
-function authHeaders(extra = {}) {
-  const jwt = getJWT();
-  return {
-    "content-type": "application/json",
-    ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
-    ...extra,
-  };
-}
-
-function authHeadersGet(extra = {}) {
-  const jwt = getJWT();
-  return {
-    ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
-    ...extra,
-  };
-}
 
 // ✅ Access info (backend manda)
 // Requiere que el backend exponga:
@@ -682,14 +635,44 @@ function commentKebabMenuHTML({ postId, comment, isReply = false, parentId = nul
 function closeAllKebabs(){
   document.querySelectorAll('[data-kebab-menu]').forEach(m => {
     m.hidden = true;
-    m.style.display = 'none'; // ✅ fuerza por si CSS anula hidden
+    m.style.display = 'none';
+    // Restaurar position original
+    m.style.position = '';
+    m.style.left = '';
+    m.style.right = '';
+    m.style.top = '';
+    m.style.zIndex = '';
+    m.style.visibility = '';
+  });
+  // También cerrar kebabs flotantes y limpiar sus referencias
+  document.querySelectorAll('.floating-kebab-menu').forEach(m => {
+    const btn = document.querySelector(`[data-_fk-id="${m.dataset.fkId}"]`);
+    if (btn) btn.dataset._fkId = '';
+    m.remove();
   });
 }
 
 
 
 
-function toggleKebabFromButton(btn){
+/**
+ * Abre un kebab flotante desde un botón data-kebab (posts/comentarios).
+ * Clona el menú HTML original y lo muestra como flotante en body.
+ * Toggle: primer click abre, segundo click cierra.
+ */
+function openFloatingKebabFromButton(btn) {
+  // Toggle: si ya está abierto, cerrar
+  if (btn.dataset._fkId) {
+    const existing = document.querySelector(`[data-fk-id="${btn.dataset._fkId}"]`);
+    if (existing) existing.remove();
+    btn.dataset._fkId = '';
+    return;
+  }
+
+  // Cerrar cualquier otro kebab
+  document.querySelectorAll('.floating-kebab-menu').forEach(m => m.remove());
+  closeAllKebabs();
+
   const host =
     btn.closest('.comment') ||
     btn.closest('[data-open-post]') ||
@@ -698,22 +681,82 @@ function toggleKebabFromButton(btn){
     btn.closest('.mini') ||
     btn.closest('.sheet-item') ||
     btn.parentElement;
-
-  if(!host) return;
+  if (!host) return;
 
   const menu = host.querySelector('[data-kebab-menu]');
-  if(!menu) return;
+  if (!menu) return;
 
-  const isOpen = !menu.hidden;
+  const rect = btn.getBoundingClientRect();
+  const clone = document.createElement('div');
+  clone.className = 'kebab-menu floating-kebab-menu';
+  clone.style.position = 'fixed';
+  clone.style.zIndex = '9999';
+  clone.style.left = 'auto';
+  clone.innerHTML = menu.innerHTML;
 
-  // Cierra todo primero (con display:none forzado)
+  // Posicionar
+  clone.style.visibility = 'hidden';
+  document.body.appendChild(clone);
+  const rightPos = Math.min(rect.right, window.innerWidth - 12);
+  clone.style.right = (window.innerWidth - rightPos) + 'px';
+  clone.style.top = (rect.bottom + 4) + 'px';
+  clone.style.visibility = '';
+
+  // Asociar botón con flotante para toggle
+  const fkId = 'fk_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  btn.dataset._fkId = fkId;
+  clone.dataset.fkId = fkId;
+}
+
+/**
+ * Abre un kebab flotante (position:fixed) para elementos que no usan data-kebab-menu
+ * Crea un div nuevo en document.body y lo limpia al cerrar.
+ * Si el menú ya está abierto para este botón, lo cierra (toggle).
+ */
+function openFloatingKebab(btn, roomName, roomType) {
+  // Si este botón ya tiene un menú abierto asociado, cerrarlo (toggle)
+  if (btn.dataset._fkId) {
+    const existing = document.querySelector(`[data-fk-id="${btn.dataset._fkId}"]`);
+    if (existing) { existing.remove(); }
+    btn.dataset._fkId = '';
+    return;
+  }
+
+  // Cerrar cualquier kebab flotante existente de otros botones
+  document.querySelectorAll('.floating-kebab-menu').forEach(m => m.remove());
+  // Cerrar también kebabs tradicionales
   closeAllKebabs();
 
-  // Si estaba cerrado, abrir este
-  if (!isOpen) {
-    menu.hidden = false;
-    menu.style.display = ''; // ✅ limpia inline para que CSS controle
-  }
+  const rect = btn.getBoundingClientRect();
+  const menu = document.createElement('div');
+  menu.className = 'kebab-menu floating-kebab-menu';
+  menu.style.position = 'fixed';
+  menu.style.zIndex = '9999';
+  menu.style.left = 'auto';
+
+  // Render inline para medir
+  menu.style.visibility = 'hidden';
+  document.body.appendChild(menu);
+  menu.innerHTML = `
+    <button class="kebab-item" type="button" data-kebab-item="1"
+      data-kebab-action="room-edit"
+      data-room-name="${esc(roomName)}"
+      data-room-type="${roomType}">✏️ Editar</button>
+    <button class="kebab-item" type="button" data-kebab-item="1"
+      data-kebab-action="room-delete"
+      data-room-name="${esc(roomName)}"
+      data-room-type="${roomType}">🗑️ Eliminar</button>
+  `;
+  // Alinear borde derecho del menú con borde derecho del botón
+  const rightPos = Math.min(rect.right, window.innerWidth - 12);
+  menu.style.right = (window.innerWidth - rightPos) + 'px';
+  menu.style.top = (rect.bottom + 4) + 'px';
+  menu.style.visibility = '';
+
+  // Asociar menú con botón para toggle
+  const fkId = 'fk_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  btn.dataset._fkId = fkId;
+  menu.dataset.fkId = fkId;
 }
 
 
@@ -902,9 +945,7 @@ return !!t.closest(
 
 async function handleGlobalAction(e) {
 
-  
-
-// =========================
+  // =========================
 // Guardar edición de post
 // =========================
 const saveBtn = e.target.closest('[data-post-save]');
@@ -1081,7 +1122,7 @@ if (kb) {
 
   e.preventDefault?.();
   e.stopPropagation?.();
-  toggleKebabFromButton(kb);
+  openFloatingKebabFromButton(kb);
   return;
 }
 
@@ -1123,6 +1164,46 @@ if (item) {
 
   if (action === 'report') {
     await openReportPostModal(postId);
+    return;
+  }
+
+  // =========================
+  // ROOMS — editar / eliminar
+  // =========================
+  if (action === 'room-edit') {
+    const roomName = item.getAttribute('data-room-name');
+    const roomType = item.getAttribute('data-room-type');
+    if (!roomName || !roomType) return;
+    const newName = prompt(`Editar nombre de la sala "${roomName}":`, roomName);
+    if (!newName || newName.trim() === roomName) return;
+    try {
+      const r = await fetch(`${API_BASE}/api/rooms/${encodeURIComponent(roomName)}/settings?type=${roomType}`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({ name: newName.trim() }),
+      });
+      if (!r.ok) { alert('Error al editar sala'); return; }
+      // Recargar el modal
+      if (roomType === 'governance') openGovernanceRoomsModal();
+      else openRoomsModal();
+    } catch { alert('Error de red'); }
+    return;
+  }
+
+  if (action === 'room-delete') {
+    const roomName = item.getAttribute('data-room-name');
+    const roomType = item.getAttribute('data-room-type');
+    if (!roomName || !roomType) return;
+    if (!confirm(`¿Eliminar la sala "${roomName}"? Esta acción no se puede deshacer.`)) return;
+    try {
+      const r = await fetch(`${API_BASE}/api/rooms/${encodeURIComponent(roomName)}?type=${roomType}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
+      if (!r.ok) { alert('Error al eliminar sala'); return; }
+      if (roomType === 'governance') openGovernanceRoomsModal();
+      else openRoomsModal();
+    } catch { alert('Error de red'); }
     return;
   }
 
@@ -1589,6 +1670,7 @@ if (pick) {
 // =========================
 document.addEventListener('pointerup', async (e) => {
   if (e.pointerType === 'mouse' && e.button !== 0) return;
+
   if (!isActionableTarget(e.target)) return;
 
   __lastPointerTs = Date.now();
@@ -1596,6 +1678,9 @@ document.addEventListener('pointerup', async (e) => {
 }, { passive: false });
 
 document.addEventListener('click', async (e) => {
+  // Cerrar kebabs flotantes en TODOS los clicks reales (solo uno por clic)
+  closeFloatingKebabIfOutside(e);
+
   if (!isActionableTarget(e.target)) return;
   if (Date.now() - __lastPointerTs < 650) return;
 
@@ -1603,35 +1688,68 @@ document.addEventListener('click', async (e) => {
 });
 
 // =========================
-// KEBAB: cerrar con Escape (una sola vez)
+// KEBAB: cerrar con Escape + scroll
 // =========================
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeAllKebabs();
 });
 
-// =========================
-// KEBAB: cerrar con click afuera (una sola vez)
-// =========================
-document.addEventListener('pointerdown', (e) => {
-  if (!e.target.closest('.kebab-btn') && !e.target.closest('.kebab-menu')) {
-    closeAllKebabs();
+document.addEventListener('scroll', () => closeAllKebabs(), { passive: true });
+
+/**
+ * Cierra cualquier kebab flotante si el click fue fuera del botón y del menú.
+ * También hace toggle: si el click fue en el mismo botón, cierra el menú.
+ */
+function closeFloatingKebabIfOutside(e) {
+  const floating = document.querySelector('.floating-kebab-menu');
+  if (!floating) return;
+  
+  // Si el click fue en el mismo botón que abrió el menú → toggle (cerrar)
+  const btn = document.querySelector(`[data-_fk-id="${floating.dataset.fkId}"]`);
+  if (btn && e.target.closest('.kebab-btn') === btn) {
+    floating.remove();
+    btn.dataset._fkId = '';
+    return;
   }
-}, { passive: true });
+  
+  // Si el click fue dentro del menú → no cerrar
+  if (e.target.closest('.floating-kebab-menu')) return;
+  
+  // Click fuera de todo → cerrar
+  if (btn) btn.dataset._fkId = '';
+  floating.remove();
+}
 
 
 async function getPostsSafe() {
   const local = loadJSON(DB_KEY, []); // siempre disponible
+  const lastSync = parseInt(localStorage.getItem('alemty.posts.sync') || '0', 10);
+  const stale = Date.now() - lastSync > 120_000; // 2 minutos
+
+  // Si hay datos locales recientes y no queremos esperar, devuélvelos rápido
+  // mientras refrescamos en background
+  if (local.length > 0 && !stale) {
+    // Refresco en background sin bloquear el render
+    API.getPosts().then(posts => {
+      if (Array.isArray(posts)) {
+        saveJSON(DB_KEY, posts);
+        localStorage.setItem('alemty.posts.sync', String(Date.now()));
+        POSTS_CACHE = posts;
+        renderAll();
+      }
+    }).catch(() => {});
+    return local;
+  }
 
   try {
     const posts = await API.getPosts();
-    // Si API trae posts reales, úsala.
-    if (Array.isArray(posts) && posts.length > 0) return posts;
 
-    // Si API responde pero vacío, mantén demo local si existe.
-    if (Array.isArray(posts) && posts.length === 0 && local.length > 0) return local;
-
-    // Si ambos están vacíos, devuelve vacío.
-    if (Array.isArray(posts)) return posts;
+    // ✅ API respondió — siempre actualizamos localStorage, incluso si vacío
+    if (Array.isArray(posts)) {
+      saveJSON(DB_KEY, posts);
+      localStorage.setItem('alemty.posts.sync', String(Date.now()));
+      return posts;
+    }
   } catch (e) {
     console.warn("API offline, usando localStorage");
   }
@@ -3460,7 +3578,7 @@ function openRoomsModal() {
       </div>
 
       <div id="roomsList"
-           style="display:flex; flex-direction:column; gap:8px; max-height:320px; overflow:auto; padding-right:4px;">
+           style="display:flex; flex-direction:column; gap:8px;">
       </div>
 
       <div id="roomsPager"
@@ -3521,18 +3639,42 @@ function openRoomsModal() {
       nextBtn.disabled = page >= maxPage || total === 0;
 
       listEl.innerHTML = pageItems.length
-        ? pageItems.map((room) => `
-            <button class="sheet-item room-item" type="button" data-room-open="${esc(room.name)}">
-              <div class="t">${esc(room.name)}</div>
-              <div class="small muted">${visLabel(room.visibility)} · Abrir</div>
-            </button>
-          `).join("")
+        ? pageItems.map((room) => {
+            const roomName = esc(room.name);
+            const roomId = String(room.id || '');
+            const isOwner = room.created_by && room.created_by.toLowerCase() === getDid();
+            const isFounder = getDid() === '0x6a202f991c4c1df079449be9847b1dac3f51854f';
+            const canMod = isOwner || isFounder;
+            return `
+            <div class="sheet-item room-item" data-room-open="${roomName}" style="position:relative; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+              <div style="flex:1; min-width:0; cursor:pointer;" data-room-open="${roomName}">
+                <div class="t">${roomName}</div>
+                <div class="small muted">${visLabel(room.visibility)}</div>
+              </div>
+              ${canMod ? `
+              <div style="flex-shrink:0; position:relative;">
+                <button class="kebab-btn" type="button" data-room-kebab="${roomName}" aria-label="Opciones">⋮</button>
+              </div>
+              ` : ''}
+            </div>`;
+          }).join("")
         : `<div class="small muted" style="padding:8px 2px;">No hay resultados.</div>`;
 
       listEl.querySelectorAll("[data-room-open]").forEach((btn) => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", (e) => {
+          // No abrir sala si el click fue sobre el kebab
+          if (e.target.closest('.kebab-btn') || e.target.closest('.kebab-menu')) return;
           const roomName = btn.getAttribute("data-room-open");
           if (roomName) openRoomModal({ type: "backroom", name: roomName });
+        });
+      });
+
+      // Kebab flotante para backrooms
+      listEl.querySelectorAll("[data-room-kebab]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const roomName = btn.getAttribute("data-room-kebab");
+          if (roomName) openFloatingKebab(btn, roomName, 'backroom');
         });
       });
 
@@ -3924,7 +4066,7 @@ async function openGovernanceRoomsModal() {
     </div>
 
     <div id="govRoomsList"
-      style="display:flex; flex-direction:column; gap:8px; max-height:320px; overflow:auto; padding-right:4px;">
+      style="display:flex; flex-direction:column; gap:8px;">
     </div>
 
     <div id="govRoomsPager"
@@ -3986,18 +4128,42 @@ async function openGovernanceRoomsModal() {
     nextBtn.disabled = !access.okRead || page >= maxPage || total === 0;
 
     listEl.innerHTML = pageItems.length
-      ? pageItems.map((room) => `
-          <button class="sheet-item room-item" type="button" data-gov-open="${esc(room.name)}">
-            <div class="t">${esc(room.name)}</div>
-            <div class="small muted">${visLabel(room.visibility)} · Abrir</div>
-          </button>
-        `).join("")
+      ? pageItems.map((room) => {
+          const roomName = esc(room.name);
+          const roomId = String(room.id || '');
+          const isOwner = room.created_by && room.created_by.toLowerCase() === getDid();
+          const isFounder = getDid() === '0x6a202f991c4c1df079449be9847b1dac3f51854f';
+          const canMod = isOwner || isFounder;
+          return `
+          <div class="sheet-item room-item" data-gov-open="${roomName}" style="position:relative; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <div style="flex:1; min-width:0; cursor:pointer;" data-gov-open="${roomName}">
+              <div class="t">${roomName}</div>
+              <div class="small muted">${visLabel(room.visibility)}</div>
+            </div>
+            ${canMod ? `
+            <div style="flex-shrink:0; position:relative;">
+              <button class="kebab-btn" type="button" data-room-kebab="${roomName}" aria-label="Opciones">⋮</button>
+            </div>
+            ` : ''}
+          </div>`;
+        }).join("")
       : `<div class="small muted" style="padding:8px 2px;">${access.okRead ? "No hay resultados." : "—"}</div>`;
 
     listEl.querySelectorAll("[data-gov-open]").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", (e) => {
+        // No abrir sala si el click fue sobre el kebab o dentro del kebab-menu
+        if (e.target.closest('.kebab-btn') || e.target.closest('.kebab-menu')) return;
         const roomName = btn.getAttribute("data-gov-open");
         if (roomName) openRoomModal({ type: "governance", name: roomName });
+      });
+    });
+
+    // Kebab flotante para salas (posicionado con fixed para evitar overflow)
+    listEl.querySelectorAll("[data-room-kebab]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const roomName = btn.getAttribute("data-room-kebab");
+        if (roomName) openFloatingKebab(btn, roomName, 'governance');
       });
     });
 
@@ -4307,4 +4473,3 @@ document.addEventListener('click', async (e) => {
     }
   });
 })();
-window.getGovernanceAccess = getGovernanceAccess;

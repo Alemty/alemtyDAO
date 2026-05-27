@@ -1,774 +1,247 @@
-
 /* =========================================================
-   ID — iOS/Aero Modal-Match (v1.2)
-   - Cards match shell modal glass/halo (same formula)
-   - No drop shadows on cards
-   - Social cards: no harsh split, fade wash like ID top glow
-   - Light theme: book card corner fixed with emerald wash
-   Scoped to #pageIdentity only (safe for DAO/DEFI later)
+   ID — pageIdentity (alemty.eth)
+   Scoped a #pageIdentity únicamente
    ========================================================= */
 
-#pageIdentity{
-  /* Identity palette (no changes) */
+#pageIdentity {
   --id-bg: var(--bg, #0B1220);
   --id-panel: var(--panel, #18243A);
   --id-text: var(--text, #EAF2FF);
   --id-muted: var(--muted, #9FB2C7);
   --id-primary: var(--primary, #00FFD5);
   --id-accent: var(--accent, #00A3FF);
-
-  /* Shell-like border token fallback */
   --id-border: var(--border, rgba(255,255,255,.12));
-
-  /* Radii */
   --r-card: 22px;
   --r-card-mobile: 18px;
   --r-btn: 12px;
   --r-pill: 999px;
-
-  /* Layout */
   --content-max: 760px;
   --pad-x: 18px;
-
-  /* Motion */
   --t-fast: 200ms ease-out;
   --t-med: 300ms ease-out;
-
-  /* Shell-like glass tuning (match) */
   --glass-ui: color-mix(in oklab, var(--id-panel), transparent 12%);
-  --glass-blur: blur(12px) saturate(108%); /* match shell theme-ready blocks */ /* [1](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!sad588434360e40fc89990cdbc3c07abb) */
-
-  /* Typography */
+  --glass-blur: blur(12px) saturate(108%);
   --ts-display: clamp(1.75rem, 4.6vw, 2.6rem);
   --ts-h2: clamp(1.3rem, 3.3vw, 2.05rem);
   --ts-label: 11px;
 }
 
 /* Container */
-#pageIdentity .container{
-  max-width: var(--content-max);
-  margin: 0 auto;
-  padding: 0 var(--pad-x);
-}
+#pageIdentity .container { max-width: var(--content-max); margin: 0 auto; padding: 0 var(--pad-x); }
 
-/* ID-only background glow */
-#pageIdentity{ position:relative; isolation:isolate; }
-#pageIdentity::before{
-  content:"";
-  position:fixed;
-  inset:-20%;
-  z-index:-1;
-  pointer-events:none;
+/* Fondo glow ID */
+#pageIdentity { position: relative; isolation: isolate; }
+#pageIdentity::before {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  z-index: -1;
+  pointer-events: none;
   background:
     radial-gradient(720px 360px at 15% 16%, rgba(0,255,213,.10), transparent 66%),
     radial-gradient(640px 360px at 85% 18%, rgba(0,163,255,.08), transparent 62%);
-  opacity:.95;
+  opacity: .95;
 }
 
-/* HERO */
-#pageIdentity .hero{
-  position:relative;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  overflow:hidden;
-  padding:54px 0 22px;
-}
-#pageIdentity .hero-glow{
-  position:absolute;
-  inset:-40px;
-  pointer-events:none;
-  background:
-    radial-gradient(780px 380px at 12% 24%, rgba(0,255,213,.18), transparent 68%),
-    radial-gradient(660px 360px at 86% 34%, rgba(0,163,255,.12), transparent 66%);
-  opacity:.95;
-}
-#pageIdentity .hero-inner{ position:relative; z-index:2; text-align:center; }
-#pageIdentity .kicker{
-  margin:0 0 10px;
-  color:var(--id-muted);
-  font-weight:800;
-  letter-spacing:.6px;
-  text-transform:uppercase;
-  font-size:var(--ts-label);
-}
-#pageIdentity h1{
-  margin:0;
-  font-size:var(--ts-display);
-  line-height:1.08;
-  letter-spacing:-0.6px;
-}
-#pageIdentity .emerald{ color:var(--id-primary); text-shadow:none; }
-#pageIdentity .sub{
-  margin:10px auto 0;
-  color:var(--id-muted);
-  max-width:64ch;
-  font-size:14px;
-  line-height:1.55;
-}
+/* Offset topbar fija */
+#pageIdentity { padding-top: var(--topbar-h, 72px); }
 
-/* PROFILE */
-#pageIdentity .profile{
-  position:relative;
-  margin-top:-64px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:12px;
-  text-align:center;
-  z-index:2;
-}
-#pageIdentity .avatar-wrap{
-  position:relative;
-  width:176px;height:176px;
-  display:grid;
-  place-items:center;
-}
-#pageIdentity .avatar{
-  width:176px;height:176px;
-  border-radius:50%;
-  border:1px solid rgba(255,255,255,.16);
-  object-fit:cover;
-  object-position:center;
-  background:#071a20;
-  box-shadow:none;   /* no glow/shadow on photo */
-  filter:none;
-}
-#pageIdentity .aura{ display:none; } /* remove photo glow */
-#pageIdentity .name{
-  font-weight:950;
-  font-size:var(--ts-h2);
-  margin:6px 0 0;
-  letter-spacing:-0.4px;
-}
-#pageIdentity .ens{
-  font-weight:850;
-  color:var(--id-primary);
-  margin:0;
-}
-#pageIdentity .ens a{ color:var(--id-primary); text-decoration:none; }
-#pageIdentity .ens a:hover{ text-decoration:underline; }
+/* ===== HERO ===== */
+#pageIdentity .hero { position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 54px 0 22px; }
+#pageIdentity .hero-glow { position: absolute; inset: -40px; pointer-events: none; background: radial-gradient(780px 380px at 12% 24%, rgba(0,255,213,.18), transparent 68%), radial-gradient(660px 360px at 86% 34%, rgba(0,163,255,.12), transparent 66%); opacity: .95; }
+#pageIdentity .hero-inner { position: relative; z-index: 2; text-align: center; }
+#pageIdentity .kicker { margin: 0 0 10px; color: var(--id-muted); font-weight: 800; letter-spacing: .6px; text-transform: uppercase; font-size: var(--ts-label); }
+#pageIdentity h1 { margin: 0; font-size: var(--ts-display); line-height: 1.08; letter-spacing: -0.6px; }
+#pageIdentity .emerald { color: var(--id-primary); text-shadow: none; }
+#pageIdentity .sub { margin: 10px auto 0; color: var(--id-muted); max-width: 64ch; font-size: 14px; line-height: 1.55; }
 
-/* Pubkey + copy */
-#pageIdentity .pubkey{
-  display:flex; gap:10px;
-  align-items:center; justify-content:center;
-  flex-wrap:wrap;
-}
-#pageIdentity .pubkey code{
-  background:rgba(0,255,213,.08);
-  padding:10px 12px;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.12);
-  font-variant-numeric:tabular-nums;
-}
-#pageIdentity .copy-btn{
-  min-height:44px;
-  padding:10px 14px;
-  border-radius:var(--r-btn);
-  border:1px solid rgba(255,255,255,.18);
-  cursor:pointer;
-  font-weight:950;
-  color:#08101a;
-  background:linear-gradient(135deg,var(--id-primary),var(--id-accent));
-  box-shadow:none;
-  transition:transform var(--t-fast), filter var(--t-fast);
-}
-#pageIdentity .copy-btn:hover{ transform:translateY(-1px); filter:saturate(120%) brightness(1.03); }
-#pageIdentity .copy-btn:active{ transform:translateY(0); }
-#pageIdentity .copy-ok{ color:var(--id-primary); font-weight:900; }
-#pageIdentity .copy-ok[hidden]{ display:none !important; }
+/* ===== PROFILE ===== */
+#pageIdentity .profile { position: relative; margin-top: -64px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; z-index: 2; }
+#pageIdentity .avatar-wrap { position: relative; width: 176px; height: 176px; display: grid; place-items: center; }
+#pageIdentity .avatar { width: 176px; height: 176px; border-radius: 50%; border: 1px solid rgba(255,255,255,.16); object-fit: cover; object-position: center; background: #071a20; box-shadow: none; filter: none; }
+#pageIdentity .aura { display: none; }
+#pageIdentity .name { font-weight: 950; font-size: var(--ts-h2); margin: 6px 0 0; letter-spacing: -0.4px; }
+#pageIdentity .ens { font-weight: 850; color: var(--id-primary); margin: 0; }
+#pageIdentity .ens a { color: var(--id-primary); text-decoration: none; }
+#pageIdentity .ens a:hover { text-decoration: underline; }
 
-/* Focus accessibility */
+/* ===== PUBKEY ===== */
+#pageIdentity .pubkey { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
+#pageIdentity .pubkey code { background: rgba(0,255,213,.08); padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.12); font-variant-numeric: tabular-nums; }
+#pageIdentity .copy-btn { min-height: 44px; padding: 10px 14px; border-radius: var(--r-btn); border: 1px solid rgba(255,255,255,.18); cursor: pointer; font-weight: 950; color: #08101a; background: linear-gradient(135deg, var(--id-primary), var(--id-accent)); box-shadow: none; transition: transform var(--t-fast), filter var(--t-fast); }
+#pageIdentity .copy-btn:hover { transform: translateY(-1px); filter: saturate(120%) brightness(1.03); }
+#pageIdentity .copy-btn:active { transform: translateY(0); }
+#pageIdentity .copy-ok { color: var(--id-primary); font-weight: 900; }
+#pageIdentity .copy-ok[hidden] { display: none !important; }
+
+/* ===== FOCUS ===== */
 #pageIdentity a:focus-visible,
-#pageIdentity button:focus-visible{
-  outline:2px solid rgba(0,255,213,.55);
-  outline-offset:3px;
-  border-radius:12px;
+#pageIdentity button:focus-visible { outline: 2px solid rgba(0,255,213,.55); outline-offset: 3px; border-radius: 12px; }
+
+/* ===== MODAL GLASS (ID-specific) ===== */
+#pageIdentity .modal-glass {
+  position: relative;
+  border-radius: var(--r-card);
+  border: 1px solid var(--id-border);
+  background: var(--glass-ui);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  overflow: hidden;
+  box-shadow: none;
+  transition: transform var(--t-fast), filter var(--t-fast), border-color var(--t-fast);
 }
 
-/* =========================================================
-   MODAL-MATCH GLASS CARD (align to shell.css)
-   - backdrop-filter blur(12px) saturate(108%)
-   - halo ::after with same dual radial gradients, opacity/blur
-   - no box-shadow
-   This mirrors shell topbar/bottom-nav/drawer/modal halos. [1](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!sad588434360e40fc89990cdbc3c07abb)
-   ========================================================= */
-#pageIdentity .modal-glass{
-  position:relative;
-  border-radius:var(--r-card);
-  border:1px solid var(--id-border);
-  background:var(--glass-ui);
-  backdrop-filter:var(--glass-blur);
-  -webkit-backdrop-filter:var(--glass-blur);
-  overflow:hidden;
-  box-shadow:none;
-  transition:transform var(--t-fast), filter var(--t-fast), border-color var(--t-fast);
-}
-#pageIdentity .modal-glass::before{
-  /* subtle top highlight like glass catching light */
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  border-radius:inherit;
-  background:
-    radial-gradient(ellipse 95% 70% at 50% -14%, rgba(255,255,255,.06), transparent 72%);
-  opacity:.9;
-}
-#pageIdentity .modal-glass::after{
-  /* SAME halo structure as shell.css (radials + blur + opacity). */ /* [1](https://onedrive.live.com?cid=8C61CF68A019DADE&id=8C61CF68A019DADE!sad588434360e40fc89990cdbc3c07abb) */
-  content:"";
-  position:absolute;
-  inset:-1px;
-  pointer-events:none;
-  border-radius:inherit;
-  background:
-    radial-gradient(420px 220px at 15% 0%, rgba(0,255,213,.22), transparent 65%),
-    radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.18), transparent 70%);
-  opacity:.65;
-  filter:blur(14px);
-}
-#pageIdentity .modal-glass > *{ position:relative; z-index:1; }
-
-#pageIdentity .modal-glass:hover{
-  transform:translateY(-1px);
-  filter:saturate(112%);
-  border-color:rgba(0,255,213,.22);
+#pageIdentity .modal-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(ellipse 95% 70% at 50% -14%, rgba(255,255,255,.06), transparent 72%);
+  opacity: .9;
 }
 
-/* =========================================================
-   BOOK PORTAL — now uses modal-glass perfectly
-   ========================================================= */
-#pageIdentity .book-portal{ width:100%; padding:18px 0 10px; }
-#pageIdentity .book-frame{
-  max-width:1100px;
-  margin:0 auto;
-  padding:18px 16px;
-
-  /* modal glass */
-  border-radius:var(--r-card);
-  border:1px solid var(--id-border);
-  background:var(--glass-ui);
-  backdrop-filter:var(--glass-blur);
-  -webkit-backdrop-filter:var(--glass-blur);
-  position:relative;
-  overflow:hidden;
-  box-shadow:none;
-  transition:transform var(--t-fast), filter var(--t-fast), border-color var(--t-fast);
-}
-/* use the same halo formula as modal */
-#pageIdentity .book-frame::after{
-  content:"";
-  position:absolute;
-  inset:-1px;
-  pointer-events:none;
-  border-radius:inherit;
-  background:
-    radial-gradient(420px 220px at 15% 0%, rgba(0,255,213,.22), transparent 65%),
-    radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.18), transparent 70%);
-  opacity:.65;
-  filter:blur(14px);
-}
-/* top highlight + inner wash */
-#pageIdentity .book-frame::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  border-radius:inherit;
-  background:
-    radial-gradient(ellipse 95% 70% at 50% -14%, rgba(255,255,255,.06), transparent 72%),
-    radial-gradient(520px 320px at 16% 26%, rgba(0,255,213,.14), transparent 68%),
-    radial-gradient(520px 320px at 86% 74%, rgba(0,163,255,.10), transparent 72%);
-  opacity:.95;
-}
-#pageIdentity .book-frame > *{ position:relative; z-index:2; }
-
-#pageIdentity .book-frame:hover{
-  transform:translateY(-1px);
-  filter:saturate(112%);
-  border-color:rgba(0,255,213,.22);
-}
-#pageIdentity .book-frame.engaged{
-  filter:saturate(118%);
-  border-color:rgba(0,255,213,.28);
+#pageIdentity .modal-glass::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(420px 220px at 15% 0%, rgba(0,255,213,.22), transparent 65%),
+              radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.18), transparent 70%);
+  opacity: .65;
+  filter: blur(14px);
 }
 
-#pageIdentity .book-badge{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  font-weight:950;
-  letter-spacing:.6px;
-  padding:6px 10px;
-  border-radius:var(--r-pill);
-  background:linear-gradient(135deg, rgba(0,255,213,.18), rgba(0,163,255,.14));
-  border:1px solid rgba(255,255,255,.12);
-  color:var(--id-text);
-  text-transform:uppercase;
-  font-size:11px;
-  box-shadow:none;
-}
-#pageIdentity .book-title{
-  margin:10px 0 6px;
-  font-size:1.55rem;
-  font-weight:980;
-  letter-spacing:-0.4px;
-}
-#pageIdentity .book-sub{
-  margin:0 0 14px;
-  color:var(--id-muted);
-  max-width:78ch;
-  line-height:1.55;
-}
-#pageIdentity .book-note{ opacity:.88; }
+#pageIdentity .modal-glass > * { position: relative; z-index: 1; }
+#pageIdentity .modal-glass:hover { transform: translateY(-1px); filter: saturate(112%); border-color: rgba(0,255,213,.22); }
 
-#pageIdentity .book-actions{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  align-items:center;
-}
-#pageIdentity .btn-primary{
-  min-height:44px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  border-radius:var(--r-btn);
-  padding:10px 14px;
-  text-decoration:none;
-  font-weight:950;
-  cursor:pointer;
-  border:1px solid rgba(255,255,255,.18);
-  color:#08101a;
-  background:linear-gradient(135deg, var(--id-primary), #bff8ff);
-  box-shadow:none;
-  transition:transform var(--t-fast), filter var(--t-fast);
-}
-#pageIdentity .btn-primary:hover{ transform:translateY(-1px); filter:saturate(120%) brightness(1.03); }
-#pageIdentity .buy-btn{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; line-height:1.1; }
-#pageIdentity .buy-main{ font-size:1rem; font-weight:950; }
-#pageIdentity .buy-sub{ font-size:.72rem; font-weight:700; opacity:.88; letter-spacing:.4px; text-transform:uppercase; }
-#pageIdentity .book-rune{
-  position:absolute;
-  right:16px;
-  bottom:12px;
-  font-size:3.2rem;
-  opacity:.10;
-  user-select:none;
+/* ===== BOOK PORTAL ===== */
+#pageIdentity .book-portal { width: 100%; padding: 18px 0 10px; }
+
+#pageIdentity .book-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 18px 16px;
+  border-radius: var(--r-card);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--ui-inset);
+  transition: transform var(--t-fast), filter var(--t-fast), border-color var(--t-fast);
 }
 
-/* SECTION TITLE */
-#pageIdentity .section-title{
-  margin:18px 0 0;
-  font-size:var(--ts-label);
-  font-weight:700;
-  letter-spacing:2.5px;
-  text-transform:uppercase;
-  color:var(--id-muted);
+#pageIdentity .book-frame::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(420px 220px at 15% 0%, var(--glow-a), transparent 65%),
+              radial-gradient(420px 220px at 85% 100%, var(--glow-b), transparent 70%);
+  opacity: .65;
+  filter: blur(14px);
 }
 
-/* =========================================================
-   SOCIAL CARDS — no harsh split; faded wash across left side
-   ========================================================= */
-#pageIdentity .cards-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
-  gap:16px;
-  justify-content:center;
-  margin-top:16px;
+#pageIdentity .book-frame > * { position: relative; z-index: 2; }
+#pageIdentity .book-frame:hover { transform: translateY(-1px); filter: saturate(112%); border-color: var(--ui-border); }
+#pageIdentity .book-frame.engaged { filter: saturate(118%); border-color: var(--ui-border); }
+
+#pageIdentity .book-badge { display: inline-flex; align-items: center; gap: 8px; font-weight: 950; letter-spacing: .6px; padding: 6px 10px; border-radius: var(--r-pill); background: linear-gradient(135deg, rgba(0,255,213,.18), rgba(0,163,255,.14)); border: 1px solid rgba(255,255,255,.12); color: var(--id-text); text-transform: uppercase; font-size: 11px; box-shadow: none; }
+#pageIdentity .book-title { margin: 10px 0 6px; font-size: 1.55rem; font-weight: 980; letter-spacing: -0.4px; }
+#pageIdentity .book-sub { margin: 0 0 14px; color: var(--id-muted); max-width: 78ch; line-height: 1.55; }
+#pageIdentity .book-note { opacity: .88; }
+#pageIdentity .book-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+#pageIdentity .btn-primary { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: var(--r-btn); padding: 10px 14px; text-decoration: none; font-weight: 950; cursor: pointer; border: 1px solid rgba(255,255,255,.18); color: #08101a; background: linear-gradient(135deg, var(--id-primary), #bff8ff); box-shadow: none; transition: transform var(--t-fast), filter var(--t-fast); }
+#pageIdentity .btn-primary:hover { transform: translateY(-1px); filter: saturate(120%) brightness(1.03); }
+#pageIdentity .buy-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; line-height: 1.1; }
+#pageIdentity .buy-main { font-size: 1rem; font-weight: 950; }
+#pageIdentity .buy-sub { font-size: .72rem; font-weight: 700; opacity: .88; letter-spacing: .4px; text-transform: uppercase; }
+#pageIdentity .book-rune { position: absolute; right: 16px; bottom: 12px; font-size: 3.2rem; opacity: .10; user-select: none; z-index: 1; pointer-events: none; }
+
+/* ===== SECTION TITLE ===== */
+#pageIdentity .section-title { margin: 18px 0 0; font-size: var(--ts-label); font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: var(--id-muted); }
+
+/* ===== SOCIAL CARDS ===== */
+#pageIdentity .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; justify-content: center; margin-top: 16px; }
+
+#pageIdentity .social-card {
+  text-decoration: none; color: var(--id-text);
+  border-radius: var(--r-card); overflow: hidden;
+  display: grid; grid-template-columns: 92px 1fr; min-height: 92px;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: inset 0 0 0 1px var(--ui-inset);
+  position: relative;
+  transition: transform var(--t-fast), filter var(--t-fast), border-color var(--t-fast);
 }
 
-#pageIdentity .social-card{
-  text-decoration:none;
-  color:var(--id-text);
-  border-radius:var(--r-card);
-  overflow:hidden;
-
-  display:grid;
-  grid-template-columns:92px 1fr;
-  min-height:92px;
-
-  /* modal glass base */
-  border:1px solid var(--id-border);
-  background:var(--glass-ui);
-  backdrop-filter:var(--glass-blur);
-  -webkit-backdrop-filter:var(--glass-blur);
-
-  box-shadow:none;
-  position:relative;
-  transition:transform var(--t-fast), filter var(--t-fast), border-color var(--t-fast);
-}
-
-/* Top highlight + LEFT FADE WASH (removes harsh division) */
-#pageIdentity .social-card::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  border-radius:inherit;
-
-  /* 1) top glass highlight (like hero top) 
-     2) left-to-right wash (emerald/azure) that fades smoothly */
+#pageIdentity .social-card::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
   background:
     radial-gradient(ellipse 95% 70% at 50% -14%, rgba(255,255,255,.06), transparent 72%),
-    linear-gradient(90deg, rgba(0,255,213,.12), rgba(0,163,255,.08), transparent 70%);
-  opacity:.95;
+    linear-gradient(90deg, var(--glow-a), var(--glow-b), transparent 70%);
+  opacity: .95;
 }
 
-/* SAME halo formula as modal */
-#pageIdentity .social-card::after{
-  content:"";
-  position:absolute;
-  inset:-1px;
-  pointer-events:none;
-  border-radius:inherit;
-  background:
-    radial-gradient(420px 220px at 15% 0%, rgba(0,255,213,.22), transparent 65%),
-    radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.18), transparent 70%);
-  opacity:.65;
-  filter:blur(14px);
+#pageIdentity .social-card::after {
+  content: ""; position: absolute; inset: -1px; pointer-events: none; border-radius: inherit;
+  background: radial-gradient(420px 220px at 15% 0%, var(--glow-a), transparent 65%),
+              radial-gradient(420px 220px at 85% 100%, var(--glow-b), transparent 70%);
+  opacity: .65; filter: blur(14px);
 }
 
-#pageIdentity .social-card > *{ position:relative; z-index:1; }
+#pageIdentity .social-card > * { position: relative; z-index: 1; }
+#pageIdentity .social-card:hover { transform: translateY(-1px); filter: saturate(112%); border-color: rgba(0,255,213,.22); }
+#pageIdentity .social-card .icon-pane { display: flex; align-items: center; justify-content: center; background: transparent; border-right: 0; }
+#pageIdentity .social-card .ico { width: 100%; height: 100%; padding: 18px; object-fit: contain; display: block; filter: none; }
+#pageIdentity .social-card .text-pane { display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 12px 14px; min-width: 0; overflow: hidden; }
+#pageIdentity .social-card .platform { font-weight: 850; font-size: 14px; letter-spacing: -0.1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#pageIdentity .social-card .desc { font-size: 12px; line-height: 1.25; color: rgba(234,242,255,.78); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
 
-#pageIdentity .social-card:hover{
-  transform:translateY(-1px);
-  filter:saturate(112%);
-  border-color:rgba(0,255,213,.22);
-}
+/* ===== BOTTOM SAFE SPACE ===== */
+#pageIdentity .bottom-safe-space { height: 120px; pointer-events: none; }
 
-/* Icon pane: transparent, no border-right, so no “cut” */
-#pageIdentity .social-card .icon-pane{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:transparent;
-  border-right:0;
-}
-#pageIdentity .social-card .ico{
-  width:100%;
-  height:100%;
-  padding:18px;
-  object-fit:contain;
-  display:block;
-  filter:none;
-}
-
-#pageIdentity .social-card .text-pane{
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  gap:4px;
-  padding:12px 14px;
-  min-width:0;
-  overflow:hidden;
-}
-#pageIdentity .social-card .platform{
-  font-weight:850;
-  font-size:14px;
-  letter-spacing:-0.1px;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-#pageIdentity .social-card .desc{
-  font-size:12px;
-  line-height:1.25;
-  color:rgba(234,242,255,.78);
-  overflow:hidden;
-  text-overflow:ellipsis;
-
-  display:-webkit-box;
-  -webkit-box-orient:vertical;
-  -webkit-line-clamp:2;
-  line-clamp:2;
-}
-
-/* Bottom safe space */
-#pageIdentity .bottom-safe-space{
-  height:120px;
-  pointer-events:none;
-}
-
-/* =========================================================
-   LIGHT THEME — emerald wash fixes book corner & keeps modal feel
-   ========================================================= */
-html.light #pageIdentity{
-  /* Keep modal feel: lighter glass base */
+/* ===== LIGHT THEME ===== */
+html.light #pageIdentity {
   --glass-ui: rgba(255,255,255,.82);
   --id-border: rgba(0,0,0,.08);
 }
 
-/* Book: eliminate any “dark corner” with explicit emerald wash */
-html.light #pageIdentity .book-frame::before{
-  background:
-    radial-gradient(ellipse 110% 80% at 0% 0%, rgba(0,255,213,.18), transparent 62%),
-    radial-gradient(ellipse 110% 80% at 100% 0%, rgba(0,163,255,.14), transparent 62%),
-    radial-gradient(ellipse 95% 70% at 50% -14%, rgba(255,255,255,.78), transparent 72%);
-  opacity:1;
-}
-html.light #pageIdentity .book-frame::after{
-  opacity:.45;
-  filter:blur(12px);
-}
+html.light #pageIdentity .book-frame::after { opacity: .45; filter: blur(12px); }
 
-/* Social cards in light: keep fade and soften text */
-html.light #pageIdentity .social-card::before{
-  background:
-    radial-gradient(ellipse 95% 70% at 50% -14%, rgba(255,255,255,.78), transparent 72%),
-    linear-gradient(90deg, rgba(0,255,213,.14), rgba(0,163,255,.10), transparent 70%);
-  opacity:1;
-}
-html.light #pageIdentity .social-card::after{
-  opacity:.42;
-  filter:blur(12px);
-}
+html.light #pageIdentity .social-card::after { opacity: .42; filter: blur(12px); }
+
 html.light #pageIdentity .sub,
 html.light #pageIdentity .kicker,
-html.light #pageIdentity .section-title{
-  color:rgba(8,16,26,.62);
-}
-html.light #pageIdentity .social-card .desc{
-  color:rgba(8,16,26,.64);
-}
-html.light #pageIdentity .pubkey code{
-  background:rgba(0,163,255,.08);
-  border-color:rgba(0,0,0,.08);
-}
-html.light #pageIdentity .btn-primary{
-  background:linear-gradient(135deg,#00cbb0,#00a3ff);
-  border-color:rgba(0,163,255,.55);
-  box-shadow:none;
-}
+html.light #pageIdentity .section-title { color: rgba(8,16,26,.62); }
 
-/* =========================================================
-   Mobile (plan): padding 16px & blur <= 12px (already)
-   ========================================================= */
-@media (max-width:480px){
-  #pageIdentity{ --pad-x:16px; }
-  #pageIdentity .hero{ padding:44px 0 18px; }
-  #pageIdentity .cards-grid{ grid-template-columns:1fr; gap:12px; }
-  #pageIdentity .social-card,
-  #pageIdentity .book-frame{ border-radius:var(--r-card-mobile); }
+html.light #pageIdentity .social-card .desc { color: rgba(8,16,26,.64); }
+html.light #pageIdentity .pubkey code { background: rgba(0,163,255,.08); border-color: rgba(0,0,0,.08); }
+html.light #pageIdentity .btn-primary { background: linear-gradient(135deg,#00cbb0,#00a3ff); border-color: rgba(0,163,255,.55); box-shadow: none; }
 
-  /* reduce blur slightly for performance */
-  #pageIdentity{ --glass-blur: blur(10px) saturate(120%); }
-  #pageIdentity .book-frame::after,
-  #pageIdentity .social-card::after{ filter: blur(12px); opacity: .55; }
+/* ===== MOBILE ===== */
+@media (max-width: 480px) {
+  #pageIdentity { --pad-x: 16px; }
+  #pageIdentity .hero { padding: 44px 0 18px; }
+  #pageIdentity .cards-grid { grid-template-columns: 1fr; gap: 12px; }
+  #pageIdentity .social-card, #pageIdentity .book-frame { border-radius: var(--r-card-mobile); }
+  #pageIdentity { --glass-blur: blur(10px) saturate(120%); }
+  #pageIdentity .book-frame::after, #pageIdentity .social-card::after { filter: blur(12px); opacity: .55; }
 }
 
-/* Reduced motion */
-@media (prefers-reduced-motion:reduce){
-  #pageIdentity *{ animation:none !important; transition:none !important; }
+@media (prefers-reduced-motion: reduce) {
+  #pageIdentity * { animation: none !important; transition: none !important; }
 }
 
-/* =====================================================
-   ID — FORCE MODAL LOOK EVERYWHERE (FIXED + MODAL OFFSET)
-   (Topbar / Bottom-nav / Book card / Social cards)
-   ✅ FIX: NO mover .book-rune (dragón siempre de fondo a la derecha)
-   Pegar AL FINAL de /css/style.css (ID)
-===================================================== */
-
-/* 1) Tokens: mismo look del modal */
-:root{
-  --id-ui-blur: blur(22px) saturate(140%);
-  --id-ui-glow-a: rgba(0,255,213,.22);
-  --id-ui-glow-b: rgba(0,163,255,.18);
-
-  /* Dark */
-  --id-ui-surface-dark: rgba(10,20,26,.62);
-  --id-ui-border-dark: rgba(0,255,213,.18);
-  --id-ui-inset-dark: rgba(0,255,213,.10);
-
-  /* Light */
-  --id-ui-surface-light: rgba(255,255,255,.82);
-  --id-ui-border-light: rgba(13,185,166,.18);
-  --id-ui-inset-light: rgba(13,185,166,.10);
-
-  /* Altura topbar */
-  --id-topbar-h: 72px;
-}
-
-/* 2) Glass del modal a Book + Social + modal-glass */
-#pageIdentity .book-frame,
-#pageIdentity .social-card,
-#pageIdentity .modal-glass{
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: var(--id-ui-blur) !important;
-  -webkit-backdrop-filter: var(--id-ui-blur) !important;
-  background-image: none !important;
-}
-
-/* 3) DARK */
-html:not(.light) #pageIdentity .book-frame,
-html:not(.light) #pageIdentity .social-card,
-html:not(.light) #pageIdentity .modal-glass{
-  background: var(--id-ui-surface-dark) !important;
-  border: 1px solid var(--id-ui-border-dark) !important;
-  box-shadow:
-    0 24px 60px rgba(0,0,0,.45),
-    0 0 0 1px var(--id-ui-inset-dark) inset !important;
-}
-
-/* 4) LIGHT */
-html.light #pageIdentity .book-frame,
-html.light #pageIdentity .social-card,
-html.light #pageIdentity .modal-glass{
-  background: var(--id-ui-surface-light) !important;
-  border: 1px solid var(--id-ui-border-light) !important;
-  box-shadow:
-    0 18px 46px rgba(0,0,0,.16),
-    0 0 0 1px var(--id-ui-inset-light) inset !important;
-}
-
-/* 5) Glow halo */
-#pageIdentity .book-frame::after,
-#pageIdentity .social-card::after,
-#pageIdentity .modal-glass::after{
-  content:"";
-  position:absolute;
-  inset:-1px;
-  pointer-events:none;
-  border-radius:inherit;
-  background:
-    radial-gradient(420px 220px at 15% 0%, var(--id-ui-glow-a), transparent 65%),
-    radial-gradient(420px 220px at 85% 100%, var(--id-ui-glow-b), transparent 70%);
-  opacity:.65;
-  filter:blur(14px);
-}
-
-/* 6) Highlight superior */
-#pageIdentity .book-frame::before,
-#pageIdentity .social-card::before,
-#pageIdentity .modal-glass::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  border-radius:inherit;
-  background:
-    radial-gradient(ellipse 95% 70% at 50% -14%, rgba(255,255,255,.07), transparent 72%);
-  opacity:.9;
-}
-
-/* 7) ✅ En vez de cambiar position de TODOS los hijos, solo subimos z-index del contenido */
-#pageIdentity .book-frame > *:not(.book-rune),
-#pageIdentity .social-card > *,
-#pageIdentity .modal-glass > *{
-  position: relative; /* OK aquí (no afecta al dragón por el :not) */
-  z-index: 2;
-}
-
-/* ✅ Dragón: SIEMPRE absoluto, siempre fondo derecha */
-#pageIdentity .book-rune{
-  position: absolute !important;
-  right: 16px !important;
-  bottom: 12px !important;
-  z-index: 1 !important;      /* detrás del contenido */
-  opacity: .10 !important;
-  pointer-events: none;
-  user-select: none;
-}
-
-/* 8) Hover suave */
-#pageIdentity .book-frame:hover,
-#pageIdentity .social-card:hover,
-#pageIdentity .modal-glass:hover{
-  transform: translateY(-1px);
-  filter: saturate(112%);
-}
-
-/* ===============================
-   TOPBAR / BOTTOM NAV (ID)
-================================ */
-.topbar{
-  position: fixed !important;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  backdrop-filter: var(--id-ui-blur) !important;
-  -webkit-backdrop-filter: var(--id-ui-blur) !important;
-}
-
-.bottom-nav{
-  position: fixed !important;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  backdrop-filter: var(--id-ui-blur) !important;
-  -webkit-backdrop-filter: var(--id-ui-blur) !important;
-}
-
-/* Compensa topbar */
-#pageIdentity{
-  padding-top: var(--id-topbar-h);
-}
-
-/* ===============================
-   MODAL OFFSET bajo topbar
-================================ */
-.modal.open .modal-card{
-  margin-top: calc(var(--id-topbar-h) + 16px) !important;
-  max-height: calc(100vh - var(--id-topbar-h) - 28px) !important;
-}
-
-/* ===============================
-   FIX Light theme pseudo-selectors (sí aplican)
-================================ */
-html.light #pageIdentity .book-frame::before{
-  background:
-    radial-gradient(ellipse 110% 80% at 0% 0%, rgba(0,255,213,.18), transparent 62%),
-    radial-gradient(ellipse 110% 80% at 100% 0%, rgba(0,163,255,.14), transparent 62%),
-    radial-gradient(ellipse 95% 70% at 50% -14%, rgba(255,255,255,.78), transparent 72%);
-  opacity: 1;
-}
-html.light #pageIdentity .book-frame::after{
-  opacity: .45;
-  filter: blur(12px);
-}
-
-html.light #pageIdentity .social-card::before{
-  background:
-    radial-gradient(ellipse 95% 70% at 50% -14%, rgba(255,255,255,.78), transparent 72%),
-    linear-gradient(90deg, rgba(0,255,213,.14), rgba(0,163,255,.10), transparent 70%);
-  opacity: 1;
-}
-html.light #pageIdentity .social-card::after{
-  opacity: .42;
-  filter: blur(12px);
-}
-
-
-/* ===== Credenciales button (igual que Copiar) ===== */
-/* NO redefinas background/color/border para que herede .copy-btn */
-#pageIdentity .cred-btn{
-  /* si quieres, solo ajustes de layout */
-  white-space: nowrap;
-}
-
-/* ===== Modal body spacing ===== */
-.creds-body{
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* (opcional) ancho cómodo */
-.creds-card{
-  width: min(980px, 92vw);
-}
-
-#pageIdentity .book-frame{
-  display: flex;
-  flex-direction: column;
-  align-items: center;   /* ✅ CLAVE: centra TODO horizontalmente */
-  text-align: center;    /* centra textos */
-}
-
+/* ===== Credenciales button ===== */
+#pageIdentity .cred-btn { white-space: nowrap; }

@@ -1,73 +1,72 @@
+/* ==========================================================
+   ar.alemty.eth — Estilos del subdominio AR
+   Scoped al body (sin clase raíz específica)
+   ========================================================== */
 
-/* =====================================================
-   AR · style.css
-   Apple / Glass compatible con shell.css
-   ===================================================== */
-
-.card{
-  border-radius:24px;
-  border:1px solid var(--border);
-  background: rgba(255,255,255,.04);
-  box-shadow:
-    0 18px 60px rgba(0,0,0,.38),
-    0 0 0 1px rgba(0,255,213,.10) inset;
-  backdrop-filter: blur(14px) saturate(120%);
-  -webkit-backdrop-filter: blur(14px) saturate(120%);
-  position:relative;
-  overflow:hidden;
+/* Fondo glow */
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  position: relative;
 }
 
-.card::after{
-  content:"";
-  position:absolute;
-  inset:-1px;
-  pointer-events:none;
-  border-radius:inherit;
+body::before {
+  content: "";
+  position: fixed;
+  inset: -20vh;
+  z-index: -1;
+  pointer-events: none;
   background:
-    radial-gradient(320px 180px at 15% 0%, rgba(0,255,213,.18), transparent 65%),
-    radial-gradient(320px 180px at 85% 100%, rgba(0,163,255,.14), transparent 70%);
-  opacity:.6;
+    radial-gradient(600px 400px at 20% 0%, rgba(0,255,213,.12), transparent 60%),
+    radial-gradient(500px 300px at 80% 20%, rgba(0,163,255,.10), transparent 60%);
+  opacity: .95;
+}
+
+html.light body::before {
+  background:
+    radial-gradient(820px 500px at 18% -10%, rgba(0,255,213,.22), transparent 60%),
+    radial-gradient(720px 420px at 85% 15%, rgba(0,149,255,.18), transparent 62%),
+    radial-gradient(900px 500px at 50% 110%, rgba(255,255,255,.55), transparent 70%);
+  opacity: 1;
+}
+
+/* Container */
+.container { padding-top: var(--topbar-h); }
+
+/* ===== Cards estilo DAO unificado ===== */
+.card {
+  background: var(--ui-surface) !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--ui-inset) !important;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(420px 220px at 15% 0%, var(--glow-a), transparent 65%),
+              radial-gradient(420px 220px at 85% 100%, var(--glow-b), transparent 70%);
+  opacity: .22;
   filter: blur(14px);
 }
 
-.card.clickable{
-  cursor:pointer;
+.card > * { position: relative; z-index: 1; }
+
+html.light .card {
+  background: var(--glass-light-2) !important;
+  border: 1px solid rgba(0, 120, 200, .14) !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,.08), 0 0 0 1px rgba(255,255,255,.72) inset !important;
 }
 
-.card.clickable:hover{
-  transform: translateY(-2px);
-  box-shadow:
-    0 22px 70px rgba(0,0,0,.45),
-    0 0 0 1px rgba(0,255,213,.18) inset;
-}
+/* ===== Modal offset ===== */
+.modal-card { margin-top: calc(var(--topbar-h) + 16px); }
 
-.btn{
-  margin-top:10px;
-}
-
-.modal-body{
-  padding:16px;
-}
-
-.sheet-list{
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-}
-
-.sheet-item{
-  padding:12px;
-  border-radius:18px;
-  border:1px solid var(--border);
-  background: rgba(255,255,255,.03);
-}
-
-.sheet-item .t{
-  font-weight:900;
-}
-
-.sheet-item .m{
-  font-size:12px;
-  opacity:.75;
-  margin-top:4px;
-}
+/* ===== Brand ===== */
+.h1 { font-weight: 1000; letter-spacing: -0.02em; }

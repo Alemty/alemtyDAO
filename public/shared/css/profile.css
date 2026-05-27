@@ -1,0 +1,187 @@
+/* =========================================================
+   PROFILE MODAL — Perfil de usuario (progreso, tokens, slots)
+   Se carga en TODOS los subdominios
+   ========================================================= */
+
+/* ===== Profile Tabs (glass style) ===== */
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color: rgba(255,255,255,.75);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease, transform .1s ease;
+  text-transform: uppercase;
+  white-space: nowrap;
+  user-select: none;
+  line-height: 1;
+}
+
+.tab-btn:hover {
+  background: rgba(0,255,213,.08);
+  border-color: rgba(0,255,213,.25);
+  color: rgba(255,255,255,.92);
+}
+
+.tab-btn:active {
+  transform: translateY(1px);
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-color: transparent;
+  color: #08101a;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.15) inset;
+}
+
+html.light .tab-btn {
+  background: rgba(0,0,0,.04);
+  border-color: rgba(0,0,0,.10);
+  color: rgba(8,16,26,.70);
+}
+
+html.light .tab-btn:hover {
+  background: rgba(13,185,166,.10);
+  border-color: rgba(13,185,166,.25);
+  color: rgba(8,16,26,.92);
+}
+
+html.light .tab-btn.active {
+  background: linear-gradient(135deg, #00a28a, #0078c8);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.50) inset;
+}
+
+.tab-btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.profile-card { padding: 0; }
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: 330px 1fr;
+  min-height: 560px;
+}
+
+.profile-left {
+  padding: 16px;
+  border-right: 1px solid var(--border);
+  background: rgba(255, 255, 255, .02);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profile-right {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (max-width: 820px) { .profile-grid { grid-template-columns: 180px 1fr; } }
+@media (max-width: 520px) { .profile-grid { grid-template-columns: 160px 1fr; } }
+
+.profile-avatar {
+  width: 80px; height: 80px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, .06);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.profile-avatar.empty { background: rgba(255, 255, 255, .04); }
+.profile-avatar.empty::after { content: "🏅"; font-size: 24px; opacity: .55; }
+.profile-avatar.empty img { display: none; }
+
+.profile-level .lvl { font-weight: 1000; font-size: 20px; letter-spacing: -.4px; line-height: 1.1; }
+.profile-level .rank { margin-top: 4px; font-weight: 900; opacity: .92; color: var(--primary); text-shadow: 0 0 16px rgba(0,255,213,.18); }
+.profile-addr { font-family: var(--mono); font-size: 12px; opacity: .85; word-break: break-word; }
+
+.profile-slots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 4px; }
+.slot { border-radius: 16px; border: 1px solid var(--border); background: rgba(255,255,255,.04); padding: 10px; }
+.slot-k { font-size: 11px; opacity: .8; font-weight: 900; }
+.slot-v { margin-top: 6px; font-size: 12px; font-weight: 900; }
+
+.profile-tabs { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-start; }
+
+.profile-fixed {
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, .03);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.barbox .bar-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.bar-track { width: 100%; height: 12px; border-radius: 999px; border: 1px solid var(--border); background: rgba(255,255,255,.03); overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 999px; }
+.bar-fill.dharma { background: linear-gradient(90deg, #00A3FF, #00FFD5); box-shadow: 0 0 18px rgba(0,163,255,.22); }
+.bar-fill.karma { background: linear-gradient(90deg, #FF2D55, #FF6A00); box-shadow: 0 0 18px rgba(255,45,85,.20); }
+
+.pf-balances { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.pf-balances > div { padding: 10px; border: 1px solid var(--border); border-radius: 16px; background: rgba(255,255,255,.04); font-weight: 900; }
+
+.profile-content { border-radius: 18px; border: 1px solid var(--border); background: rgba(255,255,255,.02); padding: 12px; min-height: 200px; }
+
+.token { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px; font-weight: 700; font-size: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.10); }
+.token .ico { font-size: 14px; line-height: 1; }
+.token .lbl { opacity: .9; }
+.token .val { margin-left: auto; font-variant-numeric: tabular-nums; }
+.token-alem { color: #FFD84D; box-shadow: 0 0 0 2px rgba(240, 189, 4, 0.903) inset; }
+.token-aura { color: #6EC8FF; box-shadow: 0 0 0 2px rgba(24, 149, 171, 0.66) inset; }
+.token-vealem { color: #cf5e12; box-shadow: 0 0 0 2px rgba(243, 136, 15, 0.911) inset; }
+.token-dharma { color: #16c92b; box-shadow: 0 0 0 2px rgba(7, 186, 52, 0.597) inset; }
+.token-karma { color: #f04242; box-shadow: 0 0 0 2px rgba(245, 10, 10, 0.944) inset; opacity: .75; }
+.token-karma.negative { color: #FF2D55; opacity: 1; box-shadow: 0 0 0 1px rgba(244, 13, 56, 0.35) inset; }
+.hint.vealem { margin-top: 6px; color: #B084FF; }
+
+/* ===== Mobile: scroll horizontal en profile-fixed ===== */
+@media (max-width: 480px) {
+  .pf-balances { display: flex; gap: 8px; min-width: 220px; }
+  .profile-fixed > * { flex: 0 0 auto; min-width: 220px; scroll-snap-align: start; }
+  .profile-fixed::-webkit-scrollbar { display: none; }
+  .profile-fixed { scrollbar-width: none; }
+}
+
+/* ===== Remover sombras internas en modales ===== */
+.modal .profile-left,
+.modal .profile-right,
+.modal .profile-content,
+.modal .profile-fixed {
+  box-shadow: none !important;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, .04);
+}
+
+html.light .modal .profile-left,
+html.light .modal .profile-right,
+html.light .modal .profile-content,
+html.light .modal .profile-fixed {
+  background: rgba(255, 255, 255, .72);
+}
+
+/* ===== Mobile: tokens en grilla 2xN ===== */
+@media (max-width: 640px) {
+  .pf-balances { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 10px; width: 100%; min-width: 0; }
+  .pf-balances > div { min-width: 0; width: 100%; white-space: normal; text-align: left; align-items: flex-start; padding: 8px 10px; }
+  .profile-fixed { overflow-x: hidden; }
+}

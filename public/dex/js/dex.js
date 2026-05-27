@@ -4,33 +4,6 @@ import { initInternalAmm } from "./alem-amm.js";
 console.log("[DEX] phase: cards (swap + pools)");
 
 /* =========================
-   Topbar offset (fix overlay)
-========================= */
-function syncTopbarOffset() {
-  const tb = document.getElementById("topbar");
-  const nb = document.getElementById("navbar");
-  const tbH = tb ? tb.offsetHeight : 0;
-  const nbH = nb ? nb.offsetHeight : 0;
-  document.documentElement.style.setProperty("--app-topbar-h", `${tbH > 0 ? tbH : 72}px`);
-  document.documentElement.style.setProperty("--app-bottomnav-h", `${nbH > 0 ? nbH : 78}px`);
-}
-
-function bootTopbarOffset() {
-  syncTopbarOffset();
-  [25, 60, 120, 250, 500, 900].forEach((ms) => setTimeout(syncTopbarOffset, ms));
-  let tries = 0;
-  const tick = () => {
-    syncTopbarOffset();
-    tries += 1;
-    if (tries < 10) requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
-}
-
-window.addEventListener("load", bootTopbarOffset);
-window.addEventListener("resize", () => requestAnimationFrame(syncTopbarOffset));
-
-/* =========================
    UI: Swap card
 ========================= */
 const $ = (sel, root = document) => root.querySelector(sel);

@@ -1,0 +1,16 @@
+/* =========================================================
+   MODERATION MODAL — Solo para admins/mods
+   ========================================================= */
+
+.mod-card { width: min(860px, 92vw); }
+.mod-body { padding: 14px 16px; }
+.mod-list { display: flex; flex-direction: column; gap: 10px; }
+
+.mod-item {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .04);
+}
+
+.mod-item .t { font-weight: 1000; }
