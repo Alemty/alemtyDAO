@@ -42,9 +42,9 @@ html.light .defi-bg {
 .defi-root .h1.defi-brand {
   font-weight: 1000;
   letter-spacing: -0.02em;
-  display: inline-flex;
-  align-items: baseline;
-  flex-wrap: wrap;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   margin: 0;
 }
 .defi-root .h1.defi-brand .defi-brand-em {
@@ -55,8 +55,7 @@ html.light .defi-root .h1.defi-brand .defi-brand-em { color: var(--primary); tex
 .defi-root .h1.defi-brand .defi-brand-base { color: var(--text); }
 
 .defi-brand-tag {
-  display: block;
-  clear: both;
+  display: inline-block;
   margin-top: 2px;
   margin-bottom: 14px;
   font-size: 9px;
