@@ -204,14 +204,15 @@ html.light .token-aura {
   background: linear-gradient(135deg, rgba(110,200,255,.10), rgba(110,200,255,.02));
 }
 
-/* Label morado para "por reclamar" en el token Aura */
-.pf-aura-reclaimable {
+/* Label morado para "por reclamar" en el hint (6to token, debajo de veALEM) */
+.hint.vealem.pf-aura-reclaimable {
   color: #a855f7;
-  font-weight: 600;
-  font-size: 10px;
+  font-weight: 700;
+  font-size: 11px;
   white-space: nowrap;
+  opacity: 1 !important;
 }
-html.light .pf-aura-reclaimable {
+html.light .hint.vealem.pf-aura-reclaimable {
   color: #9333ea;
 }
 

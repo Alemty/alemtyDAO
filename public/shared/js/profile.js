@@ -590,19 +590,20 @@ export async function syncProfile() {
 
   modal.querySelector("#pfDharma").textContent = addr ? String(dharma) : "—";
   const auraLabel = addr
-    ? (auraReclamable > 0
-      ? `${String(aura)} <span class="pf-aura-reclaimable">(${String(auraReclamable)} por reclamar)</span>`
-      : String(aura))
+    ? (auraReclamable > 0 ? `${String(aura)} (${String(auraReclamable)} por reclamar)` : String(aura))
     : "—";
-  modal.querySelector("#pfAura").innerHTML = auraLabel;
+  modal.querySelector("#pfAura").textContent = auraLabel;
   const auraHint = modal.querySelector("#pfAuraHint");
   if (auraHint) {
     if (addr && auraReclamable > 0) {
       auraHint.textContent = `🔵 ${String(auraReclamable)} AURA por reclamar · Ve a la pestaña DEX para mintear on-chain`;
+      auraHint.classList.add('pf-aura-reclaimable');
     } else if (addr && auraBalance !== '0') {
       auraHint.textContent = `🔵 ${auraBalance} AURA on-chain disponibles`;
+      auraHint.classList.remove('pf-aura-reclaimable');
     } else {
       auraHint.textContent = '';
+      auraHint.classList.remove('pf-aura-reclaimable');
     }
   }
   modal.querySelector("#pfAlem").textContent = addr ? "0" : "—";
