@@ -480,21 +480,12 @@ app.post("/api/farm/claim", auth, async (c) => {
   }
 
   // Insertar claim
+  // NOTA: No escribimos en aura_ledger ni user_stats aquí porque
+  // /api/me/stats ya suma farm_claims.SUM(amount) → auraFarmed → auraReclamable.
+  // Así evitamos problemas de overflow con BigInt/Number para cantidades en wei.
   await c.env.DB.prepare(
     "INSERT INTO farm_claims (address, claim_date, amount, streak) VALUES (?, ?, ?, ?)"
   ).bind(address, today, String(amount), streak).run();
-
-  // Registrar en aura_ledger
-  const eventKey = `farm:${address}:${today}`;
-  const amountWei = BigInt(Math.round(amount * 1e18));
-  await c.env.DB.prepare(
-    "INSERT OR IGNORE INTO aura_ledger (address, kind, amount, event_key, ref_type, ref_id) VALUES (?, 'mint', ?, ?, 'farm', ?)"
-  ).bind(address, Number(amountWei), eventKey, today).run();
-
-  // Actualizar user_stats
-  await c.env.DB.prepare(
-    "INSERT INTO user_stats (address, aura_balance, updated_at) VALUES (?, ?, unixepoch()) ON CONFLICT(address) DO UPDATE SET aura_balance = aura_balance + ?, updated_at = unixepoch()"
-  ).bind(address, Number(amountWei), Number(amountWei)).run();
 
   return c.json({
     ok: true,
