@@ -165,6 +165,18 @@ body[data-app="dex"] .tag { display: inline-flex; align-items: center; padding: 
 body[data-app="dex"] .tag.ext { border-color: rgba(0, 163, 255, .25); }
 body[data-app="dex"] .dex-metric .k { font-size: 11px; font-weight: 900; }
 body[data-app="dex"] .dex-metric .v { font-size: 14px; font-weight: 950; }
+body[data-app="dex"] .dex-pool-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+body[data-app="dex"] .dex-btn.small {
+  padding: 6px 10px;
+  font-size: 11px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
 body[data-app="dex"] .dex-foot { margin-top: 10px; font-size: 12px; opacity: .7; }
 
 /* ---------- SELECT LIGHT ---------- */

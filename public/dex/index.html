@@ -117,7 +117,7 @@
         <div class="dex-card-head">
           <div>
             <h2 class="dex-title">Pools</h2>
-            <p class="dex-sub muted">Administra liquidez y monitorea pools clave de la DAO.</p>
+            <p class="dex-sub muted">Administra liquidez, vota y soborna pools clave de la DAO.</p>
           </div>
 
           <div class="dex-tools">
@@ -152,7 +152,11 @@
                 <div class="k muted">APR</div>
                 <div class="v">—</div>
               </div>
-              <button class="dex-btn" type="button" disabled>Agregar Liquidez</button>
+              <div class="dex-pool-actions">
+                <button class="dex-btn small" type="button">➕ Liquidez</button>
+                <button class="dex-btn small" type="button">🗳️ Votar</button>
+                <button class="dex-btn small" type="button">💰 Sobornar</button>
+              </div>
             </div>
           </article>
 
@@ -165,7 +169,7 @@
               </div>
               <div class="dex-pool-meta">
                 <span class="tag ext">Externo</span>
-                <span class="muted">Ethereum (Base)</span>
+                <span class="muted">Base (Ethereum L2)</span>
               </div>
             </div>
             <div class="dex-pool-right">
@@ -177,13 +181,17 @@
                 <div class="k muted">APR</div>
                 <div class="v">—</div>
               </div>
-              <button class="dex-btn" type="button" disabled>Agregar Liquidez</button>
+              <div class="dex-pool-actions">
+                <button class="dex-btn small" type="button">➕ Liquidez</button>
+                <button class="dex-btn small" type="button">🗳️ Votar</button>
+                <button class="dex-btn small" type="button">💰 Sobornar</button>
+              </div>
             </div>
           </article>
         </div>
 
-        <div class="dex-foot muted">
-          Próximo: conectar datos reales (quotes/TVL) cuando existan contratos y pools.
+        <div class="dex-foot muted" style="margin-top:10px;">
+          Próximo: conectar datos reales (quotes/TVL/votos/sobornos) cuando existan contratos y pools.
         </div>
       </section>
 
@@ -395,7 +403,7 @@
           </div>
 
           <!-- Right: info & formula -->
-          <div class="noble-right">
+          <div class="noble-right" style="display:flex;flex-direction:column;gap:14px;">
             <div class="vestake-info-card">
               <div class="vestake-info-title">⚖️ Fórmula de Nobleza</div>
               <div class="small" style="line-height:1.6;opacity:.85;">
