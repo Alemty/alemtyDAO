@@ -1023,9 +1023,18 @@ function renderDexTab(modal) {
         });
 
         statusEl.textContent = `✅ Tx confirmada: ${txHash.slice(0, 10)}...`;
+
+        // 5. Notificar al backend que el minteo se completó — limpia farm_claims
+        try {
+          await fetch(API_BASE + '/api/farm/reclaim-complete', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+        } catch (_) {} // best-effort
+
         claimBtn.textContent = '✅ Reclamado';
 
-        // 5. Recargar stats
+        // 6. Recargar stats
         __ME_STATS__ = await fetchMeStats();
         syncProfile();
       } catch (e) {

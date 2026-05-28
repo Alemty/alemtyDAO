@@ -496,6 +496,13 @@ app.post("/api/farm/claim", auth, async (c) => {
   });
 });
 
+app.post("/api/farm/reclaim-complete", auth, async (c) => {
+  const address = c.get("address");
+  // Limpiar farm_claims del usuario — se llama DESPUÉS de que la tx de mint se confirma on-chain
+  await c.env.DB.prepare("DELETE FROM farm_claims WHERE address = ?").bind(address).run();
+  return c.json({ ok: true, message: "Farm claims limpiados. AURA minteado on-chain." });
+});
+
 /* =========================================================
    ROUTERS (montar ANTES del legacy)
 ========================================================= */
