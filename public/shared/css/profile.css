@@ -204,16 +204,41 @@ html.light .token-aura {
   background: linear-gradient(135deg, rgba(110,200,255,.10), rgba(110,200,255,.02));
 }
 
-/* Label morado para "por reclamar" en el hint (6to token, debajo de veALEM) */
-.hint.vealem.pf-aura-reclaimable {
-  color: #a855f7;
-  font-weight: 700;
+/* Token morado "Por Reclamar" (6to token, como los otros 5) */
+.token-aura-reclaim {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 10px 6px;
+  border-radius: 14px;
+  font-weight: 800;
   font-size: 11px;
-  white-space: nowrap;
-  opacity: 1 !important;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  color: #a855f7;
+  background: linear-gradient(135deg, rgba(168,85,247,.15), rgba(168,85,247,.04));
+  border: 1px solid rgba(168,85,247,.25);
+  box-shadow: 0 0 12px rgba(168,85,247,.06);
 }
-html.light .hint.vealem.pf-aura-reclaimable {
-  color: #9333ea;
+html.light .token-aura-reclaim {
+  background: linear-gradient(135deg, rgba(168,85,247,.10), rgba(168,85,247,.02));
+}
+.token-aura-reclaim .lbl {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  opacity: .7;
+  font-weight: 600;
+}
+.token-aura-reclaim .val {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  color: #a855f7;
+  font-weight: 900;
 }
 
 /* Karma — rojo/rosa */

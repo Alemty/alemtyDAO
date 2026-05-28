@@ -529,7 +529,7 @@ export function buildProfileModal() {
               <div class="token token-karma" id="pfKarmaToken"><span class="lbl">Karma</span><span class="val" id="pfKarmaVal">—</span></div>
               <div class="token token-alem"><span class="lbl">$ALEM</span><span class="val" id="pfAlem">—</span></div>
               <div class="token token-vealem"><span class="lbl">veALEM</span><span class="val" id="pfVeAlem">—</span></div>
-              <div class="small muted hint vealem" id="pfAuraHint"></div>
+              <div class="token token-aura-reclaim" id="pfAuraHint"></div>
             </div>
           </div>
           <div class="profile-content" id="pfContent"></div>
@@ -596,14 +596,11 @@ export async function syncProfile() {
   const auraHint = modal.querySelector("#pfAuraHint");
   if (auraHint) {
     if (addr && auraReclamable > 0) {
-      auraHint.textContent = `${String(auraReclamable)} AURA por reclamar · Ve a la pestaña DEX para mintear on-chain`;
-      auraHint.classList.add('pf-aura-reclaimable');
+      auraHint.innerHTML = `<span class="lbl">Reclamar</span><span class="val" style="color:#a855f7;">${String(auraReclamable)} AURA</span>`;
     } else if (addr && auraBalance !== '0') {
-      auraHint.textContent = `${auraBalance} AURA on-chain disponibles`;
-      auraHint.classList.remove('pf-aura-reclaimable');
+      auraHint.innerHTML = `<span class="lbl">On-chain</span><span class="val">${auraBalance}</span>`;
     } else {
-      auraHint.textContent = '';
-      auraHint.classList.remove('pf-aura-reclaimable');
+      auraHint.innerHTML = '';
     }
   }
   modal.querySelector("#pfAlem").textContent = addr ? "0" : "—";
