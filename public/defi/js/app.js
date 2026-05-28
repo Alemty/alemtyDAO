@@ -99,15 +99,6 @@ function genEthSeries(tfKey) {
 }
 
 /* =====================================================
-  Light mode detection for canvas
-===================================================== */
-function isLightMode() {
-  return document.documentElement.classList.contains('light') ||
-         (localStorage.getItem('theme') === 'light') ||
-         (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: light)').matches);
-}
-
-/* =====================================================
   Chart drawing
 ===================================================== */
 function drawTradingChart(pairKey, tfKey) {
@@ -132,8 +123,8 @@ function drawTradingChart(pairKey, tfKey) {
   const minY = Math.min(...series), maxY = Math.max(...series);
   const range = Math.max(1e-9, maxY - minY);
 
-  // Grid — light-aware
-  const light = isLightMode();
+  // Grid — detectar tema
+  const light = document.documentElement.classList.contains('light');
   ctx.strokeStyle = light ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.10)';
   ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
