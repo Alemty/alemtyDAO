@@ -27,13 +27,13 @@ function applyMode(next) {
   if (mode === "internal") {
     fromSel.innerHTML = `<option value="AURA">AURA</option><option value="ALEM">ALEM</option>`;
     toSel.innerHTML   = `<option value="ALEM">ALEM</option><option value="AURA">AURA</option>`;
-    hintFrom.textContent = "Pool interno Aura ↔ ALEM (tokenomics)";
-    hintTo.textContent = "Salida (quote interno pronto)";
+    if (hintFrom) hintFrom.textContent = "Pool interno Aura ↔ ALEM (tokenomics)";
+    if (hintTo) hintTo.textContent = "Salida (quote interno pronto)";
   } else {
     fromSel.innerHTML = `<option value="ALEM">ALEM</option><option value="ETH">ETH</option>`;
     toSel.innerHTML   = `<option value="ETH">ETH</option><option value="ALEM">ALEM</option>`;
-    hintFrom.textContent = "(Base) — ALEM ↔ ETH";
-    hintTo.textContent = "Salida (quote base pronto)";
+    if (hintFrom) hintFrom.textContent = "(Base) — ALEM ↔ ETH";
+    if (hintTo) hintTo.textContent = "Salida (quote base pronto)";
   }
 
   fromSel.value = mode === "internal" ? "AURA" : "ALEM";
