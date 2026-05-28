@@ -949,8 +949,8 @@ function renderDexTab(modal) {
           return;
         }
 
-        // 1. Pedir al backend que firme y envíe la tx de transfer
-        statusEl.textContent = '⏳ Enviando AURA desde el agente...';
+        // 1. Pedir al backend que prepare la tx de transfer
+        statusEl.textContent = '⏳ Preparando tx de transfer...';
         const claimRes = await fetch(API_BASE + '/api/aura/claim', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -967,9 +967,29 @@ function renderDexTab(modal) {
           return;
         }
 
-        const txHash = claimData.txHash;
+        // 2. Firmar con MetaMask
+        statusEl.textContent = '⏳ Abriendo MetaMask para firmar la transacción...';
+        let txHash;
+        try {
+          txHash = await window.ethereum.request({
+            method: 'eth_sendTransaction',
+            params: claimData.params
+          });
+        } catch (mmErr) {
+          statusEl.textContent = '❌ El usuario rechazó la transacción en MetaMask.';
+          claimBtn.disabled = false;
+          claimBtn.textContent = '⚡ Reclaim Rewards (todo)';
+          return;
+        }
+        
+        if (!txHash) {
+          statusEl.textContent = '❌ Error al firmar la transacción.';
+          claimBtn.disabled = false;
+          claimBtn.textContent = '⚡ Reclaim Rewards (todo)';
+          return;
+        }
 
-        // 2. Esperar confirmación consultando el RPC
+        // 3. Esperar confirmación consultando el RPC
         statusEl.textContent = `✅ Tx enviada: ${txHash.slice(0, 14)}... Esperando confirmación...`;
 
         // Esperar hasta 60s por confirmación

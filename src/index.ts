@@ -314,10 +314,6 @@ app.get("/api/me/verify", auth, async (c) => {
    Aprueba al contrato AURA para gastar tokens de la wallet agente (max uint256)
    ========================================================= */
 app.post("/api/aura/approve-agent", async (c) => {
-  const agentPk = c.env.AGENT_PRIVATE_KEY;
-  if (!agentPk) {
-    return c.json({ ok: false, error: "AGENT_PRIVATE_KEY no configurado" }, 500);
-  }
   const agentAddr = '0x02756cb3a5413cd616d192c56dfdce80dd66706e';
   const auraContract = c.env.AURA_CONTRACT;
   if (!auraContract) {
@@ -331,24 +327,37 @@ app.post("/api/aura/approve-agent", async (c) => {
   const maxUint = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
   const data = approveSelector + spenderPadded + maxUint;
 
+  // Consultar nonce y gas del RPC
   try {
-    const { signAndSendTransaction } = await import('./utils/signer');
+    const [nonceRes, gasPriceRes, chainIdRes] = await Promise.all([
+      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionCount', params: [agentAddr, 'latest'] }) }),
+      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] }) }),
+      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] }) })
+    ]);
+    const nonceData: any = await nonceRes.json();
+    const gasPriceData: any = await gasPriceRes.json();
+    const chainIdData: any = await chainIdRes.json();
     
-    const txHash = await signAndSendTransaction(agentPk, {
-      to: auraContract,
-      data,
-      from: agentAddr
-    }, rpcUrl);
+    if (!nonceData?.result || !gasPriceData?.result || !chainIdData?.result) {
+      return c.json({ ok: false, error: 'No se pudo obtener datos de red del RPC' }, 500);
+    }
     
     return c.json({
       ok: true,
-      txHash,
-      message: 'Aprobación exitosa. El agente ahora permite transferencias desde el contrato AURA.',
-      agentAddress: agentAddr
+      method: 'eth_sendTransaction',
+      params: [{
+        from: agentAddr,
+        to: auraContract,
+        data: data,
+        nonce: nonceData.result,
+        gasPrice: gasPriceData.result,
+        chainId: chainIdData.result
+      }],
+      message: 'Copia estos params a MetaMask o llama a eth_sendTransaction desde el frontend con window.ethereum.request({ method: "eth_sendTransaction", params: [...] })'
     });
   } catch (e: any) {
-    console.error("❌ Error en approve:", e.message, e.stack);
-    return c.json({ ok: false, error: `Error al aprobar: ${e.message}` }, 500);
+    console.error("❌ Error en approve:", e.message);
+    return c.json({ ok: false, error: `Error: ${e.message}` }, 500);
   }
 });
 
@@ -356,8 +365,8 @@ app.post("/api/aura/approve-agent", async (c) => {
    AURA — Claim de recompensas (Rulebook §5.1)
    POST /api/aura/claim
    Body: { amount: string (wei) }
-   Firma y envía una tx de transfer(address,uint256) desde la wallet agente hacia el usuario.
-   El agente paga el gas (tiene ETH para eso). El usuario solo presiona "Reclaim" y recibe AURA.
+   Prepara una tx de transfer(address,uint256) para firmar desde MetaMask.
+   Devuelve los parámetros para eth_sendTransaction.
    ========================================================= */
 app.post("/api/aura/claim", auth, async (c) => {
   const caller = c.get("address");
@@ -365,48 +374,56 @@ app.post("/api/aura/claim", auth, async (c) => {
   let amountWei = String(payload.amount || "0");
   const auraContract = c.env.AURA_CONTRACT;
   const rpcUrl = 'https://rpc.ankr.com/base';
+  const agentAddr = '0x02756cb3a5413cd616d192c56dfdce80dd66706e';
 
   if (!auraContract) {
     return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
   }
 
-  const agentPk = c.env.AGENT_PRIVATE_KEY;
-  if (!agentPk) {
-    return c.json({ ok: false, error: "AGENT_PRIVATE_KEY no configurado. Configúralo como secreto en Cloudflare Workers." }, 500);
-  }
-
   // Construir datos de la tx: transfer(address,uint256)
-  // selector: 0xa9059cbb
   const transferSelector = '0xa9059cbb';
   const toPadded = caller.slice(2).toLowerCase().padStart(64, '0');
   const amountPadded = BigInt(amountWei).toString(16).padStart(64, '0');
   const data = transferSelector + toPadded + amountPadded;
 
   try {
-    const { signAndSendTransaction } = await import('./utils/signer');
-    console.log("🚀 Claim request:", { caller, amountWei, dataLen: data.length });
+    const [nonceRes, gasPriceRes, chainIdRes] = await Promise.all([
+      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionCount', params: [agentAddr, 'latest'] }) }),
+      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] }) }),
+      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] }) })
+    ]);
+    const nonceData: any = await nonceRes.json();
+    const gasPriceData: any = await gasPriceRes.json();
+    const chainIdData: any = await chainIdRes.json();
     
-    const agentAddr = '0x02756cb3a5413cd616d192c56dfdce80dd66706e';
-    const txHash = await signAndSendTransaction(agentPk, {
-      to: auraContract,
-      data,
-      from: agentAddr
-    }, rpcUrl);
-
+    if (!nonceData?.result || !gasPriceData?.result || !chainIdData?.result) {
+      return c.json({ ok: false, error: 'No se pudo obtener datos de red del RPC' }, 500);
+    }
+    
     return c.json({
       ok: true,
-      txHash,
+      method: 'eth_sendTransaction',
+      params: [{
+        from: agentAddr,
+        to: auraContract,
+        data: data,
+        value: '0x0',
+        nonce: nonceData.result,
+        gasPrice: gasPriceData.result,
+        chainId: chainIdData.result
+      }],
       metadata: {
-        from: c.env.AGENT_ADDRESS || '',
+        from: agentAddr,
         to: caller,
         amountWei,
         amountReadable: (Number(amountWei) / 1e18).toFixed(4),
         auraContract
-      }
+      },
+      message: 'Usa window.ethereum.request({ method: "eth_sendTransaction", params: [...] }) desde el frontend para firmar con MetaMask'
     });
   } catch (e: any) {
-    console.error("❌ Error en transfer:", e.message, e.stack);
-    return c.json({ ok: false, error: `Error al transferir AURA: ${e.message}`, stack: e.stack }, 500);
+    console.error("❌ Error en claim:", e.message);
+    return c.json({ ok: false, error: `Error al preparar claim: ${e.message}` }, 500);
   }
 });
 
