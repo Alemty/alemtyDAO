@@ -1,6 +1,6 @@
 {
   "dependencies": {
     "hono": "^4.12.12",
-    "ethers": "^6.13.5"
+    "viem": "^2.23.0"
   }
 }

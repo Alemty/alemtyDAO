@@ -340,7 +340,6 @@ app.post("/api/aura/claim", auth, async (c) => {
 
   try {
     const { signAndSendTransaction } = await import('./utils/signer');
-    // Log para debug
     console.log("🚀 Claim request:", { caller, amountWei, dataLen: data.length });
     const txHash = await signAndSendTransaction(agentPk, {
       to: auraContract,
