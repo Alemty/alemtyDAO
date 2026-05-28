@@ -1284,24 +1284,42 @@ async function buyItem(id, seller, price) {
 
 /* =========================================================
    FARM TAB — Reclamo diario de AURA con mini-game pixel art estilo Tibia
+   Conectado al backend: POST /api/farm/claim + GET /api/farm/status
    ========================================================= */
-function getFarmState(addr) {
-  const k = `alemty.farm.${addr.toLowerCase()}`;
-  try { return JSON.parse(localStorage.getItem(k)) || {}; } catch { return {}; }
+
+// Caché del estado del servidor para evitar múltiples llamadas
+let _farmServerState = { canClaim: false, streak: 0, todayAmount: 0, totalFarmed: 0, history: [] };
+
+async function loadFarmStatus() {
+  try {
+    const { getJWT } = await import('./api.js');
+    const token = getJWT();
+    if (!token) return null;
+    const res = await fetch('/api/farm/status', { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.ok) {
+      _farmServerState = data;
+      return data;
+    }
+  } catch {}
+  return null;
 }
-function saveFarmState(addr, st) {
-  localStorage.setItem(`alemty.farm.${addr.toLowerCase()}`, JSON.stringify(st));
-}
-function canFarmToday(addr) {
-  const st = getFarmState(addr);
-  if (!st.lastClaim) return true;
-  const now = new Date();
-  const last = new Date(st.lastClaim);
-  return now.toDateString() !== last.toDateString();
-}
-function getDailyStreak(addr) {
-  const st = getFarmState(addr);
-  return st.streak || 0;
+
+async function submitFarmClaim(amount, streak) {
+  try {
+    const { getJWT } = await import('./api.js');
+    const token = getJWT();
+    if (!token) return null;
+    const res = await fetch('/api/farm/claim', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ amount, streak })
+    });
+    const data = await res.json();
+    return data;
+  } catch {}
+  return null;
 }
 
 function renderFarmTab(modal) {
@@ -1313,61 +1331,91 @@ function renderFarmTab(modal) {
     return;
   }
 
-  const canClaim = canFarmToday(addr);
-  const streak = getDailyStreak(addr);
-  const st = getFarmState(addr);
+  // Cargar estado del servidor
+  loadFarmStatus().then(status => {
+    const canClaim = status?.canClaim !== false; // default: true si no hay respuesta
+    const streak = status?.streak || 0;
+    const totalFarmed = status?.totalFarmed || 0;
+    const history = status?.history || [];
+    const claimedToday = status?.claimedToday || false;
+    const todayAmount = status?.todayAmount || 0;
 
-  c.innerHTML = `
-    <div class="pf-box farm-container">
-      <div class="h2" style="font-size:15px;display:flex;align-items:center;gap:8px;">
-        🎣 Pescando AURA
-        <span class="farm-streak" id="farmStreak" style="font-size:11px;font-weight:400;opacity:.6;">Racha: ${streak} día${streak !== 1 ? 's' : ''}</span>
-      </div>
+    // También mantener estado local para la racha actual durante la sesión
+    // para evitar race conditions entre el reclamo local y el servidor
+    let localStreak = streak;
 
-      <!-- Canvas del mini-game -->
-      <div class="farm-canvas-wrapper" style="position:relative;width:100%;max-width:360px;margin:10px auto;border-radius:14px;overflow:hidden;background:var(--bg-card,#0d1520);border:1px solid rgba(255,255,255,.08);">
-        <canvas id="farmCanvas" width="360" height="320" style="display:block;width:100%;height:auto;image-rendering:pixelated;"></canvas>
+    c.innerHTML = `
+      <div class="pf-box farm-container">
+        <div class="h2" style="font-size:15px;display:flex;align-items:center;gap:8px;">
+          🎣 Pescando AURA
+          <span class="farm-streak" id="farmStreak" style="font-size:11px;font-weight:400;opacity:.6;">Racha: ${streak} día${streak !== 1 ? 's' : ''}</span>
+        </div>
 
-        <!-- Overlay de resultado -->
-        <div id="farmOverlay" class="farm-overlay" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.72);z-index:5;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:20px;border-radius:14px;">
-          <div id="farmResultIcon" style="font-size:48px;margin-bottom:6px;">🎁</div>
-          <div id="farmResultTitle" style="font-size:18px;font-weight:700;"></div>
-          <div id="farmResultSub" style="font-size:13px;opacity:.7;margin-top:4px;"></div>
-          <button id="farmCloseResult" class="tab-btn" style="margin-top:14px;font-size:12px;padding:6px 18px;">Cerrar</button>
+        <!-- Total farmeado acumulado -->
+        <div style="font-size:11px;opacity:.6;text-align:center;margin-bottom:2px;">Total acumulado: <strong style="color:var(--primary,#00ffd5);">${totalFarmed} AURA</strong> · Pendiente de mintear on-chain</div>
+
+        <!-- Canvas del mini-game -->
+        <div class="farm-canvas-wrapper" style="position:relative;width:100%;max-width:360px;margin:6px auto;border-radius:14px;overflow:hidden;background:var(--bg-card,#0d1520);border:1px solid rgba(255,255,255,.08);">
+          <canvas id="farmCanvas" width="360" height="320" style="display:block;width:100%;height:auto;image-rendering:pixelated;"></canvas>
+
+          <!-- Overlay de resultado -->
+          <div id="farmOverlay" class="farm-overlay" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.72);z-index:5;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:20px;border-radius:14px;">
+            <div id="farmResultIcon" style="font-size:48px;margin-bottom:6px;">🎁</div>
+            <div id="farmResultTitle" style="font-size:18px;font-weight:700;"></div>
+            <div id="farmResultSub" style="font-size:13px;opacity:.7;margin-top:4px;"></div>
+            <button id="farmCloseResult" class="tab-btn" style="margin-top:14px;font-size:12px;padding:6px 18px;">Cerrar</button>
+          </div>
+        </div>
+
+        <!-- Botón principal -->
+        <button id="farmBtn" class="tab-btn" style="width:100%;margin-top:6px;font-size:14px;padding:10px;${!canClaim ? 'opacity:.4;cursor:not-allowed;' : ''}" ${!canClaim ? 'disabled' : ''}>
+          ${canClaim ? '🎣 Lanzar caña!' : '⏳ Ya pescaste hoy · Vuelve mañana'}
+        </button>
+        <div id="farmTimer" style="font-size:11px;opacity:.5;text-align:center;margin-top:4px;"></div>
+
+        <!-- Historial de rewards (desde backend) -->
+        <div class="farm-history" id="farmHistory" style="margin-top:10px;font-size:12px;opacity:.7;">
+          ${history.length === 0 ? 'Aún no has pescado nada. ¡Lanza la caña!' : ''}
         </div>
       </div>
+    `;
 
-      <!-- Botón principal -->
-      <button id="farmBtn" class="tab-btn ${canClaim ? '' : 'disabled'}" style="width:100%;margin-top:6px;font-size:14px;padding:10px;${canClaim ? '' : 'opacity:.4;cursor:not-allowed;'}" ${canClaim ? '' : 'disabled'}>
-        ${canClaim ? '🎣 Lanzar caña!' : '⏳ Ya pescaste hoy · Vuelve mañana'}
-      </button>
-      <div id="farmTimer" style="font-size:11px;opacity:.5;text-align:center;margin-top:4px;"></div>
+    // Dibujar escena inicial
+    drawFarmScene(addr);
 
-      <!-- Historial de rewards -->
-      <div class="farm-history" id="farmHistory" style="margin-top:10px;font-size:12px;opacity:.7;"></div>
-    </div>
-  `;
+    // Botón de pesca
+    const btn = c.querySelector('#farmBtn');
+    if (btn && canClaim) {
+      btn.addEventListener('click', () => {
+        // Deshabilitar inmediatamente
+        btn.disabled = true;
+        btn.style.opacity = '.4';
+        btn.textContent = '🎣 Pesca en curso...';
+        startFarming(addr, c, localStreak);
+      });
+    }
 
-  // Dibujar escena inicial
-  drawFarmScene(addr, st);
+    // Render historial desde backend
+    renderFarmHistoryFromServer(c, history);
 
-  // Botón de pesca
-  const btn = c.querySelector('#farmBtn');
-  btn?.addEventListener('click', () => startFarming(addr, st, c));
+    // Cerrar overlay
+    c.querySelector('#farmCloseResult')?.addEventListener('click', () => {
+      const ov = c.querySelector('#farmOverlay');
+      if (ov) { ov.style.display = 'none'; }
+      // Refrescar stats globales (para que el hint de AURA por reclamar se actualice)
+      syncProfile();
+    });
 
-  // Cerrar overlay
-  c.querySelector('#farmCloseResult')?.addEventListener('click', () => {
-    const ov = c.querySelector('#farmOverlay');
-    if (ov) { ov.style.display = 'none'; }
+    // Mostrar countdown si ya reclamó
+    if (!canClaim && claimedToday) {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      updateFarmCountdown(c, todayStr, addr);
+    }
   });
 
-  // Mostrar countdown si ya reclamó
-  if (!canClaim && st.lastClaim) {
-    updateFarmCountdown(c, st.lastClaim, addr);
-  }
-
-  // Render historial
-  renderFarmHistory(addr, c);
+  // Cargar inicial con valores por defecto mientras se resuelve
+  // (no mostrar contenido vacío — el status load lo llena)
+  c.innerHTML = `<div class="pf-box farm-container"><div style="padding:20px;text-align:center;opacity:.5;">🎣 Cargando...</div></div>`;
 }
 
 function drawFarmScene(addr, st, animating) {
@@ -1507,8 +1555,7 @@ function drawChest(ctx, cx, cy, size) {
 
 function lerp(a, b, t) { return a + (b - a) * t; }
 
-function startFarming(addr, st, container) {
-  if (!canFarmToday(addr)) return;
+function startFarming(addr, container, currentStreak) {
   const canvas = document.getElementById('farmCanvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
@@ -1530,8 +1577,8 @@ function startFarming(addr, st, container) {
     // Ángulo de la caña: sube y baja
     const angle = -0.3 + Math.sin(progress * Math.PI) * 0.6;
 
-    // Redibujar escena sin caña
-    drawFarmScene(addr, st, true);
+    // Redibujar escena sin caña (st ya no se usa globalmente)
+    drawFarmScene(addr, null, true);
 
     // Dibujar caña con ángulo
     drawFishingRod(ctx, px, py, angle);
@@ -1563,16 +1610,16 @@ function startFarming(addr, st, container) {
       requestAnimationFrame(animateCast);
     } else {
       // Fase 2: Esperar un momento (simular que pica)
-      setTimeout(() => animateReelIn(addr, st, container, ctx), 800);
+      setTimeout(() => animateReelIn(addr, container, ctx, currentStreak), 800);
     }
   }
 
-  function animateReelIn(addr, st, container, ctx) {
+  function animateReelIn(addr, container, ctx, currentStreak) {
     // Fase 2: Recoger línea con cofre
     let frame2 = 0;
     const totalFrames2 = 25;
     // Determinar reward ANTES de la animación
-    const reward = getRandomFarmReward(addr, st);
+    const reward = getRandomFarmReward(currentStreak);
 
     function reelStep() {
       const p = frame2 / totalFrames2;
@@ -1583,7 +1630,7 @@ function startFarming(addr, st, container) {
       const endX = lx;
       const endY = ly + lineLen;
 
-      drawFarmScene(addr, st, true);
+      drawFarmScene(addr, null, true);
       drawFishingRod(ctx, px, py, -0.2 + p * 0.2);
 
       // Línea
@@ -1614,8 +1661,8 @@ function startFarming(addr, st, container) {
       if (frame2 <= totalFrames2) {
         requestAnimationFrame(reelStep);
       } else {
-        // Mostrar resultado
-        showFarmResult(addr, st, container, reward, ctx);
+        // Mostrar resultado y enviar claim al backend
+        showFarmResult(addr, container, reward, ctx, currentStreak);
       }
     }
     reelStep();
@@ -1624,9 +1671,9 @@ function startFarming(addr, st, container) {
   animateCast();
 }
 
-function getRandomFarmReward(addr, st) {
+function getRandomFarmReward(streak) {
   // Dificultad: mientras más racha, más difícil el reward alto
-  const streak = st.streak || 0;
+  streak = streak || 0;
   const roll = Math.random();
 
   // Base: ~40% chance de 0.1, ~30% de 0.5, ~20% de 1, ~8% de 5, ~2% de 10, ~0.5% de 50, ~0.1% de 100
@@ -1649,18 +1696,19 @@ function getRandomFarmReward(addr, st) {
   return Math.min(reward, 100);
 }
 
-function showFarmResult(addr, st, container, reward, ctx) {
-  // Guardar claim
-  const now = new Date().toISOString();
-  st.lastClaim = now;
-  st.streak = (st.streak || 0) + 1;
-  st.history = st.history || [];
-  st.history.unshift({ date: now, reward });
-  if (st.history.length > 30) st.history = st.history.slice(0, 30);
-  saveFarmState(addr, st);
+function showFarmResult(addr, container, reward, ctx, currentStreak) {
+  const newStreak = (currentStreak || 0) + 1;
+
+  // Enviar claim al backend (async, no bloquea la animación)
+  submitFarmClaim(reward, newStreak).then(resp => {
+    if (resp?.ok) {
+      // Refrescar stats globales para que el hint de AURA se actualice
+      setTimeout(() => syncProfile(), 300);
+    }
+  });
 
   // Dibujar escena final con cofre abierto
-  drawFarmScene(addr, st, false);
+  drawFarmScene(addr, null, false);
   const px = 180, py = 190;
   drawFishingRod(ctx, px, py, -0.1);
   // Cofre abierto al lado del personaje
@@ -1727,24 +1775,20 @@ function showFarmResult(addr, st, container, reward, ctx) {
   // Actualizar racha
   const streakEl = container.querySelector('#farmStreak');
   if (streakEl) {
-    streakEl.textContent = `Racha: ${st.streak} día${st.streak !== 1 ? 's' : ''}`;
+    streakEl.textContent = `Racha: ${newStreak} día${newStreak !== 1 ? 's' : ''}`;
   }
 
-  // Actualizar historial
-  renderFarmHistory(addr, container);
-
   // Iniciar countdown
-  updateFarmCountdown(container, now, addr);
+  updateFarmCountdown(container, addr);
 }
 
-function updateFarmCountdown(container, lastClaim, addr) {
+function updateFarmCountdown(container, addr) {
   const timer = container.querySelector('#farmTimer');
   if (!timer) return;
 
   function tick() {
     const now = new Date();
-    const last = new Date(lastClaim);
-    const nextMidnight = new Date(last);
+    const nextMidnight = new Date(now);
     nextMidnight.setDate(nextMidnight.getDate() + 1);
     nextMidnight.setHours(0, 0, 0, 0);
     const diff = nextMidnight.getTime() - now.getTime();
@@ -1769,24 +1813,22 @@ function updateFarmCountdown(container, lastClaim, addr) {
   tick();
 }
 
-function renderFarmHistory(addr, container) {
-  const st = getFarmState(addr);
+function renderFarmHistoryFromServer(container, history) {
   const hist = container?.querySelector('#farmHistory');
   if (!hist) return;
-  if (!st.history || st.history.length === 0) {
+  if (!history || history.length === 0) {
     hist.textContent = 'Aún no has pescado nada. ¡Lanza la caña!';
     return;
   }
-  const items = st.history.slice(0, 10).map(h => {
-    const d = new Date(h.date);
-    const dateStr = d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+  const items = history.slice(0, 10).map(h => {
+    const d = new Date(h.date + 'T00:00:00');
     let icon = '🐟';
-    if (h.reward >= 100) icon = '👑';
-    else if (h.reward >= 50) icon = '💎';
-    else if (h.reward >= 10) icon = '🌟';
-    else if (h.reward >= 5) icon = '🎁';
-    else if (h.reward >= 1) icon = '📦';
-    return `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;white-space:nowrap;">${icon} ${d.getDate()} ${dateStr.split(' ')[1]}: <strong>${h.reward} AURA</strong></span>`;
+    if (h.amount >= 100) icon = '👑';
+    else if (h.amount >= 50) icon = '💎';
+    else if (h.amount >= 10) icon = '🌟';
+    else if (h.amount >= 5) icon = '🎁';
+    else if (h.amount >= 1) icon = '📦';
+    return `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;white-space:nowrap;">${icon} ${d.getDate()}/${d.getMonth()+1}: <strong>${h.amount} AURA</strong></span>`;
   }).join('');
   hist.innerHTML = `<div style="display:flex;flex-wrap:wrap;">Últimas capturas: ${items}</div>`;
 }

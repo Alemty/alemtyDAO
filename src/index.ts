@@ -184,9 +184,17 @@ app.get("/api/me/stats", auth, async (c) => {
   // (lo generado en el epoch actual que aún no se minteó).
   // El balance on-chain (auraBalance) es lo que el usuario tiene disponible para gastar/swapear.
 
-  // TODO: almacenar en D1 el último epoch reclamado por usuario para calcular auraReclamable
-  const aura = dharma; // total generado off-chain (visual)
-  let auraReclamable = 0; // generado en epoch actual, pendiente de mintear
+  // AURA farmeado desde el mini-game FARM (reclamo diario)
+  const farmRow: any = await c.env.DB.prepare(
+    "SELECT COALESCE(SUM(amount), 0) AS total FROM farm_claims WHERE address = ?"
+  ).bind(address).first();
+  const auraFarmed = Number(farmRow?.total || 0);
+
+  const aura = dharma + auraFarmed; // total generado off-chain (visual)
+
+  // auraReclamable: TODO + farm claims que aún no se mintearon
+  // Por ahora: todo lo generado (dharma + farm) es reclamable hasta que se mintee on-chain
+  let auraReclamable = auraFarmed; // farm siempre está pendiente de mintear
   let auraBalance = '0';
   const auraContract = c.env.AURA_CONTRACT;
   if (auraContract) {
@@ -641,6 +649,99 @@ app.post("/api/market/sold/:id", auth, async (c) => {
 
   await c.env.DB.prepare("UPDATE marketplace SET sold = 1 WHERE id = ?").bind(id).run();
   return c.json({ ok: true });
+});
+
+/* =========================================================
+   FARM — Reclamo diario de AURA (mini-game)
+   POST /api/farm/claim
+   Body: { amount: number, streak: number }
+   Valida que sea 1 claim por día calendario
+   Registra en farm_claims + aura_ledger
+========================================================= */
+app.post("/api/farm/claim", auth, async (c) => {
+  const address = c.get("address");
+  const payload = await c.req.json().catch(() => ({} as any));
+  const amount = Number(payload.amount) || 0;
+  const streak = Number(payload.streak) || 1;
+
+  // Validar límites
+  if (amount <= 0 || amount > 100) {
+    return c.json({ ok: false, error: "Cantidad inválida (0-100 AURA)" }, 400);
+  }
+
+  // Validar que no haya reclamado hoy
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const existing = await c.env.DB.prepare(
+    "SELECT id FROM farm_claims WHERE address = ? AND claim_date = ?"
+  ).bind(address, today).first();
+
+  if (existing) {
+    return c.json({ ok: false, error: "Ya reclamaste hoy. Vuelve mañana." }, 429);
+  }
+
+  // Insertar claim
+  await c.env.DB.prepare(
+    "INSERT INTO farm_claims (address, claim_date, amount, streak) VALUES (?, ?, ?, ?)"
+  ).bind(address, today, String(amount), streak).run();
+
+  // Registrar en aura_ledger para que se contabilice como auraReclamable
+  const eventKey = `farm:${address}:${today}`;
+  const amountWei = BigInt(Math.round(amount * 1e18));
+  await c.env.DB.prepare(
+    "INSERT OR IGNORE INTO aura_ledger (address, kind, amount, event_key, ref_type, ref_id) VALUES (?, 'mint', ?, ?, 'farm', ?)"
+  ).bind(address, Number(amountWei), eventKey, today).run();
+
+  // Actualizar user_stats
+  await c.env.DB.prepare(
+    "INSERT INTO user_stats (address, aura_balance, updated_at) VALUES (?, ?, unixepoch()) ON CONFLICT(address) DO UPDATE SET aura_balance = aura_balance + ?, updated_at = unixepoch()"
+  ).bind(address, Number(amountWei), Number(amountWei)).run();
+
+  return c.json({
+    ok: true,
+    amount,
+    streak,
+    today,
+    message: `🎣 Has pescado ${amount} AURA!`
+  });
+});
+
+// GET /api/farm/status — saber si puede reclamar hoy + streak
+app.get("/api/farm/status", auth, async (c) => {
+  const address = c.get("address");
+  const today = new Date().toISOString().slice(0, 10);
+
+  const claimToday = await c.env.DB.prepare(
+    "SELECT amount, streak FROM farm_claims WHERE address = ? AND claim_date = ?"
+  ).bind(address, today).first();
+
+  // Último claim para calcular streak
+  const lastClaim: any = await c.env.DB.prepare(
+    "SELECT claim_date, streak FROM farm_claims WHERE address = ? ORDER BY created_at DESC LIMIT 1"
+  ).bind(address).first();
+
+  // Total acumulado farmeado
+  const totalRow: any = await c.env.DB.prepare(
+    "SELECT COALESCE(SUM(amount), 0) AS total FROM farm_claims WHERE address = ?"
+  ).bind(address).first();
+
+  // Historial reciente (últimos 10)
+  const history: any[] = await c.env.DB.prepare(
+    "SELECT claim_date, amount, streak FROM farm_claims WHERE address = ? ORDER BY created_at DESC LIMIT 10"
+  ).bind(address).all();
+
+  return c.json({
+    ok: true,
+    canClaim: !claimToday,
+    claimedToday: !!claimToday,
+    todayAmount: claimToday ? Number(claimToday.amount) : 0,
+    streak: lastClaim ? Number(lastClaim.streak) : 0,
+    totalFarmed: Number(totalRow?.total || 0),
+    history: (history.results || []).map(h => ({
+      date: h.claim_date,
+      amount: Number(h.amount),
+      streak: Number(h.streak)
+    }))
+  });
 });
 
 export default app;
