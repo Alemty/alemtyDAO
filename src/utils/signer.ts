@@ -408,7 +408,7 @@ export async function signAndSendTransaction(
   const chainIdBig = BigInt(chainId);
   
   // Build RLP for signing: [nonce, gasPrice, gasLimit, to, value, data, chainId, 0, 0]
-  const rlpForSigning = rlpEncodeList([
+  const rlpItems: (bigint | string)[] = [
     nonceBig,
     gasPriceBig,
     gasLimitBig,
@@ -418,30 +418,57 @@ export async function signAndSendTransaction(
     chainIdBig,
     0n,
     0n
-  ]);
+  ];
+  
+  let rlpForSigning: Uint8Array;
+  try {
+    rlpForSigning = rlpEncodeList(rlpItems);
+  } catch (e: any) {
+    throw new Error(`RLP encode for signing failed: ${e.message}`);
+  }
   
   // Hash for signing
-  const hash = keccak256(rlpForSigning);
+  let hash: Uint8Array;
+  try {
+    hash = keccak256(rlpForSigning);
+  } catch (e: any) {
+    throw new Error(`Keccak256 failed: ${e.message}`);
+  }
   
   // Sign
-  const sig = ecdsaSign(hash, pkBig);
+  let sig: { r: bigint; s: bigint; v: number };
+  try {
+    sig = ecdsaSign(hash, pkBig);
+  } catch (e: any) {
+    throw new Error(`ECDSA sign failed: ${e.message}`);
+  }
   
   // Calculate v with EIP-155: v = chainId * 2 + 35 + (s > N/2 ? 1 : 0)
-  const isLowS = sig.s <= N / 2n;
-  const vFinal = chainIdBig * 2n + 35n + (isLowS ? 0n : 1n);
+  let vFinal: bigint;
+  try {
+    const isLowS = sig.s <= N / 2n;
+    vFinal = chainIdBig * 2n + 35n + (isLowS ? 0n : 1n);
+  } catch (e: any) {
+    throw new Error(`v calculation failed: ${e.message}`);
+  }
   
   // Build final RLP with signature: [nonce, gasPrice, gasLimit, to, value, data, v, r, s]
-  const rlpFinal = rlpEncodeList([
-    nonceBig,
-    gasPriceBig,
-    gasLimitBig,
-    txParams.to.toLowerCase(),
-    valueBig,
-    txParams.data,
-    vFinal,
-    sig.r,
-    sig.s
-  ]);
+  let rlpFinal: Uint8Array;
+  try {
+    rlpFinal = rlpEncodeList([
+      nonceBig,
+      gasPriceBig,
+      gasLimitBig,
+      txParams.to.toLowerCase(),
+      valueBig,
+      txParams.data,
+      vFinal,
+      sig.r,
+      sig.s
+    ]);
+  } catch (e: any) {
+    throw new Error(`RLP encode final failed: ${e.message}`);
+  }
   
   const rawTx = '0x' + bytesToHex(rlpFinal);
   

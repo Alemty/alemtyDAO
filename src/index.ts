@@ -340,6 +340,8 @@ app.post("/api/aura/claim", auth, async (c) => {
 
   try {
     const { signAndSendTransaction } = await import('./utils/signer');
+    // Log para debug
+    console.log("🚀 Claim request:", { caller, amountWei, dataLen: data.length });
     const txHash = await signAndSendTransaction(agentPk, {
       to: auraContract,
       data
@@ -357,8 +359,8 @@ app.post("/api/aura/claim", auth, async (c) => {
       }
     });
   } catch (e: any) {
-    console.error("❌ Error en transfer:", e.message);
-    return c.json({ ok: false, error: `Error al transferir AURA: ${e.message}` }, 500);
+    console.error("❌ Error en transfer:", e.message, e.stack);
+    return c.json({ ok: false, error: `Error al transferir AURA: ${e.message}`, stack: e.stack }, 500);
   }
 });
 
