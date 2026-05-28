@@ -1536,9 +1536,9 @@ function drawFarmScene(addr, st, animating) {
   // CAÑA DE PESCAR + BOYA (solo cuando no animando)
   // ============================================================
   if(!animating){
-    drawFishingRod(ctx,px+2,py-4,0);
+    drawFishingRod(ctx,px,py,0);
     ctx.strokeStyle='rgba(200,200,200,0.5)';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(px+22,py-16);ctx.quadraticCurveTo(px+60,py-28,pondCX-30,pondCY-8);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(px+12+28, py-4);ctx.quadraticCurveTo(px+60,py-28,pondCX-30,pondCY-8);ctx.stroke();
     ctx.fillStyle='#ff4444';ctx.beginPath();ctx.arc(pondCX-30,pondCY-8,3,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#ff8888';ctx.beginPath();ctx.arc(pondCX-31,pondCY-9,1.5,0,Math.PI*2);ctx.fill();
   }
@@ -1551,30 +1551,36 @@ function drawFarmScene(addr, st, animating) {
   ctx.fillStyle='rgba(255,224,160,0.3)';ctx.fillRect(10,21,120,1);ctx.fillRect(W-130,21,120,1);
 }
 
-function drawFishingRod(ctx, px, py, angle) {
+function drawFishingRod(ctx, cx, cy, angle) {
+  // cx, cy = centro del personaje (px, py de drawFarmScene)
+  // Dibuja la caña saliendo desde la mano derecha del pescador
   ctx.save();
-  ctx.translate(px + 10, py - 14);
+  ctx.translate(cx + 12, cy - 4);
   ctx.rotate(angle);
+  // Mango (madera oscura)
   ctx.strokeStyle = '#6a4a2a';
   ctx.lineWidth = 4;
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  ctx.lineTo(16, -12);
+  ctx.lineTo(20, -18);
   ctx.stroke();
+  // Veta clara
   ctx.strokeStyle = '#8a6a3a';
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(14, -10);
+  ctx.moveTo(2, -1);
+  ctx.lineTo(18, -16);
   ctx.stroke();
+  // Punta delgada
   ctx.strokeStyle = '#5a3a1a';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(16, -12);
-  ctx.lineTo(22, -16);
+  ctx.moveTo(20, -18);
+  ctx.lineTo(28, -24);
   ctx.stroke();
+  // Anilla
   ctx.fillStyle = '#aaa';
-  ctx.fillRect(21, -17, 3, 2);
+  ctx.fillRect(27, -25, 3, 3);
   ctx.restore();
 }
 
@@ -1646,43 +1652,47 @@ function startFarming(addr, container, currentStreak) {
   const mountBaseX = 48, mountBaseY = 120;
   const px = mountBaseX+6, py = mountBaseY-14;
   const pondCX = 170, pondCY = 168;
-  const lineEndX = pondCX - 30, lineEndY = pondCY - 8;
+  const pondX = pondCX - 30, pondY = pondCY - 8;
 
-  // Fase 1: Lanzar caña (animación)
+  // Fase 1: lanzar caña al estanque
   let frame = 0;
   const totalFrames = 30;
-  let cofreX = 0, cofreY = 0;
 
   function animateCast() {
     const progress = frame / totalFrames;
-    const angle = -0.3 + Math.sin(progress * Math.PI) * 0.6;
+    const angle = -0.4 + Math.sin(progress * Math.PI) * 0.5;
 
     drawFarmScene(addr, null, true);
+    // Caña animada
     drawFishingRod(ctx, px, py, angle);
 
-    // Línea apuntando al estanque (como el estado estático)
-    const lineExtend = progress * 0.6;
-    const lx = px + 22;
-    const ly = py - 16;
-    const tx = pondCX - 30;
-    const ty = pondCY - 8;
-    const curX = lx + (tx - lx) * lineExtend;
-    const curY = ly + (ty - ly) * lineExtend;
-    ctx.strokeStyle = 'rgba(200,200,200,0.5)';
+    // Línea desde la punta de la caña hasta el estanque
+    const lineExtend = Math.min(progress * 1.2, 1);
+    const tipX = px + 12 + Math.cos(-angle) * 28;
+    const tipY = py - 4 + Math.sin(-angle) * 24;
+    const endX = tipX + (pondX - tipX) * lineExtend;
+    const endY = tipY + (pondY - tipY) * lineExtend;
+
+    ctx.strokeStyle = 'rgba(200,200,200,0.4)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(lx, ly);
-    ctx.quadraticCurveTo(px + 50 + progress * 20, py - 28 + progress * 10, curX, curY);
+    ctx.moveTo(tipX, tipY);
+    ctx.quadraticCurveTo(
+      tipX + (pondX - tipX) * 0.5 + 10,
+      tipY + (pondY - tipY) * 0.4,
+      endX, endY
+    );
     ctx.stroke();
 
-    // Boya roja al final de la línea
+    // Boya roja
+    const bounce = Math.sin(progress * 6) * 2;
     ctx.fillStyle = '#ff4444';
     ctx.beginPath();
-    ctx.arc(curX, curY + Math.sin(progress * 8) * 2, 3, 0, Math.PI * 2);
+    ctx.arc(endX, endY + bounce, 3, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#ff8888';
     ctx.beginPath();
-    ctx.arc(curX - 1, curY - 1 + Math.sin(progress * 8) * 2, 1.5, 0, Math.PI * 2);
+    ctx.arc(endX - 1, endY - 1 + bounce, 1.5, 0, Math.PI * 2);
     ctx.fill();
 
     frame++;
@@ -1693,43 +1703,51 @@ function startFarming(addr, container, currentStreak) {
     }
   }
 
+  // Fase 2: recoger línea — cofre emerge del agua
   function animateReelIn(addr, container, ctx, currentStreak) {
     let frame2 = 0;
-    const totalFrames2 = 25;
+    const totalFrames2 = 30;
     const reward = getRandomFarmReward(currentStreak);
-    const pondX = pondCX - 30, pondY = pondCY - 8;
 
     function reelStep() {
       const p = frame2 / totalFrames2;
 
       drawFarmScene(addr, null, true);
-      drawFishingRod(ctx, px, py, -0.2 + p * 0.2);
+      drawFishingRod(ctx, px, py, -0.2 + p * 0.15);
 
-      // Línea recogiéndose desde el estanque hacia la caña
+      // Línea recogiéndose (vuelve hacia la caña)
       const invP = 1 - p;
-      const curX = px + 22 + (pondX - (px + 22)) * invP;
-      const curY = (py - 16) + (pondY - (py - 16)) * invP;
-      ctx.strokeStyle = 'rgba(200,200,200,0.5)';
+      const tipX = px + 12 + Math.cos(0.2) * 28;
+      const tipY = py - 4 + Math.sin(0.2) * 24;
+      const curX = tipX + (pondX - tipX) * invP;
+      const curY = tipY + (pondY - tipY) * invP;
+
+      ctx.strokeStyle = 'rgba(200,200,200,0.4)';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(px + 22, py - 16);
-      ctx.quadraticCurveTo(px + 50, py - 28, curX, curY);
+      ctx.moveTo(tipX, tipY);
+      ctx.quadraticCurveTo(
+        tipX + (pondX - tipX) * 0.5 * invP + 10,
+        tipY + (pondY - tipY) * 0.4 * invP,
+        curX, curY
+      );
       ctx.stroke();
 
-      // Cofre que sube desde el agua (desde pondX,pondY hacia arriba)
-      const chestY = pondY + 10 - p * 25;
+      // Cofre pixel art emergiendo del agua (desde pondX, pondY hacia arriba)
       const chestX = pondX + Math.sin(p * 6) * 3;
+      const chestY = pondY + 12 - p * 28;
 
       // Salpicaduras
-      ctx.fillStyle = 'rgba(100,200,240,0.4)';
-      for (let i = 0; i < 5; i++) {
-        const sx = chestX + (i - 2) * 7 + Math.sin(p * 10 + i * 1.5) * 4;
-        const sy = chestY + 12 + Math.random() * 6;
+      ctx.fillStyle = 'rgba(100,200,240,0.3)';
+      for (let i = 0; i < 6; i++) {
+        const sx = chestX + (i - 2.5) * 6 + Math.sin(p * 8 + i * 1.3) * 5;
+        const sy = chestY + 10 + Math.random() * 8;
         ctx.fillRect(sx - 2, sy - 2, 4, 4);
       }
 
-      if (p > 0.4) {
-        drawChest(ctx, chestX, chestY, 16 + p * 8);
+      if (p > 0.35) {
+        const chestSize = Math.floor(18 + p * 8);
+        drawChest(ctx, chestX, chestY, chestSize);
       }
 
       frame2++;
@@ -1783,10 +1801,10 @@ function showFarmResult(addr, container, reward, ctx, currentStreak) {
 
   // Dibujar escena final con cofre abierto
   drawFarmScene(addr, null, false);
-  const px = 54, py = 106;
-  drawFishingRod(ctx, px + 2, py - 4, -0.1);
-  // Cofre abierto al lado del personaje
-  const cx = px + 22, cy = py + 8;
+  // Cofre abierto al lado del personaje (mismas coordenadas que drawFarmScene)
+  const mountBaseX = 48, mountBaseY = 120;
+  const px = mountBaseX+6, py = mountBaseY-14;
+  const cx = px + 22, cy = py + 6;
   // Sombra
   ctx.fillStyle = 'rgba(0,0,0,0.2)';
   ctx.fillRect(cx - 12, cy + 8, 24, 5);
