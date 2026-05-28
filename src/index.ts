@@ -309,6 +309,47 @@ app.get("/api/me/verify", auth, async (c) => {
 });
 
 /* =========================================================
+   AURA — Approve del agente (para permitir transferFrom)
+   POST /api/aura/approve-agent
+   Aprueba al contrato AURA para gastar tokens de la wallet agente (max uint256)
+   ========================================================= */
+app.post("/api/aura/approve-agent", async (c) => {
+  const agentPk = c.env.AGENT_PRIVATE_KEY;
+  if (!agentPk) {
+    return c.json({ ok: false, error: "AGENT_PRIVATE_KEY no configurado" }, 500);
+  }
+  const auraContract = c.env.AURA_CONTRACT;
+  if (!auraContract) {
+    return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
+  }
+  const rpcUrl = c.env.AURA_RPC_URL || 'https://base.drpc.org';
+
+  // approve(spender=contratoAURA, amount=type(uint256).max)
+  // selector: 0x095ea7b3
+  const approveSelector = '0x095ea7b3';
+  const spenderPadded = auraContract.slice(2).toLowerCase().padStart(64, '0');
+  const maxUint = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+  const data = approveSelector + spenderPadded + maxUint;
+
+  try {
+    const { signAndSendTransaction } = await import('./utils/signer');
+    const txHash = await signAndSendTransaction(agentPk, {
+      to: auraContract,
+      data
+    }, rpcUrl);
+    return c.json({
+      ok: true,
+      txHash,
+      message: 'Aprobación exitosa. El agente ahora permite transferencias desde el contrato AURA.',
+      agentAddress: c.env.AGENT_ADDRESS || ''
+    });
+  } catch (e: any) {
+    console.error("❌ Error en approve:", e.message, e.stack);
+    return c.json({ ok: false, error: `Error al aprobar: ${e.message}` }, 500);
+  }
+});
+
+/* =========================================================
    AURA — Claim de recompensas (Rulebook §5.1)
    POST /api/aura/claim
    Body: { amount: string (wei) }
