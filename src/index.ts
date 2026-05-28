@@ -194,35 +194,30 @@ app.get("/api/me/stats", auth, async (c) => {
 
   const auraContract = c.env.AURA_CONTRACT;
   if (auraContract) {
-    const rpcUrls = [
-      c.env.AURA_RPC_URL || 'https://mainnet.base.org',
-      'https://1rpc.io/base',
-      'https://base.llamarpc.com',
-    ].filter(Boolean);
-    const data = '0x70a08231' + address.slice(2).padStart(64, '0');
-    for (const rpcUrl of rpcUrls) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const rpcRes = await fetch(rpcUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            jsonrpc: '2.0', id: 1, method: 'eth_call',
-            params: [{ to: auraContract, data }, 'latest']
-          }),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        if (rpcRes.ok) {
-          const json: any = await rpcRes.json();
-          if (json?.result && json.result !== '0x') {
-            auraOnChain = Number(BigInt(json.result) / 10n ** 16n / 100n);
-            auraBalance = String(auraOnChain);
-            break;
-          }
+    try {
+      const rpcUrl = c.env.AURA_RPC_URL || 'https://mainnet.base.org';
+      const data = '0x70a08231' + address.slice(2).padStart(64, '0');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const rpcRes = await fetch(rpcUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0', id: 1, method: 'eth_call',
+          params: [{ to: auraContract, data }, 'latest']
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (rpcRes.ok) {
+        const json: any = await rpcRes.json();
+        if (json?.result && json.result !== '0x') {
+          auraOnChain = Number(BigInt(json.result) / 10n ** 16n / 100n);
+          auraBalance = String(auraOnChain);
         }
-      } catch (_) { /* intentar siguiente RPC */ }
+      }
+    } catch (_) {
+      // RPC falló, mantener auraOnChain = 0
     }
   }
 
