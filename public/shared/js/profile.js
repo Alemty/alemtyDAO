@@ -1283,41 +1283,36 @@ async function buyItem(id, seller, price) {
 }
 
 /* =========================================================
-   FARM TAB — Reclamo diario de AURA con mini-game pixel art estilo Tibia
-   Conectado al backend: POST /api/farm/claim + GET /api/farm/status
+   FARM TAB — Reclamo diario de AURA con mini-game pixel art
+   Endpoints: POST /api/farm/claim + GET /api/farm/status
    ========================================================= */
 
-// Caché del estado del servidor para evitar múltiples llamadas
-let _farmServerState = { canClaim: false, streak: 0, todayAmount: 0, totalFarmed: 0, history: [] };
+let _farmCache = null;
 
 async function loadFarmStatus() {
   try {
-    const { getJWT } = await import('./api.js');
+    const { getJWT, API_BASE } = await import('./api.js');
     const token = getJWT();
     if (!token) return null;
-    const res = await fetch('/api/farm/status', { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch(`${API_BASE}/api/farm/status`, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) return null;
     const data = await res.json();
-    if (data.ok) {
-      _farmServerState = data;
-      return data;
-    }
+    if (data.ok) { _farmCache = data; return data; }
   } catch {}
   return null;
 }
 
 async function submitFarmClaim(amount, streak) {
   try {
-    const { getJWT } = await import('./api.js');
+    const { getJWT, API_BASE } = await import('./api.js');
     const token = getJWT();
     if (!token) return null;
-    const res = await fetch('/api/farm/claim', {
+    const res = await fetch(`${API_BASE}/api/farm/claim`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ amount, streak })
     });
-    const data = await res.json();
-    return data;
+    return await res.json();
   } catch {}
   return null;
 }
@@ -1331,17 +1326,14 @@ function renderFarmTab(modal) {
     return;
   }
 
-  // Cargar estado del servidor
+  c.innerHTML = `<div class="pf-box farm-container"><div style="padding:20px;text-align:center;opacity:.5;">🎣 Cargando...</div></div>`;
+
   loadFarmStatus().then(status => {
-    const canClaim = status?.canClaim !== false; // default: true si no hay respuesta
+    const canClaim = status?.canClaim !== false;
     const streak = status?.streak || 0;
     const totalFarmed = status?.totalFarmed || 0;
     const history = status?.history || [];
     const claimedToday = status?.claimedToday || false;
-    const todayAmount = status?.todayAmount || 0;
-
-    // También mantener estado local para la racha actual durante la sesión
-    // para evitar race conditions entre el reclamo local y el servidor
     let localStreak = streak;
 
     c.innerHTML = `
@@ -1350,16 +1342,12 @@ function renderFarmTab(modal) {
           ⛏️ Farmeando AURA
           <span class="farm-streak" id="farmStreak" style="font-size:11px;font-weight:400;opacity:.6;">Racha: ${streak} día${streak !== 1 ? 's' : ''}</span>
         </div>
+        <div style="font-size:11px;opacity:.6;text-align:center;margin-bottom:2px;">Total acumulado: <strong style="color:var(--primary,#00ffd5);">${totalFarmed} AURA</strong></div>
 
-        <!-- Total farmeado acumulado -->
-        <div style="font-size:11px;opacity:.6;text-align:center;margin-bottom:2px;">Total acumulado: <strong style="color:var(--primary,#00ffd5);">${totalFarmed} AURA</strong> · Pendiente de mintear on-chain</div>
-
-        <!-- Canvas del mini-game -->
-        <div class="farm-canvas-wrapper" style="position:relative;width:100%;max-width:360px;margin:6px auto;border-radius:14px;overflow:hidden;background:var(--bg-card,#0d1520);border:1px solid rgba(255,255,255,.08);">
+        <div style="position:relative;width:360px;margin:6px auto;border-radius:14px;overflow:hidden;background:var(--bg-card,#0d1520);border:1px solid rgba(255,255,255,.08);">
           <canvas id="farmCanvas" width="360" height="260" style="display:block;width:100%;height:auto;image-rendering:pixelated;"></canvas>
 
-          <!-- Overlay de resultado -->
-          <div id="farmOverlay" class="farm-overlay" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.72);z-index:5;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:20px;border-radius:14px;">
+          <div id="farmOverlay" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.72);z-index:5;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:20px;">
             <div id="farmResultIcon" style="font-size:48px;margin-bottom:6px;">🎁</div>
             <div id="farmResultTitle" style="font-size:18px;font-weight:700;"></div>
             <div id="farmResultSub" style="font-size:13px;opacity:.7;margin-top:4px;"></div>
@@ -1367,587 +1355,218 @@ function renderFarmTab(modal) {
           </div>
         </div>
 
-        <!-- Botón principal -->
-        <button id="farmBtn" class="tab-btn" style="width:100%;margin-top:6px;font-size:14px;padding:10px;${!canClaim ? 'opacity:.4;cursor:not-allowed;' : ''}" ${!canClaim ? 'disabled' : ''}>
-          ${canClaim ? '🎣 Lanzar caña!' : '⏳ Ya pescaste hoy · Vuelve mañana'}
+        <button id="farmBtn" class="tab-btn" style="width:100%;margin-top:6px;font-size:14px;padding:10px;${!canClaim?'opacity:.4;cursor:not-allowed;':''}" ${!canClaim?'disabled':''}>
+          ${canClaim ? '🎣 Lanzar caña!' : '⏳ Ya pescaste hoy'}
         </button>
         <div id="farmTimer" style="font-size:11px;opacity:.5;text-align:center;margin-top:4px;"></div>
 
-        <!-- Historial de rewards (desde backend) -->
         <div class="farm-history" id="farmHistory" style="margin-top:10px;font-size:12px;opacity:.7;">
-          ${history.length === 0 ? 'Aún no has pescado nada. ¡Lanza la caña!' : ''}
+          ${history.length === 0 ? 'Aún no has pescado nada.' : ''}
         </div>
       </div>
     `;
 
-    // Dibujar escena inicial
-    drawFarmScene(addr);
+    drawFarmScene();
 
-    // Botón de pesca
     const btn = c.querySelector('#farmBtn');
     if (btn && canClaim) {
       btn.addEventListener('click', () => {
-        // Deshabilitar inmediatamente
-        btn.disabled = true;
-        btn.style.opacity = '.4';
-        btn.textContent = '🎣 Pesca en curso...';
+        btn.disabled = true; btn.style.opacity = '.4'; btn.textContent = '🎣 Pesca en curso...';
         startFarming(addr, c, localStreak);
       });
     }
 
-    // Render historial desde backend
-    renderFarmHistoryFromServer(c, history);
+    renderFarmHistory(c, history);
 
-    // Cerrar overlay
     c.querySelector('#farmCloseResult')?.addEventListener('click', () => {
       const ov = c.querySelector('#farmOverlay');
-      if (ov) { ov.style.display = 'none'; }
-      // Refrescar stats globales (para que el hint de AURA por reclamar se actualice)
+      if (ov) ov.style.display = 'none';
       syncProfile();
     });
 
-    // Mostrar countdown si ya reclamó
-    if (!canClaim && claimedToday) {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      updateFarmCountdown(c, todayStr, addr);
-    }
+    if (!canClaim && claimedToday) updateFarmCountdown(c);
   });
-
-  // Cargar inicial con valores por defecto mientras se resuelve
-  // (no mostrar contenido vacío — el status load lo llena)
-  c.innerHTML = `<div class="pf-box farm-container"><div style="padding:20px;text-align:center;opacity:.5;">🎣 Cargando...</div></div>`;
 }
 
-function drawFarmScene(addr, st, animating) {
+/* ===== CANVAS ===== */
+function drawFarmScene() {
   const canvas = document.getElementById('farmCanvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const W = 360, H = 260;
 
-  // ============================================================
-  // CIELO (comprimido)
-  // ============================================================
-  for (let y = 0; y < 50; y++) {
-    const t = y / 50;
-    ctx.fillStyle = `rgb(${Math.floor(8+t*18)},${Math.floor(12+t*22)},${Math.floor(30+t*25)})`;
-    ctx.fillRect(0, y, W, 2);
-  }
-  for (let i = 0; i < 10; i++) {
-    ctx.fillStyle = `rgb(${190+i*6},${190+i*6},215)`;
-    ctx.fillRect((i*31+7)%W, (i*23+5)%42, 2, 2);
-  }
+  for (let y = 0; y < 50; y++) { const t = y/50; ctx.fillStyle = `rgb(${8+t*18},${12+t*22},${30+t*25})`; ctx.fillRect(0, y, W, 2); }
+  for (let i = 0; i < 10; i++) { ctx.fillStyle = `rgb(${190+i*6},${190+i*6},215)`; ctx.fillRect((i*31+7)%W, (i*23+5)%42, 2, 2); }
 
-  // ============================================================
-  // COLINA (1 capa)
-  // ============================================================
   for (let x = 0; x < W; x += 4) {
     const h = Math.sin(x*0.025)*10+10;
-    for (let dy = 0; dy < h; dy += 2) {
-      ctx.fillStyle = (Math.floor(x/4)+Math.floor(dy/2))%2===0?'#1a3a2a':'#1e4230';
-      ctx.fillRect(x, 42+dy, 4, 2);
-    }
+    for (let dy = 0; dy < h; dy += 2) { ctx.fillStyle = (Math.floor(x/4)+Math.floor(dy/2))%2===0?'#1a3a2a':'#1e4230'; ctx.fillRect(x, 42+dy, 4, 2); }
   }
 
-  // ============================================================
-  // MONTAÑA GRANDE (izquierda, 14 capas, más alta/ancha)
-  // ============================================================
-  const mountBaseX = 48, mountBaseY = 120;
-  ctx.fillStyle = 'rgba(0,0,0,0.2)';
-  ctx.fillRect(mountBaseX-18, mountBaseY+70, 56, 6);
-  ctx.fillStyle = '#2a1a0a';
-  ctx.fillRect(mountBaseX-16, mountBaseY+58, 52, 14);
-  [
-    {w:48,x:0,c:'#3a2a1a'},{w:44,x:2,c:'#4a3a2a'},{w:40,x:4,c:'#5a4a3a'},
-    {w:38,x:5,c:'#4a3a2a'},{w:34,x:7,c:'#5a4a3a'},{w:30,x:9,c:'#6a5a4a'},
-    {w:26,x:11,c:'#5a4a3a'},{w:22,x:13,c:'#6a5a4a'},{w:18,x:15,c:'#4a3a2a'},
-    {w:14,x:17,c:'#5a4a3a'},{w:12,x:18,c:'#6a5a4a'},{w:10,x:19,c:'#5a4a3a'},
-    {w:8,x:20,c:'#7a6a5a'},{w:6,x:21,c:'#6a5a4a'},
-  ].forEach((l,i)=>ctx.fillRect(mountBaseX-12+l.x,mountBaseY+i*5,l.w,5)||(ctx.fillStyle=l.c));
-  ctx.fillStyle = '#3a2a1a'; ctx.fillRect(mountBaseX+4, mountBaseY-18, 10, 18);
-  ctx.fillStyle = '#5a4a3a'; ctx.fillRect(mountBaseX+5, mountBaseY-14, 8, 12);
-  ctx.fillStyle = '#7a6a5a'; ctx.fillRect(mountBaseX+6, mountBaseY-8, 6, 6);
-  // Grietas
-  ctx.fillStyle = 'rgba(0,0,0,0.1)';
-  [[2,6,2,10],[8,14,2,8],[14,4,2,6],[20,10,2,8],[6,22,2,6],[18,28,2,5],[10,36,3,4],[4,44,2,6],[22,42,2,5]]
-    .forEach(([gx,gy,gw,gh])=>ctx.fillRect(mountBaseX+gx,mountBaseY+gy,gw,gh));
-  // Musgo base
-  ctx.fillStyle = 'rgba(30,60,30,0.3)';
-  ctx.fillRect(mountBaseX-10, mountBaseY+60, 44, 4);
-  ctx.fillRect(mountBaseX-6, mountBaseY+56, 34, 3);
+  const mx = 48, my = 120;
+  ctx.fillStyle='rgba(0,0,0,0.2)';ctx.fillRect(mx-18,my+70,56,6);
+  ctx.fillStyle='#2a1a0a';ctx.fillRect(mx-16,my+58,52,14);
+  [{w:48,x:0,c:'#3a2a1a'},{w:44,x:2,c:'#4a3a2a'},{w:40,x:4,c:'#5a4a3a'},{w:38,x:5,c:'#4a3a2a'},{w:34,x:7,c:'#5a4a3a'},{w:30,x:9,c:'#6a5a4a'},{w:26,x:11,c:'#5a4a3a'},{w:22,x:13,c:'#6a5a4a'},{w:18,x:15,c:'#4a3a2a'},{w:14,x:17,c:'#5a4a3a'},{w:12,x:18,c:'#6a5a4a'},{w:10,x:19,c:'#5a4a3a'},{w:8,x:20,c:'#7a6a5a'},{w:6,x:21,c:'#6a5a4a'}].forEach((l,i)=>ctx.fillRect(mx-12+l.x,my+i*5,l.w,5)||(ctx.fillStyle=l.c));
+  ctx.fillStyle='#3a2a1a';ctx.fillRect(mx+4,my-18,10,18);ctx.fillStyle='#5a4a3a';ctx.fillRect(mx+5,my-14,8,12);ctx.fillStyle='#7a6a5a';ctx.fillRect(mx+6,my-8,6,6);
+  ctx.fillStyle='rgba(0,0,0,0.1)';[[2,6,2,10],[8,14,2,8],[14,4,2,6],[20,10,2,8],[6,22,2,6],[18,28,2,5],[10,36,3,4],[4,44,2,6],[22,42,2,5]].forEach(([gx,gy,gw,gh])=>ctx.fillRect(mx+gx,my+gy,gw,gh));
+  ctx.fillStyle='rgba(30,60,30,0.3)';ctx.fillRect(mx-10,my+60,44,4);ctx.fillRect(mx-6,my+56,34,3);
 
-  // ============================================================
-  // ESTANQUE (derecha, más cerca)
-  // ============================================================
-  const pondCX = 170, pondCY = 168, pondRX = 98, pondRY = 38;
-  ctx.fillStyle = '#1a3a4a';
-  ctx.beginPath(); ctx.ellipse(pondCX+2, pondCY+3, pondRX+2, pondRY+2, 0, 0, Math.PI*2); ctx.fill();
-  ['#1a4a6a','#1e5070','#22587a','#266084','#2a688e'].forEach((c,i)=>{
-    const t=i/4,yoff=Math.round(-pondRY+i*(pondRY*2/5)),hw=Math.round(Math.sqrt(Math.max(0,1-(yoff/pondRY)**2))*pondRX);
-    ctx.fillStyle=c; ctx.fillRect(pondCX-hw, pondCY+yoff, hw*2, Math.ceil(pondRY*2/5)+1);
-  });
-  for(let i=0;i<5;i++){const wy=pondCY-10+i*7,w=Math.sin(Date.now()*.001+i)*3;
-    for(let wx=pondCX-75;wx<pondCX+75;wx+=4)ctx.fillRect(wx,wy+Math.sin(wx*0.08+i*1.5+w)*2,4,1);}
+  const pondX=170,pondY=168,prx=98,pry=38;
+  ctx.fillStyle='#1a3a4a';ctx.beginPath();ctx.ellipse(pondX+2,pondY+3,prx+2,pry+2,0,0,Math.PI*2);ctx.fill();
+  ['#1a4a6a','#1e5070','#22587a','#266084','#2a688e'].forEach((c,i)=>{const t=i/4,yoff=Math.round(-pry+i*(pry*2/5)),hw=Math.round(Math.sqrt(Math.max(0,1-(yoff/pry)**2))*prx);ctx.fillStyle=c;ctx.fillRect(pondX-hw,pondY+yoff,hw*2,Math.ceil(pry*2/5)+1);});
+  for(let i=0;i<5;i++){const wy=pondY-10+i*7,w=Math.sin(Date.now()*.001+i)*3;for(let wx=pondX-75;wx<pondX+75;wx+=4)ctx.fillRect(wx,wy+Math.sin(wx*0.08+i*1.5+w)*2,4,1);}
 
-  // ============================================================
-  // ORILLA (delgada)
-  // ============================================================
-  for(let y=192;y<H;y+=3)for(let x=0;x<W;x+=4){
-    const d=(Math.floor(x/4)+Math.floor(y/3))%3;
-    ctx.fillStyle=d===0?'#5a4a3a':(d===1?'#635444':'#4a3a2a');
-    ctx.fillRect(x,y,4,3);
-  }
+  for(let y=192;y<H;y+=3)for(let x=0;x<W;x+=4){const d=(Math.floor(x/4)+Math.floor(y/3))%3;ctx.fillStyle=d===0?'#5a4a3a':(d===1?'#635444':'#4a3a2a');ctx.fillRect(x,y,4,3);}
   for(let i=0;i<20;i++){ctx.fillStyle=i%2===0?'#3a6a3a':'#2a5a2a';ctx.fillRect((i*19+5)%W,191,3,3);}
 
-  // ============================================================
-  // ÁRBOLES (2 simplificados)
-  // ============================================================
-  [[310,200],[340,206]].forEach(([tx,ty])=>{
-    ctx.fillStyle='#5a3a1a';ctx.fillRect(tx-1,ty-14,3,18);
-    ctx.fillStyle='#1a4a1a';ctx.fillRect(tx-8,ty-22,16,10);ctx.fillRect(tx-5,ty-26,10,8);
-    ctx.fillStyle='#2a6a2a';ctx.fillRect(tx-6,ty-20,12,6);ctx.fillRect(tx-3,ty-24,6,4);
-  });
+  [[310,200],[340,206]].forEach(([tx,ty])=>{ctx.fillStyle='#5a3a1a';ctx.fillRect(tx-1,ty-14,3,18);ctx.fillStyle='#1a4a1a';ctx.fillRect(tx-8,ty-22,16,10);ctx.fillRect(tx-5,ty-26,10,8);ctx.fillStyle='#2a6a2a';ctx.fillRect(tx-6,ty-20,12,6);ctx.fillRect(tx-3,ty-24,6,4);});
 
-  // ============================================================
-  // AVATAR PESCADOR (túnica azul, de perfil, caña en mano)
-  // ============================================================
-  const px = mountBaseX+6, py = mountBaseY-14;
+  const px=mx+6,py=my-14;
   ctx.fillStyle='rgba(0,0,0,0.3)';ctx.fillRect(px-4,py+18,14,4);
-  // Brazo atrás
   ctx.fillStyle='#3a5a8a';ctx.fillRect(px-1,py-2,4,8);ctx.fillStyle='#d4a56a';ctx.fillRect(px-2,py+4,3,4);
-  // Túnica
   ['#2a4a7a','#3a5a8a','#3a5a8a','#4a6a9a','#3a5a8a','#2a4a7a'].forEach((c,i)=>{ctx.fillStyle=c;ctx.fillRect(px-2,py-4+i*3,8,3);});
-  // Cinturón
   ctx.fillStyle='#6a4a2a';ctx.fillRect(px-2,py+8,8,2);ctx.fillStyle='#c47a2a';ctx.fillRect(px+4,py+8,2,2);
-  // Piernas
   ctx.fillStyle='#1a2a4a';ctx.fillRect(px-2,py+14,4,8);ctx.fillRect(px+3,py+14,4,8);
   ctx.fillStyle='#3a2a1a';ctx.fillRect(px-2,py+20,4,3);ctx.fillRect(px+3,py+20,4,3);
-  // Cabeza
-  ctx.fillStyle='#d4a56a';ctx.fillRect(px,py-12,7,10);
-  ctx.fillStyle='#c89a5e';ctx.fillRect(px+7,py-8,3,3);ctx.fillRect(px+9,py-7,2,1);
-  ctx.fillStyle='#fff';ctx.fillRect(px+3,py-9,3,2);ctx.fillStyle='#222';ctx.fillRect(px+5,py-8,1,1);
-  ctx.fillStyle='#d4a56a';ctx.fillRect(px-2,py-9,2,3);
-  // Pelo
+  ctx.fillStyle='#d4a56a';ctx.fillRect(px,py-12,7,10);ctx.fillStyle='#c89a5e';ctx.fillRect(px+7,py-8,3,3);ctx.fillRect(px+9,py-7,2,1);
+  ctx.fillStyle='#fff';ctx.fillRect(px+3,py-9,3,2);ctx.fillStyle='#222';ctx.fillRect(px+5,py-8,1,1);ctx.fillStyle='#d4a56a';ctx.fillRect(px-2,py-9,2,3);
   ['#7a4a1a','#8a5a2a','#9a6a3a'].forEach((c,i)=>{ctx.fillStyle=c;ctx.fillRect(px-1+i,py-16,2,5);});
   ctx.fillStyle='#6a3a0a';ctx.fillRect(px-3,py-17,3,3);ctx.fillRect(px-4,py-18,2,2);
-  // Capa
   ctx.fillStyle='rgba(42,74,122,0.35)';ctx.fillRect(px-6,py,6,14);ctx.fillRect(px-8,py+6,4,8);
 
-  // NOTA: la caña solo se dibuja durante la animación (animateCast/animateReelIn)
-  // para evitar rastros visuales. En estado estático no se muestra nada.
-
-  // ============================================================
-  // CARTEL
-  // ============================================================
   ctx.fillStyle='rgba(0,0,0,0.65)';ctx.fillRect(4,4,W-8,20);
   ctx.fillStyle='#ffe0a0';ctx.font='bold 9px monospace';ctx.fillText('⛏️  RECLAMO DIARIO — FARMEANDO AURA',14,16);
   ctx.fillStyle='rgba(255,224,160,0.3)';ctx.fillRect(10,21,120,1);ctx.fillRect(W-130,21,120,1);
 }
 
-function drawFishingRod(ctx, cx, cy, angle) {
-  // cx, cy = centro del personaje (px, py de drawFarmScene)
-  // Dibuja la caña saliendo desde la mano derecha del pescador
-  ctx.save();
-  ctx.translate(cx + 12, cy - 4);
-  ctx.rotate(angle);
-  // Mango (madera oscura)
-  ctx.strokeStyle = '#6a4a2a';
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(20, -18);
-  ctx.stroke();
-  // Veta clara
-  ctx.strokeStyle = '#8a6a3a';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(2, -1);
-  ctx.lineTo(18, -16);
-  ctx.stroke();
-  // Punta delgada
-  ctx.strokeStyle = '#5a3a1a';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(20, -18);
-  ctx.lineTo(28, -24);
-  ctx.stroke();
-  // Anilla
-  ctx.fillStyle = '#aaa';
-  ctx.fillRect(27, -25, 3, 3);
-  ctx.restore();
-}
-
-function drawChest(ctx, cx, cy, size) {
-  const s = size || 24;
-  const hs = s / 2;
-  const qs = s * 0.3;
-
-  // Sombra
-  ctx.fillStyle = 'rgba(0,0,0,0.25)';
-  ctx.fillRect(cx - hs - 1, cy + qs + 1, s + 2, 5);
-
-  // Base del cofre (madera texturizada)
-  const woodColors = ['#6a3a1a', '#7a4a2a', '#6a3a1a', '#8a5a3a', '#6a3a1a'];
-  for (let i = 0; i < 5; i++) {
-    ctx.fillStyle = woodColors[i];
-    ctx.fillRect(cx - hs, cy - qs + i * Math.ceil(s * 0.12), s, Math.ceil(s * 0.12) + 1);
-  }
-
-  // Tapa del cofre
-  const lidColors = ['#8a5a3a', '#9a6a4a', '#8a5a3a', '#a07a5a'];
-  for (let i = 0; i < 4; i++) {
-    ctx.fillStyle = lidColors[i];
-    ctx.fillRect(cx - hs - 1, cy - qs - 5 + i * 3, s + 2, 3);
-  }
-  // Borde dorado de la tapa
-  ctx.fillStyle = '#c49840';
-  ctx.fillRect(cx - hs - 1, cy - qs - 6, s + 2, 2);
-  ctx.fillRect(cx - hs - 1, cy - qs + 5, s + 2, 2);
-
-  // Cerradura (2x4 con brillo)
-  ctx.fillStyle = '#333';
-  ctx.fillRect(cx - 2, cy - 2, 4, 5);
-  ctx.fillStyle = '#ffd700';
-  ctx.fillRect(cx - 1, cy - 1, 2, 3);
-  ctx.fillStyle = '#fff8dc';
-  ctx.fillRect(cx - 1, cy - 1, 1, 1);
-
-  // Remaches dorados
-  const rivetPositions = [
-    [cx - hs + 3, cy - qs + 2],
-    [cx + hs - 4, cy - qs + 2],
-    [cx - hs + 3, cy + qs - 2],
-    [cx + hs - 4, cy + qs - 2],
-  ];
-  rivetPositions.forEach(([rx, ry]) => {
-    ctx.fillStyle = '#c49840';
-    ctx.fillRect(rx, ry, 3, 3);
-    ctx.fillStyle = '#ffd700';
-    ctx.fillRect(rx, ry, 2, 2);
-    ctx.fillStyle = '#fff8dc';
-    ctx.fillRect(rx, ry, 1, 1);
-  });
-
-  // Brillo en la tapa
-  ctx.fillStyle = 'rgba(255,220,160,0.2)';
-  ctx.fillRect(cx - hs + 4, cy - qs - 3, s - 8, 3);
-}
-
-function lerp(a, b, t) { return a + (b - a) * t; }
-
+/* ===== ANIMACIÓN ===== */
 function startFarming(addr, container, currentStreak) {
   const canvas = document.getElementById('farmCanvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const btn = container.querySelector('#farmBtn');
-  if (btn) { btn.disabled = true; btn.style.opacity = '.4'; btn.textContent = '🎣 Pesca en curso...'; }
-
-  const mountBaseX = 48, mountBaseY = 120;
-  const px = mountBaseX+6, py = mountBaseY-14;
-  const pondCX = 170, pondCY = 168;
-  const pondX = pondCX - 30, pondY = pondCY - 8;
-
-  // Fase 1: lanzar caña al estanque
+  const mx=48,my=120,px=mx+6,py=my-14,pondX=170-30,pondY=168-8;
   let frame = 0;
   const totalFrames = 30;
 
-  function animateCast() {
-    const progress = frame / totalFrames;
-    const angle = -0.4 + Math.sin(progress * Math.PI) * 0.5;
-
-    drawFarmScene(addr, null, true);
-    // Caña animada
-    drawFishingRod(ctx, px, py, angle);
-
-    // Línea desde la punta de la caña hasta el estanque
-    const lineExtend = Math.min(progress * 1.2, 1);
-    const tipX = px + 12 + Math.cos(-angle) * 28;
-    const tipY = py - 4 + Math.sin(-angle) * 24;
-    const endX = tipX + (pondX - tipX) * lineExtend;
-    const endY = tipY + (pondY - tipY) * lineExtend;
-
-    ctx.strokeStyle = 'rgba(200,200,200,0.4)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(tipX, tipY);
-    ctx.quadraticCurveTo(
-      tipX + (pondX - tipX) * 0.5 + 10,
-      tipY + (pondY - tipY) * 0.4,
-      endX, endY
-    );
-    ctx.stroke();
-
-    // Boya roja
-    const bounce = Math.sin(progress * 6) * 2;
-    ctx.fillStyle = '#ff4444';
-    ctx.beginPath();
-    ctx.arc(endX, endY + bounce, 3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ff8888';
-    ctx.beginPath();
-    ctx.arc(endX - 1, endY - 1 + bounce, 1.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    frame++;
-    if (frame <= totalFrames) {
-      requestAnimationFrame(animateCast);
-    } else {
-      setTimeout(() => animateReelIn(addr, container, ctx, currentStreak), 800);
-    }
+  function drawRod(angle) {
+    ctx.save();ctx.translate(px+12, py-4);ctx.rotate(angle);
+    ctx.strokeStyle='#6a4a2a';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(20,-18);ctx.stroke();
+    ctx.strokeStyle='#8a6a3a';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(2,-1);ctx.lineTo(18,-16);ctx.stroke();
+    ctx.strokeStyle='#5a3a1a';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(20,-18);ctx.lineTo(28,-24);ctx.stroke();
+    ctx.fillStyle='#aaa';ctx.fillRect(27,-25,3,3);ctx.restore();
   }
 
-  // Fase 2: recoger línea — cofre emerge del agua
-  function animateReelIn(addr, container, ctx, currentStreak) {
-    let frame2 = 0;
-    const totalFrames2 = 30;
-    const reward = getRandomFarmReward(currentStreak);
+  function lineToPond(angle, extend) {
+    const tipX=px+12+Math.cos(-angle)*28, tipY=py-4+Math.sin(-angle)*24;
+    const endX=tipX+(pondX-tipX)*extend, endY=tipY+(pondY-tipY)*extend;
+    ctx.strokeStyle='rgba(200,200,200,0.4)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(tipX,tipY);ctx.quadraticCurveTo(tipX+(pondX-tipX)*0.5+10,tipY+(pondY-tipY)*0.4,endX,endY);ctx.stroke();
+    ctx.fillStyle='#ff4444';ctx.beginPath();ctx.arc(endX,endY+Math.sin(frame*0.5)*2,3,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ff8888';ctx.beginPath();ctx.arc(endX-1,endY-1+Math.sin(frame*0.5)*2,1.5,0,Math.PI*2);ctx.fill();
+  }
 
-    function reelStep() {
-      const p = frame2 / totalFrames2;
+  function animateCast() {
+    const p = frame/totalFrames, angle = -0.4+Math.sin(p*Math.PI)*0.5;
+    drawFarmScene(); drawRod(angle); lineToPond(angle, Math.min(p*1.2,1));
+    frame++; if(frame<=totalFrames) requestAnimationFrame(animateCast); else setTimeout(()=>animateReelIn(), 800);
+  }
 
-      drawFarmScene(addr, null, true);
-      drawFishingRod(ctx, px, py, -0.2 + p * 0.15);
-
-      // Línea recogiéndose (vuelve hacia la caña)
-      const invP = 1 - p;
-      const tipX = px + 12 + Math.cos(0.2) * 28;
-      const tipY = py - 4 + Math.sin(0.2) * 24;
-      const curX = tipX + (pondX - tipX) * invP;
-      const curY = tipY + (pondY - tipY) * invP;
-
-      ctx.strokeStyle = 'rgba(200,200,200,0.4)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(tipX, tipY);
-      ctx.quadraticCurveTo(
-        tipX + (pondX - tipX) * 0.5 * invP + 10,
-        tipY + (pondY - tipY) * 0.4 * invP,
-        curX, curY
-      );
-      ctx.stroke();
-
-      // Cofre pixel art emergiendo del agua (desde pondX, pondY hacia arriba)
-      const chestX = pondX + Math.sin(p * 6) * 3;
-      const chestY = pondY + 12 - p * 28;
-
-      // Salpicaduras
-      ctx.fillStyle = 'rgba(100,200,240,0.3)';
-      for (let i = 0; i < 6; i++) {
-        const sx = chestX + (i - 2.5) * 6 + Math.sin(p * 8 + i * 1.3) * 5;
-        const sy = chestY + 10 + Math.random() * 8;
-        ctx.fillRect(sx - 2, sy - 2, 4, 4);
-      }
-
-      if (p > 0.35) {
-        const chestSize = Math.floor(18 + p * 8);
-        drawChest(ctx, chestX, chestY, chestSize);
-      }
-
-      frame2++;
-      if (frame2 <= totalFrames2) {
-        requestAnimationFrame(reelStep);
-      } else {
-        showFarmResult(addr, container, reward, ctx, currentStreak);
-      }
+  function animateReelIn() {
+    let f2=0; const total2=30, reward=getRandomFarmReward(currentStreak);
+    function step() {
+      const p=f2/total2, invP=1-p, angle=-0.2+p*0.15;
+      drawFarmScene(); drawRod(angle);
+      const tipX=px+12+Math.cos(0.2)*28, tipY=py-4+Math.sin(0.2)*24;
+      const curX=tipX+(pondX-tipX)*invP, curY=tipY+(pondY-tipY)*invP;
+      ctx.strokeStyle='rgba(200,200,200,0.4)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(tipX,tipY);ctx.quadraticCurveTo(tipX+(pondX-tipX)*0.5*invP+10,tipY+(pondY-tipY)*0.4*invP,curX,curY);ctx.stroke();
+      const chestX=pondX+Math.sin(p*6)*3, chestY=pondY+12-p*28;
+      ctx.fillStyle='rgba(100,200,240,0.3)';
+      for(let i=0;i<6;i++)ctx.fillRect(chestX+(i-2.5)*6+Math.sin(p*8+i*1.3)*5-2,chestY+10+Math.random()*8-2,4,4);
+      if(p>0.35) drawChest(ctx, chestX, chestY, Math.floor(18+p*8));
+      f2++; if(f2<=total2) requestAnimationFrame(step); else showFarmResult(addr, container, reward, ctx, currentStreak);
     }
-    reelStep();
+    step();
   }
 
   animateCast();
 }
 
 function getRandomFarmReward(streak) {
-  // Dificultad: mientras más racha, más difícil el reward alto
-  streak = streak || 0;
-  const roll = Math.random();
-
-  // Base: ~40% chance de 0.1, ~30% de 0.5, ~20% de 1, ~8% de 5, ~2% de 10, ~0.5% de 50, ~0.1% de 100
-  // Con racha, los valores bajos se vuelven menos probables
-  const difficulty = Math.min(streak * 0.05, 0.5); // max 50% reduction
-
+  streak=streak||0; const roll=Math.random(), diff=Math.min(streak*0.05,0.5);
   let reward;
-  if (roll < 0.35 - difficulty * 0.2) reward = 0.1;
-  else if (roll < 0.60 - difficulty * 0.15) reward = 0.5;
-  else if (roll < 0.78 - difficulty * 0.1) reward = 1;
-  else if (roll < 0.90 - difficulty * 0.05) reward = 5;
-  else if (roll < 0.97) reward = 10;
-  else if (roll < 0.995) reward = 50;
-  else reward = 100;
-
-  // Bonus de racha: multiplicador 1x-3x según racha
-  const streakMultiplier = 1 + Math.floor(streak / 7) * 0.5;
-  reward = Math.round(reward * streakMultiplier * 10) / 10;
-
-  return Math.min(reward, 100);
+  if(roll<0.35-diff*0.2) reward=0.1; else if(roll<0.60-diff*0.15) reward=0.5;
+  else if(roll<0.78-diff*0.1) reward=1; else if(roll<0.90-diff*0.05) reward=5;
+  else if(roll<0.97) reward=10; else if(roll<0.995) reward=50; else reward=100;
+  return Math.min(Math.round(reward*(1+Math.floor(streak/7)*0.5)*10)/10,100);
 }
 
+function drawChest(ctx, cx, cy, size) {
+  const s=size||24, hs=s>>1, qs=Math.floor(s*0.3);
+  ctx.fillStyle='rgba(0,0,0,0.25)';ctx.fillRect(cx-hs-1,cy+qs+1,s+2,5);
+  ['#6a3a1a','#7a4a2a','#6a3a1a','#8a5a3a','#6a3a1a'].forEach((c,i)=>{ctx.fillStyle=c;ctx.fillRect(cx-hs,cy-qs+i*Math.ceil(s*0.12),s,Math.ceil(s*0.12)+1);});
+  ['#8a5a3a','#9a6a4a','#8a5a3a','#a07a5a'].forEach((c,i)=>{ctx.fillStyle=c;ctx.fillRect(cx-hs-1,cy-qs-5+i*3,s+2,3);});
+  ctx.fillStyle='#c49840';ctx.fillRect(cx-hs-1,cy-qs-6,s+2,2);ctx.fillRect(cx-hs-1,cy-qs+5,s+2,2);
+  ctx.fillStyle='#333';ctx.fillRect(cx-2,cy-2,4,5);ctx.fillStyle='#ffd700';ctx.fillRect(cx-1,cy-1,2,3);ctx.fillStyle='#fff8dc';ctx.fillRect(cx-1,cy-1,1,1);
+  [[cx-hs+3,cy-qs+2],[cx+hs-4,cy-qs+2],[cx-hs+3,cy+qs-2],[cx+hs-4,cy+qs-2]].forEach(([rx,ry])=>{ctx.fillStyle='#c49840';ctx.fillRect(rx,ry,3,3);ctx.fillStyle='#ffd700';ctx.fillRect(rx,ry,2,2);ctx.fillStyle='#fff8dc';ctx.fillRect(rx,ry,1,1);});
+  ctx.fillStyle='rgba(255,220,160,0.2)';ctx.fillRect(cx-hs+4,cy-qs-3,s-8,3);
+}
+
+/* ===== RESULTADO ===== */
 function showFarmResult(addr, container, reward, ctx, currentStreak) {
-  const newStreak = (currentStreak || 0) + 1;
+  const newStreak=(currentStreak||0)+1, mx=48,my=120,px=mx+6,py=my-14,cx=px+22,cy=py+6;
 
-  // Dibujar escena final con cofre abierto
-  drawFarmScene(addr, null, false);
-  // Cofre abierto al lado del personaje (mismas coordenadas que drawFarmScene)
-  const mountBaseX = 48, mountBaseY = 120;
-  const px = mountBaseX+6, py = mountBaseY-14;
-  const cx = px + 22, cy = py + 6;
-  // Sombra
-  ctx.fillStyle = 'rgba(0,0,0,0.2)';
-  ctx.fillRect(cx - 12, cy + 8, 24, 5);
-  // Base (caja abierta)
-  const woodOpen = ['#6a3a1a','#7a4a2a','#6a3a1a','#8a5a3a','#7a4a2a'];
-  for (let i = 0; i < 5; i++) {
-    ctx.fillStyle = woodOpen[i];
-    ctx.fillRect(cx - 10, cy + i * 3, 20, 3);
-  }
-  // Tapa levantada (detrás)
-  ctx.fillStyle = '#8a5a3a';
-  ctx.fillRect(cx - 11, cy - 10, 22, 4);
-  ctx.fillStyle = '#9a6a4a';
-  ctx.fillRect(cx - 10, cy - 9, 20, 2);
-  // Bisagra
-  ctx.fillStyle = '#666';
-  ctx.fillRect(cx - 4, cy - 10, 3, 3);
-  ctx.fillRect(cx + 1, cy - 10, 3, 3);
-  // Tesoro dentro del cofre (monedas y brillos)
-  ctx.fillStyle = '#ffd700';
-  ctx.fillRect(cx - 6, cy + 2, 5, 3);
-  ctx.fillRect(cx + 2, cy + 3, 4, 2);
-  ctx.fillRect(cx - 2, cy + 1, 3, 4);
-  ctx.fillStyle = '#ffec80';
-  ctx.fillRect(cx - 5, cy + 3, 2, 1);
-  ctx.fillRect(cx + 3, cy + 4, 2, 1);
-  // Sparkles alrededor (más brillantes y variados)
-  for (let i = 0; i < 10; i++) {
-    const sx = cx - 10 + Math.random() * 22;
-    const sy = cy - 12 - Math.random() * 12;
-    const sparkSize = Math.random() > 0.5 ? 2 : 1;
-    ctx.fillStyle = ['#ffd700','#fff','#ffec80','#ff8800'][i % 4];
-    ctx.fillRect(sx, sy, sparkSize, sparkSize);
-  }
+  drawFarmScene();
+  ctx.fillStyle='rgba(0,0,0,0.2)';ctx.fillRect(cx-12,cy+8,24,5);
+  ['#6a3a1a','#7a4a2a','#6a3a1a','#8a5a3a','#7a4a2a'].forEach((c,i)=>{ctx.fillStyle=c;ctx.fillRect(cx-10,cy+i*3,20,3);});
+  ctx.fillStyle='#8a5a3a';ctx.fillRect(cx-11,cy-10,22,4);ctx.fillStyle='#9a6a4a';ctx.fillRect(cx-10,cy-9,20,2);
+  ctx.fillStyle='#666';ctx.fillRect(cx-4,cy-10,3,3);ctx.fillRect(cx+1,cy-10,3,3);
+  ctx.fillStyle='#ffd700';ctx.fillRect(cx-6,cy+2,5,3);ctx.fillRect(cx+2,cy+3,4,2);ctx.fillRect(cx-2,cy+1,3,4);
+  ctx.fillStyle='#ffec80';ctx.fillRect(cx-5,cy+3,2,1);ctx.fillRect(cx+3,cy+4,2,1);
+  for(let i=0;i<10;i++){ctx.fillStyle=['#ffd700','#fff','#ffec80','#ff8800'][i%4];ctx.fillRect(cx-10+Math.random()*22,cy-12-Math.random()*12,Math.random()>.5?2:1,Math.random()>.5?2:1);}
 
-  // Mostrar overlay
-  const overlay = container.querySelector('#farmOverlay');
-  const icon = container.querySelector('#farmResultIcon');
-  const title = container.querySelector('#farmResultTitle');
-  const sub = container.querySelector('#farmResultSub');
-  const btn = container.querySelector('#farmBtn');
+  const overlay=container.querySelector('#farmOverlay'), icon=container.querySelector('#farmResultIcon'), title=container.querySelector('#farmResultTitle'), sub=container.querySelector('#farmResultSub'), btn=container.querySelector('#farmBtn'), d=reward<1?reward.toFixed(1):reward;
+  if(overlay&&title&&sub&&icon) overlay.style.display='flex';
 
-  // Enviar claim al backend — esperamos confirmación
+  if(reward>=100){icon.textContent='👑';title.textContent=`👑 ¡${d} AURA — JACKPOT!`;sub.textContent='¡Cofre legendario!';}
+  else if(reward>=50){icon.textContent='💎';title.textContent=`💎 ¡${d} AURA — Legendario!`;sub.textContent='¡Tesoro increíble!';}
+  else if(reward>=10){icon.textContent='🌟';title.textContent=`🌟 ¡${d} AURA — Cofre valioso!`;sub.textContent='Brillo especial en el cofre.';}
+  else if(reward>=5){icon.textContent='🎁';title.textContent=`🎁 ¡${d} AURA!`;sub.textContent='Buena pesca.';}
+  else if(reward>=1){icon.textContent='📦';title.textContent=`📦 ¡${d} AURA!`;sub.textContent='Cofre modesto pero bienvenido.';}
+  else{icon.textContent='🪙';title.textContent=`🪙 ¡${d} AURA!`;sub.textContent='Pequeñito pero es AURA.';}
+
   submitFarmClaim(reward, newStreak).then(resp => {
-    if (resp?.ok) {
-      // Refrescar stats globales (🔵 AURA por reclamar se actualiza)
-      setTimeout(() => syncProfile(), 300);
-      if (btn) {
-        btn.disabled = true;
-        btn.style.opacity = '.4';
-        btn.textContent = '⏳ Vuelve mañana';
-      }
+    if(resp?.ok){
+      setTimeout(()=>syncProfile(),300);
+      if(btn){btn.disabled=true;btn.style.opacity='.4';btn.textContent='⏳ Vuelve mañana';}
+      const se=container.querySelector('#farmStreak');if(se)se.textContent=`Racha: ${newStreak} día${newStreak!==1?'s':''}`;
+      updateFarmCountdown(container);
     } else {
-      // Error del servidor — mostrar en overlay y re-habilitar botón
-      if (title) title.textContent = '❌ Error al registrar';
-      if (sub) sub.textContent = resp?.error || 'No se pudo guardar. Intenta de nuevo.';
-      if (btn) {
-        btn.disabled = false;
-        btn.style.opacity = '1';
-        btn.textContent = '🎣 Intentar de nuevo';
-      }
+      if(title)title.textContent='❌ Error en servidor';
+      if(sub)sub.textContent=resp?.error||'Intenta de nuevo.';
+      if(btn){btn.disabled=false;btn.style.opacity='1';btn.textContent='🎣 Reintentar';}
     }
-  }).catch(() => {
-    if (title) title.textContent = '❌ Error de conexión';
-    if (sub) sub.textContent = 'Revisa tu conexión e intenta de nuevo.';
-    if (btn) {
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      btn.textContent = '🎣 Intentar de nuevo';
-    }
+  }).catch(()=>{
+    if(title)title.textContent='❌ Error de conexión';
+    if(sub)sub.textContent='Revisa tu conexión.';
+    if(btn){btn.disabled=false;btn.style.opacity='1';btn.textContent='🎣 Reintentar';}
   });
-
-  if (overlay && title && sub && icon) {
-    overlay.style.display = 'flex';
-    const auraDisplay = reward < 1 ? reward.toFixed(1) : reward;
-    if (reward >= 100) {
-      icon.textContent = '👑';
-      title.textContent = `👑 ¡${auraDisplay} AURA — JACKPOT MÍTICO!`;
-      sub.textContent = '¡El cofre legendario contenía una fortuna!';
-    } else if (reward >= 50) {
-      icon.textContent = '💎';
-      title.textContent = `💎 ¡${auraDisplay} AURA — Premio legendario!`;
-      sub.textContent = '¡El cofre contenía un tesoro increíble!';
-    } else if (reward >= 10) {
-      icon.textContent = '🌟';
-      title.textContent = `🌟 ¡${auraDisplay} AURA — Cofre valioso!`;
-      sub.textContent = 'Un cofre muy valioso emergió del estanque.';
-    } else if (reward >= 5) {
-      icon.textContent = '🎁';
-      title.textContent = `🎁 ¡${auraDisplay} AURA — Buena pesca!`;
-      sub.textContent = 'El cofre tenía un brillo especial.';
-    } else if (reward >= 1) {
-      icon.textContent = '📦';
-      title.textContent = `📦 ¡${auraDisplay} AURA`;
-      sub.textContent = 'Un cofre modesto pero bienvenido.';
-    } else {
-      icon.textContent = '🪙';
-      title.textContent = `🪙 ¡${auraDisplay} AURA`;
-      sub.textContent = 'Un cofre pequeñito pero es AURA.';
-    }
-  }
-
-  // Actualizar racha
-  const streakEl = container.querySelector('#farmStreak');
-  if (streakEl) {
-    streakEl.textContent = `Racha: ${newStreak} día${newStreak !== 1 ? 's' : ''}`;
-  }
-
-  // Iniciar countdown
-  updateFarmCountdown(container, addr);
 }
 
-function updateFarmCountdown(container, addr) {
-  const timer = container.querySelector('#farmTimer');
-  if (!timer) return;
-
-  function tick() {
-    const now = new Date();
-    const nextMidnight = new Date(now);
-    nextMidnight.setDate(nextMidnight.getDate() + 1);
-    nextMidnight.setHours(0, 0, 0, 0);
-    const diff = nextMidnight.getTime() - now.getTime();
-
-    if (diff <= 0) {
-      timer.textContent = '🎣 ¡Ya puedes pescar de nuevo!';
-      const btn = container.querySelector('#farmBtn');
-      if (btn) {
-        btn.disabled = false;
-        btn.style.opacity = '1';
-        btn.textContent = '🎣 Lanzar caña!';
-      }
-      return;
-    }
-
-    const h = Math.floor(diff / 3600000);
-    const m = Math.floor((diff % 3600000) / 60000);
-    const s = Math.floor((diff % 60000) / 1000);
-    timer.textContent = `⏳ Siguiente reclamo en ${h}h ${m}m ${s}s`;
-    setTimeout(tick, 1000);
-  }
+/* ===== COUNTDOWN ===== */
+function updateFarmCountdown(container) {
+  const timer=container.querySelector('#farmTimer'); if(!timer) return;
+  function tick(){const n=new Date(),m=new Date(n);m.setDate(m.getDate()+1);m.setHours(0,0,0,0);const d=m.getTime()-n.getTime();if(d<=0){timer.textContent='🎣 ¡Ya puedes pescar!';return;}timer.textContent=`⏳ ${Math.floor(d/3600000)}h ${Math.floor((d%3600000)/60000)}m ${Math.floor((d%60000)/1000)}s`;setTimeout(tick,1000);}
   tick();
 }
 
-function renderFarmHistoryFromServer(container, history) {
-  const hist = container?.querySelector('#farmHistory');
-  if (!hist) return;
-  if (!history || history.length === 0) {
-    hist.textContent = 'Aún no has pescado nada. ¡Lanza la caña!';
-    return;
-  }
-  const items = history.slice(0, 10).map(h => {
-    const d = new Date(h.date + 'T00:00:00');
-    let icon = '🪙';
-    if (h.amount >= 100) icon = '👑';
-    else if (h.amount >= 50) icon = '💎';
-    else if (h.amount >= 10) icon = '🌟';
-    else if (h.amount >= 5) icon = '🎁';
-    else if (h.amount >= 1) icon = '📦';
+/* ===== HISTORIAL ===== */
+function renderFarmHistory(container, history) {
+  const el=container.querySelector('#farmHistory'); if(!el) return;
+  if(!history||!history.length){el.textContent='Aún no has pescado nada.';return;}
+  el.innerHTML='<div style="display:flex;flex-wrap:wrap;">Últimas capturas: '+history.slice(0,10).map(h=>{
+    const d=new Date(h.date+'T00:00:00'); let icon='🪙';
+    if(h.amount>=100)icon='👑';else if(h.amount>=50)icon='💎';else if(h.amount>=10)icon='🌟';else if(h.amount>=5)icon='🎁';else if(h.amount>=1)icon='📦';
     return `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;white-space:nowrap;">${icon} ${d.getDate()}/${d.getMonth()+1}: <strong>${h.amount} AURA</strong></span>`;
-  }).join('');
-  hist.innerHTML = `<div style="display:flex;flex-wrap:wrap;">Últimas capturas: ${items}</div>`;
+  }).join('')+'</div>';
 }
