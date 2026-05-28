@@ -132,7 +132,7 @@ function drawTradingChart(pairKey, tfKey) {
 
   // Grid — light-aware
   const light = isLightMode();
-  ctx.strokeStyle = light ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.06)';
+  ctx.strokeStyle = light ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.10)';
   ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
     const y = padT + (plotH * i / 4);
@@ -173,7 +173,7 @@ function drawTradingChart(pairKey, tfKey) {
   ctx.stroke();
 
   // Y-axis labels — light-aware
-  ctx.fillStyle = light ? 'rgba(0,0,0,.55)' : 'rgba(255,255,255,.45)';
+  ctx.fillStyle = light ? 'rgba(0,0,0,.55)' : 'rgba(255,255,255,.65)';
   ctx.font = '700 10px Inter, system-ui, sans-serif';
   for (let i = 0; i <= 4; i++) {
     const y = padT + (plotH * i / 4);
