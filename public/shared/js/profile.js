@@ -1424,133 +1424,410 @@ function drawFarmScene(addr, st, animating) {
   const ctx = canvas.getContext('2d');
   const W = 360, H = 320;
 
-  // Clear
+  // ============================================================
+  // CIELO GRADIENTE (degradado pixel art con dithering manual)
+  // ============================================================
+  for (let y = 0; y < 80; y++) {
+    const t = y / 80;
+    const r = Math.floor(10 + t * 20);
+    const g = Math.floor(15 + t * 25);
+    const b = Math.floor(40 + t * 30);
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.fillRect(0, y, W, 2);
+  }
+
+  // --- Estrellas titilantes ---
+  const starSeed = [3,7,13,19,27,33,41,47,53,61,67,73,79,83,97,101,107,113,127,131];
+  for (let i = 0; i < starSeed.length; i++) {
+    const sx = (starSeed[i] * 11 + 5) % W;
+    const sy = (starSeed[i] * 7 + 3) % 70;
+    const bright = 180 + (starSeed[i] % 6) * 12;
+    ctx.fillStyle = `rgb(${bright},${bright},${Math.min(255,bright+20)})`;
+    ctx.fillRect(sx, sy, 2, 2);
+    // Brillo alrededor (estrella más grande intermitente)
+    if (i % 3 === 0) {
+      ctx.fillStyle = `rgba(255,255,220,0.15)`;
+      ctx.fillRect(sx - 1, sy - 1, 4, 4);
+    }
+  }
+  // Luna pixel art (esquina superior derecha)
+  const moonX = 300, moonY = 18;
+  ctx.fillStyle = '#e8e0c8';
+  ctx.fillRect(moonX - 6, moonY - 5, 12, 10);
+  ctx.fillRect(moonX - 4, moonY - 7, 8, 14);
+  ctx.fillRect(moonX - 2, moonY - 8, 4, 16);
+  // Sombra de luna (creciente)
   ctx.fillStyle = '#1a2332';
-  ctx.fillRect(0, 0, W, H);
+  ctx.fillRect(moonX + 2, moonY - 6, 4, 12);
+  ctx.fillRect(moonX + 4, moonY - 4, 2, 8);
+  // Brillo luna
+  ctx.fillStyle = 'rgba(255,255,220,0.12)';
+  ctx.fillRect(moonX - 8, moonY - 10, 18, 20);
 
-  // --- Cielo con estrellitas pixel ---
-  ctx.fillStyle = '#2a3a5a';
-  for (let i = 0; i < 20; i++) {
-    const x = (i * 37 + 13) % W, y = (i * 53 + 7) % 80;
-    ctx.fillRect(x, y, 2, 2);
+  // ============================================================
+  // COLINAS DE FONDO (3 capas con dithering)
+  // ============================================================
+  function drawHills(yStart, color1, color2, amp, freq) {
+    for (let x = 0; x < W; x += 4) {
+      const h = Math.sin(x * freq) * amp + amp;
+      for (let dy = 0; dy < h && yStart + dy < 235; dy += 2) {
+        const dither = (Math.floor(x / 4) + Math.floor(dy / 2)) % 2;
+        ctx.fillStyle = dither === 0 ? color1 : color2;
+        ctx.fillRect(x, yStart + dy, 4, 2);
+      }
+    }
   }
+  drawHills(65, '#1a3a2a', '#1e4230', 15, 0.025);
+  drawHills(75, '#1e4230', '#224e38', 20, 0.018);
+  drawHills(88, '#2a5a42', '#306a4e', 10, 0.035);
 
-  // --- Agua / estanque ( oval pixelado ) ---
+  // ============================================================
+  // AGUA / ESTANQUE (con textura pixel y reflejos)
+  // ============================================================
   const pondCX = 140, pondCY = 210, pondRX = 90, pondRY = 40;
-  ctx.fillStyle = '#2d6b8a';
+
+  // Sombra del estanque
+  ctx.fillStyle = '#1a3a4a';
   ctx.beginPath();
-  ctx.ellipse(pondCX, pondCY, pondRX, pondRY, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#3a8ab5';
-  ctx.beginPath();
-  ctx.ellipse(pondCX, pondCY - 4, pondRX - 8, pondRY - 6, 0, 0, Math.PI * 2);
+  ctx.ellipse(pondCX + 2, pondCY + 3, pondRX + 2, pondRY + 2, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Onditas pixel en el agua
-  ctx.fillStyle = 'rgba(255,255,255,.08)';
-  for (let i = 0; i < 5; i++) {
-    const wx = pondCX + (i - 2) * 22;
-    ctx.fillRect(wx - 6, pondCY - 12 + ((i % 2) ? 6 : -4), 12, 2);
+  // Capa base agua oscura
+  const waterColors = ['#1a4a6a', '#1e5070', '#22587a', '#266084', '#2a688e'];
+  for (let row = 0; row < 16; row++) {
+    const t = row / 15;
+    const ci = Math.min(Math.floor(t * waterColors.length), waterColors.length - 1);
+    ctx.fillStyle = waterColors[ci];
+    const yoff = Math.round(-pondRY + row * (pondRY * 2 / 16));
+    const halfW = Math.round(Math.sqrt(Math.max(0, 1 - (yoff / pondRY) ** 2)) * pondRX);
+    ctx.fillRect(pondCX - halfW, pondCY + yoff, halfW * 2, Math.ceil(pondRY * 2 / 16) + 1);
   }
 
-  // --- Orilla (tierra pixel) ---
-  ctx.fillStyle = '#5a4a3a';
-  ctx.fillRect(0, 235, W, 85);
-  ctx.fillStyle = '#6b5a4a';
-  ctx.fillRect(0, 240, W, 80);
+  // Capa superior agua clara (reflejo)
+  const waterTop = ['#2a6a8e', '#32789e', '#3a84ae', '#4290be'];
+  for (let row = 0; row < 8; row++) {
+    const t = row / 7;
+    const ci = Math.min(Math.floor(t * waterTop.length), waterTop.length - 1);
+    ctx.fillStyle = waterTop[ci];
+    const yoff = Math.round(-pondRY + row * (pondRY * 2 / 16));
+    const halfW = Math.round(Math.sqrt(Math.max(0, 1 - (yoff / pondRY) ** 2)) * (pondRX - 10));
+    ctx.fillRect(pondCX - halfW, pondCY + yoff - 2, halfW * 2, Math.ceil(pondRY * 2 / 16));
+  }
 
-  // --- Árboles pixel art ---
+  // Ondas con textura (patrón de agua pixel)
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 8; i++) {
+    const wy = pondCY - 12 + i * 6;
+    const wobble = Math.sin(Date.now() * 0.001 + i) * 3;
+    ctx.beginPath();
+    for (let wx = pondCX - 70; wx < pondCX + 70; wx += 4) {
+      const dx = (wx - pondCX) / pondRX;
+      if (Math.abs(dx) < 1) {
+        const y = wy + Math.sin(wx * 0.08 + i * 1.5 + wobble) * 2;
+        ctx.fillRect(wx, y, 4, 1);
+      }
+    }
+  }
+
+  // Brillo en superficie del agua
+  ctx.fillStyle = 'rgba(180,230,255,0.04)';
+  for (let i = 0; i < 6; i++) {
+    const gx = pondCX - 50 + i * 18;
+    const gy = pondCY - 15 + Math.sin(i * 2.1) * 8;
+    ctx.fillRect(gx, gy, 6, 2);
+  }
+
+  // ============================================================
+  // ORILLA con textura de tierra (patrón de 2 colores)
+  // ============================================================
+  for (let y = 235; y < 320; y += 3) {
+    const t = (y - 235) / 85;
+    const dark = t < 0.3;
+    for (let x = 0; x < W; x += 4) {
+      const dither = (Math.floor(x / 4) + Math.floor(y / 3)) % 3;
+      if (dark) {
+        ctx.fillStyle = dither < 2 ? '#5a4a3a' : '#4a3a2a';
+      } else {
+        ctx.fillStyle = dither === 0 ? '#6b5a4a' : (dither === 1 ? '#635444' : '#584a3c');
+      }
+      ctx.fillRect(x, y, 4, 3);
+    }
+  }
+  // Grama en el borde de la orilla
+  for (let i = 0; i < 30; i++) {
+    const gx = (i * 13 + 7) % W;
+    const gy = 234 + (i % 4);
+    ctx.fillStyle = i % 2 === 0 ? '#3a6a3a' : '#2a5a2a';
+    ctx.fillRect(gx, gy, 3, 4);
+  }
+
+  // ============================================================
+  // ÁRBOLES pixel art detallados
+  // ============================================================
   function drawTree(tx, ty) {
-    // Tronco
-    ctx.fillStyle = '#5a3a1a';
-    ctx.fillRect(tx - 2, ty - 20, 4, 24);
-    // Copa
-    ctx.fillStyle = '#2a6a2a';
-    ctx.fillRect(tx - 10, ty - 30, 20, 14);
-    ctx.fillRect(tx - 6, ty - 36, 12, 10);
-  }
-  drawTree(20, 248);
-  drawTree(330, 248);
-  drawTree(50, 260);
+    // Sombra del árbol
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    ctx.fillRect(tx - 12, ty + 2, 24, 4);
 
-  // --- Avatar pixel art estilo Tibia (personaje) ---
+    // Tronco con textura
+    const trunkColors = ['#5a3a1a', '#4a2a0a', '#5a3a1a', '#6a4a2a'];
+    for (let i = 0; i < 8; i++) {
+      ctx.fillStyle = trunkColors[i % 4];
+      ctx.fillRect(tx - 2 + (i % 2), ty - 24 + i * 3, 4, 3);
+    }
+
+    // Copa del árbol (3 capas)
+    // Capa base (oscura)
+    ctx.fillStyle = '#1a4a1a';
+    ctx.fillRect(tx - 14, ty - 36, 28, 16);
+    ctx.fillRect(tx - 10, ty - 42, 20, 12);
+    ctx.fillRect(tx - 6, ty - 46, 12, 8);
+    // Capa media
+    ctx.fillStyle = '#2a6a2a';
+    ctx.fillRect(tx - 12, ty - 34, 24, 12);
+    ctx.fillRect(tx - 8, ty - 40, 16, 10);
+    ctx.fillRect(tx - 4, ty - 44, 8, 6);
+    // Capa clara (highlights)
+    ctx.fillStyle = '#3a8a3a';
+    ctx.fillRect(tx - 8, ty - 32, 16, 8);
+    ctx.fillRect(tx - 4, ty - 38, 8, 6);
+    // Detalles de hojas sueltas
+    ctx.fillStyle = '#4a9a4a';
+    ctx.fillRect(tx - 10, ty - 30, 3, 3);
+    ctx.fillRect(tx + 6, ty - 32, 3, 3);
+    ctx.fillRect(tx - 2, ty - 40, 3, 3);
+  }
+  drawTree(24, 248);
+  drawTree(336, 248);
+  drawTree(55, 258);
+  drawTree(310, 256);
+
+  // Arbustos pequeños
+  function drawBush(bx, by) {
+    ctx.fillStyle = '#2a5a2a';
+    ctx.fillRect(bx - 4, by - 6, 8, 6);
+    ctx.fillStyle = '#3a7a3a';
+    ctx.fillRect(bx - 2, by - 4, 4, 4);
+  }
+  drawBush(80, 252);
+  drawBush(270, 250);
+  drawBush(110, 258);
+
+  // Flores pequeñas
+  function drawFlower(fx, fy, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(fx, fy, 3, 3);
+    ctx.fillRect(fx - 2, fy + 2, 7, 2);
+  }
+  drawFlower(92, 248, '#ff6b8a');
+  drawFlower(250, 246, '#ffcc44');
+  drawFlower(130, 254, '#ff88aa');
+
+  // ============================================================
+  // AVATAR PIXEL ART (personaje tipo RPG con más detalle)
+  // ============================================================
   const px = 180, py = 190;
-  // Cuerpo (túnica)
-  ctx.fillStyle = '#3a5a8a';
-  ctx.fillRect(px - 6, py - 10, 12, 20);
-  // Cabeza
-  ctx.fillStyle = '#d4a56a';
-  ctx.fillRect(px - 5, py - 22, 10, 12);
-  // Ojos
-  ctx.fillStyle = '#000';
+
+  // Sombra del personaje en el suelo
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.fillRect(px - 8, py + 20, 16, 4);
+
+  // Cuerpo (túnica con textura)
+  const robeColors = ['#2a4a7a', '#3a5a8a', '#3a5a8a', '#4a6a9a', '#3a5a8a', '#2a4a7a'];
+  for (let i = 0; i < 6; i++) {
+    ctx.fillStyle = robeColors[i];
+    const rx = px - 6 + (i % 2) * 4;
+    const ry = py - 10 + i * 3;
+    ctx.fillRect(rx, ry, 8, 3);
+  }
+  // Cinturón
+  ctx.fillStyle = '#6a4a2a';
+  ctx.fillRect(px - 6, py + 2, 12, 3);
+  ctx.fillStyle = '#c47a2a';
+  ctx.fillRect(px, py + 2, 2, 3); // hebilla
+
+  // Cabeza con pelo detallado
+  const headColors = ['#d4a56a', '#d4a56a', '#c89a5e', '#d4a56a'];
+  for (let i = 0; i < 4; i++) {
+    ctx.fillStyle = headColors[i];
+    ctx.fillRect(px - 5 + (i % 2) * 4, py - 22 + i * 3, 6, 3);
+  }
+  // Ojos con brillo
+  ctx.fillStyle = '#fff';
   ctx.fillRect(px - 3, py - 19, 2, 2);
   ctx.fillRect(px + 1, py - 19, 2, 2);
-  // Pelo
-  ctx.fillStyle = '#8a5a2a';
-  ctx.fillRect(px - 6, py - 24, 12, 4);
-  // Piernas
-  ctx.fillStyle = '#2a3a5a';
+  ctx.fillStyle = '#222';
+  ctx.fillRect(px - 2, py - 18, 1, 1);
+  ctx.fillRect(px + 2, py - 18, 1, 1);
+  // Pelo (más detallado)
+  const hairColors = ['#8a5a2a', '#7a4a1a', '#9a6a3a', '#8a5a2a'];
+  for (let i = 0; i < 4; i++) {
+    ctx.fillStyle = hairColors[i];
+    ctx.fillRect(px - 6 + i * 3, py - 25, 3, 4);
+  }
+  // Flequillo
+  ctx.fillStyle = '#7a4a1a';
+  ctx.fillRect(px - 4, py - 23, 8, 2);
+  ctx.fillStyle = '#9a6a3a';
+  ctx.fillRect(px - 2, py - 24, 4, 2);
+
+  // Piernas con textura
+  ctx.fillStyle = '#1a2a4a';
   ctx.fillRect(px - 5, py + 10, 4, 10);
   ctx.fillRect(px + 1, py + 10, 4, 10);
-  // Brazos
+  ctx.fillStyle = '#2a3a5a';
+  ctx.fillRect(px - 4, py + 12, 2, 6);
+  ctx.fillRect(px + 2, py + 12, 2, 6);
+  // Botas
+  ctx.fillStyle = '#3a2a1a';
+  ctx.fillRect(px - 5, py + 18, 4, 3);
+  ctx.fillRect(px + 1, py + 18, 4, 3);
+
+  // Brazos con mangas
   ctx.fillStyle = '#d4a56a';
   ctx.fillRect(px - 10, py - 8, 4, 12);
   ctx.fillRect(px + 6, py - 8, 4, 12);
+  // Mangas
+  ctx.fillStyle = '#3a5a8a';
+  ctx.fillRect(px - 11, py - 8, 4, 4);
+  ctx.fillRect(px + 7, py - 8, 4, 4);
 
-  // --- Caña de pescar (si no está animando la captura) ---
+  // Capa/poncho detrás (efecto visual)
+  ctx.fillStyle = 'rgba(42,74,122,0.3)';
+  ctx.fillRect(px - 9, py - 6, 18, 16);
+  ctx.fillRect(px - 10, py + 2, 20, 6);
+
+  // ============================================================
+  // CAÑA DE PESCAR + BOYA (cuando no anima)
+  // ============================================================
   if (!animating) {
     drawFishingRod(ctx, px, py, 0);
-    // Línea al agua
-    ctx.strokeStyle = '#ccc';
+    // Línea al agua (con curva)
+    ctx.strokeStyle = 'rgba(200,200,200,0.5)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(px + 28, py - 14);
-    ctx.lineTo(pondCX - 30, pondCY - 10);
+    ctx.quadraticCurveTo(px + 40, pondCY - 20, pondCX - 30, pondCY - 10);
     ctx.stroke();
-    // Boya
+    // Boya (más detallada)
+    const boyaX = pondCX - 30, boyaY = pondCY - 10;
     ctx.fillStyle = '#ff4444';
     ctx.beginPath();
-    ctx.arc(pondCX - 30, pondCY - 10, 3, 0, Math.PI * 2);
+    ctx.arc(boyaX, boyaY, 3, 0, Math.PI * 2);
     ctx.fill();
+    ctx.fillStyle = '#ff8888';
+    ctx.beginPath();
+    ctx.arc(boyaX - 1, boyaY - 1, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    // Onda desde la boya
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(boyaX, boyaY + 2, 6, 0, Math.PI);
+    ctx.stroke();
   }
 
-  // --- Cartel informativo ---
-  ctx.fillStyle = 'rgba(0,0,0,.6)';
+  // ============================================================
+  // CARTEL INFORMATIVO (estilo RPG)
+  // ============================================================
+  ctx.fillStyle = 'rgba(0,0,0,0.65)';
   ctx.fillRect(4, 4, W - 8, 22);
-  ctx.fillStyle = '#fff';
-  ctx.font = '10px monospace';
-  ctx.fillText('🎣 RECLAMO DIARIO · LANZA LA CAÑA PARA GANAR AURA', 10, 18);
+  ctx.fillStyle = 'rgba(100,200,255,0.08)';
+  ctx.fillRect(5, 5, W - 10, 20);
+  ctx.fillStyle = '#ffe0a0';
+  ctx.font = 'bold 9px monospace';
+  ctx.fillText('⛏️  RECLAMO DIARIO — FARMEANDO AURA', 14, 18);
+  // Decoración barra inferior
+  ctx.fillStyle = 'rgba(255,224,160,0.3)';
+  ctx.fillRect(10, 23, 120, 1);
+  ctx.fillRect(W - 130, 23, 120, 1);
 }
 
 function drawFishingRod(ctx, px, py, angle) {
   ctx.save();
   ctx.translate(px + 10, py - 14);
   ctx.rotate(angle);
-  // Caña
+  // Caña de bambú (más gruesa con textura)
+  ctx.strokeStyle = '#6a4a2a';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(16, -12);
+  ctx.stroke();
   ctx.strokeStyle = '#8a6a3a';
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  ctx.lineTo(18, -10);
+  ctx.lineTo(14, -10);
   ctx.stroke();
+  // Punta de la caña
+  ctx.strokeStyle = '#5a3a1a';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(16, -12);
+  ctx.lineTo(22, -16);
+  ctx.stroke();
+  // Anillo en punta
+  ctx.fillStyle = '#aaa';
+  ctx.fillRect(21, -17, 3, 2);
   ctx.restore();
 }
 
 function drawChest(ctx, cx, cy, size) {
-  // Cofre pixel art
-  const s = size || 20;
-  // Base
-  ctx.fillStyle = '#c47a2a';
-  ctx.fillRect(cx - s/2, cy - s/3, s, s * 0.6);
-  // Tapa
-  ctx.fillStyle = '#d48a3a';
-  ctx.fillRect(cx - s/2 - 1, cy - s/3 - 4, s + 2, 8);
-  // Cerradura
+  const s = size || 24;
+  const hs = s / 2;
+  const qs = s * 0.3;
+
+  // Sombra
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.fillRect(cx - hs - 1, cy + qs + 1, s + 2, 5);
+
+  // Base del cofre (madera texturizada)
+  const woodColors = ['#6a3a1a', '#7a4a2a', '#6a3a1a', '#8a5a3a', '#6a3a1a'];
+  for (let i = 0; i < 5; i++) {
+    ctx.fillStyle = woodColors[i];
+    ctx.fillRect(cx - hs, cy - qs + i * Math.ceil(s * 0.12), s, Math.ceil(s * 0.12) + 1);
+  }
+
+  // Tapa del cofre
+  const lidColors = ['#8a5a3a', '#9a6a4a', '#8a5a3a', '#a07a5a'];
+  for (let i = 0; i < 4; i++) {
+    ctx.fillStyle = lidColors[i];
+    ctx.fillRect(cx - hs - 1, cy - qs - 5 + i * 3, s + 2, 3);
+  }
+  // Borde dorado de la tapa
+  ctx.fillStyle = '#c49840';
+  ctx.fillRect(cx - hs - 1, cy - qs - 6, s + 2, 2);
+  ctx.fillRect(cx - hs - 1, cy - qs + 5, s + 2, 2);
+
+  // Cerradura (2x4 con brillo)
+  ctx.fillStyle = '#333';
+  ctx.fillRect(cx - 2, cy - 2, 4, 5);
   ctx.fillStyle = '#ffd700';
-  ctx.fillRect(cx - 2, cy - 2, 4, 4);
-  // Brillo
-  ctx.fillStyle = 'rgba(255,255,200,.3)';
-  ctx.fillRect(cx - s/2 + 2, cy - s/3 - 2, s - 4, 3);
+  ctx.fillRect(cx - 1, cy - 1, 2, 3);
+  ctx.fillStyle = '#fff8dc';
+  ctx.fillRect(cx - 1, cy - 1, 1, 1);
+
+  // Remaches dorados
+  const rivetPositions = [
+    [cx - hs + 3, cy - qs + 2],
+    [cx + hs - 4, cy - qs + 2],
+    [cx - hs + 3, cy + qs - 2],
+    [cx + hs - 4, cy + qs - 2],
+  ];
+  rivetPositions.forEach(([rx, ry]) => {
+    ctx.fillStyle = '#c49840';
+    ctx.fillRect(rx, ry, 3, 3);
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(rx, ry, 2, 2);
+    ctx.fillStyle = '#fff8dc';
+    ctx.fillRect(rx, ry, 1, 1);
+  });
+
+  // Brillo en la tapa
+  ctx.fillStyle = 'rgba(255,220,160,0.2)';
+  ctx.fillRect(cx - hs + 4, cy - qs - 3, s - 8, 3);
 }
 
 function lerp(a, b, t) { return a + (b - a) * t; }
@@ -1645,12 +1922,19 @@ function startFarming(addr, container, currentStreak) {
       const chestY = endY - 10 + (1 - p) * 30;
       const chestX = endX + Math.sin(p * 6) * 3;
 
-      // Agua salpicando
-      ctx.fillStyle = 'rgba(58,138,181,.5)';
-      for (let i = 0; i < 3; i++) {
-        const sx = chestX + (i - 1) * 8 + Math.sin(p * 10 + i) * 3;
-        const sy = chestY + 14 + Math.random() * 4;
+      // Agua salpicando (más detalle)
+      ctx.fillStyle = 'rgba(100,200,240,0.4)';
+      for (let i = 0; i < 5; i++) {
+        const sx = chestX + (i - 2) * 7 + Math.sin(p * 10 + i * 1.5) * 4;
+        const sy = chestY + 12 + Math.random() * 6;
         ctx.fillRect(sx - 2, sy - 2, 4, 4);
+      }
+      // Gotas volando
+      ctx.fillStyle = 'rgba(180,230,255,0.3)';
+      for (let i = 0; i < 3; i++) {
+        const gx = chestX + Math.sin(p * 12 + i * 2) * 14;
+        const gy = chestY - 2 - i * 5 + Math.sin(p * 8 + i) * 3;
+        ctx.fillRect(gx, gy, 2, 2);
       }
 
       if (p > 0.4) {
@@ -1711,23 +1995,41 @@ function showFarmResult(addr, container, reward, ctx, currentStreak) {
   drawFarmScene(addr, null, false);
   const px = 180, py = 190;
   drawFishingRod(ctx, px, py, -0.1);
-  // Cofre abierto al lado del personaje
+  // Cofre abierto al lado del personaje (con tesoro visible)
   const cx = px + 24, cy = py + 4;
-  ctx.fillStyle = '#c47a2a';
-  ctx.fillRect(cx - 10, cy - 2, 20, 12);
-  ctx.fillStyle = '#d48a3a';
-  ctx.fillRect(cx - 11, cy - 6, 22, 6);
+  // Sombra
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.fillRect(cx - 12, cy + 8, 24, 5);
+  // Base (caja abierta)
+  const woodOpen = ['#6a3a1a','#7a4a2a','#6a3a1a','#8a5a3a','#7a4a2a'];
+  for (let i = 0; i < 5; i++) {
+    ctx.fillStyle = woodOpen[i];
+    ctx.fillRect(cx - 10, cy + i * 3, 20, 3);
+  }
+  // Tapa levantada (detrás)
+  ctx.fillStyle = '#8a5a3a';
+  ctx.fillRect(cx - 11, cy - 10, 22, 4);
+  ctx.fillStyle = '#9a6a4a';
+  ctx.fillRect(cx - 10, cy - 9, 20, 2);
+  // Bisagra
+  ctx.fillStyle = '#666';
+  ctx.fillRect(cx - 4, cy - 10, 3, 3);
+  ctx.fillRect(cx + 1, cy - 10, 3, 3);
+  // Tesoro dentro del cofre (monedas y brillos)
   ctx.fillStyle = '#ffd700';
-  ctx.fillRect(cx - 2, cy + 2, 4, 4);
-  // Brillo del cofre abierto
-  ctx.fillStyle = 'rgba(255,215,0,.3)';
-  ctx.fillRect(cx - 8, cy - 4, 16, 3);
-  // Sparkles
-  ctx.fillStyle = '#ffd700';
-  for (let i = 0; i < 6; i++) {
-    const sx = cx - 8 + Math.random() * 16;
-    const sy = cy - 4 - Math.random() * 10;
-    ctx.fillRect(sx, sy, 2, 2);
+  ctx.fillRect(cx - 6, cy + 2, 5, 3);
+  ctx.fillRect(cx + 2, cy + 3, 4, 2);
+  ctx.fillRect(cx - 2, cy + 1, 3, 4);
+  ctx.fillStyle = '#ffec80';
+  ctx.fillRect(cx - 5, cy + 3, 2, 1);
+  ctx.fillRect(cx + 3, cy + 4, 2, 1);
+  // Sparkles alrededor (más brillantes y variados)
+  for (let i = 0; i < 10; i++) {
+    const sx = cx - 10 + Math.random() * 22;
+    const sy = cy - 12 - Math.random() * 12;
+    const sparkSize = Math.random() > 0.5 ? 2 : 1;
+    ctx.fillStyle = ['#ffd700','#fff','#ffec80','#ff8800'][i % 4];
+    ctx.fillRect(sx, sy, sparkSize, sparkSize);
   }
 
   // Mostrar overlay
