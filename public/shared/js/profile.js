@@ -1625,90 +1625,114 @@ function drawFarmScene(addr, st, animating) {
   drawFlower(130, 254, '#ff88aa');
 
   // ============================================================
-  // AVATAR PIXEL ART (personaje tipo RPG con más detalle)
+  // MONTAÑA / ROCA donde se para el personaje (izquierda)
   // ============================================================
-  const px = 180, py = 190;
-
-  // Sombra del personaje en el suelo
-  ctx.fillStyle = 'rgba(0,0,0,0.2)';
-  ctx.fillRect(px - 8, py + 20, 16, 4);
-
-  // Cuerpo (túnica con textura)
-  const robeColors = ['#2a4a7a', '#3a5a8a', '#3a5a8a', '#4a6a9a', '#3a5a8a', '#2a4a7a'];
-  for (let i = 0; i < 6; i++) {
-    ctx.fillStyle = robeColors[i];
-    const rx = px - 6 + (i % 2) * 4;
-    const ry = py - 10 + i * 3;
-    ctx.fillRect(rx, ry, 8, 3);
+  const mountBaseX = 50, mountBaseY = 182;
+  // Montaña gigante tipo Picoro (formación rocosa)
+  const rockColors = ['#4a3a2a','#5a4a3a','#6a5a4a','#5a4a3a','#3a2a1a'];
+  // Base ancha
+  ctx.fillStyle = '#3a2a1a';
+  ctx.fillRect(mountBaseX - 14, mountBaseY + 24, 40, 12);
+  // Cuerpo de la montaña (piramidal)
+  for (let row = 0; row < 10; row++) {
+    const w = 36 - row * 2;
+    const xoff = row;
+    ctx.fillStyle = rockColors[row % rockColors.length];
+    ctx.fillRect(mountBaseX - 12 + xoff, mountBaseY + row * 3, w, 3);
   }
+  // Pico de la montaña
+  ctx.fillStyle = '#3a2a1a';
+  ctx.fillRect(mountBaseX + 2, mountBaseY - 8, 8, 8);
+  ctx.fillStyle = '#5a4a3a';
+  ctx.fillRect(mountBaseX + 3, mountBaseY - 6, 6, 4);
+  // Textura de roca (grietas)
+  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  ctx.fillRect(mountBaseX + 4, mountBaseY + 6, 2, 8);
+  ctx.fillRect(mountBaseX + 10, mountBaseY + 12, 2, 6);
+  ctx.fillRect(mountBaseX + 16, mountBaseY + 3, 2, 5);
+
+  // ============================================================
+  // AVATAR PIXEL ART (perfil lateral, tipo Picoro DBZ)
+  // ============================================================
+  // El personaje está parado en la montaña, de lado (mirando hacia la derecha)
+  const px = mountBaseX + 8, py = mountBaseY - 8;
+
+  // Sombra del personaje sobre la roca
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.fillRect(px - 4, py + 20, 14, 4);
+
+  // Brazo izquierdo (el que sostiene la caña, hacia atrás/perfil)
+  ctx.fillStyle = '#3a5a8a';
+  ctx.fillRect(px, py - 4, 4, 8);
+  ctx.fillStyle = '#d4a56a';
+  ctx.fillRect(px - 1, py + 2, 3, 4);
+
+  // Cuerpo (túnica, de perfil = más estrecho adelante-atrás)
+  const robeSide = ['#2a4a7a','#3a5a8a','#3a5a8a','#4a6a9a','#3a5a8a','#2a4a7a'];
+  for (let i = 0; i < 6; i++) {
+    ctx.fillStyle = robeSide[i];
+    ctx.fillRect(px - 2, py - 6 + i * 3, 8, 3);
+  }
+
   // Cinturón
   ctx.fillStyle = '#6a4a2a';
-  ctx.fillRect(px - 6, py + 2, 12, 3);
+  ctx.fillRect(px - 2, py + 6, 8, 2);
   ctx.fillStyle = '#c47a2a';
-  ctx.fillRect(px, py + 2, 2, 3); // hebilla
+  ctx.fillRect(px + 4, py + 6, 2, 2); // hebilla al frente
 
-  // Cabeza con pelo detallado
-  const headColors = ['#d4a56a', '#d4a56a', '#c89a5e', '#d4a56a'];
-  for (let i = 0; i < 4; i++) {
-    ctx.fillStyle = headColors[i];
-    ctx.fillRect(px - 5 + (i % 2) * 4, py - 22 + i * 3, 6, 3);
-  }
-  // Ojos con brillo
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(px - 3, py - 19, 2, 2);
-  ctx.fillRect(px + 1, py - 19, 2, 2);
-  ctx.fillStyle = '#222';
-  ctx.fillRect(px - 2, py - 18, 1, 1);
-  ctx.fillRect(px + 2, py - 18, 1, 1);
-  // Pelo (más detallado)
-  const hairColors = ['#8a5a2a', '#7a4a1a', '#9a6a3a', '#8a5a2a'];
-  for (let i = 0; i < 4; i++) {
-    ctx.fillStyle = hairColors[i];
-    ctx.fillRect(px - 6 + i * 3, py - 25, 3, 4);
-  }
-  // Flequillo
-  ctx.fillStyle = '#7a4a1a';
-  ctx.fillRect(px - 4, py - 23, 8, 2);
-  ctx.fillStyle = '#9a6a3a';
-  ctx.fillRect(px - 2, py - 24, 4, 2);
-
-  // Piernas con textura
+  // Piernas (de perfil, una adelante otra atrás)
   ctx.fillStyle = '#1a2a4a';
-  ctx.fillRect(px - 5, py + 10, 4, 10);
-  ctx.fillRect(px + 1, py + 10, 4, 10);
-  ctx.fillStyle = '#2a3a5a';
-  ctx.fillRect(px - 4, py + 12, 2, 6);
-  ctx.fillRect(px + 2, py + 12, 2, 6);
+  ctx.fillRect(px - 2, py + 12, 4, 8);  // pierna trasera
+  ctx.fillRect(px + 3, py + 12, 4, 8);  // pierna delantera
   // Botas
   ctx.fillStyle = '#3a2a1a';
-  ctx.fillRect(px - 5, py + 18, 4, 3);
-  ctx.fillRect(px + 1, py + 18, 4, 3);
+  ctx.fillRect(px - 2, py + 18, 4, 3);
+  ctx.fillRect(px + 3, py + 18, 4, 3);
 
-  // Brazos con mangas
+  // Cabeza de perfil (mirando a la derecha)
   ctx.fillStyle = '#d4a56a';
-  ctx.fillRect(px - 10, py - 8, 4, 12);
-  ctx.fillRect(px + 6, py - 8, 4, 12);
-  // Mangas
-  ctx.fillStyle = '#3a5a8a';
-  ctx.fillRect(px - 11, py - 8, 4, 4);
-  ctx.fillRect(px + 7, py - 8, 4, 4);
+  ctx.fillRect(px, py - 14, 7, 10);
+  // Nariz (puntiaguda hacia adelante, estilo Picoro)
+  ctx.fillStyle = '#c89a5e';
+  ctx.fillRect(px + 7, py - 10, 3, 3);
+  ctx.fillRect(px + 9, py - 9, 2, 1);
+  // Ojo de perfil (uno solo visible)
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(px + 3, py - 11, 3, 2);
+  ctx.fillStyle = '#222';
+  ctx.fillRect(px + 5, py - 10, 1, 1);
+  // Oreja
+  ctx.fillStyle = '#d4a56a';
+  ctx.fillRect(px - 2, py - 11, 2, 3);
 
-  // Capa/poncho detrás (efecto visual)
-  ctx.fillStyle = 'rgba(42,74,122,0.3)';
-  ctx.fillRect(px - 9, py - 6, 18, 16);
-  ctx.fillRect(px - 10, py + 2, 20, 6);
+  // Pelo/antena tipo Picoro (de perfil)
+  const hairSide = ['#7a4a1a','#8a5a2a','#9a6a3a'];
+  for (let i = 0; i < 3; i++) {
+    ctx.fillStyle = hairSide[i];
+    ctx.fillRect(px - 1 + i, py - 18, 2, 5);
+  }
+  // Punta del pelo hacia atrás
+  ctx.fillStyle = '#6a3a0a';
+  ctx.fillRect(px - 3, py - 19, 3, 3);
+  ctx.fillRect(px - 4, py - 20, 2, 2);
+
+  // Capa (flotando hacia atrás como Picoro)
+  ctx.fillStyle = 'rgba(42,74,122,0.35)';
+  ctx.fillRect(px - 6, py - 2, 6, 14);
+  ctx.fillRect(px - 8, py + 4, 4, 8);
+  ctx.fillRect(px - 7, py + 10, 6, 4);
 
   // ============================================================
-  // CAÑA DE PESCAR + BOYA (cuando no anima)
+  // CAÑA DE PESCAR + BOYA (personaje de perfil, caña al agua)
   // ============================================================
   if (!animating) {
-    drawFishingRod(ctx, px, py, 0);
-    // Línea al agua (con curva)
+    drawFishingRod(ctx, px + 2, py - 6, 0);
+    // Línea al agua (desde la punta de la caña hacia el estanque)
     ctx.strokeStyle = 'rgba(200,200,200,0.5)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(px + 28, py - 14);
-    ctx.quadraticCurveTo(px + 40, pondCY - 20, pondCX - 30, pondCY - 10);
+    ctx.moveTo(px + 22, py - 18);
+    ctx.quadraticCurveTo(px + 50, py - 30, pondCX - 30, pondCY - 10);
     ctx.stroke();
     // Boya (más detallada)
     const boyaX = pondCX - 30, boyaY = pondCY - 10;
@@ -1840,7 +1864,7 @@ function startFarming(addr, container, currentStreak) {
   const btn = container.querySelector('#farmBtn');
   if (btn) { btn.disabled = true; btn.style.opacity = '.4'; btn.textContent = '🎣 Pesca en curso...'; }
 
-  const px = 180, py = 190;
+  const px = 58, py = 174;
   const pondCX = 140, pondCY = 210;
   const lineEndX = pondCX - 30, lineEndY = pondCY - 10;
 
@@ -1862,8 +1886,8 @@ function startFarming(addr, container, currentStreak) {
 
     // Línea de pesca
     const lineLen = 20 + progress * 50;
-    const lx = px + 28 + Math.cos(-angle + 0.2) * 12;
-    const ly = py - 14 + Math.sin(-angle + 0.2) * 12;
+    const lx = px + 16 + Math.cos(-angle + 0.2) * 8;
+    const ly = py - 10 + Math.sin(-angle + 0.2) * 8;
     const endX = lx;
     const endY = ly + lineLen;
 
@@ -1901,8 +1925,8 @@ function startFarming(addr, container, currentStreak) {
     function reelStep() {
       const p = frame2 / totalFrames2;
       // Línea recogiéndose
-      const lx = px + 28;
-      const ly = py - 14;
+      const lx = px + 16;
+      const ly = py - 10;
       const lineLen = 60 * (1 - p);
       const endX = lx;
       const endY = ly + lineLen;
@@ -1993,10 +2017,10 @@ function showFarmResult(addr, container, reward, ctx, currentStreak) {
 
   // Dibujar escena final con cofre abierto
   drawFarmScene(addr, null, false);
-  const px = 180, py = 190;
-  drawFishingRod(ctx, px, py, -0.1);
+  const px = 58, py = 174;
+  drawFishingRod(ctx, px + 2, py - 6, -0.1);
   // Cofre abierto al lado del personaje (con tesoro visible)
-  const cx = px + 24, cy = py + 4;
+  const cx = px + 22, cy = py + 6;
   // Sombra
   ctx.fillStyle = 'rgba(0,0,0,0.2)';
   ctx.fillRect(cx - 12, cy + 8, 24, 5);
