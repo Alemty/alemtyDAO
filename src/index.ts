@@ -13,6 +13,12 @@ import { posts } from "./routes/posts";
 // ✅ Rooms router
 import { rooms } from "./routes/rooms";
 
+// Helper
+function shortAddr(addr: string): string {
+  if (!addr || addr.length < 10) return addr || '';
+  return addr.slice(0, 6) + '…' + addr.slice(-4);
+}
+
 /* =========================
    Tipos
 ========================= */
@@ -159,6 +165,16 @@ app.get("/api/me/stats", auth, async (c) => {
   ).bind(address).first();
   const commentsReceived = Number((commentsReceivedRow as any)?.n ?? 0);
 
+  // ✅ Reacciones DADAS por el usuario
+  const likesGivenRow = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM reactions WHERE address = ? AND type = 'like'"
+  ).bind(address).first();
+  const pointsGivenRow = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM reactions WHERE address = ? AND type = 'point'"
+  ).bind(address).first();
+  const likesGiven = Number((likesGivenRow as any)?.n ?? 0);
+  const pointsGiven = Number((pointsGivenRow as any)?.n ?? 0);
+
   const dharma = pointsReceived + likesReceived;
 
   // AURA se genera 1:1 con Dharma (cada like/point = +1 AURA acumulado).
@@ -204,6 +220,10 @@ app.get("/api/me/stats", auth, async (c) => {
     activity: {
       posts: Number((postsRow as any)?.n ?? 0),
       comments: Number((commentsRow as any)?.n ?? 0),
+    },
+    given: {
+      likesGiven,
+      pointsGiven,
     },
     received: {
       pointsReceived,
@@ -406,6 +426,221 @@ app.all("/api/*", (c) => {
 ========================================================= */
 app.all("*", async (c) => {
   return c.env.ASSETS.fetch(c.req.raw);
+});
+
+/* =========================================================
+   DM (Direct Messages) — Chat tipo MSN
+========================================================= */
+
+// GET /api/dm/conversations — Lista de conversaciones del usuario
+app.get("/api/dm/conversations", auth, async (c) => {
+  const address = c.get("address");
+
+  const rows = await c.env.DB.prepare(`
+    SELECT DISTINCT
+      CASE WHEN sender = ? THEN recipient ELSE sender END AS peer,
+      (SELECT body FROM dms WHERE (sender = ? AND recipient = peer) OR (sender = peer AND recipient = ?) ORDER BY created_at DESC LIMIT 1) AS last_msg,
+      (SELECT created_at FROM dms WHERE (sender = ? AND recipient = peer) OR (sender = peer AND recipient = ?) ORDER BY created_at DESC LIMIT 1) AS last_at,
+      (SELECT COUNT(*) FROM dms WHERE recipient = ? AND sender = peer AND read = 0) AS unread
+    FROM dms
+    WHERE sender = ? OR recipient = ?
+    ORDER BY last_at DESC
+  `).bind(address, address, address, address, address, address, address, address).all();
+
+  // Obtener ENS/display name de cada peer
+  const conversations = [];
+  for (const row of (rows.results || [])) {
+    const peer: any = row;
+    const userRow: any = await c.env.DB.prepare("SELECT ens FROM users WHERE address = ? LIMIT 1").bind(peer.peer).first();
+    conversations.push({
+      peer: peer.peer,
+      displayName: userRow?.ens || shortAddr(peer.peer),
+      lastMsg: peer.last_msg || '',
+      lastAt: peer.last_at || '',
+      unread: peer.unread || 0
+    });
+  }
+
+  return c.json({ ok: true, conversations });
+});
+
+// GET /api/dm/:peer — Mensajes con un usuario específico
+app.get("/api/dm/:peer", auth, async (c) => {
+  const address = c.get("address");
+  const peer = c.req.param('peer').toLowerCase();
+  const before = c.req.query('before'); // paginación: timestamp ISO
+
+  let query = `
+    SELECT id, sender, recipient, body, read, created_at
+    FROM dms
+    WHERE (sender = ? AND recipient = ?) OR (sender = ? AND recipient = ?)
+  `;
+  const params: any[] = [address, peer, peer, address];
+
+  if (before) {
+    query += ` AND created_at < ?`;
+    params.push(before);
+  }
+
+  query += ` ORDER BY created_at DESC LIMIT 50`;
+
+  const rows = await c.env.DB.prepare(query).bind(...params).all();
+
+  // Marcar como leídos los mensajes del peer hacia el usuario
+  await c.env.DB.prepare("UPDATE dms SET read = 1 WHERE sender = ? AND recipient = ? AND read = 0")
+    .bind(peer, address).run();
+
+  return c.json({
+    ok: true,
+    messages: (rows.results || []).reverse(),
+    peer
+  });
+});
+
+// POST /api/dm/send — Enviar mensaje a un usuario
+app.post("/api/dm/send", auth, async (c) => {
+  const address = c.get("address");
+  const { to, body } = await c.req.json();
+
+  if (!to || !body || typeof body !== 'string' || body.trim().length === 0) {
+    return c.json({ ok: false, error: "Faltan campos: to (address) y body (texto)" }, 400);
+  }
+  if (body.length > 2000) {
+    return c.json({ ok: false, error: "Mensaje demasiado largo (máx 2000 caracteres)" }, 400);
+  }
+
+  const peer = to.toLowerCase();
+  if (peer === address.toLowerCase()) {
+    return c.json({ ok: false, error: "No puedes enviarte mensajes a ti mismo" }, 400);
+  }
+
+  const result = await c.env.DB.prepare(
+    "INSERT INTO dms (sender, recipient, body) VALUES (?, ?, ?)"
+  ).bind(address, peer, body.trim()).run();
+
+  return c.json({
+    ok: true,
+    message: {
+      id: result.meta.last_row_id,
+      sender: address,
+      recipient: peer,
+      body: body.trim(),
+      read: 0,
+      created_at: new Date().toISOString()
+    }
+  });
+});
+
+// POST /api/dm/read/:peer — Marcar conversación como leída
+app.post("/api/dm/read/:peer", auth, async (c) => {
+  const address = c.get("address");
+  const peer = c.req.param('peer').toLowerCase();
+
+  await c.env.DB.prepare("UPDATE dms SET read = 1 WHERE sender = ? AND recipient = ? AND read = 0")
+    .bind(peer, address).run();
+
+  return c.json({ ok: true });
+});
+
+// GET /api/dm/unread — Total de mensajes no leídos
+app.get("/api/dm/unread", auth, async (c) => {
+  const address = c.get("address");
+  const row: any = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM dms WHERE recipient = ? AND read = 0"
+  ).bind(address).first();
+
+  return c.json({ ok: true, unread: Number(row?.n ?? 0) });
+});
+
+/* =========================
+   🛒 MARKETPLACE P2P (NFTs por AURA)
+========================= */
+
+// Listar items en venta
+app.get("/api/market/items", async (c) => {
+  const rows: any[] = await c.env.DB.prepare(
+    `SELECT m.id, m.seller, m.nft_name, m.nft_image, m.nft_contract, m.nft_token_id,
+            m.price_aura, m.created_at,
+            COALESCE(u.display_name, '') AS seller_name
+     FROM marketplace m
+     LEFT JOIN user_profiles u ON u.address = m.seller
+     WHERE m.sold = 0
+     ORDER BY m.created_at DESC
+     LIMIT 50`
+  ).all();
+  return c.json({ ok: true, items: rows.results ?? [] });
+});
+
+// Listar items propios (vendidos + activos)
+app.get("/api/market/my", auth, async (c) => {
+  const address = c.get("address");
+  const rows: any[] = await c.env.DB.prepare(
+    `SELECT * FROM marketplace WHERE seller = ? ORDER BY created_at DESC`
+  ).bind(address).all();
+  return c.json({ ok: true, items: rows.results ?? [] });
+});
+
+// Publicar item en venta
+app.post("/api/market/list", auth, async (c) => {
+  const address = c.get("address");
+  const body: any = await c.req.json();
+  const { nftName, nftImage, nftContract, nftTokenId, priceAura } = body;
+
+  if (!nftName || !priceAura || priceAura <= 0) {
+    return c.json({ ok: false, error: "Faltan campos obligatorios (nftName, priceAura)" }, 400);
+  }
+
+  await c.env.DB.prepare(
+    `INSERT INTO marketplace (seller, nft_name, nft_image, nft_contract, nft_token_id, price_aura)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).bind(address, nftName.trim(), nftImage ?? '', nftContract ?? '', nftTokenId ?? '', priceAura).run();
+
+  return c.json({ ok: true });
+});
+
+// Comprar item (transferir AURA + marcar vendido)
+app.post("/api/market/buy/:id", auth, async (c) => {
+  const buyer = c.get("address");
+  const id = Number(c.req.param("id"));
+  if (!Number.isFinite(id)) return c.json({ ok: false, error: "ID inválido" }, 400);
+
+  const item: any = await c.env.DB.prepare(
+    "SELECT * FROM marketplace WHERE id = ? AND sold = 0"
+  ).bind(id).first();
+
+  if (!item) return c.json({ ok: false, error: "Item no disponible o ya vendido" }, 404);
+  if (item.seller === buyer) return c.json({ ok: false, error: "No puedes comprarte tu propio item" }, 400);
+
+  // Devolvemos los datos para que el frontend prepare la tx de AURA
+  return c.json({
+    ok: true,
+    item: {
+      id: item.id,
+      seller: item.seller,
+      nftName: item.nft_name,
+      priceAura: item.price_aura,
+    },
+    buyer,
+    // El frontend debe llamar claim-like para transferir AURA del buyer al seller
+    // luego marcar como vendido via POST /api/market/sold/:id
+  });
+});
+
+// Confirmar venta (marcar como vendido después de la tx en cadena)
+app.post("/api/market/sold/:id", auth, async (c) => {
+  const address = c.get("address");
+  const id = Number(c.req.param("id"));
+  if (!Number.isFinite(id)) return c.json({ ok: false, error: "ID inválido" }, 400);
+
+  const item: any = await c.env.DB.prepare(
+    "SELECT * FROM marketplace WHERE id = ? AND sold = 0"
+  ).bind(id).first();
+
+  if (!item) return c.json({ ok: false, error: "Item no encontrado" }, 404);
+  if (item.seller !== address) return c.json({ ok: false, error: "Solo el vendedor puede confirmar" }, 403);
+
+  await c.env.DB.prepare("UPDATE marketplace SET sold = 1 WHERE id = ?").bind(id).run();
+  return c.json({ ok: true });
 });
 
 export default app;

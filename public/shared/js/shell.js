@@ -265,12 +265,32 @@ export function mountShell() {
   });
 
   // Exponer global para abrir perfil desde otros módulos (app.js, notifications.js)
-  window.openProfileModal = async function openProfileModal(addr) {
+  window.openProfileModal = async function openProfileModal(addr, tab) {
     // Guardar la dirección clickeada en localStorage temporal para syncProfile
-    if (addr) localStorage.setItem('alemty.profile.viewing', addr);
+    if (addr) {
+      localStorage.setItem('alemty.profile.viewing', addr);
+      // Guardar la dirección visitada para que DM la use
+      localStorage.setItem('alemty.profile.viewingAddr', addr);
+    }
+    if (tab) localStorage.setItem('alemty.profile.defaultTab', tab);
     await syncProfile();
     openModal("profileModal");
   };
+
+  // Al abrir perfil de otro usuario, activar pestaña DM automáticamente
+  window.addEventListener('modal:opened', (e) => {
+    if (e.detail?.modalId !== 'profileModal') return;
+    const defaultTab = localStorage.getItem('alemty.profile.defaultTab') || '';
+    localStorage.removeItem('alemty.profile.defaultTab');
+    if (defaultTab) {
+      setTimeout(() => {
+        const btn = document.querySelector(`.tab-btn[data-tab="${defaultTab}"]`);
+        if (btn) btn.click();
+      }, 50);
+    }
+    // Limpiar la dirección visitada después de usarla
+    setTimeout(() => localStorage.removeItem('alemty.profile.viewingAddr'), 100);
+  });
 
   window.addEventListener("did:changed", async () => { await syncProfile(); void updateNotifUI(); });
 
