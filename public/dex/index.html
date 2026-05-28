@@ -286,6 +286,158 @@
         </div>
       </section>
 
+      <!-- ===================== NOBLEZA (Conquer-style) ===================== -->
+      <section class="glass dex-card" id="nobilityCard">
+        <div class="dex-card-head">
+          <div>
+            <h2 class="dex-title">👑 Nobleza</h2>
+            <p class="dex-sub muted">Rangos políticos según veALEMTY activo. El poder se bloquea, el estatus se gana.</p>
+          </div>
+        </div>
+
+        <div class="noble-layout">
+
+          <!-- Left: ranking list -->
+          <div class="noble-left">
+            <div class="noble-table">
+
+              <!-- 👑 Reyes — Top 3 -->
+              <div class="noble-tier">
+                <div class="noble-tier-head">
+                  <span class="noble-tier-icon">👑</span>
+                  <span class="noble-tier-title">Reyes</span>
+                  <span class="noble-tier-sub">Top 3 veALEMTY</span>
+                </div>
+                <div class="noble-row noble-row--king">
+                  <span class="noble-rank">1</span>
+                  <span class="noble-addr">alemty.eth</span>
+                  <span class="noble-ve">2,450,000 veALEM</span>
+                  <span class="noble-badge king">👑 Rey</span>
+                </div>
+                <div class="noble-row noble-row--king">
+                  <span class="noble-rank">2</span>
+                  <span class="noble-addr">0x7F3…bD92</span>
+                  <span class="noble-ve">1,820,000 veALEM</span>
+                  <span class="noble-badge king">👑 Rey</span>
+                </div>
+                <div class="noble-row noble-row--king">
+                  <span class="noble-rank">3</span>
+                  <span class="noble-addr">0x9A1…cF04</span>
+                  <span class="noble-ve">1,650,000 veALEM</span>
+                  <span class="noble-badge king">👑 Rey</span>
+                </div>
+                <div class="noble-tier-foot">Dirección estratégica · Propuestas estructurales</div>
+              </div>
+
+              <!-- 🤴 Príncipes — Top 4–15 -->
+              <div class="noble-tier">
+                <div class="noble-tier-head">
+                  <span class="noble-tier-icon">🤴</span>
+                  <span class="noble-tier-title">Príncipes</span>
+                  <span class="noble-tier-sub">Top 4–15 veALEMTY</span>
+                </div>
+                <div class="noble-row">
+                  <span class="noble-rank">4</span>
+                  <span class="noble-addr">0xB2E…a871</span>
+                  <span class="noble-ve">980,000 veALEM</span>
+                  <span class="noble-badge prince">🤴 Príncipe</span>
+                </div>
+                <div class="noble-row">
+                  <span class="noble-rank">5</span>
+                  <span class="noble-addr">0xF4C…3d60</span>
+                  <span class="noble-ve">750,000 veALEM</span>
+                  <span class="noble-badge prince">🤴 Príncipe</span>
+                </div>
+                <div class="noble-row">
+                  <span class="noble-rank">10</span>
+                  <span class="noble-addr">0xD8A…9f12</span>
+                  <span class="noble-ve">410,000 veALEM</span>
+                  <span class="noble-badge prince">🤴 Príncipe</span>
+                </div>
+                <div class="noble-row">
+                  <span class="noble-rank">15</span>
+                  <span class="noble-addr">0xE5B…2c78</span>
+                  <span class="noble-ve">250,000 veALEM</span>
+                  <span class="noble-badge prince">🤴 Príncipe</span>
+                </div>
+                <div class="noble-tier-foot">Propuestas y voto</div>
+              </div>
+
+              <!-- 🏰 Duques — Top 16–50 -->
+              <div class="noble-tier">
+                <div class="noble-tier-head">
+                  <span class="noble-tier-icon">🏰</span>
+                  <span class="noble-tier-title">Duques</span>
+                  <span class="noble-tier-sub">Top 16–50 veALEMTY</span>
+                </div>
+                <div class="noble-row">
+                  <span class="noble-rank">20</span>
+                  <span class="noble-addr">0x1C9…4a55</span>
+                  <span class="noble-ve">120,000 veALEM</span>
+                  <span class="noble-badge duke">🏰 Duque</span>
+                </div>
+                <div class="noble-row">
+                  <span class="noble-rank">35</span>
+                  <span class="noble-addr">0x6A3…f78b</span>
+                  <span class="noble-ve">65,000 veALEM</span>
+                  <span class="noble-badge duke">🏰 Duque</span>
+                </div>
+                <div class="noble-row">
+                  <span class="noble-rank">50</span>
+                  <span class="noble-addr">alemty.eth</span>
+                  <span class="noble-ve">42,000 veALEM</span>
+                  <span class="noble-badge duke">🏰 Duque</span>
+                </div>
+                <div class="noble-tier-foot">Voto y deliberación</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Right: info & formula -->
+          <div class="noble-right">
+            <div class="vestake-info-card">
+              <div class="vestake-info-title">⚖️ Fórmula de Nobleza</div>
+              <div class="small" style="line-height:1.6;opacity:.85;">
+                La nobleza se calcula exclusivamente sobre <strong>veALEMTY activo</strong>.
+                No sobre ALEM líquido ni balance en cartera.
+              </div>
+              <div class="noble-formula-box" style="margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.04);font-family:monospace;font-size:12px;line-height:1.5;">
+                veALEMTY = min(√ALEM_lock × (días/30), 500,000)<br/>
+                Rango = f(veALEMTY) según percentil global
+              </div>
+            </div>
+
+            <div class="vestake-info-card">
+              <div class="vestake-info-title">🪪 NFTs de Nobleza</div>
+              <div class="small" style="line-height:1.6;opacity:.85;">
+                <span>❌ No transferibles</span><br/>
+                <span>🔨 Se mintean y queman automáticamente</span><br/>
+                <span>🏛️ Representan cargo político, no propiedad</span><br/>
+                <span>📉 Al perder veALEMTY suficiente, la nobleza se pierde</span>
+              </div>
+            </div>
+
+            <div class="vestake-info-card">
+              <div class="vestake-info-title">📜 Permisos por Rango</div>
+              <div class="noble-perms" style="margin-top:6px;">
+                <div class="noble-perm-row"><span class="noble-perm-icon">👑</span><span class="noble-perm-label">Reyes</span><span class="noble-perm-desc">Dirección estratégica, propuestas estructurales</span></div>
+                <div class="noble-perm-row"><span class="noble-perm-icon">🤴</span><span class="noble-perm-label">Príncipes</span><span class="noble-perm-desc">Propuestas y voto</span></div>
+                <div class="noble-perm-row"><span class="noble-perm-icon">🏰</span><span class="noble-perm-label">Duques</span><span class="noble-perm-desc">Voto y deliberación</span></div>
+              </div>
+            </div>
+
+            <div class="vestake-info-card">
+              <div class="vestake-info-title">🔍 Tu estatus</div>
+              <div class="small muted" style="margin-top:4px;">Conecta tu wallet para ver tu rango de nobleza.</div>
+              <div class="noble-preview" style="margin-top:8px;padding:10px 12px;border-radius:10px;border:1px dashed var(--border);text-align:center;font-size:13px;opacity:.7;">
+                ⚡ Fuera del Top 50 no hay nobleza
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div>
 
     <div class="bottom-safe-space"></div>

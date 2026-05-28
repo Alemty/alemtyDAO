@@ -403,3 +403,111 @@ html.light body[data-app="dex"] .vestake-input-row {
   body[data-app="dex"] .dex-mid { padding: 2px 0; }
   body[data-app="dex"] .vestake-options { grid-template-columns: 1fr 1fr; }
 }
+
+/* ==========================================================
+   NOBLEZA — Conquer-style ranking cards
+   ========================================================== */
+body[data-app="dex"] .noble-layout {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 18px;
+}
+
+body[data-app="dex"] .noble-table {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+body[data-app="dex"] .noble-tier {
+  background: color-mix(in oklab, var(--ui-surface), transparent 20%);
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+body[data-app="dex"] .noble-tier-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: color-mix(in oklab, var(--ui-surface), transparent 40%);
+  border-bottom: 1px solid var(--ui-border);
+}
+body[data-app="dex"] .noble-tier-icon { font-size: 18px; }
+body[data-app="dex"] .noble-tier-title { font-weight: 900; font-size: 14px; }
+body[data-app="dex"] .noble-tier-sub { margin-left: auto; font-size: 11px; opacity: .6; }
+
+body[data-app="dex"] .noble-row {
+  display: grid;
+  grid-template-columns: 30px 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  border-bottom: 1px solid color-mix(in oklab, var(--ui-border), transparent 50%);
+}
+body[data-app="dex"] .noble-row:last-child { border-bottom: 0; }
+body[data-app="dex"] .noble-row--king {
+  background: linear-gradient(90deg, rgba(255,215,0,.06), transparent);
+}
+html.light body[data-app="dex"] .noble-row--king {
+  background: linear-gradient(90deg, rgba(255,215,0,.10), transparent);
+}
+
+body[data-app="dex"] .noble-rank { font-size: 11px; opacity: .5; font-weight: 900; text-align: center; }
+body[data-app="dex"] .noble-addr { font-family: monospace; font-size: 11px; opacity: .8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body[data-app="dex"] .noble-ve { font-size: 11px; opacity: .7; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+body[data-app="dex"] .noble-badge {
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+body[data-app="dex"] .noble-badge.king { background: rgba(255,215,0,.15); color: #fbbf24; }
+body[data-app="dex"] .noble-badge.prince { background: rgba(168,85,247,.15); color: #a855f7; }
+body[data-app="dex"] .noble-badge.duke { background: rgba(59,130,246,.15); color: #3b82f6; }
+html.light body[data-app="dex"] .noble-badge.king { background: rgba(255,200,0,.2); color: #b8860b; }
+html.light body[data-app="dex"] .noble-badge.prince { background: rgba(168,85,247,.12); color: #7c3aed; }
+html.light body[data-app="dex"] .noble-badge.duke { background: rgba(59,130,246,.12); color: #2563eb; }
+
+body[data-app="dex"] .noble-tier-foot {
+  padding: 6px 14px;
+  font-size: 10px;
+  opacity: .5;
+  text-align: center;
+  border-top: 1px solid color-mix(in oklab, var(--ui-border), transparent 50%);
+}
+
+/* Permissions list */
+body[data-app="dex"] .noble-perms {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+body[data-app="dex"] .noble-perm-row {
+  display: grid;
+  grid-template-columns: 24px 70px 1fr;
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--ui-surface), transparent 30%);
+}
+body[data-app="dex"] .noble-perm-icon { font-size: 14px; text-align: center; }
+body[data-app="dex"] .noble-perm-label { opacity: .85; }
+body[data-app="dex"] .noble-perm-desc { opacity: .6; font-weight: 500; }
+
+/* Nobleza responsive */
+@media (max-width: 900px) {
+  body[data-app="dex"] .noble-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  body[data-app="dex"] .noble-row { grid-template-columns: 24px 1fr auto; font-size: 11px; }
+  body[data-app="dex"] .noble-ve { display: none; }
+}
