@@ -227,7 +227,7 @@ app.get("/api/me/stats", auth, async (c) => {
     for (const rpcUrl of rpcUrls) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
         const rpcRes = await fetch(rpcUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
