@@ -115,6 +115,13 @@ html.light .tab-btn.active {
 .profile-level .rank { margin-top: 4px; font-weight: 900; opacity: .92; color: var(--primary); text-shadow: 0 0 16px rgba(0,255,213,.18); }
 .profile-addr { font-family: var(--mono); font-size: 12px; opacity: .85; word-break: break-word; }
 
+.profile-bars-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 6px 0 2px;
+}
+
 .profile-slots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 4px; }
 .slot { border-radius: 16px; border: 1px solid var(--border); background: rgba(255,255,255,.04); padding: 10px; }
 .slot-k { font-size: 11px; opacity: .8; font-weight: 900; }
@@ -139,20 +146,102 @@ html.light .tab-btn.active {
 .bar-fill.karma { background: linear-gradient(90deg, #FF2D55, #FF6A00); box-shadow: 0 0 18px rgba(255,45,85,.20); }
 
 .pf-balances { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.pf-balances > div { padding: 10px; border: 1px solid var(--border); border-radius: 16px; background: rgba(255,255,255,.04); font-weight: 900; }
 
 .profile-content { border-radius: 18px; border: 1px solid var(--border); background: rgba(255,255,255,.02); padding: 12px; min-height: 200px; }
 
-.token { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px; font-weight: 700; font-size: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.10); }
-.token .ico { font-size: 14px; line-height: 1; }
-.token .lbl { opacity: .9; }
-.token .val { margin-left: auto; font-variant-numeric: tabular-nums; }
-.token-alem { color: #FFD84D; box-shadow: 0 0 0 2px rgba(240, 189, 4, 0.903) inset; }
-.token-aura { color: #6EC8FF; box-shadow: 0 0 0 2px rgba(24, 149, 171, 0.66) inset; }
-.token-vealem { color: #cf5e12; box-shadow: 0 0 0 2px rgba(243, 136, 15, 0.911) inset; }
-.token-dharma { color: #16c92b; box-shadow: 0 0 0 2px rgba(7, 186, 52, 0.597) inset; }
-.token-karma { color: #f04242; box-shadow: 0 0 0 2px rgba(245, 10, 10, 0.944) inset; opacity: .75; }
-.token-karma.negative { color: #FF2D55; opacity: 1; box-shadow: 0 0 0 1px rgba(244, 13, 56, 0.35) inset; }
+/* 🎯 Token cards — glass con acento de color como background sutil */
+.token {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 10px 6px;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 11px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,.08);
+  position: relative;
+  overflow: hidden;
+  transition: transform .15s, box-shadow .2s;
+}
+.token:hover {
+  transform: translateY(-1px);
+}
+.token .lbl {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  opacity: .7;
+  font-weight: 600;
+}
+.token .val {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+/* Dharma — verde esmeralda */
+.token-dharma {
+  color: #2ecc71;
+  background: linear-gradient(135deg, rgba(46,204,113,.15), rgba(46,204,113,.04));
+  border-color: rgba(46,204,113,.25);
+  box-shadow: 0 0 12px rgba(46,204,113,.06);
+}
+html.light .token-dharma {
+  background: linear-gradient(135deg, rgba(46,204,113,.10), rgba(46,204,113,.02));
+}
+
+/* Aura — celeste */
+.token-aura {
+  color: #6EC8FF;
+  background: linear-gradient(135deg, rgba(110,200,255,.15), rgba(110,200,255,.04));
+  border-color: rgba(110,200,255,.2);
+  box-shadow: 0 0 12px rgba(110,200,255,.06);
+}
+html.light .token-aura {
+  background: linear-gradient(135deg, rgba(110,200,255,.10), rgba(110,200,255,.02));
+}
+
+/* Karma — rojo/rosa */
+.token-karma {
+  color: #ff6b6b;
+  background: linear-gradient(135deg, rgba(255,107,107,.12), rgba(255,107,107,.03));
+  border-color: rgba(255,107,107,.2);
+  box-shadow: 0 0 12px rgba(255,107,107,.05);
+}
+.token-karma.negative {
+  color: #FF2D55;
+  background: linear-gradient(135deg, rgba(255,45,85,.18), rgba(255,45,85,.05));
+  border-color: rgba(255,45,85,.3);
+}
+html.light .token-karma {
+  background: linear-gradient(135deg, rgba(255,107,107,.08), rgba(255,107,107,.02));
+}
+
+/* $ALEM — dorado */
+.token-alem {
+  color: #FFD84D;
+  background: linear-gradient(135deg, rgba(255,216,77,.15), rgba(255,216,77,.04));
+  border-color: rgba(255,216,77,.2);
+  box-shadow: 0 0 12px rgba(255,216,77,.06);
+}
+html.light .token-alem {
+  background: linear-gradient(135deg, rgba(255,216,77,.12), rgba(255,216,77,.03));
+}
+
+/* veALEM — naranja */
+.token-vealem {
+  color: #ff9f43;
+  background: linear-gradient(135deg, rgba(255,159,67,.15), rgba(255,159,67,.04));
+  border-color: rgba(255,159,67,.2);
+  box-shadow: 0 0 12px rgba(255,159,67,.06);
+}
+html.light .token-vealem {
+  background: linear-gradient(135deg, rgba(255,159,67,.10), rgba(255,159,67,.02));
+}
+
 .hint.vealem { margin-top: 6px; color: #B084FF; }
 
 /* ===== Mobile: scroll horizontal en profile-fixed ===== */
@@ -197,4 +286,141 @@ html.light .modal .profile-fixed {
   .profile-content .post-tags .pill { flex: 1 1 auto; min-width: 0; max-width: 100%; white-space: normal; word-break: break-word; box-sizing: border-box; text-align: left; }
   .profile-content .h2 { font-size: 16px; }
   .profile-content .muted { font-size: 12px; }
+  .pf-stats-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ===== Estadísticas glass (Estado + Actividad) ===== */
+.pf-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.pf-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  text-align: center;
+}
+.pf-stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: .7;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  line-height: 1.2;
+}
+.pf-stat-value {
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+html.light .pf-stat-item {
+  background: rgba(0,0,0,.03);
+}
+
+/* Dharma/Aura con color sobre pf-stat-item */
+.pf-stat-item.dharma {
+  color: #2ecc71;
+  background: linear-gradient(135deg, rgba(46,204,113,.12), rgba(46,204,113,.03));
+  border-color: rgba(46,204,113,.2);
+}
+.pf-stat-item.aura {
+  color: #6EC8FF;
+  background: linear-gradient(135deg, rgba(110,200,255,.12), rgba(110,200,255,.03));
+  border-color: rgba(110,200,255,.2);
+}
+html.light .pf-stat-item.dharma {
+  background: linear-gradient(135deg, rgba(46,204,113,.10), rgba(46,204,113,.02));
+}
+html.light .pf-stat-item.aura {
+  background: linear-gradient(135deg, rgba(110,200,255,.10), rgba(110,200,255,.02));
+}
+
+/* =========================================================
+   🛒 MARKETPLACE P2P (Tienda)
+========================================================= */
+.mk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+.mk-card {
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  overflow: hidden;
+  transition: transform .15s;
+}
+.mk-card:hover { transform: translateY(-2px); }
+.mk-card.mk-sold { opacity: .5; }
+.mk-img-wrap {
+  width: 100%;
+  aspect-ratio: 1;
+  background: rgba(255,255,255,.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.mk-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+.mk-img-fallback { font-size: 32px; opacity: .4; }
+.mk-info { padding: 8px 10px 10px; }
+.mk-name { font-weight: 800; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mk-seller { font-size: 11px; opacity: .6; margin-top: 2px; }
+.mk-price { font-size: 13px; font-weight: 700; margin-top: 4px; color: #6EC8FF; }
+.mk-status { font-size: 11px; margin-top: 2px; }
+.mk-buy-btn {
+  margin-top: 6px;
+  width: 100%;
+  padding: 6px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  cursor: pointer;
+}
+.mk-buy-btn:hover { opacity: .85; }
+.mk-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mk-label {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: .7;
+  margin-bottom: -4px;
+}
+.mk-input {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--font);
+}
+.mk-input.mono { font-family: var(--mono); font-size: 12px; }
+.mk-submit {
+  margin-top: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #6EC8FF, #00A3FF);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+}
+.mk-submit:hover { opacity: .85; }
+html.light .mk-card { background: rgba(0,0,0,.02); }
+html.light .mk-input { background: rgba(0,0,0,.03); }

@@ -274,7 +274,7 @@ function renderDashboard() {
   const container = document.getElementById('iaMetrics');
   if (!container) return;
 
-  // Métricas conectadas a la documentación real
+  // Métricas conectadas a documentación real y backend
   const scenesWithAR = OVR_LANDS.filter(l => l.scene).length;
   const metrics = [
     { label: 'Agentes Activos', value: `${METRICS.agentsActive}`, sub: `de ${AGENTS.length} totales` },
@@ -549,9 +549,15 @@ function startActivityRefresh() {
 
 // Métricas cada 15 segundos
 function startMetricsRefresh() {
-  setInterval(() => {
-    METRICS.ops24h += Math.floor(Math.random() * 5);
-
+  setInterval(async () => {
+    const agents = await fetchAgents();
+    if (agents) {
+      METRICS.agentsActive = agents.filter(a => a.status === 'online' || a.status === 'busy').length;
+      METRICS.ops24h = agents.reduce((sum, a) => {
+        const c = a.counter?.find(ct => ct.icon === '🤖');
+        return sum + Number(c?.val?.replace(/[,.]/g, '') || 0);
+      }, 0);
+    }
     const el = document.getElementById('iaMetrics');
     if (el) renderDashboard();
   }, 15000);
