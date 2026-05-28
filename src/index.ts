@@ -220,7 +220,7 @@ app.get("/api/me/stats", auth, async (c) => {
   // Consultar RPC si no hay caché
   if (auraContract && !cacheValid) {
     const rpcUrls = [
-      'https://base.drpc.org',
+      'https://mainnet.base.org',
       'https://base-rpc.publicnode.com',
     ];
     const data = '0x70a08231' + address.slice(2).padStart(64, '0');
@@ -319,7 +319,7 @@ app.post("/api/aura/approve-agent", async (c) => {
   if (!auraContract) {
     return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
   }
-  const rpcUrl = 'https://base.drpc.org';
+  const rpcUrl = 'https://mainnet.base.org';
 
   // approve(spender=contratoAURA, amount=type(uint256).max)
   const approveSelector = '0x095ea7b3';
@@ -373,7 +373,7 @@ app.post("/api/aura/claim", auth, async (c) => {
   const payload = await c.req.json().catch(() => ({} as any));
   let amountWei = String(payload.amount || "0");
   const auraContract = c.env.AURA_CONTRACT;
-  const rpcUrl = 'https://base.drpc.org';
+  const rpcUrl = 'https://mainnet.base.org';
   const agentAddr = '0x02756cb3a5413cd616d192c56dfdce80dd66706e';
 
   if (!auraContract) {
