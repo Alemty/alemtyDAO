@@ -1660,23 +1660,29 @@ function startFarming(addr, container, currentStreak) {
     drawFarmScene(addr, null, true);
     drawFishingRod(ctx, px, py, angle);
 
-    // Línea de pesca
-    const lineLen = 20 + progress * 50;
-    const lx = px + 16 + Math.cos(-angle + 0.2) * 8;
-    const ly = py - 4 + Math.sin(-angle + 0.2) * 8;
-    ctx.strokeStyle = '#ccc';
+    // Línea apuntando al estanque (como el estado estático)
+    const lineExtend = progress * 0.6;
+    const lx = px + 22;
+    const ly = py - 16;
+    const tx = pondCX - 30;
+    const ty = pondCY - 8;
+    const curX = lx + (tx - lx) * lineExtend;
+    const curY = ly + (ty - ly) * lineExtend;
+    ctx.strokeStyle = 'rgba(200,200,200,0.5)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(lx, ly);
-    ctx.lineTo(lx, Math.min(ly + lineLen, ly + 60));
+    ctx.quadraticCurveTo(px + 50 + progress * 20, py - 28 + progress * 10, curX, curY);
     ctx.stroke();
 
-    // Boya
-    const boyaY = Math.min(ly + lineLen, ly + 60);
-    const bounce = Math.sin(progress * 8) * 2;
+    // Boya roja al final de la línea
     ctx.fillStyle = '#ff4444';
     ctx.beginPath();
-    ctx.arc(lx, boyaY + bounce, 3, 0, Math.PI * 2);
+    ctx.arc(curX, curY + Math.sin(progress * 8) * 2, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ff8888';
+    ctx.beginPath();
+    ctx.arc(curX - 1, curY - 1 + Math.sin(progress * 8) * 2, 1.5, 0, Math.PI * 2);
     ctx.fill();
 
     frame++;
@@ -1691,30 +1697,30 @@ function startFarming(addr, container, currentStreak) {
     let frame2 = 0;
     const totalFrames2 = 25;
     const reward = getRandomFarmReward(currentStreak);
+    const pondX = pondCX - 30, pondY = pondCY - 8;
 
     function reelStep() {
       const p = frame2 / totalFrames2;
-      const lineLen = 60 * (1 - p);
-      const lx = px + 16;
-      const ly = py - 4;
-      const endY = ly + lineLen;
 
       drawFarmScene(addr, null, true);
       drawFishingRod(ctx, px, py, -0.2 + p * 0.2);
 
-      // Línea
-      ctx.strokeStyle = '#ccc';
+      // Línea recogiéndose desde el estanque hacia la caña
+      const invP = 1 - p;
+      const curX = px + 22 + (pondX - (px + 22)) * invP;
+      const curY = (py - 16) + (pondY - (py - 16)) * invP;
+      ctx.strokeStyle = 'rgba(200,200,200,0.5)';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(lx, ly);
-      ctx.lineTo(lx, endY);
+      ctx.moveTo(px + 22, py - 16);
+      ctx.quadraticCurveTo(px + 50, py - 28, curX, curY);
       ctx.stroke();
 
-      // Cofre que sube desde el agua
-      const chestY = endY - 10 + (1 - p) * 30;
-      const chestX = lx + Math.sin(p * 6) * 3;
+      // Cofre que sube desde el agua (desde pondX,pondY hacia arriba)
+      const chestY = pondY + 10 - p * 25;
+      const chestX = pondX + Math.sin(p * 6) * 3;
 
-      // Agua salpicando
+      // Salpicaduras
       ctx.fillStyle = 'rgba(100,200,240,0.4)';
       for (let i = 0; i < 5; i++) {
         const sx = chestX + (i - 2) * 7 + Math.sin(p * 10 + i * 1.5) * 4;
@@ -1825,30 +1831,31 @@ function showFarmResult(addr, container, reward, ctx, currentStreak) {
 
   if (overlay && title && sub && icon) {
     overlay.style.display = 'flex';
+    const auraDisplay = reward < 1 ? reward.toFixed(1) : reward;
     if (reward >= 100) {
       icon.textContent = '👑';
-      title.textContent = `🎉 ${reward} AURA — JACKPOT MÍTICO!`;
-      sub.textContent = '¡Eres una leyenda de la pesca!';
+      title.textContent = `👑 ¡${auraDisplay} AURA — JACKPOT MÍTICO!`;
+      sub.textContent = '¡El cofre legendario contenía una fortuna!';
     } else if (reward >= 50) {
       icon.textContent = '💎';
-      title.textContent = `✨ ${reward} AURA — Premio legendario!`;
+      title.textContent = `💎 ¡${auraDisplay} AURA — Premio legendario!`;
       sub.textContent = '¡El cofre contenía un tesoro increíble!';
     } else if (reward >= 10) {
       icon.textContent = '🌟';
-      title.textContent = `⭐ ${reward} AURA — Gran pesca!`;
+      title.textContent = `🌟 ¡${auraDisplay} AURA — Cofre valioso!`;
       sub.textContent = 'Un cofre muy valioso emergió del estanque.';
     } else if (reward >= 5) {
       icon.textContent = '🎁';
-      title.textContent = `🎁 ${reward} AURA — Buena pesca!`;
+      title.textContent = `🎁 ¡${auraDisplay} AURA — Buena pesca!`;
       sub.textContent = 'El cofre tenía un brillo especial.';
     } else if (reward >= 1) {
       icon.textContent = '📦';
-      title.textContent = `📦 ${reward} AURA`;
+      title.textContent = `📦 ¡${auraDisplay} AURA`;
       sub.textContent = 'Un cofre modesto pero bienvenido.';
     } else {
-      icon.textContent = '🐟';
-      title.textContent = `🐟 ${reward} AURA`;
-      sub.textContent = 'Un pececillo se transformó en AURA.';
+      icon.textContent = '🪙';
+      title.textContent = `🪙 ¡${auraDisplay} AURA`;
+      sub.textContent = 'Un cofre pequeñito pero es AURA.';
     }
   }
 
@@ -1908,7 +1915,7 @@ function renderFarmHistoryFromServer(container, history) {
   }
   const items = history.slice(0, 10).map(h => {
     const d = new Date(h.date + 'T00:00:00');
-    let icon = '🐟';
+    let icon = '🪙';
     if (h.amount >= 100) icon = '👑';
     else if (h.amount >= 50) icon = '💎';
     else if (h.amount >= 10) icon = '🌟';
