@@ -361,6 +361,12 @@ export async function signAndSendTransaction(
   const pkBytes = hexToBytes(pkClean.length === 64 ? pkClean : pkClean.padStart(64, '0'));
   const pkBig = bytesToBigInt(pkBytes);
   
+  // Derivar clave pública (también se usa para firmar)
+  const pubKeyPoint = pointMul(pkBig, { x: GX, y: GY });
+  const pubKeyDerived = '0x04' + bytesToHex(bigIntToBytes32(pubKeyPoint.x)) + bytesToHex(bigIntToBytes32(pubKeyPoint.y));
+  const addrDerived = '0x' + bytesToHex(keccak256(pubKeyPoint.x === 0n ? new Uint8Array(64) : new Uint8Array([...(bigIntToBytes32(pubKeyPoint.x)), ...(bigIntToBytes32(pubKeyPoint.y))])).slice(12));
+  console.log("🔑 Derived pubKey:", pubKeyDerived.slice(0, 20) + '...', "addr:", addrDerived);
+  
   // 2. Use provided from address or derive it
   const fromAddress = txParams.from ? txParams.from.toLowerCase() : _deriveAddress(pkHex);
   const toAddress = txParams.to.toLowerCase();
