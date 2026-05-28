@@ -17,3 +17,10 @@ not_found_handling = "single-page-application"
 binding = "DB"
 database_name = "alemtydao-db"
 database_id = "bd641541-fbee-4630-b13e-4af7683887fc"
+
+# ===============================
+# AURA Token Contract (Base Mainnet)
+# ===============================
+[vars]
+AURA_CONTRACT = "0x74f685da4d39e53e7df6e0970b84224ea0d00634"
+AURA_RPC_URL = "https://mainnet.base.org"

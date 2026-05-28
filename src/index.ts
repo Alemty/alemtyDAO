@@ -21,6 +21,9 @@ export type Bindings = {
   SESSION_SECRET: string;
   JWT_SECRET: string;
   ASSETS: Fetcher;
+  AURA_CONTRACT: string;
+  AURA_PRIVATE_KEY: string;
+  AURA_RPC_URL: string;
 };
 
 export type Vars = {
@@ -157,7 +160,43 @@ app.get("/api/me/stats", auth, async (c) => {
   const commentsReceived = Number((commentsReceivedRow as any)?.n ?? 0);
 
   const dharma = pointsReceived + likesReceived;
-  const aura = dharma;
+
+  // AURA se genera 1:1 con Dharma (cada like/point = +1 AURA acumulado).
+  // El minteo on-chain ocurre por epoch (semanal) — Rulebook §5.1 — para evitar
+  // gas por cada interacción. El usuario reclama su AURA acumulado en 1 tx semanal.
+  // El perfil muestra: auraGenerado (total acumulado off-chain) y auraReclamable
+  // (lo generado en el epoch actual que aún no se minteó).
+  // El balance on-chain (auraBalance) es lo que el usuario tiene disponible para gastar/swapear.
+
+  // TODO: almacenar en D1 el último epoch reclamado por usuario para calcular auraReclamable
+  const aura = dharma; // total generado off-chain (visual)
+  let auraReclamable = 0; // generado en epoch actual, pendiente de mintear
+  let auraBalance = '0';
+  const auraContract = c.env.AURA_CONTRACT;
+  if (auraContract) {
+    try {
+      const rpcUrl = c.env.AURA_RPC_URL || 'https://mainnet.base.org';
+      const data = '0x70a08231' + address.slice(2).padStart(64, '0');
+      const rpcRes = await fetch(rpcUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'eth_call',
+          params: [{ to: auraContract, data }, 'latest']
+        })
+      });
+      if (rpcRes.ok) {
+        const json: any = await rpcRes.json();
+        if (json?.result && json.result !== '0x') {
+          auraBalance = String(BigInt(json.result) / 10n ** 16n / 100n);
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ AURA RPC error:', e);
+    }
+  }
 
   return c.json({
     ok: true,
@@ -173,7 +212,9 @@ app.get("/api/me/stats", auth, async (c) => {
     },
     tokenomics: {
       dharma,
-      aura,
+      aura,           // total generado off-chain (visual, coincide con dharma)
+      auraReclamable, // pendiente de mintear on-chain este epoch
+      auraBalance,    // balance on-chain real (después de gastos/swaps)
     },
   });
 });
@@ -200,6 +241,149 @@ app.get("/api/me", auth, async (c) => {
 app.get("/api/me/verify", auth, async (c) => {
   const address = c.get("address");
   return c.json({ ok: true, address });
+});
+
+/* =========================================================
+   AURA — Claim de recompensas (Rulebook §5.1)
+   POST /api/aura/claim
+   Body: { to: string, amount: string (wei) }
+   Devuelve: tx preparada lista para firmar con MetaMask
+   El usuario firma desde el frontend (sin private key en el Worker)
+========================================================= */
+app.post("/api/aura/claim", auth, async (c) => {
+  const caller = c.get("address");
+  const payload = await c.req.json().catch(() => ({} as any));
+  const to = String(payload.to || caller).toLowerCase();
+  const amountWei = String(payload.amount || "0");
+  const auraContract = c.env.AURA_CONTRACT;
+  const rpcUrl = c.env.AURA_RPC_URL || 'https://mainnet.base.org';
+
+  if (!auraContract) {
+    return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
+  }
+
+  // 1. Validar hard cap on-chain
+  try {
+    const supplyData = '0x18160ddd'; // totalSupply()
+    const capData = '0xfb86a404';    // hardCap()
+    const [supplyRes, capRes] = await Promise.all([
+      fetch(rpcUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: auraContract, data: supplyData }, 'latest'] })
+      }),
+      fetch(rpcUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_call', params: [{ to: auraContract, data: capData }, 'latest'] })
+      })
+    ]);
+    const supplyJson: any = await supplyRes.json();
+    const capJson: any = await capRes.json();
+    if (supplyJson?.result && capJson?.result) {
+      const currentSupply = BigInt(supplyJson.result);
+      const hardCap = BigInt(capJson.result);
+      const amount = BigInt(amountWei);
+      if (currentSupply + amount > hardCap) {
+        return c.json({ ok: false, error: 'ExceedsHardCap', currentSupply: currentSupply.toString(), hardCap: hardCap.toString() }, 400);
+      }
+    }
+  } catch (e: any) {
+    console.warn('⚠️ Error validando hard cap:', e.message);
+  }
+
+  // 2. Obtener nonce del minter (0x6A202f...) para construir la tx
+  let nonce = '0x0';
+  try {
+    const nonceRes = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 3,
+        method: 'eth_getTransactionCount',
+        params: ['0x6A202f991c4C1df079449BE9847b1DaC3F51854f', 'latest']
+      })
+    });
+    const nonceJson: any = await nonceRes.json();
+    if (nonceJson?.result) nonce = nonceJson.result;
+  } catch (e: any) {
+    console.warn('⚠️ Error obteniendo nonce:', e.message);
+  }
+
+  // 3. Construir datos de la tx (mint(address,uint256) = 0x40c10f19)
+  const mintSelector = '0x40c10f19';
+  const toPadded = to.slice(2).padStart(64, '0');
+  const amountPadded = BigInt(amountWei).toString(16).padStart(64, '0');
+  const data = mintSelector + toPadded + amountPadded;
+
+  // 4. Estimar gas
+  let gasEstimate = '0x52080'; // 336k default
+  try {
+    const gasRes = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 4,
+        method: 'eth_estimateGas',
+        params: [{
+          from: '0x6A202f991c4C1df079449BE9847b1DaC3F51854f',
+          to: auraContract,
+          data
+        }]
+      })
+    });
+    const gasJson: any = await gasRes.json();
+    if (gasJson?.result) gasEstimate = gasJson.result;
+  } catch (e: any) {
+    console.warn('⚠️ Error estimando gas:', e.message);
+  }
+
+  // 5. Obtener gas price
+  let gasPrice = '0x59682f00'; // 1.5 gwei default
+  try {
+    const gasPriceRes = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 5, method: 'eth_gasPrice', params: [] })
+    });
+    const gpJson: any = await gasPriceRes.json();
+    if (gpJson?.result) gasPrice = gpJson.result;
+  } catch (e: any) {
+    console.warn('⚠️ Error obteniendo gas price:', e.message);
+  }
+
+  // 6. Devolver tx preparada para que el frontend la firme con eth_sendTransaction
+  // El from es la wallet minter (0x6A202f...) — el usuario debe tenerla en MetaMask
+  return c.json({
+    ok: true,
+    tx: {
+      from: '0x6A202f991c4C1df079449BE9847b1DaC3F51854f',
+      to: auraContract,
+      data,
+      nonce,
+      gas: gasEstimate,
+      gasPrice,
+      value: '0x0',
+      chainId: '0x2105' // 8453 Base Mainnet
+    },
+    metadata: {
+      to,
+      amountWei,
+      amountReadable: (Number(amountWei) / 1e18).toFixed(4),
+      auraContract
+    }
+  });
+});
+
+// Endpoint legacy para compatibilidad (instrucciones manuales)
+app.post("/api/aura/mint", auth, async (c) => {
+  return c.json({
+    ok: false,
+    error: "Usa POST /api/aura/claim en su lugar. Este endpoint prepara la tx para firmar con MetaMask.",
+    instructions: "Haz POST a /api/aura/claim con { amount: 'string en wei' } y firma la tx devuelta con eth_sendTransaction desde el frontend."
+  }, 400);
 });
 
 /* =========================================================

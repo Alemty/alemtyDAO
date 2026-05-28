@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="es">
 <head>
@@ -45,7 +44,6 @@
   © alemty.eth · ENS · IPFS · FINANZAS DESCENTRALIZADAS
 </div>
 
-
   <!-- Fondo vivo -->
   <div class="defi-bg"></div>
 
@@ -55,9 +53,9 @@
   <span class="defi-brand-em">defi</span><span class="defi-brand-em">.</span><span class="defi-brand-base">alemty</span><span class="defi-brand-base">.</span><span class="defi-brand-em">eth</span>
 </div>
 
-    <p class="muted">Reporte visual: emisión, volatilidad y puente hacia DEX.</p>
+    <p class="muted">Reporte DeFi basado en Tokenomics Rulebook v1.3 — Emisión, precios y sostenibilidad a largo plazo.</p>
 
-    <!-- ===== TRADING CHARTS (3 grandes, estilo Binance) ===== -->
+    <!-- ===== TRADING CHARTS (3 pares, estilo Binance) ===== -->
     <section class="trading-section" aria-label="Gráficos de trading">
       <div class="trading-tabs">
         <button class="trading-tab active" data-pair="AURA/USD">AURA/USD</button>
@@ -79,23 +77,116 @@
       </div>
     </section>
 
-    <!-- 4 TOKENS (mini cards en una línea) -->
-    <section class="defi-row4" aria-label="Tokens principales">
-      <article class="card defi-mini" id="cardDharma"></article>
-      <article class="card defi-mini" id="cardKarma"></article>
-      <article class="card defi-mini" id="cardAura"></article>
-      <article class="card defi-mini" id="cardAlem"></article>
+    <!-- ===== REPORTE TOKENOMICS: 4 métricas clave ===== -->
+    <section class="defi-row4" aria-label="Métricas tokenomics">
+      <article class="card defi-mini" id="cardSupply">
+        <div class="mini-top">
+          <div>
+            <div class="mini-title">Supply ALEM</div>
+            <div class="mini-meta">Máximo inmutable · 1,000,000,000</div>
+          </div>
+        </div>
+        <div class="mini-tags">
+          <span class="mini-tag">50% Comunidad</span>
+          <span class="mini-tag">20% Reserva</span>
+          <span class="mini-tag">15% Equipo</span>
+          <span class="mini-tag">10% DAO</span>
+          <span class="mini-tag">5% Grants</span>
+        </div>
+        <div class="small muted" style="margin-top:4px;">
+          Distribución fijada en tokenomics · Sin ICO · Sin preventa
+        </div>
+      </article>
+
+      <article class="card defi-mini" id="cardAuraEmission">
+        <div class="mini-top">
+          <div>
+            <div class="mini-title">Aura — Emisión</div>
+            <div class="mini-meta">Decay + piso h_min = 0.05</div>
+          </div>
+        </div>
+        <div class="mini-tags">
+          <span class="mini-tag">α=0.001</span>
+          <span class="mini-tag">H=26 epochs</span>
+          <span class="mini-tag">Piso perpetuo</span>
+        </div>
+        <div class="small muted" style="margin-top:4px;">
+          AuraPerEvent = Aura₀ × m(Nₑ) × h(e) · Solo desde Dharma Social
+        </div>
+      </article>
+
+      <article class="card defi-mini" id="cardAlemEmission">
+        <div class="mini-top">
+          <div>
+            <div class="mini-title">ALEM — Emisión</div>
+            <div class="mini-meta">Determinista por señal</div>
+          </div>
+        </div>
+        <div class="mini-tags">
+          <span class="mini-tag">Nref=1000</span>
+          <span class="mini-tag">k=0.65</span>
+          <span class="mini-tag">m_min=0.02</span>
+        </div>
+        <div class="small muted" style="margin-top:4px;">
+          Solo eventos calificados · Decae con adopción · Sin inflación fija
+        </div>
+      </article>
+
+      <article class="card defi-mini" id="cardAuraCap">
+        <div class="mini-top">
+          <div>
+            <div class="mini-title">Aura — Cap Dinámico</div>
+            <div class="mini-meta">Aura_max = pool × ratio × 2</div>
+          </div>
+        </div>
+        <div class="mini-tags">
+          <span class="mini-tag">Ratio 1000:1</span>
+          <span class="mini-tag">β=1% breaker</span>
+          <span class="mini-tag">Sostenible</span>
+        </div>
+        <div class="small muted" style="margin-top:4px;">
+          Cap crece con ALEM en pool · Circuit breaker diario evita drenaje
+        </div>
+      </article>
     </section>
 
-    <!-- 2 CARDS EXTRA (mini en línea) -->
-    <section class="defi-row2" style="margin-top:12px;" aria-label="Gobernanza y pools">
-      <article class="card defi-mini" id="cardAlemVeAlem"></article>
-      <article class="card defi-mini" id="cardPoolVeAlemVeStake"></article>
+    <!-- ===== SUSTAINABILITY REPORT ===== -->
+    <section class="card" style="margin-top:16px;padding:18px;">
+      <div class="h2" style="margin-bottom:10px;">🌱 Reporte de Sostenibilidad — Tokenomics v1.3</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;">
+        <div>
+          <div class="t" style="font-size:13px;">Separación regulatoria</div>
+          <div class="small muted">Dharma (XP) y Karma (deuda) son off-chain no transferibles. Aura es utility cerrada no listed. ALEM es gobernanza. Ningún componente es equity ni promesa de retorno.</div>
+        </div>
+        <div>
+          <div class="t" style="font-size:13px;">Anti-farm y Sybil</div>
+          <div class="small muted">DS recibe doble cap por par DID→DID (5 máx/día). Karma bloquea nivel hasta saldar. AuraSeed requiere anti-Sybil verificable. No pay-to-level.</div>
+        </div>
+        <div>
+          <div class="t" style="font-size:13px;">Decadencia programada</div>
+          <div class="small muted">Aura: decay hiperbólico por epoch con piso perpetuo (h_min=0.05). ALEM: emisión decae con adopción (m(N) = (Nref/max(N,Nref))^k). Sin inflación perpetua.</div>
+        </div>
+        <div>
+          <div class="t" style="font-size:13px;">Gobernanza no líquida</div>
+          <div class="small muted">Poder político = veALEM (locked). Decae con el tiempo sin relock. Nobleza (Reyes/Príncipes/Duques) dinámica y no heredable. Quórum 10% veALEM activo.</div>
+        </div>
+        <div>
+          <div class="t" style="font-size:13px;">Circuit breaker y caps</div>
+          <div class="small muted">Aura cap dinámico amarrado al pool (crece con liquidez). Circuit breaker diario β=1% evita drenaje masivo. SwapFactor ajusta por Karma.</div>
+        </div>
+        <div>
+          <div class="t" style="font-size:13px;">Modelo económico cerrado</div>
+          <div class="small muted">Aura fluye por consumo (posts, puntos, boosts) con quema parcial (50%). No hay faucet ni emisión infinita. El mérito (DS) es la única puerta de entrada.</div>
+        </div>
+      </div>
+      <div class="small muted" style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px;">
+        📄 Tokenomics Rulebook v1.3 · Constitución v1 · Whitepaper Final · <strong>El código es la ley — lo no escrito no existe.</strong>
+      </div>
     </section>
 
-    <!-- CHARTS GRID: Pie pequeño + 3 charts pequeños -->
-    <section class="defi-charts" style="margin-top:14px;" aria-label="Gráficas">
-      <!-- Pie pequeño -->
+    <!-- ===== CANONICAL CHARTS ===== -->
+    <section class="defi-charts" style="margin-top:16px;" aria-label="Gráficas canónicas">
+      <!-- Pie -->
       <div class="card chart-card chart-pie" id="mintPieWrap" data-chart="mintPie" role="button" tabindex="0" aria-label="Abrir detalle de Mint">
         <div class="chart-head">
           <div>
@@ -104,7 +195,6 @@
           </div>
           <button class="icon-btn mini" type="button" data-action="open-mint" aria-label="Abrir mint">↗</button>
         </div>
-
         <div class="pie-grid">
           <canvas id="chartPie" width="200" height="150" aria-label="Gráfica de pastel mint"></canvas>
           <div class="pie-bar" id="pieBar" aria-label="Leyenda de mint"></div>
@@ -118,7 +208,7 @@
           <button class="icon-btn mini" type="button" data-action="open-aura" aria-label="Abrir aura">↗</button>
         </div>
         <canvas id="chartAura" width="360" height="130" aria-label="Gráfica aura"></canvas>
-        <div class="small muted">Decay + piso mínimo.</div>
+        <div class="small muted">Decay + piso mínimo · Sostenible</div>
       </div>
 
       <!-- ALEM -->
@@ -128,7 +218,7 @@
           <button class="icon-btn mini" type="button" data-action="open-alem" aria-label="Abrir alem">↗</button>
         </div>
         <canvas id="chartAlem" width="360" height="130" aria-label="Gráfica alem"></canvas>
-        <div class="small muted">Solo eventos calificados.</div>
+        <div class="small muted">Solo eventos calificados · Sin inflación</div>
       </div>
 
       <!-- Cap -->
@@ -138,17 +228,12 @@
           <button class="icon-btn mini" type="button" data-action="open-cap" aria-label="Abrir cap">↗</button>
         </div>
         <canvas id="chartCap" width="360" height="130" aria-label="Gráfica cap"></canvas>
-        <div class="small muted">Cap crece con el pool.</div>
+        <div class="small muted">Cap crece con el pool · Breaker 1%</div>
       </div>
     </section>
 
-    <!-- Roadmap botón (abre modal) -->
-    <section style="margin-top:14px;">
-      <button class="btn" id="openRoadmap" type="button">Ver Roadmap DEX</button>
-    </section>
-
     <footer class="small muted" style="margin-top:18px;">
-      alemty · DeFi · Reporte v1 · No financiero / no equity / no promesa de retorno.
+      alemty · DeFi · Reporte v1.3 · No financiero / no equity / no promesa de retorno · <strong>Código primero, código siempre.</strong>
     </footer>
   </main>
 
@@ -168,7 +253,3 @@
   <script type="module" src="/defi/js/app.js"></script>
 </body>
 </html>
-
-
-
-

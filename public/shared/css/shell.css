@@ -405,7 +405,7 @@ html.light .modal-backdrop {
 .modal-card {
   position: relative;
   width: min(980px, 92vw);
-  margin: calc(var(--app-topbar-h, var(--topbar-h)) + 16px) auto 0;
+  margin: calc(var(--app-topbar-h, var(--topbar-h)) + 12px) auto 0;
   z-index: 2;
   border-radius: 24px;
   border: 1px solid var(--ui-border);
@@ -414,7 +414,7 @@ html.light .modal-backdrop {
   -webkit-backdrop-filter: var(--glass-blur);
   overflow: visible;
   box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(0,255,213,.18) inset;
-  max-height: calc(100vh - var(--app-topbar-h, var(--topbar-h)) - var(--app-bottomnav-h, 78px) - 8px);
+  max-height: calc(100vh - var(--app-topbar-h, var(--topbar-h)) - 110px);
   display: flex;
   flex-direction: column;
 }
@@ -468,7 +468,7 @@ html.light .modal-headbar { border-bottom: 1px solid rgba(0,0,0,.08); }
 .modal-body {
   padding: 18px 20px 22px;
   overflow-y: auto;
-  max-height: calc(100vh - var(--app-topbar-h, var(--topbar-h)) - var(--app-bottomnav-h, 78px) - 80px);
+  flex: 1;
   scrollbar-width: thin;
   scrollbar-color: var(--primary) rgba(255,255,255,.06);
 }
@@ -647,6 +647,25 @@ html.theme-ready .modal-card {
 html:not(.theme-ready) * { transition: none !important; }
 
 * { transition: color .18s ease; }
+
+/* ===== SERVICE CARDS (modal de servicios) ===== */
+.service-card {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.02);
+}
+.service-card:hover {
+  background: rgba(0,255,213,.03);
+  border-color: rgba(0,255,213,.12);
+}
+html.light .service-card {
+  background: rgba(0,0,0,.02);
+}
+html.light .service-card:hover {
+  background: rgba(13,185,166,.06);
+  border-color: rgba(13,185,166,.18);
+}
 
 /* ===== TYPOGRAPHY ===== */
 body {

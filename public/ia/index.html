@@ -1,80 +1,8 @@
-
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>alemty.eth · IA</title>
-
-  <!-- Estilos globales (desde subcarpeta) -->
-  <link rel="stylesheet" href="../settings/theme.css">
-  <link rel="stylesheet" href="../shared/css/module.css">
-  <link rel="stylesheet" href="../shared/css/shell.css">
-  <link rel="stylesheet" href="css/style.css">
-
-  <!-- Fuente -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=Quicksand:wght@300..500&display=swap" rel="stylesheet">
-</head>
-
-<body>
-  <!-- ✅ Shell inyecta aquí -->
-  <header id="topbar"></header>
-  <nav id="navbar"></nav>
-
-  <!-- Contenido principal -->
-  <main class="container" style="margin-top:16px;">
-
-    <section class="card">
-      <div class="h1">IA · alemty.eth</div>
-      <p class="muted">
-        Módulo de Inteligencia Artificial.
-        Agentes, simulaciones, análisis y automatización soberana.
-      </p>
-    </section>
-
-    <section class="grid" style="margin-top:16px;">
-      <div class="col-6">
-        <div class="card">
-          <div class="h2">Agentes</div>
-          <p class="small muted">
-            Agentes autónomos conectados a identidad y tokens.
-          </p>
-          <button class="btn" disabled>Crear agente</button>
-        </div>
-      </div>
-
-      <div class="col-6">
-        <div class="card">
-          <div class="h2">Simulaciones</div>
-          <p class="small muted">
-            Entornos de prueba, modelos y escenarios.
-          </p>
-          <button class="btn" disabled>Ver simulaciones</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="grid" style="margin-top:16px;">
-      <div class="col-12">
-        <div class="card">
-          <div class="h2">Estado</div>
-          <p class="small muted">
-            Este módulo se activará progresivamente.
-            Conectará con DEX, DAO y Tokenomics.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <footer class="small muted" style="margin-top:24px;">
-      Módulo IA · alemty.eth
-    </footer>
-
-  </main>
-
-  <!-- Inicialización de tema -->
+  <meta charset="utf-8" />
+  <!-- ================= THEME INIT (como otros subdominios) ================= -->
   <script>
     (function () {
       try {
@@ -85,12 +13,77 @@
       } catch {}
     })();
   </script>
+  <meta name="viewport" content="width=device-width, initial-scale=0.7, maximum-scale=1, user-scalable=yes" />
+  <meta name="color-scheme" content="dark light" />
+  <title>ia.alemty.eth</title>
 
-  <!-- ✅ Shell JS (inyecta navbar, drawer, perfil, etc.) -->
-  <script type="module">
-    import { mountShell } from '../shared/js/shell.js';
-    mountShell();
-  </script>
+  <!-- CSS GLOBAL -->
+  <link rel="stylesheet" href="../settings/theme.css">
+  <link rel="stylesheet" href="../shared/css/module.css">
+  <link rel="stylesheet" href="../shared/css/shell.css">
+  <link rel="stylesheet" href="../shared/css/profile.css">
+  <link rel="stylesheet" href="../shared/css/notifications.css">
+  <link rel="stylesheet" href="../shared/css/moderation.css">
+
+  <!-- CSS IA -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Fuente -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=Quicksand:wght@300..500&display=swap" rel="stylesheet" />
+</head>
+
+<body>
+
+<header id="topbar"></header>
+<nav id="navbar"></nav>
+
+<div class="web3-disclaimer">
+  © alemty.eth · ENS · IPFS · Inteligencia Artificial Descentralizada
+</div>
+
+<main id="pageIA">
+  <div class="container" style="margin-top:16px;">
+
+    <!-- ================= TITLE: ia.alemty.eth (como defi.alemty.eth) ================= -->
+    <div class="ia-brand" aria-label="ia.alemty.eth">
+      <span class="ia-brand-em">ia</span><span class="ia-brand-em">.</span><span class="ia-brand-base">alemty</span><span class="ia-brand-base">.</span><span class="ia-brand-em">eth</span>
+    </div>
+    <p class="ia-subtitle">🤖 Centro de Control — Agentes, Automatizaciones, Foro, DEX, DEFI</p>
+
+    <!-- ================= METRICS ================= -->
+    <div class="metrics-grid" id="iaMetrics"></div>
+
+    <!-- ================= AGENTS SECTION ================= -->
+    <div class="section-title">
+      <h2>🤖 Agentes Inteligentes</h2>
+      <span class="badge" id="agentCountBadge">6 activos</span>
+    </div>
+    <div class="agents-grid" id="iaAgents"></div>
+
+    <!-- ================= ACTIVITY FEED ================= -->
+    <div class="section-title" style="margin-top:24px;">
+      <h2>📋 Actividad Reciente</h2>
+      <span class="badge">Tiempo real</span>
+    </div>
+    <div class="card" style="padding:16px;">
+      <div class="activity-feed" id="iaActivity"></div>
+    </div>
+
+    <!-- ================= ADMIN SECTION ================= -->
+    <div class="admin-section" id="iaAdmin"></div>
+
+    <div class="bottom-safe"></div>
+
+  </div>
+</main>
+
+<!-- ================= APP JS ================= -->
+<script type="module">
+  import { mountIA } from './js/app.js';
+  mountIA();
+</script>
 
 </body>
 </html>
