@@ -436,7 +436,7 @@ export async function signAndSendTransaction(
         break; // Success, stop trying
       }
     } catch (err: any) {
-      console.error(`⚠️ RPC ${rpc} failed:`, err.message?.slice(0, 60) || 'unknown error');
+      console.log(`⚠️ RPC failed [${rpc}]: ${err.message?.slice(0, 60) || 'unknown'}`);
       continue; // Try next RPC
     }
   }
