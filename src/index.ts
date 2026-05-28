@@ -201,22 +201,36 @@ app.get("/api/me/stats", auth, async (c) => {
   const auraContract = c.env.AURA_CONTRACT;
   if (auraContract) {
     try {
-      const rpcUrl = c.env.AURA_RPC_URL || 'https://mainnet.base.org';
+      // Intentar con múltiples RPCs por si alguno falla desde Cloudflare
+      const rpcUrls = [
+        c.env.AURA_RPC_URL || 'https://mainnet.base.org',
+        'https://1rpc.io/base',
+        'https://base.llamarpc.com',
+      ].filter(Boolean);
       const data = '0x70a08231' + address.slice(2).padStart(64, '0');
-      const rpcRes = await fetch(rpcUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0', id: 1, method: 'eth_call',
-          params: [{ to: auraContract, data }, 'latest']
-        })
-      });
-      if (rpcRes.ok) {
-        const json: any = await rpcRes.json();
-        if (json?.result && json.result !== '0x') {
-          auraBalance = String(BigInt(json.result) / 10n ** 16n / 100n);
-          aura = Number(auraBalance);
-        }
+      for (const rpcUrl of rpcUrls) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          const rpcRes = await fetch(rpcUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              jsonrpc: '2.0', id: 1, method: 'eth_call',
+              params: [{ to: auraContract, data }, 'latest']
+            }),
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          if (rpcRes.ok) {
+            const json: any = await rpcRes.json();
+            if (json?.result && json.result !== '0x') {
+              auraBalance = String(BigInt(json.result) / 10n ** 16n / 100n);
+              aura = Number(auraBalance);
+              break; // éxito, salir del bucle
+            }
+          }
+        } catch (_) { /* intentar siguiente RPC */ }
       }
     } catch (e) {
       console.warn('⚠️ AURA RPC error, usando fallback off-chain:', e);
@@ -509,6 +523,16 @@ app.post("/api/farm/reclaim-complete", auth, async (c) => {
 ========================================================= */
 app.route("/api/posts", posts);
 app.route("/api/rooms", rooms);
+
+// Endpoint debug para verificar env vars (ruta única que no captura legacy)
+app.get("/___debug", async (c) => {
+  const contract = c.env.AURA_CONTRACT || '(no configurado)';
+  return c.json({
+    AURA_CONTRACT: contract,
+    AURA_RPC_URL: c.env.AURA_RPC_URL || '(no configurado)',
+    contractLength: contract.length,
+  });
+});
 
 /* =========================================================
    LEGACY ROUTER (API EXTRA – NO TOCAR)
