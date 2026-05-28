@@ -190,37 +190,12 @@ app.get("/api/me/stats", auth, async (c) => {
   ).bind(address).first();
   const auraFarmed = Number(farmRow?.total || 0);
 
-  // aura = balance on-chain real (desde la RPC). Si falla la RPC, aura = 0.
-  // auraReclamable = farm claims pendientes de mintear on-chain.
-  let aura = 0;
+  // aura = total off-chain generado (dharma + farm). Cuando el contrato AURA esté
+  // deployado en Base, se consultará el balance on-chain real.
+  // auraReclamable = farm claims pendientes de reclamar (se limpian al mintear).
+  let aura = dharma + auraFarmed;
   let auraReclamable = auraFarmed;
   let auraBalance = '0';
-  const auraContract = c.env.AURA_CONTRACT;
-  if (auraContract) {
-    try {
-      const rpcUrl = c.env.AURA_RPC_URL || 'https://mainnet.base.org';
-      const data = '0x70a08231' + address.slice(2).padStart(64, '0');
-      const rpcRes = await fetch(rpcUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'eth_call',
-          params: [{ to: auraContract, data }, 'latest']
-        })
-      });
-      if (rpcRes.ok) {
-        const json: any = await rpcRes.json();
-        if (json?.result && json.result !== '0x') {
-          auraBalance = String(BigInt(json.result) / 10n ** 16n / 100n);
-          aura = Number(auraBalance);
-        }
-      }
-    } catch (e) {
-      console.warn('⚠️ AURA RPC error:', e);
-    }
-  }
 
   return c.json({
     ok: true,
@@ -240,8 +215,8 @@ app.get("/api/me/stats", auth, async (c) => {
     },
     tokenomics: {
       dharma,
-      aura,           // balance on-chain real (auraBalance) o fallback total generado
-      auraReclamable, // pendiente de mintear on-chain
+      aura,           // total generado off-chain (dharma + farm)
+      auraReclamable, // pendiente de reclamar (solo farm)
       auraBalance,    // balance on-chain real (después de gastos/swaps)
     },
   });
