@@ -204,6 +204,17 @@ html.light .token-aura {
   background: linear-gradient(135deg, rgba(110,200,255,.10), rgba(110,200,255,.02));
 }
 
+/* Label morado para "por reclamar" en el token Aura */
+.pf-aura-reclaimable {
+  color: #a855f7;
+  font-weight: 600;
+  font-size: 10px;
+  white-space: nowrap;
+}
+html.light .pf-aura-reclaimable {
+  color: #9333ea;
+}
+
 /* Karma — rojo/rosa */
 .token-karma {
   color: #ff6b6b;

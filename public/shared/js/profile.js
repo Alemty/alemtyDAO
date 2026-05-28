@@ -590,9 +590,11 @@ export async function syncProfile() {
 
   modal.querySelector("#pfDharma").textContent = addr ? String(dharma) : "—";
   const auraLabel = addr
-    ? (auraReclamable > 0 ? `${String(aura)} (${String(auraReclamable)} por reclamar)` : String(aura))
+    ? (auraReclamable > 0
+      ? `${String(aura)} <span class="pf-aura-reclaimable">(${String(auraReclamable)} por reclamar)</span>`
+      : String(aura))
     : "—";
-  modal.querySelector("#pfAura").textContent = auraLabel;
+  modal.querySelector("#pfAura").innerHTML = auraLabel;
   const auraHint = modal.querySelector("#pfAuraHint");
   if (auraHint) {
     if (addr && auraReclamable > 0) {
