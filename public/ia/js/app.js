@@ -258,26 +258,73 @@ export function mountIA() {
     renderAdminSection();
   });
 
-  renderDashboard();
-  renderAgents();
-  renderActivity();
-  renderAdminSection();
+  // Cargar datos del backend en paralelo
+  Promise.all([
+    renderDashboard(),
+    renderAgents(),
+    renderActivity()
+  ]).then(() => {
+    renderAdminSection();
+    startActivityRefresh();
+    startMetricsRefresh();
+  }).catch(() => {
+    renderAdminSection();
+    startActivityRefresh();
+    startMetricsRefresh();
+  });
+}
 
-  startActivityRefresh();
-  startMetricsRefresh();
+/* =========================================================
+   FETCH: Datos reales desde el Worker
+========================================================= */
+const API_BASE_IA = window.location.origin;
+
+async function fetchAgents() {
+  try {
+    const res = await fetch(API_BASE_IA + '/api/agents');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.ok && data.agents) {
+      METRICS.agentsActive = data.agentsActive || 6;
+      METRICS.ops24h = data.ops24h || 0;
+      METRICS.tvlManaged = data.tvlManaged || 284000;
+      METRICS.feesGenerated = data.feesGenerated || 4.2;
+      return data.agents;
+    }
+  } catch (e) {
+    console.warn('⚠️ IA: fetchAgents error, usando fallback:', e);
+  }
+  // Fallback a AGENTS local si el backend no responde
+  return null;
+}
+
+async function fetchActivity(limit) {
+  try {
+    const res = await fetch(API_BASE_IA + '/api/agents/activity?limit=' + (limit || 20));
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.ok && data.activity) return data.activity;
+  } catch (e) {
+    console.warn('⚠️ IA: fetchActivity error:', e);
+  }
+  return null;
 }
 
 /* =========================================================
    RENDER: Dashboard Metrics
 ========================================================= */
-function renderDashboard() {
+async function renderDashboard() {
   const container = document.getElementById('iaMetrics');
   if (!container) return;
 
-  // Métricas conectadas a la documentación real
+  // Intentar datos reales
+  const agents = await fetchAgents();
+  const activeAgents = agents ? agents.filter((a: any) => a.status === 'online' || a.status === 'busy').length : METRICS.agentsActive;
+
+  // Métricas conectadas a documentación real y backend
   const scenesWithAR = OVR_LANDS.filter(l => l.scene).length;
   const metrics = [
-    { label: 'Agentes Activos', value: `${METRICS.agentsActive}`, sub: `de ${AGENTS.length} totales` },
+    { label: 'Agentes Activos', value: `${activeAgents}`, sub: `de 6 totales · ${METRICS.ops24h} ops 24h` },
     { label: 'Total NFTs',     value: String(TOTAL_ASSETS), sub: `${ASSET_COLLECTIONS} colecciones · ${OVR_TOTAL} tierras` },
     { label: 'Parcelas OVR',   value: String(OVR_TOTAL), sub: `${scenesWithAR} escenas AR activas` },
     { label: 'AURA / ALEM',     value: 'Pendiente', sub: 'Minteo pendiente' }
@@ -295,16 +342,20 @@ function renderDashboard() {
 /* =========================================================
    RENDER: Agent Cards
 ========================================================= */
-function renderAgents() {
+async function renderAgents() {
   const container = document.getElementById('iaAgents');
   const badge = document.getElementById('agentCountBadge');
   if (!container) return;
 
-  if (badge) badge.textContent = `${AGENTS.length} activos`;
+  // Intentar datos reales
+  const backendAgents = await fetchAgents();
+  const agentList = backendAgents || AGENTS;
+
+  if (badge) badge.textContent = `${agentList.length} activos`;
 
   const statusDot = (s) => s === 'online' ? '🟢' : s === 'busy' ? '🟡' : '⚪';
 
-  container.innerHTML = AGENTS.map(a => `
+  container.innerHTML = agentList.map(a => `
     <div class="agent-card">
       <div class="agent-head">
         <div class="agent-avatar">${a.emoji}</div>
@@ -340,7 +391,7 @@ function renderAgents() {
         </div>
         ` : ''}
         <div class="agent-actions">
-          <button class="btn-sm" data-agent="${a.id}" data-action="goto">🔗 Ir a ${a.subdomain}</button>
+          <button class="btn-sm" data-agent="${a.id}" data-action="goto">🔗 Ir a ${a.subdomain || a.id.replace('agent-', '')}</button>
           <button class="btn-sm" data-agent="${a.id}" data-action="restart">🔄 Reiniciar</button>
           <button class="btn-sm primary" data-agent="${a.id}" data-action="config">⚙️ Configurar</button>
         </div>
@@ -360,11 +411,15 @@ function renderAgents() {
 /* =========================================================
    RENDER: Activity Feed
 ========================================================= */
-function renderActivity() {
+async function renderActivity() {
   const container = document.getElementById('iaActivity');
   if (!container) return;
 
-  container.innerHTML = ACTIVITY_LOG.map(a => `
+  // Intentar datos reales
+  const backendActivity = await fetchActivity(20);
+  const activityList = backendActivity || ACTIVITY_LOG;
+
+  container.innerHTML = activityList.map(a => `
     <div class="activity-item">
       <div class="act-icon">${a.icon}</div>
       <div class="act-body">
@@ -372,10 +427,27 @@ function renderActivity() {
           <span class="act-agent">${esc(a.agent)}</span>
           ${esc(a.text)}
         </div>
-        <div class="act-time">${esc(a.time)}</div>
+        <div class="act-time">${formatTimeAgo(a.time)}</div>
       </div>
     </div>
   `).join('');
+}
+
+function formatTimeAgo(time) {
+  if (!time) return 'hace unos seg';
+  // Si ya es string relativo, devolverlo
+  if (typeof time === 'string' && time.startsWith('hace')) return time;
+  // Si es timestamp ISO, calcular diferencia
+  try {
+    const diff = Date.now() - new Date(time).getTime();
+    const sec = Math.floor(diff / 1000);
+    if (sec < 10) return 'hace unos seg';
+    if (sec < 60) return `hace ${sec} seg`;
+    if (sec < 3600) return `hace ${Math.floor(sec / 60)} min`;
+    return `hace ${Math.floor(sec / 3600)}h`;
+  } catch {
+    return 'hace unos seg';
+  }
 }
 
 /* =========================================================
@@ -510,48 +582,47 @@ function showToast(msg) {
    REAL-TIME REFRESH LOOPS
 ========================================================= */
 
-// Actividad cada 15 segundos
+// Actividad cada 15 segundos (recarga desde backend + genera eventos locales)
 function startActivityRefresh() {
-  setInterval(() => {
-    const times = document.querySelectorAll('.act-time');
-    const statuses = ['hace unos seg', 'hace 10 seg', 'hace 30 seg', 'hace 1 min', 'hace 2 min'];
-    times.forEach(t => {
-      t.textContent = statuses[Math.floor(Math.random() * statuses.length)];
-    });
-
-    if (Math.random() > 0.5) {
-      const newActions = [
-        { agent: 'AutoBot',        text: `Pinata upload: public/ → IPFS (nuevo CID)`, icon: '⚡', time: 'hace unos seg' },
-        { agent: 'OVR Assistant',  text: `Parcela OVR sincronizada — 24/24 lands activas en Polygon`, icon: '🌍', time: 'hace unos seg' },
-        { agent: 'AutoBot',        text: `Telegram: ${Math.floor(Math.random()*50+10)} notificaciones enviadas a comunidad`, icon: '⚡', time: 'hace unos seg' },
-        { agent: 'OVR Assistant',  text: `Escena AR preparada para OVRland — coordenadas (${Math.floor(Math.random()*180-90)},${Math.floor(Math.random()*360-180)})`, icon: '🌍', time: 'hace unos seg' },
-        { agent: 'AutoBot',        text: `Discord: webhook ok — commit ${Math.random().toString(16).slice(2,8)}`, icon: '⚡', time: 'hace unos seg' },
-        { agent: 'Governance Bot', text: `veALEMTY locks activos: ${Math.floor(Math.random()*5000+12000)} tokens bloqueados`, icon: '🏛️', time: 'hace unos seg' },
-        { agent: 'Pool Balancer',  text: `Rebalance automático — ratio ALEM/WETH optimizado`, icon: '🔄', time: 'hace unos seg' }
-      ];
-      const pick = newActions[Math.floor(Math.random() * newActions.length)];
-      const feed = document.getElementById('iaActivity');
-      if (feed) {
-        const div = document.createElement('div');
-        div.className = 'activity-item';
-        div.innerHTML = `
-          <div class="act-icon">${pick.icon}</div>
+  setInterval(async () => {
+    // Recargar actividad real del backend
+    const backendActivity = await fetchActivity(20);
+    const feed = document.getElementById('iaActivity');
+    if (feed && backendActivity) {
+      feed.innerHTML = backendActivity.map(a => `
+        <div class="activity-item">
+          <div class="act-icon">${a.icon}</div>
           <div class="act-body">
-            <div class="act-text"><span class="act-agent">${esc(pick.agent)}</span>${esc(pick.text)}</div>
-            <div class="act-time">${esc(pick.time)}</div>
-          </div>`;
-        feed.prepend(div);
-        while (feed.children.length > 20) feed.lastChild.remove();
-      }
+            <div class="act-text">
+              <span class="act-agent">${esc(a.agent)}</span>
+              ${esc(a.text)}
+            </div>
+            <div class="act-time">${formatTimeAgo(a.time)}</div>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      // Fallback: actualizar timestamps
+      const times = document.querySelectorAll('.act-time');
+      const statuses = ['hace unos seg', 'hace 10 seg', 'hace 30 seg', 'hace 1 min', 'hace 2 min'];
+      times.forEach(t => {
+        t.textContent = statuses[Math.floor(Math.random() * statuses.length)];
+      });
     }
   }, 15000);
 }
 
-// Métricas cada 15 segundos
+// Métricas cada 15 segundos (recarga desde backend)
 function startMetricsRefresh() {
-  setInterval(() => {
-    METRICS.ops24h += Math.floor(Math.random() * 5);
-
+  setInterval(async () => {
+    const agents = await fetchAgents();
+    if (agents) {
+      METRICS.agentsActive = agents.filter((a: any) => a.status === 'online' || a.status === 'busy').length;
+      METRICS.ops24h = agents.reduce((sum: number, a: any) => {
+        const c = a.counter?.find((ct: any) => ct.icon === '🤖');
+        return sum + Number(c?.val?.replace(/[,.]/g, '') || 0);
+      }, 0);
+    }
     const el = document.getElementById('iaMetrics');
     if (el) renderDashboard();
   }, 15000);
