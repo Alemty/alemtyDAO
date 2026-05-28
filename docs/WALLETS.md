@@ -24,14 +24,17 @@
 | **Privada** | Guardada en CDP (Coinbase Developer Platform) |
 | **Origen** | Creada por alemty durante setup inicial |
 
-### 2. Wallet Distribuidora (por crear)
+### 2. Wallet Distribuidora (Agente Autónomo)
 
 | Campo | Valor |
 |---|---|
-| **Dirección** | *(pendiente)* |
-| **Rol** | Recibe AURA via mint desde la wallet minter y los distribuye a usuarios que reclaman |
-| **¿Para qué?** | Centraliza el AURA antes de distribuirlo a usuarios finales |
-| **Estado** | ❌ No creada aún |
+| **Dirección** | `0x8ed91bc2777577f9e9694a60dff515da8d13c9ac` |
+| **Rol** | Recibe AURA via mint desde la wallet minter y los distribuye automáticamente a usuarios que reclaman |
+| **¿Para qué?** | El Worker firma y envía transfers de AURA automáticamente cuando un usuario reclama |
+| **Private Key** | Guardada como `AGENT_PRIVATE_KEY` en Cloudflare Workers (secreto de versión) |
+| **ETH** | ~0.002 ETH (necesario para gas de transfers) |
+| **AURA** | 10,000 AURA (para distribuir a usuarios) |
+| **Origen** | Generada con Node.js crypto nativo, importada a MetaMask |
 
 ## Flujo de Distribución
 
@@ -42,14 +45,14 @@
               └────────┬─────────┘
                        │ mint(AURA)
                        ▼
-              ┌──────────────────┐
-              │ Wallet Distrib.  │  ← Recibe todo el AURA minteado
-              │  (por crear)     │
-              └────────┬─────────┘
-                       │ transfer(AURA)
+              ┌─────────────────────────────┐
+              │ Wallet Distribuidora (Agente)│  ← Recibe todo el AURA minteado
+              │ 0x8ed91b...c9ac            │  ← Firma transfers automáticamente
+              └────────┬────────────────────┘
+                       │ transfer(AURA) — firmado por el Worker
                        ▼
               ┌──────────────────┐
-              │  Usuarios finales│  ← Reclaman desde la UI (DEX → Reclaim)
+              │  Usuarios finales│  ← Reclaman desde la UI (Perfil → Reclaim)
               └──────────────────┘
 ```
 
@@ -71,8 +74,9 @@
 | Endpoint | Método | Auth | Descripción |
 |---|---|---|---|
 | `/api/me/stats` | GET | Bearer JWT | Devuelve dharma, aura, auraReclamable, auraBalance |
-| `/api/aura/claim` | POST | Bearer JWT | Prepara tx de mint para firmar con MetaMask |
-| `/api/farm/reclaim-complete` | POST | Bearer JWT | Limpia farm_claims después de mintear on-chain |
+| `/api/aura/claim` | POST | Bearer JWT | El Worker firma y envía transfer de AURA desde la wallet agente al usuario |
+| `/api/aura/approve-agent` | POST | No | Aprueba al contrato AURA para gastar tokens de la wallet agente |
+| `/api/farm/reclaim-complete` | POST | Bearer JWT | Limpia farm_claims y actualiza aura_claimed después del transfer on-chain |
 | `/api/farm/claim` | POST | Bearer JWT | Registra claim diario de farm |
 | `/api/farm/status` | GET | Bearer JWT | Estado del farm (streak, canClaim, etc.) |
 
