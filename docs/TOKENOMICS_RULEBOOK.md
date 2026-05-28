@@ -5,6 +5,8 @@
 **Blockchain:** Base (L2 Ethereum)  
 **Filosofía:** El mérito no se compra. El valor circula. El poder se bloquea.
 
+> **Contract Reference:** AuraToken desplegado en `0x74f685da4d39e53e7df6e0970b84224ea0d00634` (Base Mainnet, verificado en Basescan).
+
 > **No financiero.** Ningún componente representa equity ni promesa de retorno.
 
 ---
