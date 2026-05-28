@@ -417,6 +417,50 @@ html.light body[data-app="dex"] .vestake-input-row {
 }
 
 /* ==========================================================
+   CARDS COMPACTAS — Swap + Pools (mas pequenas, estilo DEFI)
+   ========================================================== */
+body[data-app="dex"] #swapCard,
+body[data-app="dex"] #poolsCard {
+  padding: 14px;
+}
+body[data-app="dex"] #swapCard .dex-card-head,
+body[data-app="dex"] #poolsCard .dex-card-head {
+  margin-bottom: 10px;
+}
+body[data-app="dex"] #swapCard .dex-title,
+body[data-app="dex"] #poolsCard .dex-title {
+  font-size: 1.05rem;
+}
+body[data-app="dex"] #swapCard .dex-sub,
+body[data-app="dex"] #poolsCard .dex-sub {
+  font-size: 12px;
+}
+body[data-app="dex"] #swapCard .dex-input-row {
+  padding: 8px;
+  border-radius: 12px;
+}
+body[data-app="dex"] #swapCard .dex-select {
+  padding: 8px;
+  font-size: 12px;
+}
+body[data-app="dex"] #swapCard .dex-input {
+  font-size: 0.95rem;
+}
+body[data-app="dex"] #swapCard .dex-btn {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+body[data-app="dex"] #swapCard .dex-mid {
+  padding-bottom: 2px;
+}
+
+/* Restaurar tamaño normal para cards grandes */
+body[data-app="dex"] #veStakeCard,
+body[data-app="dex"] #nobilityCard {
+  padding: 22px;
+}
+
+/* ==========================================================
    NOBLEZA — Conquer-style ranking cards
    ========================================================== */
 body[data-app="dex"] .noble-layout {
