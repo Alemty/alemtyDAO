@@ -36,31 +36,32 @@
 
 <body class="defi-root">
   <!-- Shell -->
-  
-<header id="topbar"></header>
-<nav id="navbar"></nav>
+  <header id="topbar"></header>
+  <nav id="navbar"></nav>
 
-<div class="web3-disclaimer">
-  © alemty.eth · ENS · IPFS · FINANZAS DESCENTRALIZADAS
-</div>
+  <div class="web3-disclaimer">
+    © alemty.eth · ENS · IPFS · FINANZAS DESCENTRALIZADAS
+  </div>
 
   <!-- Fondo vivo -->
   <div class="defi-bg"></div>
 
   <main class="container" style="margin-top:16px;">
     
-<div class="h1 defi-brand" aria-label="defi.alemty.eth">
-  <span class="defi-brand-em">defi</span><span class="defi-brand-em">.</span><span class="defi-brand-base">alemty</span><span class="defi-brand-base">.</span><span class="defi-brand-em">eth</span>
-</div>
+    <div class="h1 defi-brand" aria-label="defi.alemty.eth">
+      <span class="defi-brand-em">defi</span><span class="defi-brand-em">.</span><span class="defi-brand-base">alemty</span><span class="defi-brand-base">.</span><span class="defi-brand-em">eth</span>
+    </div>
 
-    <p class="muted">Reporte DeFi basado en Tokenomics Rulebook v1.3 — Emisión, precios y sostenibilidad a largo plazo.</p>
+    <p class="muted">Reporte DeFi basado en Tokenomics Rulebook v1.3 — Precios, emisión y sostenibilidad a largo plazo.</p>
 
-    <!-- ===== TRADING CHARTS (3 pares, estilo Binance) ===== -->
+    <!-- ===== TRADING CHARTS (5 pares) ===== -->
     <section class="trading-section" aria-label="Gráficos de trading">
       <div class="trading-tabs">
-        <button class="trading-tab active" data-pair="AURA/USD">AURA/USD</button>
-        <button class="trading-tab" data-pair="ALEM/USD">ALEM/USD</button>
-        <button class="trading-tab" data-pair="ETH/USD">ETH/USD</button>
+        <button class="trading-tab active" data-pair="ALEM/ETH">ALEM / ETH</button>
+        <button class="trading-tab" data-pair="AURA/ALEM">AURA / ALEM</button>
+        <button class="trading-tab" data-pair="ALEM/USD">ALEM / USD</button>
+        <button class="trading-tab" data-pair="veALEM/ETH">veALEM / ETH</button>
+        <button class="trading-tab" data-pair="ETH/USD">ETH / USD</button>
       </div>
       <div class="trading-chart-wrap">
         <canvas id="tradingChart" width="1100" height="400"></canvas>
@@ -70,14 +71,14 @@
         </div>
       </div>
       <div class="trading-stats" id="tradingStats">
-        <div class="trading-stat"><span class="ts-label">24h Vol</span><span class="ts-val" id="tsVol">—</span></div>
-        <div class="trading-stat"><span class="ts-label">24h High</span><span class="ts-val" id="tsHigh">—</span></div>
         <div class="trading-stat"><span class="ts-label">24h Low</span><span class="ts-val" id="tsLow">—</span></div>
+        <div class="trading-stat"><span class="ts-label">24h High</span><span class="ts-val" id="tsHigh">—</span></div>
+        <div class="trading-stat"><span class="ts-label">Volatilidad</span><span class="ts-val" id="tsVol">—</span></div>
         <div class="trading-stat"><span class="ts-label">Market Cap</span><span class="ts-val" id="tsMc">—</span></div>
       </div>
     </section>
 
-    <!-- ===== REPORTE TOKENOMICS: 4 métricas clave ===== -->
+    <!-- ===== TOKENOMICS INFO ROW ===== -->
     <section class="defi-row4" aria-label="Métricas tokenomics">
       <article class="card defi-mini" id="cardSupply">
         <div class="mini-top">
@@ -150,6 +151,15 @@
       </article>
     </section>
 
+    <!-- ===== NOTES UNDER CARDS ===== -->
+    <section style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">
+      <span class="mini-tag">ALEM / ETH Variable</span>
+      <span class="mini-tag">AURA/ALEM Estable (100 de AURA = 1 ALEM)</span>
+      <span class="mini-tag">ALEM/ETH Variable</span>
+      <span class="mini-tag">veALEM/ETH Variable (depende de la cantidad de ALEM staked)</span>
+      <span class="mini-tag">ETH/USD</span>
+    </section>
+
     <!-- ===== SUSTAINABILITY REPORT ===== -->
     <section class="card" style="margin-top:16px;padding:18px;">
       <div class="h2" style="margin-bottom:10px;">🌱 Reporte de Sostenibilidad — Tokenomics v1.3</div>
@@ -184,51 +194,32 @@
       </div>
     </section>
 
-    <!-- ===== CANONICAL CHARTS ===== -->
-    <section class="defi-charts" style="margin-top:16px;" aria-label="Gráficas canónicas">
-      <!-- Pie -->
-      <div class="card chart-card chart-pie" id="mintPieWrap" data-chart="mintPie" role="button" tabindex="0" aria-label="Abrir detalle de Mint">
-        <div class="chart-head">
-          <div>
-            <div class="t">Mint: división + total</div>
-            <div class="small muted" id="mintTotalText">—</div>
+    <!-- ===== CANONICAL FOOTER ===== -->
+    <section style="margin-top:14px;">
+      <div class="defi-row4" style="gap:8px;">
+        <div class="card defi-mini" style="min-height:auto;gap:6px;padding:8px 10px;">
+          <div class="mini-title" style="font-size:13px;">Mint: división + total</div>
+          <div class="small muted">Total ALEM: 1,000,000,000</div>
+          <div class="mini-tags" style="gap:4px;">
+            <span class="mini-tag" style="font-size:10px;padding:3px 6px;">Comunidad (LP, staking, incentivos) — 50%</span>
+            <span class="mini-tag" style="font-size:10px;padding:3px 6px;">Reserva estratégica — 20%</span>
+            <span class="mini-tag" style="font-size:10px;padding:3px 6px;">Equipo fundador — 15%</span>
+            <span class="mini-tag" style="font-size:10px;padding:3px 6px;">DAO / Tesorería — 10%</span>
+            <span class="mini-tag" style="font-size:10px;padding:3px 6px;">Growth / Grants — 5%</span>
           </div>
-          <button class="icon-btn mini" type="button" data-action="open-mint" aria-label="Abrir mint">↗</button>
         </div>
-        <div class="pie-grid">
-          <canvas id="chartPie" width="200" height="150" aria-label="Gráfica de pastel mint"></canvas>
-          <div class="pie-bar" id="pieBar" aria-label="Leyenda de mint"></div>
+        <div class="card defi-mini" style="min-height:auto;gap:6px;padding:8px 10px;">
+          <div class="mini-title" style="font-size:13px;">Aura: emisión por epoch</div>
+          <div class="small muted">Decay + piso mínimo · Sostenible</div>
         </div>
-      </div>
-
-      <!-- Aura -->
-      <div class="card chart-card" id="chartAuraWrap" data-chart="aura" role="button" tabindex="0" aria-label="Abrir detalle de Aura">
-        <div class="chart-head">
-          <div class="t">Aura: emisión por epoch</div>
-          <button class="icon-btn mini" type="button" data-action="open-aura" aria-label="Abrir aura">↗</button>
+        <div class="card defi-mini" style="min-height:auto;gap:6px;padding:8px 10px;">
+          <div class="mini-title" style="font-size:13px;">ALEM: emisión por señal</div>
+          <div class="small muted">Solo eventos calificados · Sin inflación</div>
         </div>
-        <canvas id="chartAura" width="360" height="130" aria-label="Gráfica aura"></canvas>
-        <div class="small muted">Decay + piso mínimo · Sostenible</div>
-      </div>
-
-      <!-- ALEM -->
-      <div class="card chart-card" id="chartAlemWrap" data-chart="alem" role="button" tabindex="0" aria-label="Abrir detalle de ALEM">
-        <div class="chart-head">
-          <div class="t">ALEM: emisión por señal</div>
-          <button class="icon-btn mini" type="button" data-action="open-alem" aria-label="Abrir alem">↗</button>
+        <div class="card defi-mini" style="min-height:auto;gap:6px;padding:8px 10px;">
+          <div class="mini-title" style="font-size:13px;">Aura cap dinámico</div>
+          <div class="small muted">Cap crece con el pool · Breaker 1%</div>
         </div>
-        <canvas id="chartAlem" width="360" height="130" aria-label="Gráfica alem"></canvas>
-        <div class="small muted">Solo eventos calificados · Sin inflación</div>
-      </div>
-
-      <!-- Cap -->
-      <div class="card chart-card" id="chartCapWrap" data-chart="cap" role="button" tabindex="0" aria-label="Abrir detalle de cap">
-        <div class="chart-head">
-          <div class="t">Aura cap dinámico</div>
-          <button class="icon-btn mini" type="button" data-action="open-cap" aria-label="Abrir cap">↗</button>
-        </div>
-        <canvas id="chartCap" width="360" height="130" aria-label="Gráfica cap"></canvas>
-        <div class="small muted">Cap crece con el pool · Breaker 1%</div>
       </div>
     </section>
 
@@ -236,18 +227,6 @@
       alemty · DeFi · Reporte v1.3 · No financiero / no equity / no promesa de retorno · <strong>Código primero, código siempre.</strong>
     </footer>
   </main>
-
-  <!-- MODAL ÚNICO (sheet estilo DAO) -->
-  <div class="modal" id="defiModal" aria-hidden="true">
-    <div class="modal-backdrop" data-close="defiModal"></div>
-    <div class="modal-card">
-      <div class="modal-headbar">
-        <strong id="defiModalTitle">Detalle</strong>
-        <button class="icon-btn" type="button" data-close="defiModal">✕</button>
-      </div>
-      <div class="modal-body" id="defiModalBody"></div>
-    </div>
-  </div>
 
   <!-- JS -->
   <script type="module" src="/defi/js/app.js"></script>

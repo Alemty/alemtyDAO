@@ -120,7 +120,6 @@ html.light .defi-root .modal-card::after {
 }
 
 /* Sub-cards en DEFI light */
-html.light .defi-root .chart-card,
 html.light .defi-root .mini {
   background: rgba(255,255,255,.22) !important;
   border: 1px solid rgba(13,185,166,.12) !important;
@@ -166,24 +165,6 @@ html.light .defi-root .btn.primary { color: #fff; background: linear-gradient(13
 .mini-tag { border-radius: 999px; border: 1px solid rgba(0,255,213,.15); padding: 5px 9px; font-size: var(--defi-fs-tag); font-weight: 900; }
 .mini-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .mini-actions .btn { width: 100%; font-size: var(--defi-fs-btn); padding: 8px 10px; }
-
-.chart-card { padding: 10px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; min-width: 0; grid-column: span 1; min-height: 0; }
-.chart-pie { grid-column: span 2; min-height: 220px; }
-.chart-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.chart-card canvas:not(#chartPie) { width: 100%; max-width: 100%; height: auto; aspect-ratio: 360 / 160; min-height: 128px; flex: 1 1 auto; }
-
-.pie-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: center; min-width: 0; flex: 1 1 auto; min-height: 0; }
-#chartPie { justify-self: center; align-self: center; width: 220px; max-width: 100%; height: auto; }
-
-@media (min-width: 901px) { #mintPieWrap.chart-pie { grid-column: span 1; max-width: 520px; } }
-@media (max-width: 820px) { .pie-grid { grid-template-columns: 1fr; } }
-
-.pie-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.pie-pct { font-weight: 950; font-size: 12px; opacity: .95; flex: 0 0 auto; }
-.pie-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.swatch { width: 12px; height: 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.20); flex: 0 0 auto; }
-
-.modal-chart { border-radius: 18px; padding: 12px; margin-top: 10px; border: 1px solid rgba(0,255,213,.15); }
 
 .defi-root .icon-btn.mini { width: 34px; height: 34px; border-radius: 12px; }
 
@@ -367,15 +348,9 @@ html.light .trading-price { text-shadow: 0 2px 12px rgba(0,0,0,.08); }
 @media (max-width: 900px) {
   .defi-row4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .defi-row2 { grid-template-columns: 1fr; }
-  .defi-charts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
-@media (max-width: 820px) {
-  .defi-charts { grid-template-columns: 1fr; }
-  .chart-pie { grid-column: span 1; }
 }
 
 @media (max-width: 520px) {
-  .defi-row4, .defi-row2, .defi-charts { grid-template-columns: 1fr; }
+  .defi-row4, .defi-row2 { grid-template-columns: 1fr; }
   .mini-actions { grid-template-columns: 1fr; }
 }
