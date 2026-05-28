@@ -51,6 +51,18 @@ body[data-app="dex"] .dex-wrap {
   gap: var(--dex-gap);
 }
 
+/* Row para Swap + Pools lado a lado */
+body[data-app="dex"] .dex-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--dex-gap);
+  align-items: stretch;
+}
+body[data-app="dex"] .dex-row > .glass {
+  min-width: 0;
+  height: 100%;
+}
+
 /* ---------- CARD SYSTEM (DAO-style, glass unificado) ---------- */
 body[data-app="dex"] .glass {
   background: var(--ui-surface) !important;
@@ -392,6 +404,11 @@ html.light body[data-app="dex"] .vestake-input-row {
   body[data-app="dex"] .dex-swap-grid { grid-template-columns: 1fr; }
   body[data-app="dex"] .dex-mid { padding: 2px 0; }
   body[data-app="dex"] .dex-card-head { flex-direction: column; align-items: flex-start; }
+}
+
+/* Dex row responsive: apilar en mobile */
+@media (max-width: 820px) {
+  body[data-app="dex"] .dex-row { grid-template-columns: 1fr; }
 }
 
 @media (pointer: coarse) and (max-width: 520px) {
