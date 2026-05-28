@@ -190,11 +190,10 @@ app.get("/api/me/stats", auth, async (c) => {
   ).bind(address).first();
   const auraFarmed = Number(farmRow?.total || 0);
 
-  const aura = dharma + auraFarmed; // total generado off-chain (visual)
-
-  // auraReclamable: TODO + farm claims que aún no se mintearon
-  // Por ahora: todo lo generado (dharma + farm) es reclamable hasta que se mintee on-chain
-  let auraReclamable = auraFarmed; // farm siempre está pendiente de mintear
+  // aura = balance on-chain real (auraBalance), no suma lo pendiente de reclamar.
+  // auraReclamable = farm claims pendientes de mintear on-chain.
+  let aura = dharma + auraFarmed; // total generado (fallback si no hay RPC)
+  let auraReclamable = auraFarmed;
   let auraBalance = '0';
   const auraContract = c.env.AURA_CONTRACT;
   if (auraContract) {
@@ -215,6 +214,7 @@ app.get("/api/me/stats", auth, async (c) => {
         const json: any = await rpcRes.json();
         if (json?.result && json.result !== '0x') {
           auraBalance = String(BigInt(json.result) / 10n ** 16n / 100n);
+          aura = Number(auraBalance); // sync: aura = balance on-chain real
         }
       }
     } catch (e) {
@@ -240,8 +240,8 @@ app.get("/api/me/stats", auth, async (c) => {
     },
     tokenomics: {
       dharma,
-      aura,           // total generado off-chain (visual, coincide con dharma)
-      auraReclamable, // pendiente de mintear on-chain este epoch
+      aura,           // balance on-chain real (auraBalance) o fallback total generado
+      auraReclamable, // pendiente de mintear on-chain
       auraBalance,    // balance on-chain real (después de gastos/swaps)
     },
   });
