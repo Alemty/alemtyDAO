@@ -190,12 +190,38 @@ app.get("/api/me/stats", auth, async (c) => {
   ).bind(address).first();
   const auraFarmed = Number(farmRow?.total || 0);
 
-  // aura = total off-chain generado (dharma + farm). Cuando el contrato AURA esté
-  // deployado en Base, se consultará el balance on-chain real.
+  // aura = balance on-chain real desde el contrato AURA en Base Mainnet.
+  // Si la RPC responde, se usa el balance on-chain. Si falla, fallback a dharma+farm.
   // auraReclamable = farm claims pendientes de reclamar (se limpian al mintear).
   let aura = dharma + auraFarmed;
   let auraReclamable = auraFarmed;
   let auraBalance = '0';
+
+  // Consultar balance on-chain desde el contrato AURA
+  const auraContract = c.env.AURA_CONTRACT;
+  if (auraContract) {
+    try {
+      const rpcUrl = c.env.AURA_RPC_URL || 'https://mainnet.base.org';
+      const data = '0x70a08231' + address.slice(2).padStart(64, '0');
+      const rpcRes = await fetch(rpcUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0', id: 1, method: 'eth_call',
+          params: [{ to: auraContract, data }, 'latest']
+        })
+      });
+      if (rpcRes.ok) {
+        const json: any = await rpcRes.json();
+        if (json?.result && json.result !== '0x') {
+          auraBalance = String(BigInt(json.result) / 10n ** 16n / 100n);
+          aura = Number(auraBalance);
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ AURA RPC error, usando fallback off-chain:', e);
+    }
+  }
 
   return c.json({
     ok: true,
@@ -215,7 +241,7 @@ app.get("/api/me/stats", auth, async (c) => {
     },
     tokenomics: {
       dharma,
-      aura,           // total generado off-chain (dharma + farm)
+      aura,           // balance on-chain real (o fallback off-chain)
       auraReclamable, // pendiente de reclamar (solo farm)
       auraBalance,    // balance on-chain real (después de gastos/swaps)
     },
