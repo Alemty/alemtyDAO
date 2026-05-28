@@ -337,6 +337,7 @@ app.post("/api/aura/approve-agent", async (c) => {
       fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] }), signal: ac.signal })
     ]);
     clearTimeout(timer);
+    const nonceData: any = await nonceRes.json();
     const gasPriceData: any = await gasPriceRes.json();
     const chainIdData: any = await chainIdRes.json();
     
@@ -397,6 +398,9 @@ app.post("/api/aura/claim", auth, async (c) => {
       fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] }), signal: ac.signal })
     ]);
     clearTimeout(timer);
+    const nonceData: any = await nonceRes.json();
+    const gasPriceData: any = await gasPriceRes.json();
+    const chainIdData: any = await chainIdRes.json();
     
     if (!nonceData?.result || !gasPriceData?.result || !chainIdData?.result) {
       return c.json({ ok: false, error: 'No se pudo obtener datos de red del RPC' }, 500);
