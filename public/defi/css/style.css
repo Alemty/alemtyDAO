@@ -254,6 +254,7 @@ html.light .tf-btn.active { color: #1e40af; background: rgba(59,130,246,.12); bo
   letter-spacing: .08em;
   opacity: .55;
 }
+html.light .ts-label { opacity: .7; color: #475569; }
 .ts-val {
   font-size: 13px;
   font-weight: 900;
@@ -264,7 +265,14 @@ html.light .trading-section {
   background: rgba(255,255,255,.55);
   border: 1px solid rgba(13,185,166,.15);
 }
-html.light .trading-price { text-shadow: 0 2px 12px rgba(0,0,0,.08); }
+html.light .trading-price {
+  text-shadow: 0 1px 6px rgba(255,255,255,.9), 0 2px 20px rgba(255,255,255,.7);
+}
+html.light .trading-price.up { color: #059669; }
+html.light .trading-price.down { color: #dc2626; }
+html.light .trading-change.up { color: #059669; }
+html.light .trading-change.down { color: #dc2626; }
+html.light .ts-val { color: #1e293b; }
 
 /* ===== BOTTOM ROW: 3 panels ===== */
 .defi-bottom-row {

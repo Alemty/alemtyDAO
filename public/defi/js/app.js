@@ -99,6 +99,13 @@ function genEthSeries(tfKey) {
 }
 
 /* =====================================================
+  Light mode detection for canvas
+===================================================== */
+function isLightMode() {
+  return document.documentElement.classList.contains('light');
+}
+
+/* =====================================================
   Chart drawing
 ===================================================== */
 function drawTradingChart(pairKey, tfKey) {
@@ -123,8 +130,10 @@ function drawTradingChart(pairKey, tfKey) {
   const minY = Math.min(...series), maxY = Math.max(...series);
   const range = Math.max(1e-9, maxY - minY);
 
-  // Grid
-  ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 1;
+  // Grid — light-aware
+  const light = isLightMode();
+  ctx.strokeStyle = light ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.06)';
+  ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
     const y = padT + (plotH * i / 4);
     ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + plotW, y); ctx.stroke();
@@ -132,9 +141,9 @@ function drawTradingChart(pairKey, tfKey) {
 
   // Gradient fill
   const grad = ctx.createLinearGradient(0, padT, 0, padT + plotH);
-  grad.addColorStop(0, pair.color + '55');
-  grad.addColorStop(0.4, pair.color + '22');
-  grad.addColorStop(1, pair.color + '02');
+  grad.addColorStop(0, pair.color + (light ? '33' : '55'));
+  grad.addColorStop(0.4, pair.color + (light ? '15' : '22'));
+  grad.addColorStop(1, pair.color + (light ? '04' : '02'));
   ctx.beginPath();
   series.forEach((v, i) => {
     const x = padL + plotW * (i / (series.length - 1));
@@ -163,8 +172,8 @@ function drawTradingChart(pairKey, tfKey) {
   });
   ctx.stroke();
 
-  // Y-axis labels
-  ctx.fillStyle = 'rgba(255,255,255,.45)';
+  // Y-axis labels — light-aware
+  ctx.fillStyle = light ? 'rgba(0,0,0,.55)' : 'rgba(255,255,255,.45)';
   ctx.font = '700 10px Inter, system-ui, sans-serif';
   for (let i = 0; i <= 4; i++) {
     const y = padT + (plotH * i / 4);
