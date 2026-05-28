@@ -1532,16 +1532,8 @@ function drawFarmScene(addr, st, animating) {
   // Capa
   ctx.fillStyle='rgba(42,74,122,0.35)';ctx.fillRect(px-6,py,6,14);ctx.fillRect(px-8,py+6,4,8);
 
-  // ============================================================
-  // CAÑA DE PESCAR + BOYA (solo cuando no animando)
-  // ============================================================
-  if(!animating){
-    drawFishingRod(ctx,px,py,0);
-    ctx.strokeStyle='rgba(200,200,200,0.5)';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(px+12+28, py-4);ctx.quadraticCurveTo(px+60,py-28,pondCX-30,pondCY-8);ctx.stroke();
-    ctx.fillStyle='#ff4444';ctx.beginPath();ctx.arc(pondCX-30,pondCY-8,3,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#ff8888';ctx.beginPath();ctx.arc(pondCX-31,pondCY-9,1.5,0,Math.PI*2);ctx.fill();
-  }
+  // NOTA: la caña solo se dibuja durante la animación (animateCast/animateReelIn)
+  // para evitar rastros visuales. En estado estático no se muestra nada.
 
   // ============================================================
   // CARTEL
@@ -1791,14 +1783,6 @@ function getRandomFarmReward(streak) {
 function showFarmResult(addr, container, reward, ctx, currentStreak) {
   const newStreak = (currentStreak || 0) + 1;
 
-  // Enviar claim al backend (async, no bloquea la animación)
-  submitFarmClaim(reward, newStreak).then(resp => {
-    if (resp?.ok) {
-      // Refrescar stats globales para que el hint de AURA se actualice
-      setTimeout(() => syncProfile(), 300);
-    }
-  });
-
   // Dibujar escena final con cofre abierto
   drawFarmScene(addr, null, false);
   // Cofre abierto al lado del personaje (mismas coordenadas que drawFarmScene)
@@ -1847,6 +1831,36 @@ function showFarmResult(addr, container, reward, ctx, currentStreak) {
   const sub = container.querySelector('#farmResultSub');
   const btn = container.querySelector('#farmBtn');
 
+  // Enviar claim al backend — esperamos confirmación
+  submitFarmClaim(reward, newStreak).then(resp => {
+    if (resp?.ok) {
+      // Refrescar stats globales (🔵 AURA por reclamar se actualiza)
+      setTimeout(() => syncProfile(), 300);
+      if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '.4';
+        btn.textContent = '⏳ Vuelve mañana';
+      }
+    } else {
+      // Error del servidor — mostrar en overlay y re-habilitar botón
+      if (title) title.textContent = '❌ Error al registrar';
+      if (sub) sub.textContent = resp?.error || 'No se pudo guardar. Intenta de nuevo.';
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.textContent = '🎣 Intentar de nuevo';
+      }
+    }
+  }).catch(() => {
+    if (title) title.textContent = '❌ Error de conexión';
+    if (sub) sub.textContent = 'Revisa tu conexión e intenta de nuevo.';
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.textContent = '🎣 Intentar de nuevo';
+    }
+  });
+
   if (overlay && title && sub && icon) {
     overlay.style.display = 'flex';
     const auraDisplay = reward < 1 ? reward.toFixed(1) : reward;
@@ -1875,12 +1889,6 @@ function showFarmResult(addr, container, reward, ctx, currentStreak) {
       title.textContent = `🪙 ¡${auraDisplay} AURA`;
       sub.textContent = 'Un cofre pequeñito pero es AURA.';
     }
-  }
-
-  if (btn) {
-    btn.disabled = true;
-    btn.style.opacity = '.4';
-    btn.textContent = '⏳ Vuelve mañana';
   }
 
   // Actualizar racha
