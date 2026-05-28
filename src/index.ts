@@ -318,12 +318,12 @@ app.post("/api/aura/approve-agent", async (c) => {
   if (!agentPk) {
     return c.json({ ok: false, error: "AGENT_PRIVATE_KEY no configurado" }, 500);
   }
-  const agentAddr = (c.env.AGENT_ADDRESS || '0x02756cB3a5413cd616d192C56dFdcE80Dd66706E').toLowerCase();
+  const agentAddr = '0x02756cb3a5413cd616d192c56dfdce80dd66706e';
   const auraContract = c.env.AURA_CONTRACT;
   if (!auraContract) {
     return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
   }
-  const rpcUrl = c.env.AURA_RPC_URL || 'https://base.drpc.org';
+  const rpcUrl = 'https://base-rpc.publicnode.com';
 
   // approve(spender=contratoAURA, amount=type(uint256).max)
   const approveSelector = '0x095ea7b3';
@@ -364,7 +364,7 @@ app.post("/api/aura/claim", auth, async (c) => {
   const payload = await c.req.json().catch(() => ({} as any));
   let amountWei = String(payload.amount || "0");
   const auraContract = c.env.AURA_CONTRACT;
-  const rpcUrl = c.env.AURA_RPC_URL || 'https://base.drpc.org';
+  const rpcUrl = 'https://base-rpc.publicnode.com';
 
   if (!auraContract) {
     return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
@@ -386,7 +386,7 @@ app.post("/api/aura/claim", auth, async (c) => {
     const { signAndSendTransaction } = await import('./utils/signer');
     console.log("🚀 Claim request:", { caller, amountWei, dataLen: data.length });
     
-    const agentAddr = (c.env.AGENT_ADDRESS || '0x02756cB3a5413cd616d192C56dFdcE80Dd66706E').toLowerCase();
+    const agentAddr = '0x02756cb3a5413cd616d192c56dfdce80dd66706e';
     const txHash = await signAndSendTransaction(agentPk, {
       to: auraContract,
       data,
