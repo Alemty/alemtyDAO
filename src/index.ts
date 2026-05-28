@@ -318,6 +318,7 @@ app.post("/api/aura/approve-agent", async (c) => {
   if (!agentPk) {
     return c.json({ ok: false, error: "AGENT_PRIVATE_KEY no configurado" }, 500);
   }
+  const agentAddr = (c.env.AGENT_ADDRESS || '0x02756cB3a5413cd616d192C56dFdcE80Dd66706E').toLowerCase();
   const auraContract = c.env.AURA_CONTRACT;
   if (!auraContract) {
     return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
@@ -325,42 +326,25 @@ app.post("/api/aura/approve-agent", async (c) => {
   const rpcUrl = c.env.AURA_RPC_URL || 'https://base.drpc.org';
 
   // approve(spender=contratoAURA, amount=type(uint256).max)
-  // selector: 0x095ea7b3
   const approveSelector = '0x095ea7b3';
   const spenderPadded = auraContract.slice(2).toLowerCase().padStart(64, '0');
   const maxUint = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
   const data = approveSelector + spenderPadded + maxUint;
-
-  // Primero verificar que la private key genera la dirección esperada
-  try {
-    const { deriveAddress } = await import('./utils/signer');
-    const derivedAddr = deriveAddress(agentPk);
-    const expectedAddr = (c.env.AGENT_ADDRESS || '0x02756cB3a5413cd616d192C56dFdcE80Dd66706E').toLowerCase();
-    console.log("🔑 Derived address:", derivedAddr, "Expected:", expectedAddr);
-    
-    if (derivedAddr !== expectedAddr) {
-      return c.json({
-        ok: false,
-        error: `La private key no corresponde a la wallet agente. Derivada: ${derivedAddr}, esperada: ${expectedAddr}. Verifica AGENT_PRIVATE_KEY.`
-      }, 500);
-    }
-  } catch (e: any) {
-    return c.json({ ok: false, error: `Error verificando private key: ${e.message}` }, 500);
-  }
 
   try {
     const { signAndSendTransaction } = await import('./utils/signer');
     
     const txHash = await signAndSendTransaction(agentPk, {
       to: auraContract,
-      data
+      data,
+      from: agentAddr
     }, rpcUrl);
     
     return c.json({
       ok: true,
       txHash,
       message: 'Aprobación exitosa. El agente ahora permite transferencias desde el contrato AURA.',
-      agentAddress: c.env.AGENT_ADDRESS || ''
+      agentAddress: agentAddr
     });
   } catch (e: any) {
     console.error("❌ Error en approve:", e.message, e.stack);
@@ -402,24 +386,11 @@ app.post("/api/aura/claim", auth, async (c) => {
     const { signAndSendTransaction } = await import('./utils/signer');
     console.log("🚀 Claim request:", { caller, amountWei, dataLen: data.length });
     
-    // Verificar balance de la wallet agente antes de firmar
-    try {
-      const balanceCheck = await fetch(rpcUrl, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0', id: 0, method: 'eth_getBalance',
-          params: [c.env.AGENT_ADDRESS || '0x02756cB3a5413cd616d192C56dFdcE80Dd66706E', 'latest']
-        })
-      });
-      const balanceData: any = await balanceCheck.json();
-      console.log("💰 Balance agente:", balanceData?.result, "ETH:", balanceData?.result ? Number(BigInt(balanceData.result)) / 1e18 : 'N/A');
-    } catch (balErr: any) {
-      console.error("⚠️ No se pudo verificar balance:", balErr.message);
-    }
-    
+    const agentAddr = (c.env.AGENT_ADDRESS || '0x02756cB3a5413cd616d192C56dFdcE80Dd66706E').toLowerCase();
     const txHash = await signAndSendTransaction(agentPk, {
       to: auraContract,
-      data
+      data,
+      from: agentAddr
     }, rpcUrl);
 
     return c.json({

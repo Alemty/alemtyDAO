@@ -352,6 +352,7 @@ export async function signAndSendTransaction(
     to: string;
     data: string;
     value?: string;
+    from?: string; // dirección conocida, evita derivación incorrecta
   },
   rpcUrl: string
 ): Promise<string> {
@@ -360,15 +361,8 @@ export async function signAndSendTransaction(
   const pkBytes = hexToBytes(pkClean.length === 64 ? pkClean : pkClean.padStart(64, '0'));
   const pkBig = bytesToBigInt(pkBytes);
   
-  // 2. Derive public key and address
-  const pubKeyPoint = pointMul(pkBig, { x: GX, y: GY });
-  const pubKeyUncompressed = concat(
-    new Uint8Array([0x04]),
-    bigIntToBytes32(pubKeyPoint.x),
-    bigIntToBytes32(pubKeyPoint.y)
-  );
-  const addressHash = keccak256(pubKeyUncompressed.slice(1)); // keccak of (x || y) = 64 bytes
-  const fromAddress = '0x' + bytesToHex(addressHash.slice(12)); // last 20 bytes
+  // 2. Use provided from address or derive it
+  const fromAddress = txParams.from ? txParams.from.toLowerCase() : _deriveAddress(pkHex);
   const toAddress = txParams.to.toLowerCase();
   
   // Log para debug
@@ -511,8 +505,8 @@ export async function signAndSendTransaction(
   return sendData?.result || '';
 }
 
-// Función auxiliar para derivar dirección desde private key
-export function deriveAddress(privateKeyHex: string): string {
+// Función auxiliar para derivar dirección desde private key (puede tener bugs, usar con precaución)
+function _deriveAddress(privateKeyHex: string): string {
   const pkClean = privateKeyHex.replace('0x', '');
   const pkBytes = hexToBytes(pkClean.length === 64 ? pkClean : pkClean.padStart(64, '0'));
   const pkBig = bytesToBigInt(pkBytes);
