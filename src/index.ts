@@ -190,9 +190,9 @@ app.get("/api/me/stats", auth, async (c) => {
   ).bind(address).first();
   const auraFarmed = Number(farmRow?.total || 0);
 
-  // aura = balance on-chain real (auraBalance), no suma lo pendiente de reclamar.
+  // aura = balance on-chain real (desde la RPC). Si falla la RPC, aura = 0.
   // auraReclamable = farm claims pendientes de mintear on-chain.
-  let aura = dharma + auraFarmed; // total generado (fallback si no hay RPC)
+  let aura = 0;
   let auraReclamable = auraFarmed;
   let auraBalance = '0';
   const auraContract = c.env.AURA_CONTRACT;
@@ -214,7 +214,7 @@ app.get("/api/me/stats", auth, async (c) => {
         const json: any = await rpcRes.json();
         if (json?.result && json.result !== '0x') {
           auraBalance = String(BigInt(json.result) / 10n ** 16n / 100n);
-          aura = Number(auraBalance); // sync: aura = balance on-chain real
+          aura = Number(auraBalance);
         }
       }
     } catch (e) {
