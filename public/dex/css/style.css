@@ -159,7 +159,7 @@ body[data-app="dex"] .sr-only { position: absolute !important; width: 1px !impor
 body[data-app="dex"] .dex-tools { display: flex; gap: 10px; flex-wrap: wrap; }
 body[data-app="dex"] .dex-search { border-radius: 14px; border: 1px solid var(--border); background: rgba(255,255,255,.05); color: inherit; padding: 10px 12px; min-width: 240px; font-weight: 800; }
 body[data-app="dex"] .dex-pool-list { display: flex; flex-direction: column; gap: 12px; }
-body[data-app="dex"] .dex-pool { display: flex; justify-content: space-between; gap: 14px; align-items: center; flex-wrap: wrap; border-radius: 18px; border: 1px solid var(--ui-border); background: var(--ui-surface); padding: 12px; }
+body[data-app="dex"] .dex-pool { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; border-radius: 14px; border: 1px solid var(--ui-border); background: var(--ui-surface); padding: 10px 12px; }
 
 /* Light: pools transparentes heredan glow */
 html.light body[data-app="dex"] article.dex-pool,
@@ -175,13 +175,25 @@ body[data-app="dex"] .chip.alem { box-shadow: 0 0 0 2px rgba(240, 189, 4, .35) i
 body[data-app="dex"] .chip.eth { box-shadow: 0 0 0 2px rgba(160, 140, 255, .35) inset; }
 body[data-app="dex"] .tag { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); background: rgba(255,255,255,.04); font-weight: 900; font-size: 12px; }
 body[data-app="dex"] .tag.ext { border-color: rgba(0, 163, 255, .25); }
-body[data-app="dex"] .dex-metric .k { font-size: 11px; font-weight: 900; }
-body[data-app="dex"] .dex-metric .v { font-size: 14px; font-weight: 950; }
+body[data-app="dex"] .dex-metric { display: flex; align-items: center; gap: 4px; }
+body[data-app="dex"] .dex-metric .k { font-size: 11px; font-weight: 900; opacity: .6; }
+body[data-app="dex"] .dex-metric .v { font-size: 13px; font-weight: 950; }
+body[data-app="dex"] .dex-pool-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+body[data-app="dex"] .dex-pool-metrics {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
 body[data-app="dex"] .dex-pool-actions {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   flex-wrap: wrap;
-  margin-top: 4px;
+  justify-content: flex-end;
 }
 body[data-app="dex"] .dex-btn.small {
   padding: 6px 10px;
