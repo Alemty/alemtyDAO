@@ -327,23 +327,23 @@ app.post("/api/aura/approve-agent", async (c) => {
   const maxUint = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
   const data = approveSelector + spenderPadded + maxUint;
 
-  // Consultar nonce y gas del RPC (con timeout 5s)
+  // Consultar nonce y gas del RPC (requests secuenciales, no paralelas para evitar rate limit)
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), 15000);
   try {
-    const [nonceRes, gasPriceRes, chainIdRes] = await Promise.all([
-      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionCount', params: [agentAddr, 'latest'] }), signal: ac.signal }),
-      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] }), signal: ac.signal }),
-      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] }), signal: ac.signal })
-    ]);
-    clearTimeout(timer);
+    const nonceRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionCount', params: [agentAddr, 'latest'] }), signal: ac.signal });
     const nonceData: any = await nonceRes.json();
+    if (!nonceData?.result) return c.json({ ok: false, error: 'No se pudo obtener nonce del RPC' }, 500);
+
+    const gasPriceRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] }), signal: ac.signal });
     const gasPriceData: any = await gasPriceRes.json();
+    if (!gasPriceData?.result) return c.json({ ok: false, error: 'No se pudo obtener gasPrice del RPC' }, 500);
+
+    const chainIdRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] }), signal: ac.signal });
     const chainIdData: any = await chainIdRes.json();
-    
-    if (!nonceData?.result || !gasPriceData?.result || !chainIdData?.result) {
-      return c.json({ ok: false, error: 'No se pudo obtener datos de red del RPC' }, 500);
-    }
+    if (!chainIdData?.result) return c.json({ ok: false, error: 'No se pudo obtener chainId del RPC' }, 500);
+
+    clearTimeout(timer);
     
     return c.json({
       ok: true,
@@ -392,19 +392,19 @@ app.post("/api/aura/claim", auth, async (c) => {
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), 15000);
   try {
-    const [nonceRes, gasPriceRes, chainIdRes] = await Promise.all([
-      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionCount', params: [agentAddr, 'latest'] }), signal: ac.signal }),
-      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] }), signal: ac.signal }),
-      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] }), signal: ac.signal })
-    ]);
-    clearTimeout(timer);
+    const nonceRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionCount', params: [agentAddr, 'latest'] }), signal: ac.signal });
     const nonceData: any = await nonceRes.json();
+    if (!nonceData?.result) return c.json({ ok: false, error: 'No se pudo obtener nonce del RPC' }, 500);
+
+    const gasPriceRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] }), signal: ac.signal });
     const gasPriceData: any = await gasPriceRes.json();
+    if (!gasPriceData?.result) return c.json({ ok: false, error: 'No se pudo obtener gasPrice del RPC' }, 500);
+
+    const chainIdRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] }), signal: ac.signal });
     const chainIdData: any = await chainIdRes.json();
-    
-    if (!nonceData?.result || !gasPriceData?.result || !chainIdData?.result) {
-      return c.json({ ok: false, error: 'No se pudo obtener datos de red del RPC' }, 500);
-    }
+    if (!chainIdData?.result) return c.json({ ok: false, error: 'No se pudo obtener chainId del RPC' }, 500);
+
+    clearTimeout(timer);
     
     return c.json({
       ok: true,
