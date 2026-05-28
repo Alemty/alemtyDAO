@@ -371,6 +371,9 @@ export async function signAndSendTransaction(
   const fromAddress = '0x' + bytesToHex(addressHash.slice(12)); // last 20 bytes
   const toAddress = txParams.to.toLowerCase();
   
+  // Log para debug
+  console.log("📬 Signer fromAddress:", fromAddress, "toAddress:", toAddress);
+  
   // 3. Fetch chain data from RPC (try multiple RPCs)
   const rpcUrls = [
     'https://base.drpc.org',
