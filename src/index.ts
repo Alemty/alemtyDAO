@@ -323,7 +323,7 @@ app.post("/api/aura/approve-agent", async (c) => {
   if (!auraContract) {
     return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
   }
-  const rpcUrl = 'https://mainnet.base.org';
+  const rpcUrl = 'https://rpc-proxy.base.org';
 
   // approve(spender=contratoAURA, amount=type(uint256).max)
   const approveSelector = '0x095ea7b3';
@@ -364,7 +364,7 @@ app.post("/api/aura/claim", auth, async (c) => {
   const payload = await c.req.json().catch(() => ({} as any));
   let amountWei = String(payload.amount || "0");
   const auraContract = c.env.AURA_CONTRACT;
-  const rpcUrl = 'https://mainnet.base.org';
+  const rpcUrl = 'https://rpc-proxy.base.org';
 
   if (!auraContract) {
     return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
