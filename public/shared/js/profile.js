@@ -596,10 +596,10 @@ export async function syncProfile() {
   const auraHint = modal.querySelector("#pfAuraHint");
   if (auraHint) {
     if (addr && auraReclamable > 0) {
-      auraHint.textContent = `🔵 ${String(auraReclamable)} AURA por reclamar · Ve a la pestaña DEX para mintear on-chain`;
+      auraHint.textContent = `${String(auraReclamable)} AURA por reclamar · Ve a la pestaña DEX para mintear on-chain`;
       auraHint.classList.add('pf-aura-reclaimable');
     } else if (addr && auraBalance !== '0') {
-      auraHint.textContent = `🔵 ${auraBalance} AURA on-chain disponibles`;
+      auraHint.textContent = `${auraBalance} AURA on-chain disponibles`;
       auraHint.classList.remove('pf-aura-reclaimable');
     } else {
       auraHint.textContent = '';
