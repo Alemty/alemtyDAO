@@ -62,7 +62,7 @@ html.light .defi-root .h1.defi-brand .defi-brand-em { color: var(--primary); tex
 
 .defi-brand-tag {
   display: inline-block;
-  margin-top: 2px;
+  margin-top: 8px;
   font-size: 9px;
   font-weight: 900;
   letter-spacing: .1em;
