@@ -177,65 +177,59 @@ app.get("/api/me/stats", auth, async (c) => {
 
   const dharma = pointsReceived + likesReceived;
 
-  // AURA se genera 1:1 con Dharma (cada like/point = +1 AURA acumulado).
-  // El minteo on-chain ocurre por epoch (semanal) — Rulebook §5.1 — para evitar
-  // gas por cada interacción. El usuario reclama su AURA acumulado en 1 tx semanal.
-  // El perfil muestra: auraGenerado (total acumulado off-chain) y auraReclamable
-  // (lo generado en el epoch actual que aún no se minteó).
-  // El balance on-chain (auraBalance) es lo que el usuario tiene disponible para gastar/swapear.
+  // AURA off-chain: dharma genera 1 AURA por cada punto, farm genera AURA extra
+  // AURA on-chain: balance real del contrato ERC-20 en Base
+  // "AURA por reclamar" = (dharma + auraFarmed) - auraOnChain
+  // NUNCA se suman off-chain + on-chain. Son conceptos separados.
 
-  // AURA farmeado desde el mini-game FARM (reclamo diario)
   const farmRow: any = await c.env.DB.prepare(
     "SELECT COALESCE(SUM(amount), 0) AS total FROM farm_claims WHERE address = ?"
   ).bind(address).first();
   const auraFarmed = Number(farmRow?.total || 0);
 
-  // aura = balance on-chain real desde el contrato AURA en Base Mainnet.
-  // Si la RPC responde, se usa el balance on-chain. Si falla, fallback a dharma+farm.
-  // auraReclamable = farm claims pendientes de reclamar (se limpian al mintear).
-  let aura = dharma + auraFarmed;
-  let auraReclamable = auraFarmed;
+  // AURA on-chain: balance real desde el contrato
+  const auraAccumulado = dharma + auraFarmed; // total off-chain generado
+  let auraOnChain = 0;
   let auraBalance = '0';
 
-  // Consultar balance on-chain desde el contrato AURA
   const auraContract = c.env.AURA_CONTRACT;
   if (auraContract) {
-    try {
-      // Intentar con múltiples RPCs por si alguno falla desde Cloudflare
-      const rpcUrls = [
-        c.env.AURA_RPC_URL || 'https://mainnet.base.org',
-        'https://1rpc.io/base',
-        'https://base.llamarpc.com',
-      ].filter(Boolean);
-      const data = '0x70a08231' + address.slice(2).padStart(64, '0');
-      for (const rpcUrl of rpcUrls) {
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000);
-          const rpcRes = await fetch(rpcUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              jsonrpc: '2.0', id: 1, method: 'eth_call',
-              params: [{ to: auraContract, data }, 'latest']
-            }),
-            signal: controller.signal
-          });
-          clearTimeout(timeoutId);
-          if (rpcRes.ok) {
-            const json: any = await rpcRes.json();
-            if (json?.result && json.result !== '0x') {
-              auraBalance = String(BigInt(json.result) / 10n ** 16n / 100n);
-              aura = Number(auraBalance);
-              break; // éxito, salir del bucle
-            }
+    const rpcUrls = [
+      c.env.AURA_RPC_URL || 'https://mainnet.base.org',
+      'https://1rpc.io/base',
+      'https://base.llamarpc.com',
+    ].filter(Boolean);
+    const data = '0x70a08231' + address.slice(2).padStart(64, '0');
+    for (const rpcUrl of rpcUrls) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const rpcRes = await fetch(rpcUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0', id: 1, method: 'eth_call',
+            params: [{ to: auraContract, data }, 'latest']
+          }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        if (rpcRes.ok) {
+          const json: any = await rpcRes.json();
+          if (json?.result && json.result !== '0x') {
+            auraOnChain = Number(BigInt(json.result) / 10n ** 16n / 100n);
+            auraBalance = String(auraOnChain);
+            break;
           }
-        } catch (_) { /* intentar siguiente RPC */ }
-      }
-    } catch (e) {
-      console.warn('⚠️ AURA RPC error, usando fallback off-chain:', e);
+        }
+      } catch (_) { /* intentar siguiente RPC */ }
     }
   }
+
+  // aura = solo balance on-chain real (0 si no tiene tokens)
+  const aura = auraOnChain;
+  // auraReclamable = lo off-chain que aún no está en la wallet
+  const auraReclamable = Math.max(0, auraAccumulado - auraOnChain);
 
   return c.json({
     ok: true,
