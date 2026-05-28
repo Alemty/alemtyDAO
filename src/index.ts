@@ -187,15 +187,26 @@ app.get("/api/me/stats", auth, async (c) => {
   ).bind(address).first();
   const auraFarmed = Number(farmRow?.total || 0);
 
-  // AURA on-chain: balance real desde el contrato, cachead0 en user_stats.aura_balance (60s)
-  const auraAccumulado = dharma + auraFarmed; // total off-chain generado
+  // AURA off-chain total generado por interacciones (dharma + farm)
+  const auraAccumulado = dharma + auraFarmed;
+
+  // AURA on-chain: balance real desde el contrato ERC-20
+  // Se consulta via RPC y se cachea en user_stats.aura_balance (60s)
   let auraOnChain = 0;
   let auraBalance = '0';
 
-  const auraContract = c.env.AURA_CONTRACT;
-  const cacheKey = `aura_onchain:${address}`;
+  // auraClaimed: cuánto AURA se ha marcado como "reclamado" off-chain
+  // (se actualiza cuando el usuario hace Reclaim y la tx se confirma)
+  // Se usa para calcular auraReclamable = auraAccumulado - auraClaimed
+  // Esto evita que el balance on-chain total (incluyendo mints iniciales)
+  // afecte el cálculo del reclamable.
+  const claimedRow: any = await c.env.DB.prepare(
+    "SELECT aura_claimed FROM user_stats WHERE address = ?"
+  ).bind(address).first();
+  const auraClaimed = Number(claimedRow?.aura_claimed ?? 0);
 
-  // 1. Intentar leer caché de D1
+  // Consultar balance on-chain via RPC con caché en D1
+  const auraContract = c.env.AURA_CONTRACT;
   const cachedRow: any = await c.env.DB.prepare(
     "SELECT aura_balance, updated_at FROM user_stats WHERE address = ?"
   ).bind(address).first();
@@ -206,7 +217,7 @@ app.get("/api/me/stats", auth, async (c) => {
     auraBalance = String(auraOnChain);
   }
 
-  // 2. Consultar RPC (si no hay caché o si expiró)
+  // Consultar RPC si no hay caché
   if (auraContract && !cacheValid) {
     const rpcUrls = [
       'https://base.drpc.org',
@@ -232,7 +243,7 @@ app.get("/api/me/stats", auth, async (c) => {
           if (json?.result && json.result !== '0x') {
             auraOnChain = Number(BigInt(json.result) / 10n ** 16n / 100n);
             auraBalance = String(auraOnChain);
-            // Guardar en D1
+            // Guardar en D1 el balance on-chain cachead0
             await c.env.DB.prepare(
               "INSERT OR REPLACE INTO user_stats (address, aura_balance, updated_at, points_received, likes_received, dharma_total, level, karma_debt) VALUES (?, ?, ?, COALESCE((SELECT points_received FROM user_stats WHERE address = ?), 0), COALESCE((SELECT likes_received FROM user_stats WHERE address = ?), 0), COALESCE((SELECT dharma_total FROM user_stats WHERE address = ?), 0), COALESCE((SELECT level FROM user_stats WHERE address = ?), 1), 0)"
             ).bind(address, auraOnChain, now, address, address, address, address).run();
@@ -243,10 +254,10 @@ app.get("/api/me/stats", auth, async (c) => {
     }
   }
 
-  // aura = solo balance on-chain real (0 si no tiene tokens)
+  // aura = balance on-chain real (lo que el usuario puede gastar/swapear)
   const aura = auraOnChain;
-  // auraReclamable = lo off-chain que aún no está en la wallet
-  const auraReclamable = Math.max(0, auraAccumulado - auraOnChain);
+  // auraReclamable = acumulado off-chain - lo ya reclamado (nunca resta balance on-chain)
+  const auraReclamable = Math.max(0, auraAccumulado - auraClaimed);
 
   return c.json({
     ok: true,
@@ -524,9 +535,22 @@ app.post("/api/farm/claim", auth, async (c) => {
 
 app.post("/api/farm/reclaim-complete", auth, async (c) => {
   const address = c.get("address");
-  // Limpiar farm_claims del usuario — se llama DESPUÉS de que la tx de mint se confirma on-chain
+
+  // Sumar farm claims al aura_claimed antes de limpiar
+  const farmRow: any = await c.env.DB.prepare(
+    "SELECT COALESCE(SUM(amount), 0) AS total FROM farm_claims WHERE address = ?"
+  ).bind(address).first();
+  const totalFarm = Number(farmRow?.total || 0);
+
+  // Incrementar aura_claimed en user_stats
+  await c.env.DB.prepare(
+    "INSERT INTO user_stats (address, aura_claimed, updated_at) VALUES (?, ?, unixepoch()) ON CONFLICT(address) DO UPDATE SET aura_claimed = aura_claimed + ?, updated_at = unixepoch()"
+  ).bind(address, totalFarm).run();
+
+  // Limpiar farm_claims del usuario
   await c.env.DB.prepare("DELETE FROM farm_claims WHERE address = ?").bind(address).run();
-  return c.json({ ok: true, message: "Farm claims limpiados. AURA minteado on-chain." });
+
+  return c.json({ ok: true, message: "Farm claims reclamados y aura_claimed actualizado." });
 });
 
 /* =========================================================
