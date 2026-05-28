@@ -55,7 +55,8 @@ html.light .defi-root .h1.defi-brand .defi-brand-em { color: var(--primary); tex
 .defi-root .h1.defi-brand .defi-brand-base { color: var(--text); }
 
 .defi-brand-tag {
-  display: inline-block;
+  display: block;
+  clear: both;
   margin-top: 2px;
   margin-bottom: 14px;
   font-size: 9px;
