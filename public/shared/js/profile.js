@@ -589,9 +589,7 @@ export async function syncProfile() {
   modal.querySelector("#pfKarmaBar").style.width = karmaValue > 0 ? "30%" : "0%";
 
   modal.querySelector("#pfDharma").textContent = addr ? String(dharma) : "—";
-  const auraLabel = addr
-    ? (auraReclamable > 0 ? `${String(aura)} (${String(auraReclamable)} por reclamar)` : String(aura))
-    : "—";
+  const auraLabel = addr ? String(aura) : "—";
   modal.querySelector("#pfAura").textContent = auraLabel;
   const auraHint = modal.querySelector("#pfAuraHint");
   if (auraHint) {
