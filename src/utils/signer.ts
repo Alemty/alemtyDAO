@@ -371,43 +371,81 @@ export async function signAndSendTransaction(
   const fromAddress = '0x' + bytesToHex(addressHash.slice(12)); // last 20 bytes
   const toAddress = txParams.to.toLowerCase();
   
-  // 3. Fetch chain data from RPC
-  const [nonceRes, gasPriceRes, chainIdRes] = await Promise.all([
-    fetch(rpcUrl, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionCount', params: [fromAddress, 'latest'] })
-    }),
-    fetch(rpcUrl, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] })
-    }),
-    fetch(rpcUrl, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] })
-    })
-  ]);
-
-  const [nonceData, gasPriceData, chainIdData]: any[] = await Promise.all([
-    nonceRes.json(), gasPriceRes.json(), chainIdRes.json()
-  ]);
-
-  const nonceHex = nonceData?.result || '0x0';
-  const gasPriceHex = gasPriceData?.result || '0x59682f00';
-  const chainIdHex = chainIdData?.result || '0x2105';
+  // 3. Fetch chain data from RPC (try multiple RPCs)
+  const rpcUrls = [
+    rpcUrl,
+    'https://base.drpc.org',
+    'https://base-rpc.publicnode.com',
+    'https://1rpc.io/base',
+    'https://mainnet.base.org',
+  ];
+  // Eliminar duplicados
+  const uniqueRpcs = [...new Set(rpcUrls)];
   
-  // 4. Estimate gas
-  let gasLimitHex = '0x52080'; // default 336k
-  try {
-    const gasRes = await fetch(rpcUrl, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0', id: 4, method: 'eth_estimateGas',
-        params: [{ from: fromAddress, to: toAddress, data: txParams.data }]
-      })
-    });
-    const gasData: any = await gasRes.json();
-    if (gasData?.result) gasLimitHex = gasData.result;
-  } catch (_) {}
+  let nonceHex = '0x0';
+  let gasPriceHex = '0x59682f00';
+  let chainIdHex = '0x2105';
+  let gasLimitHex = '0x52080';
+  let rpcFound = false;
+  
+  for (const rpc of uniqueRpcs) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      
+      const [nonceRes, gasPriceRes, chainIdRes] = await Promise.all([
+        fetch(rpc, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionCount', params: [fromAddress, 'latest'] }),
+          signal: controller.signal
+        }),
+        fetch(rpc, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] }),
+          signal: controller.signal
+        }),
+        fetch(rpc, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] }),
+          signal: controller.signal
+        })
+      ]);
+      
+      clearTimeout(timeout);
+      
+      const [nonceData, gasPriceData, chainIdData]: any[] = await Promise.all([
+        nonceRes.json(), gasPriceRes.json(), chainIdRes.json()
+      ]);
+      
+      if (nonceData?.result && gasPriceData?.result && chainIdData?.result) {
+        nonceHex = nonceData.result;
+        gasPriceHex = gasPriceData.result;
+        chainIdHex = chainIdData.result;
+        rpcFound = rpc;
+        
+        // Also estimate gas
+        try {
+          const gasRes = await fetch(rpc, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              jsonrpc: '2.0', id: 4, method: 'eth_estimateGas',
+              params: [{ from: fromAddress, to: toAddress, data: txParams.data }]
+            })
+          });
+          const gasData: any = await gasRes.json();
+          if (gasData?.result) gasLimitHex = gasData.result;
+        } catch (_) {}
+        
+        break; // Success, stop trying
+      }
+    } catch (_) {
+      continue; // Try next RPC
+    }
+  }
+  
+  if (!rpcFound) {
+    throw new Error('No se pudo conectar a ningún RPC de Base. Verifica la conectividad del Worker.');
+  }
 
   // 5. Parse values to BigInt
   const nonceBn = BigInt(nonceHex);
@@ -456,8 +494,8 @@ export async function signAndSendTransaction(
   const rlpFinal = rlpEncodeList(finalItems);
   const rawTx = '0x' + bytesToHex(rlpFinal);
   
-  // 11. Send
-  const sendRes = await fetch(rpcUrl, {
+  // 11. Send (usar el mismo RPC que funcionó para los datos)
+  const sendRes = await fetch(rpcFound, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', id: 5, method: 'eth_sendRawTransaction', params: [rawTx] })
   });
