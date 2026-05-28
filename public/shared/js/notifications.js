@@ -262,6 +262,8 @@ function updatePagination(totalPages) {
 export function openModal(id) {
   const m = document.getElementById(id);
   if (m) { m.classList.add("open"); m.setAttribute("aria-hidden", "false"); }
+  // Disparar evento para que otros módulos reaccionen (ej: DM auto-abrir)
+  window.dispatchEvent(new CustomEvent('modal:opened', { detail: { modalId: id } }));
 }
 
 export function closeModal(id) {
