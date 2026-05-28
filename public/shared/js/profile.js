@@ -518,6 +518,7 @@ export function buildProfileModal() {
             <button class="tab-btn active" data-tab="estado">ESTADO</button>
             <button class="tab-btn" data-tab="actividad">User</button>
             <button class="tab-btn" data-tab="dm">DM</button>
+            <button class="tab-btn" data-tab="farm">🎣 FARM</button>
             <button class="tab-btn" data-tab="dex">DEX</button>
             <button class="tab-btn" data-tab="tienda">🛒</button>
           </div>
@@ -632,6 +633,7 @@ function renderTab(tab, modal) {
   if (tab === "dex") {
     return renderDexTab(modal);
   }
+  if (tab === "farm") { renderFarmTab(modal); return; }
   if (tab === "tienda") { renderTiendaTab(modal); return; }
 }
 
@@ -1278,4 +1280,513 @@ async function buyItem(id, seller, price) {
   } catch (e) {
     alert('❌ Error: ' + e.message);
   }
+}
+
+/* =========================================================
+   FARM TAB — Reclamo diario de AURA con mini-game pixel art estilo Tibia
+   ========================================================= */
+function getFarmState(addr) {
+  const k = `alemty.farm.${addr.toLowerCase()}`;
+  try { return JSON.parse(localStorage.getItem(k)) || {}; } catch { return {}; }
+}
+function saveFarmState(addr, st) {
+  localStorage.setItem(`alemty.farm.${addr.toLowerCase()}`, JSON.stringify(st));
+}
+function canFarmToday(addr) {
+  const st = getFarmState(addr);
+  if (!st.lastClaim) return true;
+  const now = new Date();
+  const last = new Date(st.lastClaim);
+  return now.toDateString() !== last.toDateString();
+}
+function getDailyStreak(addr) {
+  const st = getFarmState(addr);
+  return st.streak || 0;
+}
+
+function renderFarmTab(modal) {
+  const c = modal.querySelector("#pfContent");
+  if (!c) return;
+  const addr = getDid();
+  if (!addr) {
+    c.innerHTML = `<div class="pf-box"><div class="h2">🎣 FARM</div><p class="muted">Conecta tu wallet para pescar AURA.</p></div>`;
+    return;
+  }
+
+  const canClaim = canFarmToday(addr);
+  const streak = getDailyStreak(addr);
+  const st = getFarmState(addr);
+
+  c.innerHTML = `
+    <div class="pf-box farm-container">
+      <div class="h2" style="font-size:15px;display:flex;align-items:center;gap:8px;">
+        🎣 Pescando AURA
+        <span class="farm-streak" id="farmStreak" style="font-size:11px;font-weight:400;opacity:.6;">Racha: ${streak} día${streak !== 1 ? 's' : ''}</span>
+      </div>
+
+      <!-- Canvas del mini-game -->
+      <div class="farm-canvas-wrapper" style="position:relative;width:100%;max-width:360px;margin:10px auto;border-radius:14px;overflow:hidden;background:var(--bg-card,#0d1520);border:1px solid rgba(255,255,255,.08);">
+        <canvas id="farmCanvas" width="360" height="320" style="display:block;width:100%;height:auto;image-rendering:pixelated;"></canvas>
+
+        <!-- Overlay de resultado -->
+        <div id="farmOverlay" class="farm-overlay" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.72);z-index:5;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:20px;border-radius:14px;">
+          <div id="farmResultIcon" style="font-size:48px;margin-bottom:6px;">🎁</div>
+          <div id="farmResultTitle" style="font-size:18px;font-weight:700;"></div>
+          <div id="farmResultSub" style="font-size:13px;opacity:.7;margin-top:4px;"></div>
+          <button id="farmCloseResult" class="tab-btn" style="margin-top:14px;font-size:12px;padding:6px 18px;">Cerrar</button>
+        </div>
+      </div>
+
+      <!-- Botón principal -->
+      <button id="farmBtn" class="tab-btn ${canClaim ? '' : 'disabled'}" style="width:100%;margin-top:6px;font-size:14px;padding:10px;${canClaim ? '' : 'opacity:.4;cursor:not-allowed;'}" ${canClaim ? '' : 'disabled'}>
+        ${canClaim ? '🎣 Lanzar caña!' : '⏳ Ya pescaste hoy · Vuelve mañana'}
+      </button>
+      <div id="farmTimer" style="font-size:11px;opacity:.5;text-align:center;margin-top:4px;"></div>
+
+      <!-- Historial de rewards -->
+      <div class="farm-history" id="farmHistory" style="margin-top:10px;font-size:12px;opacity:.7;"></div>
+    </div>
+  `;
+
+  // Dibujar escena inicial
+  drawFarmScene(addr, st);
+
+  // Botón de pesca
+  const btn = c.querySelector('#farmBtn');
+  btn?.addEventListener('click', () => startFarming(addr, st, c));
+
+  // Cerrar overlay
+  c.querySelector('#farmCloseResult')?.addEventListener('click', () => {
+    const ov = c.querySelector('#farmOverlay');
+    if (ov) { ov.style.display = 'none'; }
+  });
+
+  // Mostrar countdown si ya reclamó
+  if (!canClaim && st.lastClaim) {
+    updateFarmCountdown(c, st.lastClaim, addr);
+  }
+
+  // Render historial
+  renderFarmHistory(addr, c);
+}
+
+function drawFarmScene(addr, st, animating) {
+  const canvas = document.getElementById('farmCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = 360, H = 320;
+
+  // Clear
+  ctx.fillStyle = '#1a2332';
+  ctx.fillRect(0, 0, W, H);
+
+  // --- Cielo con estrellitas pixel ---
+  ctx.fillStyle = '#2a3a5a';
+  for (let i = 0; i < 20; i++) {
+    const x = (i * 37 + 13) % W, y = (i * 53 + 7) % 80;
+    ctx.fillRect(x, y, 2, 2);
+  }
+
+  // --- Agua / estanque ( oval pixelado ) ---
+  const pondCX = 140, pondCY = 210, pondRX = 90, pondRY = 40;
+  ctx.fillStyle = '#2d6b8a';
+  ctx.beginPath();
+  ctx.ellipse(pondCX, pondCY, pondRX, pondRY, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#3a8ab5';
+  ctx.beginPath();
+  ctx.ellipse(pondCX, pondCY - 4, pondRX - 8, pondRY - 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Onditas pixel en el agua
+  ctx.fillStyle = 'rgba(255,255,255,.08)';
+  for (let i = 0; i < 5; i++) {
+    const wx = pondCX + (i - 2) * 22;
+    ctx.fillRect(wx - 6, pondCY - 12 + ((i % 2) ? 6 : -4), 12, 2);
+  }
+
+  // --- Orilla (tierra pixel) ---
+  ctx.fillStyle = '#5a4a3a';
+  ctx.fillRect(0, 235, W, 85);
+  ctx.fillStyle = '#6b5a4a';
+  ctx.fillRect(0, 240, W, 80);
+
+  // --- Árboles pixel art ---
+  function drawTree(tx, ty) {
+    // Tronco
+    ctx.fillStyle = '#5a3a1a';
+    ctx.fillRect(tx - 2, ty - 20, 4, 24);
+    // Copa
+    ctx.fillStyle = '#2a6a2a';
+    ctx.fillRect(tx - 10, ty - 30, 20, 14);
+    ctx.fillRect(tx - 6, ty - 36, 12, 10);
+  }
+  drawTree(20, 248);
+  drawTree(330, 248);
+  drawTree(50, 260);
+
+  // --- Avatar pixel art estilo Tibia (personaje) ---
+  const px = 180, py = 190;
+  // Cuerpo (túnica)
+  ctx.fillStyle = '#3a5a8a';
+  ctx.fillRect(px - 6, py - 10, 12, 20);
+  // Cabeza
+  ctx.fillStyle = '#d4a56a';
+  ctx.fillRect(px - 5, py - 22, 10, 12);
+  // Ojos
+  ctx.fillStyle = '#000';
+  ctx.fillRect(px - 3, py - 19, 2, 2);
+  ctx.fillRect(px + 1, py - 19, 2, 2);
+  // Pelo
+  ctx.fillStyle = '#8a5a2a';
+  ctx.fillRect(px - 6, py - 24, 12, 4);
+  // Piernas
+  ctx.fillStyle = '#2a3a5a';
+  ctx.fillRect(px - 5, py + 10, 4, 10);
+  ctx.fillRect(px + 1, py + 10, 4, 10);
+  // Brazos
+  ctx.fillStyle = '#d4a56a';
+  ctx.fillRect(px - 10, py - 8, 4, 12);
+  ctx.fillRect(px + 6, py - 8, 4, 12);
+
+  // --- Caña de pescar (si no está animando la captura) ---
+  if (!animating) {
+    drawFishingRod(ctx, px, py, 0);
+    // Línea al agua
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(px + 28, py - 14);
+    ctx.lineTo(pondCX - 30, pondCY - 10);
+    ctx.stroke();
+    // Boya
+    ctx.fillStyle = '#ff4444';
+    ctx.beginPath();
+    ctx.arc(pondCX - 30, pondCY - 10, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // --- Cartel informativo ---
+  ctx.fillStyle = 'rgba(0,0,0,.6)';
+  ctx.fillRect(4, 4, W - 8, 22);
+  ctx.fillStyle = '#fff';
+  ctx.font = '10px monospace';
+  ctx.fillText('🎣 RECLAMO DIARIO · LANZA LA CAÑA PARA GANAR AURA', 10, 18);
+}
+
+function drawFishingRod(ctx, px, py, angle) {
+  ctx.save();
+  ctx.translate(px + 10, py - 14);
+  ctx.rotate(angle);
+  // Caña
+  ctx.strokeStyle = '#8a6a3a';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(18, -10);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawChest(ctx, cx, cy, size) {
+  // Cofre pixel art
+  const s = size || 20;
+  // Base
+  ctx.fillStyle = '#c47a2a';
+  ctx.fillRect(cx - s/2, cy - s/3, s, s * 0.6);
+  // Tapa
+  ctx.fillStyle = '#d48a3a';
+  ctx.fillRect(cx - s/2 - 1, cy - s/3 - 4, s + 2, 8);
+  // Cerradura
+  ctx.fillStyle = '#ffd700';
+  ctx.fillRect(cx - 2, cy - 2, 4, 4);
+  // Brillo
+  ctx.fillStyle = 'rgba(255,255,200,.3)';
+  ctx.fillRect(cx - s/2 + 2, cy - s/3 - 2, s - 4, 3);
+}
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function startFarming(addr, st, container) {
+  if (!canFarmToday(addr)) return;
+  const canvas = document.getElementById('farmCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = 360, H = 320;
+  const btn = container.querySelector('#farmBtn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '.4'; btn.textContent = '🎣 Pesca en curso...'; }
+
+  const px = 180, py = 190;
+  const pondCX = 140, pondCY = 210;
+  const lineEndX = pondCX - 30, lineEndY = pondCY - 10;
+
+  // Fase 1: Lanzar caña (animación)
+  let frame = 0;
+  const totalFrames = 30;
+  let cofreX = 0, cofreY = 0;
+
+  function animateCast() {
+    const progress = frame / totalFrames;
+    // Ángulo de la caña: sube y baja
+    const angle = -0.3 + Math.sin(progress * Math.PI) * 0.6;
+
+    // Redibujar escena sin caña
+    drawFarmScene(addr, st, true);
+
+    // Dibujar caña con ángulo
+    drawFishingRod(ctx, px, py, angle);
+
+    // Línea de pesca
+    const lineLen = 20 + progress * 50;
+    const lx = px + 28 + Math.cos(-angle + 0.2) * 12;
+    const ly = py - 14 + Math.sin(-angle + 0.2) * 12;
+    const endX = lx;
+    const endY = ly + lineLen;
+
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(lx, ly);
+    ctx.lineTo(endX, Math.min(endY, lineEndY + 10));
+    ctx.stroke();
+
+    // Boya
+    const boyaY = Math.min(endY, lineEndY + 10);
+    const bounce = Math.sin(progress * 8) * 2;
+    ctx.fillStyle = '#ff4444';
+    ctx.beginPath();
+    ctx.arc(endX, boyaY + bounce, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    frame++;
+    if (frame <= totalFrames) {
+      requestAnimationFrame(animateCast);
+    } else {
+      // Fase 2: Esperar un momento (simular que pica)
+      setTimeout(() => animateReelIn(addr, st, container, ctx), 800);
+    }
+  }
+
+  function animateReelIn(addr, st, container, ctx) {
+    // Fase 2: Recoger línea con cofre
+    let frame2 = 0;
+    const totalFrames2 = 25;
+    // Determinar reward ANTES de la animación
+    const reward = getRandomFarmReward(addr, st);
+
+    function reelStep() {
+      const p = frame2 / totalFrames2;
+      // Línea recogiéndose
+      const lx = px + 28;
+      const ly = py - 14;
+      const lineLen = 60 * (1 - p);
+      const endX = lx;
+      const endY = ly + lineLen;
+
+      drawFarmScene(addr, st, true);
+      drawFishingRod(ctx, px, py, -0.2 + p * 0.2);
+
+      // Línea
+      ctx.strokeStyle = '#ccc';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(lx, ly);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+
+      // Cofre que sube desde el agua
+      const chestY = endY - 10 + (1 - p) * 30;
+      const chestX = endX + Math.sin(p * 6) * 3;
+
+      // Agua salpicando
+      ctx.fillStyle = 'rgba(58,138,181,.5)';
+      for (let i = 0; i < 3; i++) {
+        const sx = chestX + (i - 1) * 8 + Math.sin(p * 10 + i) * 3;
+        const sy = chestY + 14 + Math.random() * 4;
+        ctx.fillRect(sx - 2, sy - 2, 4, 4);
+      }
+
+      if (p > 0.4) {
+        drawChest(ctx, chestX, chestY, 16 + p * 8);
+      }
+
+      frame2++;
+      if (frame2 <= totalFrames2) {
+        requestAnimationFrame(reelStep);
+      } else {
+        // Mostrar resultado
+        showFarmResult(addr, st, container, reward, ctx);
+      }
+    }
+    reelStep();
+  }
+
+  animateCast();
+}
+
+function getRandomFarmReward(addr, st) {
+  // Dificultad: mientras más racha, más difícil el reward alto
+  const streak = st.streak || 0;
+  const roll = Math.random();
+
+  // Base: ~40% chance de 0.1, ~30% de 0.5, ~20% de 1, ~8% de 5, ~2% de 10, ~0.5% de 50, ~0.1% de 100
+  // Con racha, los valores bajos se vuelven menos probables
+  const difficulty = Math.min(streak * 0.05, 0.5); // max 50% reduction
+
+  let reward;
+  if (roll < 0.35 - difficulty * 0.2) reward = 0.1;
+  else if (roll < 0.60 - difficulty * 0.15) reward = 0.5;
+  else if (roll < 0.78 - difficulty * 0.1) reward = 1;
+  else if (roll < 0.90 - difficulty * 0.05) reward = 5;
+  else if (roll < 0.97) reward = 10;
+  else if (roll < 0.995) reward = 50;
+  else reward = 100;
+
+  // Bonus de racha: multiplicador 1x-3x según racha
+  const streakMultiplier = 1 + Math.floor(streak / 7) * 0.5;
+  reward = Math.round(reward * streakMultiplier * 10) / 10;
+
+  return Math.min(reward, 100);
+}
+
+function showFarmResult(addr, st, container, reward, ctx) {
+  // Guardar claim
+  const now = new Date().toISOString();
+  st.lastClaim = now;
+  st.streak = (st.streak || 0) + 1;
+  st.history = st.history || [];
+  st.history.unshift({ date: now, reward });
+  if (st.history.length > 30) st.history = st.history.slice(0, 30);
+  saveFarmState(addr, st);
+
+  // Dibujar escena final con cofre abierto
+  drawFarmScene(addr, st, false);
+  const px = 180, py = 190;
+  drawFishingRod(ctx, px, py, -0.1);
+  // Cofre abierto al lado del personaje
+  const cx = px + 24, cy = py + 4;
+  ctx.fillStyle = '#c47a2a';
+  ctx.fillRect(cx - 10, cy - 2, 20, 12);
+  ctx.fillStyle = '#d48a3a';
+  ctx.fillRect(cx - 11, cy - 6, 22, 6);
+  ctx.fillStyle = '#ffd700';
+  ctx.fillRect(cx - 2, cy + 2, 4, 4);
+  // Brillo del cofre abierto
+  ctx.fillStyle = 'rgba(255,215,0,.3)';
+  ctx.fillRect(cx - 8, cy - 4, 16, 3);
+  // Sparkles
+  ctx.fillStyle = '#ffd700';
+  for (let i = 0; i < 6; i++) {
+    const sx = cx - 8 + Math.random() * 16;
+    const sy = cy - 4 - Math.random() * 10;
+    ctx.fillRect(sx, sy, 2, 2);
+  }
+
+  // Mostrar overlay
+  const overlay = container.querySelector('#farmOverlay');
+  const icon = container.querySelector('#farmResultIcon');
+  const title = container.querySelector('#farmResultTitle');
+  const sub = container.querySelector('#farmResultSub');
+  const btn = container.querySelector('#farmBtn');
+
+  if (overlay && title && sub && icon) {
+    overlay.style.display = 'flex';
+    if (reward >= 100) {
+      icon.textContent = '👑';
+      title.textContent = `🎉 ${reward} AURA — JACKPOT MÍTICO!`;
+      sub.textContent = '¡Eres una leyenda de la pesca!';
+    } else if (reward >= 50) {
+      icon.textContent = '💎';
+      title.textContent = `✨ ${reward} AURA — Premio legendario!`;
+      sub.textContent = '¡El cofre contenía un tesoro increíble!';
+    } else if (reward >= 10) {
+      icon.textContent = '🌟';
+      title.textContent = `⭐ ${reward} AURA — Gran pesca!`;
+      sub.textContent = 'Un cofre muy valioso emergió del estanque.';
+    } else if (reward >= 5) {
+      icon.textContent = '🎁';
+      title.textContent = `🎁 ${reward} AURA — Buena pesca!`;
+      sub.textContent = 'El cofre tenía un brillo especial.';
+    } else if (reward >= 1) {
+      icon.textContent = '📦';
+      title.textContent = `📦 ${reward} AURA`;
+      sub.textContent = 'Un cofre modesto pero bienvenido.';
+    } else {
+      icon.textContent = '🐟';
+      title.textContent = `🐟 ${reward} AURA`;
+      sub.textContent = 'Un pececillo se transformó en AURA.';
+    }
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '.4';
+    btn.textContent = '⏳ Vuelve mañana';
+  }
+
+  // Actualizar racha
+  const streakEl = container.querySelector('#farmStreak');
+  if (streakEl) {
+    streakEl.textContent = `Racha: ${st.streak} día${st.streak !== 1 ? 's' : ''}`;
+  }
+
+  // Actualizar historial
+  renderFarmHistory(addr, container);
+
+  // Iniciar countdown
+  updateFarmCountdown(container, now, addr);
+}
+
+function updateFarmCountdown(container, lastClaim, addr) {
+  const timer = container.querySelector('#farmTimer');
+  if (!timer) return;
+
+  function tick() {
+    const now = new Date();
+    const last = new Date(lastClaim);
+    const nextMidnight = new Date(last);
+    nextMidnight.setDate(nextMidnight.getDate() + 1);
+    nextMidnight.setHours(0, 0, 0, 0);
+    const diff = nextMidnight.getTime() - now.getTime();
+
+    if (diff <= 0) {
+      timer.textContent = '🎣 ¡Ya puedes pescar de nuevo!';
+      const btn = container.querySelector('#farmBtn');
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.textContent = '🎣 Lanzar caña!';
+      }
+      return;
+    }
+
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    timer.textContent = `⏳ Siguiente reclamo en ${h}h ${m}m ${s}s`;
+    setTimeout(tick, 1000);
+  }
+  tick();
+}
+
+function renderFarmHistory(addr, container) {
+  const st = getFarmState(addr);
+  const hist = container?.querySelector('#farmHistory');
+  if (!hist) return;
+  if (!st.history || st.history.length === 0) {
+    hist.textContent = 'Aún no has pescado nada. ¡Lanza la caña!';
+    return;
+  }
+  const items = st.history.slice(0, 10).map(h => {
+    const d = new Date(h.date);
+    const dateStr = d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+    let icon = '🐟';
+    if (h.reward >= 100) icon = '👑';
+    else if (h.reward >= 50) icon = '💎';
+    else if (h.reward >= 10) icon = '🌟';
+    else if (h.reward >= 5) icon = '🎁';
+    else if (h.reward >= 1) icon = '📦';
+    return `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;white-space:nowrap;">${icon} ${d.getDate()} ${dateStr.split(' ')[1]}: <strong>${h.reward} AURA</strong></span>`;
+  }).join('');
+  hist.innerHTML = `<div style="display:flex;flex-wrap:wrap;">Últimas capturas: ${items}</div>`;
 }

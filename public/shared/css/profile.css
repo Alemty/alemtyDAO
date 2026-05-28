@@ -424,3 +424,57 @@ html.light .pf-stat-item.aura {
 .mk-submit:hover { opacity: .85; }
 html.light .mk-card { background: rgba(0,0,0,.02); }
 html.light .mk-input { background: rgba(0,0,0,.03); }
+
+/* ===== FARM TAB — Mini-game diario pixel art ===== */
+.farm-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.farm-streak {
+  background: rgba(255,215,0,.12);
+  color: #ffd700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+}
+html.light .farm-streak {
+  background: rgba(180,150,0,.10);
+  color: #8a7500;
+}
+
+.farm-overlay {
+  animation: fadeInOverlay 0.3s ease;
+}
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.farm-overlay .tab-btn {
+  background: linear-gradient(135deg, var(--primary, #00ffd5), var(--accent, #0088ff));
+  border: none;
+  color: #08101a;
+  font-weight: 700;
+}
+.farm-overlay .tab-btn:hover {
+  opacity: .85;
+}
+
+#farmCanvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.farm-history {
+  width: 100%;
+  padding: 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.06);
+}
+html.light .farm-history {
+  background: rgba(0,0,0,.02);
+  border-color: rgba(0,0,0,.08);
+}
