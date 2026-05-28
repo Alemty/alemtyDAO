@@ -7,90 +7,113 @@ mountShell();
 const $ = id => document.getElementById(id);
 
 /* =====================================================
-  Colour palette — friendly, no yellow/orange
+  Palette — friendly, no yellow/orange
 ===================================================== */
 const PALETTE = {
-  'ALEM/ETH':  { color: '#3b82f6', up: '#3b82f6', down: '#ef4444' },  // blue
-  'AURA/ALEM': { color: '#22c55e', up: '#22c55e', down: '#ef4444' },  // green (stable)
-  'ALEM/USD':  { color: '#6366f1', up: '#6366f1', down: '#ef4444' },  // indigo
-  'veALEM/ETH':{ color: '#a855f7', up: '#a855f7', down: '#ef4444' },  // purple
-  'ETH/USD':   { color: '#ec4899', up: '#ec4899', down: '#ef4444' },  // pink
+  'ALEM/ETH':  { color: '#3b82f6', up: '#22c55e', down: '#ef4444' },
+  'AURA/ALEM': { color: '#22c55e', up: '#22c55e', down: '#ef4444' },
+  'ALEM/USD':  { color: '#6366f1', up: '#22c55e', down: '#ef4444' },
+  'veALEM/ETH':{ color: '#a855f7', up: '#22c55e', down: '#ef4444' },
+  'ETH/USD':   { color: '#ec4899', up: '#22c55e', down: '#ef4444' },
 };
 
 /* =====================================================
-  ETH/USD — real price from CoinGecko
+  Timeframe config — data points per timeframe
 ===================================================== */
+const TF = {
+  'MAX': { points: 500, volFactor: 1.0,  label: 'MAX' },
+  '1Y':  { points: 365, volFactor: 0.6,  label: '1 AÑO' },
+  '1M':  { points: 120, volFactor: 0.35, label: '1 MES' },
+  '1W':  { points: 84,  volFactor: 0.2,  label: '1 SEM' },
+  '1D':  { points: 48,  volFactor: 0.1,  label: '1 DÍA' },
+  '1H':  { points: 24,  volFactor: 0.04, label: '1 HORA' },
+};
+
+let currentPair = 'ALEM/ETH';
+let currentTf = '1D';
+
+/* =====================================================
+  Data generators
+===================================================== */
+function genSeries(pairKey, tfKey) {
+  const cfg = TF[tfKey] || TF['1D'];
+  const n = cfg.points;
+  const vf = cfg.volFactor;
+  const base = getBase(pairKey);
+  const vol = getVol(pairKey) * vf;
+  return Array.from({length: n}, (_, i) => {
+    return base
+      + Math.sin(i / (n * 0.15)) * vol * 1.5
+      + Math.cos(i / (n * 0.07)) * vol * 0.6
+      + (Math.random() - 0.5) * vol * 0.8
+      + (Math.random() < 0.03 ? (Math.random() - 0.5) * vol * 2 : 0)
+      + (i / n) * vol * (0.1 - Math.random() * 0.2);
+  });
+}
+
+function getBase(pair) {
+  if (pair === 'ALEM/ETH') return 0.0138;
+  if (pair === 'AURA/ALEM') return 0.001;
+  if (pair === 'ALEM/USD') return 13.8;
+  if (pair === 'veALEM/ETH') return 0.007;
+  if (pair === 'ETH/USD') return 2870;
+  return 1;
+}
+
+function getVol(pair) {
+  if (pair === 'ALEM/ETH') return 0.00035;
+  if (pair === 'AURA/ALEM') return 0.00001;
+  if (pair === 'ALEM/USD') return 0.35;
+  if (pair === 'veALEM/ETH') return 0.0002;
+  if (pair === 'ETH/USD') return 45;
+  return 0.1;
+}
+
+// ETH/USD real: inject real price into series
+let ethRealPrice = 2870;
+let ethHistory = [];
+
 async function fetchEthUsd() {
   try {
     const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
     const d = await r.json();
-    return d?.ethereum?.usd ?? null;
-  } catch {
-    return null;
-  }
+    if (d?.ethereum?.usd) ethRealPrice = d.ethereum.usd;
+  } catch {}
 }
 
-/* =====================================================
-  Data generators per pair
-===================================================== */
-function generateSeries(pairKey) {
-  const now = Date.now();
-  if (pairKey === 'ETH/USD') return generateETHSeries();
-  if (pairKey === 'AURA/ALEM') {
-    return Array.from({length: 120}, () => 0.001 + (Math.random()-0.5)*0.00001);
-  }
-  if (pairKey === 'ALEM/ETH') {
-    const base = 0.0138, vol = 0.00035;
-    return Array.from({length: 120}, (_, i) =>
-      base + Math.sin(i/24)*0.0005 + (Math.random()-0.5)*vol + (Math.random()<0.03?(Math.random()-0.5)*0.0008:0) - 0.000001*i
-    );
-  }
-  if (pairKey === 'veALEM/ETH') {
-    const base = 0.007, vol = 0.0002;
-    return Array.from({length: 120}, (_, i) =>
-      base + Math.sin(i/20)*0.0003 + (Math.random()-0.5)*vol + (Math.random()<0.02?(Math.random()-0.5)*0.0004:0)
-    );
-  }
-  if (pairKey === 'ALEM/USD') {
-    const base = 13.8, vol = 0.35;
-    return Array.from({length: 120}, (_, i) =>
-      base + Math.cos(i/24)*0.5 + (Math.random()-0.5)*vol + (Math.random()<0.03?(Math.random()-0.5)*0.8:0) - 0.002*i
-    );
-  }
-  return [];
-}
+function genEthSeries(tfKey) {
+  const cfg = TF[tfKey] || TF['1D'];
+  const n = cfg.points;
+  // Append real price to rolling history
+  ethHistory.push(ethRealPrice);
+  if (ethHistory.length > n) ethHistory = ethHistory.slice(-n);
 
-// ETH/USD — real-time with historical buffer
-let ethHistory = [];
-const HIST_LEN = 120;
-
-function generateETHSeries() {
-  // If we have enough history, add latest real price; else fill with mock
-  const realPrice = window._lastEthPrice || 2870;
-  ethHistory.push(realPrice);
-  if (ethHistory.length > HIST_LEN) ethHistory = ethHistory.slice(-HIST_LEN);
-  if (ethHistory.length < HIST_LEN) {
-    const fill = HIST_LEN - ethHistory.length;
-    for (let i = 0; i < fill; i++) {
-      const v = realPrice + (Math.random()-0.5)*60 + Math.sin(i/8)*30;
-      ethHistory.unshift(v);
+  // If not enough history, backfill
+  if (ethHistory.length < n) {
+    const need = n - ethHistory.length;
+    for (let i = 0; i < need; i++) {
+      ethHistory.unshift(ethRealPrice + (Math.random() - 0.5) * 60 + Math.sin(i / 8) * 30);
     }
   }
   return [...ethHistory];
 }
 
 /* =====================================================
-  Chart rendering
+  Chart drawing
 ===================================================== */
-let currentPair = 'ALEM/ETH';
-
-function drawTradingChart(pairKey) {
+function drawTradingChart(pairKey, tfKey) {
   const canvas = $('tradingChart');
   if (!canvas) return;
   const pair = PALETTE[pairKey];
   if (!pair) return;
 
-  const series = generateSeries(pairKey);
+  let series;
+  if (pairKey === 'ETH/USD') {
+    series = genEthSeries(tfKey);
+  } else {
+    series = genSeries(pairKey, tfKey);
+  }
+
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
@@ -179,43 +202,66 @@ function drawTradingChart(pairKey) {
     changeEl.className = 'trading-change' + (isUp ? ' up' : ' down');
   }
 
-  // Stats
+  // Stats: Open, High, Low, Close, Volatility, Volume
+  const open = series[0];
+  const close = lastPrice;
   const high = Math.max(...series);
   const low = Math.min(...series);
-  let highFmt, lowFmt;
-  if (pairKey === 'AURA/ALEM') { highFmt = high.toFixed(5); lowFmt = low.toFixed(5); }
-  else if (high < 1) { highFmt = '$' + high.toFixed(4); lowFmt = '$' + low.toFixed(4); }
-  else if (high < 100) { highFmt = '$' + high.toFixed(2); lowFmt = '$' + low.toFixed(2); }
-  else { highFmt = '$' + high.toFixed(1); lowFmt = '$' + low.toFixed(1); }
 
-  const hiEl = $('tsHigh');
-  const loEl = $('tsLow');
-  const volEl = $('tsVol');
-  const mcEl = $('tsMc');
-  if (hiEl) hiEl.textContent = highFmt;
-  if (loEl) loEl.textContent = lowFmt;
-  if (volEl) volEl.textContent = pairKey === 'AURA/ALEM' ? 'Estable' : '—';
-  if (mcEl) mcEl.textContent = '—';
+  let openFmt, closeFmt, highFmt, lowFmt;
+  const fmt2 = (v) => {
+    if (pairKey === 'AURA/ALEM') return v.toFixed(5);
+    if (v < 0.01) return v.toFixed(5);
+    if (v < 1) return '$' + v.toFixed(4);
+    if (v < 100) return '$' + v.toFixed(2);
+    return '$' + v.toFixed(1);
+  };
+  openFmt = fmt2(open); closeFmt = fmt2(close); highFmt = fmt2(high); lowFmt = fmt2(low);
+
+  $('tsOpen') && ($('tsOpen').textContent = openFmt);
+  $('tsHigh') && ($('tsHigh').textContent = highFmt);
+  $('tsLow') && ($('tsLow').textContent = lowFmt);
+  $('tsClose') && ($('tsClose').textContent = closeFmt);
+  $('tsVol') && ($('tsVol').textContent = pairKey === 'AURA/ALEM' ? 'Estable' : (changePct < 0 ? Math.abs(changePct).toFixed(1) + '%' : changePct.toFixed(1) + '%'));
+  $('tsVolAmt') && ($('tsVolAmt').textContent = (series.length * 100 + Math.floor(Math.random() * 1000)).toLocaleString());
 }
 
 /* =====================================================
   ETH/USD real-time polling
 ===================================================== */
 async function updateEthPrice() {
-  const price = await fetchEthUsd();
-  if (price) {
-    window._lastEthPrice = price;
-    if (currentPair === 'ETH/USD') drawTradingChart('ETH/USD');
-  }
+  await fetchEthUsd();
+  if (currentPair === 'ETH/USD') drawTradingChart('ETH/USD', currentTf);
 }
 
+// First fetch on boot
+async function initEthPrice() {
+  await fetchEthUsd();
+}
+
+/* =====================================================
+  Bind tabs
+===================================================== */
 function bindTradingTabs() {
   document.querySelectorAll('.trading-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.trading-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       currentPair = tab.getAttribute('data-pair');
-      drawTradingChart(currentPair);
+      drawTradingChart(currentPair, currentTf);
+    });
+  });
+}
+
+function bindTimeframes() {
+  document.querySelectorAll('.tf-btn').forEach(btn => {
+    // Set 1D as active by default
+    if (btn.id === 'tfDefault') btn.classList.add('active');
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTf = btn.getAttribute('data-tf');
+      drawTradingChart(currentPair, currentTf);
     });
   });
 }
@@ -231,10 +277,8 @@ function initMiniTrade() {
   const btn = $('tradeBtn');
   const statusEl = $('tradeStatus');
   const flipBtn = $('tradeFlip');
-
   if (!fromSel || !toSel) return;
 
-  // Rates (simulated)
   const RATES = {
     'AURA': { 'ALEM': 0.001, 'ETH': 0.00000035, 'USDC': 0.000012 },
     'ALEM': { 'AURA': 1000, 'ETH': 0.00035, 'USDC': 13.84 },
@@ -251,11 +295,8 @@ function initMiniTrade() {
       return;
     }
     const rate = RATES[from]?.[to];
-    if (rate) {
-      outEl.value = (amt * rate).toFixed(6);
-    } else {
-      outEl.value = '—';
-    }
+    if (rate) outEl.value = (amt * rate).toFixed(6);
+    else outEl.value = '—';
   }
 
   inEl?.addEventListener('input', quote);
@@ -287,59 +328,36 @@ function initMiniTrade() {
   Advanced Trading Controls
 ===================================================== */
 function initTradeControls() {
-  // Stop Loss / Take Profit
-  const slInput = $('slPrice');
-  const tpInput = $('tpPrice');
-  const slBtn = $('slBtn');
-  const tpBtn = $('tpBtn');
-  const slStatus = $('slStatus');
-  const tpStatus = $('tpStatus');
-
-  slBtn?.addEventListener('click', () => {
-    const price = Number(slInput?.value);
-    if (!price || price <= 0) { if (slStatus) slStatus.textContent = '❌ Precio inválido'; return; }
-    if (slStatus) slStatus.textContent = `✅ Stop Loss configurado en $${price}`;
+  $('slBtn')?.addEventListener('click', () => {
+    const price = Number($('slPrice')?.value);
+    if (!price || price <= 0) { if ($('slStatus')) $('slStatus').textContent = '❌ Precio inválido'; return; }
+    if ($('slStatus')) $('slStatus').textContent = `✅ Stop Loss configurado en $${price}`;
   });
 
-  tpBtn?.addEventListener('click', () => {
-    const price = Number(tpInput?.value);
-    if (!price || price <= 0) { if (tpStatus) tpStatus.textContent = '❌ Precio inválido'; return; }
-    if (tpStatus) tpStatus.textContent = `✅ Take Profit configurado en $${price}`;
+  $('tpBtn')?.addEventListener('click', () => {
+    const price = Number($('tpPrice')?.value);
+    if (!price || price <= 0) { if ($('tpStatus')) $('tpStatus').textContent = '❌ Precio inválido'; return; }
+    if ($('tpStatus')) $('tpStatus').textContent = `✅ Take Profit configurado en $${price}`;
   });
 
-  // Schedule
-  const schedBtn = $('schedBtn');
-  const schedStatus = $('schedStatus');
-  schedBtn?.addEventListener('click', () => {
+  $('schedBtn')?.addEventListener('click', () => {
     const dateVal = $('schedDate')?.value;
-    if (!dateVal) { if (schedStatus) schedStatus.textContent = '❌ Selecciona fecha y hora'; return; }
+    if (!dateVal) { if ($('schedStatus')) $('schedStatus').textContent = '❌ Selecciona fecha y hora'; return; }
     const d = new Date(dateVal);
-    if (schedStatus) schedStatus.textContent = `⏰ Trading programado para ${d.toLocaleString('es')}`;
+    if ($('schedStatus')) $('schedStatus').textContent = `⏰ Trading programado para ${d.toLocaleString('es')}`;
   });
-}
-
-/* =====================================================
-  Agents/Oracles section
-===================================================== */
-function initOracles() {
-  // Stat rows updated by future agent integration
-  console.log('[DEFI] Oracles ready for agent connection');
 }
 
 /* =====================================================
   Boot
 ===================================================== */
 async function boot() {
-  // Fetch real ETH price
-  const ethPrice = await fetchEthUsd();
-  if (ethPrice) window._lastEthPrice = ethPrice;
-  else window._lastEthPrice = 2870;
-
-  drawTradingChart('ALEM/ETH');
+  await initEthPrice();
+  drawTradingChart('ALEM/ETH', '1D');
   bindTradingTabs();
+  bindTimeframes();
   initMiniTrade();
   initTradeControls();
-  initOracles();
 
   // Poll ETH/USD every 60s
   setInterval(updateEthPrice, 60000);
