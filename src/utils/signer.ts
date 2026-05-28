@@ -447,7 +447,7 @@ export async function signAndSendTransaction(
   }
   
   if (!rpcFound) {
-    throw new Error('No se pudo conectar a ningún RPC de Base. Verifica la conectividad del Worker.');
+    throw new Error(`No se pudo conectar a ningún RPC de Base. Last fromAddress: ${fromAddress}`);
   }
 
   // 5. Parse values to BigInt
