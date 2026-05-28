@@ -102,7 +102,9 @@ function genEthSeries(tfKey) {
   Light mode detection for canvas
 ===================================================== */
 function isLightMode() {
-  return document.documentElement.classList.contains('light');
+  return document.documentElement.classList.contains('light') ||
+         (localStorage.getItem('theme') === 'light') ||
+         (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: light)').matches);
 }
 
 /* =====================================================
