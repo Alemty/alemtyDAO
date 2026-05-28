@@ -1347,7 +1347,7 @@ function renderFarmTab(modal) {
     c.innerHTML = `
       <div class="pf-box farm-container">
         <div class="h2" style="font-size:15px;display:flex;align-items:center;gap:8px;">
-          🎣 Pescando AURA
+          ⛏️ Farmeando AURA
           <span class="farm-streak" id="farmStreak" style="font-size:11px;font-weight:400;opacity:.6;">Racha: ${streak} día${streak !== 1 ? 's' : ''}</span>
         </div>
 
