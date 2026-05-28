@@ -331,6 +331,23 @@ app.post("/api/aura/approve-agent", async (c) => {
   const maxUint = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
   const data = approveSelector + spenderPadded + maxUint;
 
+  // Primero verificar que la private key genera la dirección esperada
+  try {
+    const { deriveAddress } = await import('./utils/signer');
+    const derivedAddr = deriveAddress(agentPk);
+    const expectedAddr = (c.env.AGENT_ADDRESS || '0x02756cB3a5413cd616d192C56dFdcE80Dd66706E').toLowerCase();
+    console.log("🔑 Derived address:", derivedAddr, "Expected:", expectedAddr);
+    
+    if (derivedAddr !== expectedAddr) {
+      return c.json({
+        ok: false,
+        error: `La private key no corresponde a la wallet agente. Derivada: ${derivedAddr}, esperada: ${expectedAddr}. Verifica AGENT_PRIVATE_KEY.`
+      }, 500);
+    }
+  } catch (e: any) {
+    return c.json({ ok: false, error: `Error verificando private key: ${e.message}` }, 500);
+  }
+
   try {
     const { signAndSendTransaction } = await import('./utils/signer');
     
