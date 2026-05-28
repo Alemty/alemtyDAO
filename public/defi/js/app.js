@@ -14,6 +14,7 @@ const PALETTE = {
   'AURA/ALEM': { color: '#22c55e', up: '#22c55e', down: '#ef4444' },
   'ALEM/USD':  { color: '#6366f1', up: '#22c55e', down: '#ef4444' },
   'veALEM/ETH':{ color: '#a855f7', up: '#22c55e', down: '#ef4444' },
+  'veALEM/USDC':{color: '#f472b6', up: '#22c55e', down: '#ef4444' },
   'ETH/USD':   { color: '#ec4899', up: '#22c55e', down: '#ef4444' },
 };
 
