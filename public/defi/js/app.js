@@ -358,7 +358,12 @@ function initTradeControls() {
 ===================================================== */
 async function boot() {
   await initEthPrice();
-  drawTradingChart('ALEM/ETH', '1D');
+
+  // Esperar a que el shell aplique la clase de tema antes del primer render
+  requestAnimationFrame(() => {
+    drawTradingChart('ALEM/ETH', '1D');
+  });
+
   bindTradingTabs();
   bindTimeframes();
   initMiniTrade();
@@ -366,6 +371,12 @@ async function boot() {
 
   // Poll ETH/USD every 60s
   setInterval(updateEthPrice, 60000);
+
+  // Redibujar chart si cambia el tema (clase 'light' en <html>)
+  const themeObserver = new MutationObserver(() => {
+    drawTradingChart(currentPair, currentTf);
+  });
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 }
 
 boot();
