@@ -187,37 +187,59 @@ app.get("/api/me/stats", auth, async (c) => {
   ).bind(address).first();
   const auraFarmed = Number(farmRow?.total || 0);
 
-  // AURA on-chain: balance real desde el contrato
+  // AURA on-chain: balance real desde el contrato, cachead0 en user_stats.aura_balance (60s)
   const auraAccumulado = dharma + auraFarmed; // total off-chain generado
   let auraOnChain = 0;
   let auraBalance = '0';
 
   const auraContract = c.env.AURA_CONTRACT;
-  if (auraContract) {
-    try {
-      const rpcUrl = 'https://base.drpc.org';
-      const data = '0x70a08231' + address.slice(2).padStart(64, '0');
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
-      const rpcRes = await fetch(rpcUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0', id: 1, method: 'eth_call',
-          params: [{ to: auraContract, data }, 'latest']
-        }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      if (rpcRes.ok) {
-        const json: any = await rpcRes.json();
-        if (json?.result && json.result !== '0x') {
-          auraOnChain = Number(BigInt(json.result) / 10n ** 16n / 100n);
-          auraBalance = String(auraOnChain);
+  const cacheKey = `aura_onchain:${address}`;
+
+  // 1. Intentar leer caché de D1
+  const cachedRow: any = await c.env.DB.prepare(
+    "SELECT aura_balance, updated_at FROM user_stats WHERE address = ?"
+  ).bind(address).first();
+  const now = Math.floor(Date.now() / 1000);
+  const cacheValid = cachedRow && (now - (cachedRow.updated_at || 0)) < 60;
+  if (cacheValid && Number(cachedRow.aura_balance) > 0) {
+    auraOnChain = Number(cachedRow.aura_balance);
+    auraBalance = String(auraOnChain);
+  }
+
+  // 2. Consultar RPC (si no hay caché o si expiró)
+  if (auraContract && !cacheValid) {
+    const rpcUrls = [
+      'https://base.drpc.org',
+      'https://base-rpc.publicnode.com',
+    ];
+    const data = '0x70a08231' + address.slice(2).padStart(64, '0');
+    for (const rpcUrl of rpcUrls) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const rpcRes = await fetch(rpcUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0', id: 1, method: 'eth_call',
+            params: [{ to: auraContract, data }, 'latest']
+          }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        if (rpcRes.ok) {
+          const json: any = await rpcRes.json();
+          if (json?.result && json.result !== '0x') {
+            auraOnChain = Number(BigInt(json.result) / 10n ** 16n / 100n);
+            auraBalance = String(auraOnChain);
+            // Guardar en D1
+            await c.env.DB.prepare(
+              "INSERT OR REPLACE INTO user_stats (address, aura_balance, updated_at, points_received, likes_received, dharma_total, level, karma_debt) VALUES (?, ?, ?, COALESCE((SELECT points_received FROM user_stats WHERE address = ?), 0), COALESCE((SELECT likes_received FROM user_stats WHERE address = ?), 0), COALESCE((SELECT dharma_total FROM user_stats WHERE address = ?), 0), COALESCE((SELECT level FROM user_stats WHERE address = ?), 1), 0)"
+            ).bind(address, auraOnChain, now, address, address, address, address).run();
+            break;
+          }
         }
-      }
-    } catch (_) {
-      // RPC falló, mantener auraOnChain = 0
+      } catch (_) {}
     }
   }
 
