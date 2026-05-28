@@ -949,82 +949,62 @@ function renderDexTab(modal) {
           return;
         }
 
-        // 1. Pedir al backend que prepare la tx
+        // 1. Pedir al backend que firme y envíe la tx de transfer
+        statusEl.textContent = '⏳ Enviando AURA desde el agente...';
         const claimRes = await fetch(API_BASE + '/api/aura/claim', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
           body: JSON.stringify({
-            to: getDid(),
             amount: String(auraReclamable * 1e18) // convertir a wei
           })
         });
         const claimData = await claimRes.json();
 
-        if (!claimData.ok || !claimData.tx) {
-          statusEl.textContent = '❌ ' + (claimData.error || 'Error al preparar tx');
+        if (!claimData.ok) {
+          statusEl.textContent = '❌ ' + (claimData.error || 'Error al reclamar AURA');
           claimBtn.disabled = false;
           claimBtn.textContent = '⚡ Reclaim Rewards (todo)';
           return;
         }
 
-        // 2. Pedir al usuario que cambie a Base Mainnet en MetaMask
-        const BASE_CHAIN_ID = '0x2105'; // 8453
-        let currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
-        if (currentChainId !== BASE_CHAIN_ID) {
-          try {
-            await window.ethereum.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: BASE_CHAIN_ID }]
-            });
-          } catch (switchError) {
-            if (switchError.code === 4902) {
-              await window.ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [{
-                  chainId: BASE_CHAIN_ID,
-                  chainName: 'Base Mainnet',
-                  nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-                  rpcUrls: ['https://mainnet.base.org'],
-                  blockExplorerUrls: ['https://basescan.org']
-                }]
-              });
-            } else {
-              throw switchError;
-            }
-          }
-        }
+        const txHash = claimData.txHash;
 
-        // 3. Enviar la tx a MetaMask para que el usuario la firme
-        statusEl.textContent = '✍️ Firma la transacción en MetaMask...';
-        const txHash = await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [claimData.tx]
-        });
+        // 2. Esperar confirmación consultando el RPC
+        statusEl.textContent = `✅ Tx enviada: ${txHash.slice(0, 14)}... Esperando confirmación...`;
 
-        // 4. Tx enviada, esperar confirmación (opcional)
-        statusEl.textContent = `✅ Tx enviada: ${txHash.slice(0, 10)}... Esperando confirmación...`;
+        // Esperar hasta 60s por confirmación
+        const checkInterval = 3000;
+        const maxWait = 60000;
+        let waited = 0;
 
-        // Esperar 1 confirmación
         await new Promise(resolve => {
           const checkTx = setInterval(async () => {
             try {
-              const receipt = await window.ethereum.request({
-                method: 'eth_getTransactionReceipt',
-                params: [txHash]
+              const receiptRes = await fetch('https://base.drpc.org', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  jsonrpc: '2.0', id: 1, method: 'eth_getTransactionReceipt',
+                  params: [txHash]
+                })
               });
-              if (receipt && receipt.blockNumber) {
+              const receiptJson = await receiptRes.json();
+              if (receiptJson?.result && receiptJson.result.blockNumber) {
                 clearInterval(checkTx);
                 resolve(undefined);
               }
             } catch (_) {}
-          }, 2000);
-          // Timeout después de 60s
-          setTimeout(() => { clearInterval(checkTx); resolve(undefined); }, 60000);
+            waited += checkInterval;
+            if (waited >= maxWait) {
+              clearInterval(checkTx);
+              resolve(undefined);
+            }
+          }, checkInterval);
         });
 
-        statusEl.textContent = `✅ Tx confirmada: ${txHash.slice(0, 10)}...`;
+        statusEl.textContent = `✅ Tx confirmada: ${txHash.slice(0, 14)}...`;
 
-        // 5. Notificar al backend que el minteo se completó — limpia farm_claims
+        // 3. Notificar al backend que el reclamo se completó — limpia farm_claims y actualiza aura_claimed
         try {
           await fetch(API_BASE + '/api/farm/reclaim-complete', {
             method: 'POST',

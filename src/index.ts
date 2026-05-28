@@ -311,135 +311,55 @@ app.get("/api/me/verify", auth, async (c) => {
 /* =========================================================
    AURA — Claim de recompensas (Rulebook §5.1)
    POST /api/aura/claim
-   Body: { to: string, amount: string (wei) }
-   Devuelve: tx preparada lista para firmar con MetaMask
-   El usuario firma desde el frontend (sin private key en el Worker)
-========================================================= */
+   Body: { amount: string (wei) }
+   Firma y envía una tx de transfer(address,uint256) desde la wallet agente hacia el usuario.
+   El agente paga el gas (tiene ETH para eso). El usuario solo presiona "Reclaim" y recibe AURA.
+   ========================================================= */
 app.post("/api/aura/claim", auth, async (c) => {
   const caller = c.get("address");
   const payload = await c.req.json().catch(() => ({} as any));
-  const to = String(payload.to || caller).toLowerCase();
-  const amountWei = String(payload.amount || "0");
+  let amountWei = String(payload.amount || "0");
   const auraContract = c.env.AURA_CONTRACT;
-  const rpcUrl = c.env.AURA_RPC_URL || 'https://mainnet.base.org';
+  const rpcUrl = c.env.AURA_RPC_URL || 'https://base.drpc.org';
 
   if (!auraContract) {
     return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
   }
 
-  // 1. Validar hard cap on-chain
-  try {
-    const supplyData = '0x18160ddd'; // totalSupply()
-    const capData = '0xfb86a404';    // hardCap()
-    const [supplyRes, capRes] = await Promise.all([
-      fetch(rpcUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: auraContract, data: supplyData }, 'latest'] })
-      }),
-      fetch(rpcUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_call', params: [{ to: auraContract, data: capData }, 'latest'] })
-      })
-    ]);
-    const supplyJson: any = await supplyRes.json();
-    const capJson: any = await capRes.json();
-    if (supplyJson?.result && capJson?.result) {
-      const currentSupply = BigInt(supplyJson.result);
-      const hardCap = BigInt(capJson.result);
-      const amount = BigInt(amountWei);
-      if (currentSupply + amount > hardCap) {
-        return c.json({ ok: false, error: 'ExceedsHardCap', currentSupply: currentSupply.toString(), hardCap: hardCap.toString() }, 400);
-      }
-    }
-  } catch (e: any) {
-    console.warn('⚠️ Error validando hard cap:', e.message);
+  const agentPk = c.env.AGENT_PRIVATE_KEY;
+  if (!agentPk) {
+    return c.json({ ok: false, error: "AGENT_PRIVATE_KEY no configurado. Configúralo como secreto en Cloudflare Workers." }, 500);
   }
 
-  // 2. Obtener nonce del minter (0x6A202f...) para construir la tx
-  let nonce = '0x0';
-  try {
-    const nonceRes = await fetch(rpcUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 3,
-        method: 'eth_getTransactionCount',
-        params: ['0x6A202f991c4C1df079449BE9847b1DaC3F51854f', 'latest']
-      })
-    });
-    const nonceJson: any = await nonceRes.json();
-    if (nonceJson?.result) nonce = nonceJson.result;
-  } catch (e: any) {
-    console.warn('⚠️ Error obteniendo nonce:', e.message);
-  }
-
-  // 3. Construir datos de la tx (mint(address,uint256) = 0x40c10f19)
-  const mintSelector = '0x40c10f19';
-  const toPadded = to.slice(2).padStart(64, '0');
+  // Construir datos de la tx: transfer(address,uint256)
+  // selector: 0xa9059cbb
+  const transferSelector = '0xa9059cbb';
+  const toPadded = caller.slice(2).toLowerCase().padStart(64, '0');
   const amountPadded = BigInt(amountWei).toString(16).padStart(64, '0');
-  const data = mintSelector + toPadded + amountPadded;
+  const data = transferSelector + toPadded + amountPadded;
 
-  // 4. Estimar gas
-  let gasEstimate = '0x52080'; // 336k default
   try {
-    const gasRes = await fetch(rpcUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 4,
-        method: 'eth_estimateGas',
-        params: [{
-          from: '0x6A202f991c4C1df079449BE9847b1DaC3F51854f',
-          to: auraContract,
-          data
-        }]
-      })
-    });
-    const gasJson: any = await gasRes.json();
-    if (gasJson?.result) gasEstimate = gasJson.result;
-  } catch (e: any) {
-    console.warn('⚠️ Error estimando gas:', e.message);
-  }
-
-  // 5. Obtener gas price
-  let gasPrice = '0x59682f00'; // 1.5 gwei default
-  try {
-    const gasPriceRes = await fetch(rpcUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 5, method: 'eth_gasPrice', params: [] })
-    });
-    const gpJson: any = await gasPriceRes.json();
-    if (gpJson?.result) gasPrice = gpJson.result;
-  } catch (e: any) {
-    console.warn('⚠️ Error obteniendo gas price:', e.message);
-  }
-
-  // 6. Devolver tx preparada para que el frontend la firme con eth_sendTransaction
-  // El from es la wallet minter (0x6A202f...) — el usuario debe tenerla en MetaMask
-  return c.json({
-    ok: true,
-    tx: {
-      from: '0x6A202f991c4C1df079449BE9847b1DaC3F51854f',
+    const { signAndSendTransaction } = await import('./utils/signer');
+    const txHash = await signAndSendTransaction(agentPk, {
       to: auraContract,
-      data,
-      nonce,
-      gas: gasEstimate,
-      gasPrice,
-      value: '0x0',
-      chainId: '0x2105' // 8453 Base Mainnet
-    },
-    metadata: {
-      to,
-      amountWei,
-      amountReadable: (Number(amountWei) / 1e18).toFixed(4),
-      auraContract
-    }
-  });
+      data
+    }, rpcUrl);
+
+    return c.json({
+      ok: true,
+      txHash,
+      metadata: {
+        from: c.env.AGENT_ADDRESS || '',
+        to: caller,
+        amountWei,
+        amountReadable: (Number(amountWei) / 1e18).toFixed(4),
+        auraContract
+      }
+    });
+  } catch (e: any) {
+    console.error("❌ Error en transfer:", e.message);
+    return c.json({ ok: false, error: `Error al transferir AURA: ${e.message}` }, 500);
+  }
 });
 
 // Endpoint legacy para compatibilidad (instrucciones manuales)
