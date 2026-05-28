@@ -180,9 +180,11 @@ html:not(.light) body[data-app="dex"] select option { color: #0e1a18; }
 }
 
 @media (pointer: coarse) and (max-width: 520px) {
-  body[data-app="dex"] #pageDex { font-size: 70%; padding-left: 14px; padding-right: 14px; }
+  body[data-app="dex"] #pageDex { padding-left: 14px; padding-right: 14px; }
   body[data-app="dex"] .dex-card { padding: 16px; }
+  body[data-app="dex"] .dex-card-head { flex-direction: column; align-items: flex-start; }
   body[data-app="dex"] .dex-title { font-size: 1rem; }
+  body[data-app="dex"] .dex-sub { font-size: 12px; }
   body[data-app="dex"] .dex-seg { padding: 4px; gap: 4px; }
   body[data-app="dex"] .dex-seg-btn { padding: 6px 10px; font-size: 11px; }
   body[data-app="dex"] .dex-input-row { padding: 8px; border-radius: 12px; }
@@ -194,4 +196,6 @@ html:not(.light) body[data-app="dex"] select option { color: #0e1a18; }
   body[data-app="dex"] .dex-search { min-width: 0; width: 100%; }
   body[data-app="dex"] .dex-tools { width: 100%; flex-direction: column; }
   body[data-app="dex"] .dao-brand { font-size: clamp(1.1rem, 5vw, 1.5rem); }
+  body[data-app="dex"] .dex-swap-grid { grid-template-columns: 1fr; }
+  body[data-app="dex"] .dex-mid { padding: 2px 0; }
 }

@@ -187,6 +187,183 @@ html.light .defi-root .btn.primary { color: #fff; background: linear-gradient(13
 
 .defi-root .icon-btn.mini { width: 34px; height: 34px; border-radius: 12px; }
 
+/* ===== TRADING CHARTS (Binance-style) ===== */
+.trading-section {
+  margin-bottom: 18px;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 0 0 1px var(--ui-inset);
+}
+
+.trading-section::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(620px 300px at 15% 10%, rgba(0,255,213,.20), transparent 55%),
+              radial-gradient(520px 260px at 85% 90%, rgba(0,163,255,.16), transparent 60%);
+  opacity: .65;
+  filter: blur(16px);
+}
+
+.trading-section > * { position: relative; z-index: 1; }
+
+.trading-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 10px 14px 0;
+  border-bottom: 1px solid color-mix(in oklab, var(--ui-border), transparent 40%);
+}
+
+.trading-tab {
+  padding: 8px 18px;
+  border: 0;
+  background: transparent;
+  color: color-mix(in oklab, var(--text), transparent 35%);
+  font-family: var(--font-alt), var(--font);
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0;
+  transition: color .15s, background .15s;
+  position: relative;
+}
+
+.trading-tab:hover {
+  color: var(--text);
+  background: color-mix(in oklab, var(--ui-surface), transparent 30%);
+}
+
+.trading-tab.active {
+  color: var(--primary);
+  background: color-mix(in oklab, var(--ui-surface), transparent 10%);
+}
+
+.trading-tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 2px 2px 0 0;
+}
+
+html.light .trading-tab.active {
+  color: #0db9a6;
+}
+
+.trading-chart-wrap {
+  position: relative;
+  padding: 8px 14px 4px;
+  min-height: 260px;
+}
+
+#tradingChart {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1100 / 380;
+  display: block;
+  border-radius: 8px;
+}
+
+.trading-overlay {
+  position: absolute;
+  top: 16px;
+  left: 24px;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.trading-price {
+  font-size: 28px;
+  font-weight: 1000;
+  letter-spacing: -0.5px;
+  color: var(--text);
+  text-shadow: 0 2px 20px rgba(0,0,0,.35);
+  font-variant-numeric: tabular-nums;
+}
+
+.trading-price.up { color: #00ff88; }
+.trading-price.down { color: #ff3b5c; }
+
+.trading-change {
+  font-size: 14px;
+  font-weight: 800;
+  opacity: .85;
+  letter-spacing: -0.2px;
+}
+
+.trading-change.up { color: #00ff88; }
+.trading-change.down { color: #ff3b5c; }
+
+.trading-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border-top: 1px solid color-mix(in oklab, var(--ui-border), transparent 40%);
+  padding: 10px 14px;
+}
+
+.trading-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ts-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  opacity: .55;
+}
+
+.ts-val {
+  font-size: 13px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+html.light .trading-section {
+  background: rgba(255,255,255,.55);
+  border: 1px solid rgba(13,185,166,.15);
+  box-shadow: 0 12px 32px rgba(0,0,0,.06), 0 0 0 1px rgba(255,255,255,.72) inset;
+}
+
+html.light .trading-tab.active {
+  color: #0db9a6;
+}
+
+html.light .trading-price { text-shadow: 0 2px 12px rgba(0,0,0,.08); }
+
+/* Trading responsive */
+@media (max-width: 820px) {
+  .trading-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .trading-price { font-size: 22px; }
+}
+
+@media (max-width: 520px) {
+  .trading-tabs { padding: 8px 10px 0; gap: 0; }
+  .trading-tab { padding: 6px 12px; font-size: 11px; }
+  .trading-chart-wrap { padding: 4px 10px 2px; min-height: 180px; }
+  #tradingChart { aspect-ratio: 1100 / 340; }
+  .trading-price { font-size: 18px; }
+  .trading-change { font-size: 12px; }
+  .trading-stats { padding: 8px 10px; }
+  .trading-stat { gap: 1px; }
+  .ts-val { font-size: 12px; }
+}
+
 @media (max-width: 900px) {
   .defi-row4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .defi-row2 { grid-template-columns: 1fr; }
