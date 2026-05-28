@@ -595,8 +595,8 @@ export async function syncProfile() {
   if (auraHint) {
     if (addr && auraReclamable > 0) {
       auraHint.innerHTML = `<span class="lbl">Reclamar</span><span class="val" style="color:#a855f7;">${String(auraReclamable)} AURA</span>`;
-    } else if (addr && auraBalance !== '0') {
-      auraHint.innerHTML = `<span class="lbl">On-chain</span><span class="val">${auraBalance}</span>`;
+    } else if (addr && auraReclamable <= 0) {
+      auraHint.innerHTML = `<span class="lbl">AURA por reclamar</span><span class="val" style="color:#a855f7;">0</span>`;
     } else {
       auraHint.innerHTML = '';
     }
