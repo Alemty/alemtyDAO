@@ -334,27 +334,11 @@ app.post("/api/aura/approve-agent", async (c) => {
   try {
     const { signAndSendTransaction } = await import('./utils/signer');
     
-    // Verificar balance de la wallet agente antes de firmar
-    let balanceWei = 'N/A';
-    try {
-      const balanceCheck = await fetch(rpcUrl, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0', id: 0, method: 'eth_getBalance',
-          params: [c.env.AGENT_ADDRESS || '0x02756cB3a5413cd616d192C56dFdcE80Dd66706E', 'latest']
-        })
-      });
-      const balanceData: any = await balanceCheck.json();
-      balanceWei = balanceData?.result || 'N/A';
-      console.log("💰 Balance agente:", balanceWei);
-    } catch (balErr: any) {
-      console.error("⚠️ No se pudo verificar balance:", balErr.message);
-    }
-    
     const txHash = await signAndSendTransaction(agentPk, {
       to: auraContract,
       data
     }, rpcUrl);
+    
     return c.json({
       ok: true,
       txHash,
@@ -363,7 +347,7 @@ app.post("/api/aura/approve-agent", async (c) => {
     });
   } catch (e: any) {
     console.error("❌ Error en approve:", e.message, e.stack);
-    return c.json({ ok: false, error: `Error al aprobar: ${e.message}`, balanceWei, agentAddressConfigured: c.env.AGENT_ADDRESS || 'N/A' }, 500);
+    return c.json({ ok: false, error: `Error al aprobar: ${e.message}` }, 500);
   }
 });
 
