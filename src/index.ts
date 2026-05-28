@@ -333,6 +333,22 @@ app.post("/api/aura/approve-agent", async (c) => {
 
   try {
     const { signAndSendTransaction } = await import('./utils/signer');
+    
+    // Verificar balance de la wallet agente antes de firmar
+    try {
+      const balanceCheck = await fetch(rpcUrl, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0', id: 0, method: 'eth_getBalance',
+          params: [c.env.AGENT_ADDRESS || '0x02756cB3a5413cd616d192C56dFdcE80Dd66706E', 'latest']
+        })
+      });
+      const balanceData: any = await balanceCheck.json();
+      console.log("💰 Balance agente:", balanceData?.result, "ETH:", balanceData?.result ? Number(BigInt(balanceData.result)) / 1e18 : 'N/A');
+    } catch (balErr: any) {
+      console.error("⚠️ No se pudo verificar balance:", balErr.message);
+    }
+    
     const txHash = await signAndSendTransaction(agentPk, {
       to: auraContract,
       data
@@ -382,6 +398,22 @@ app.post("/api/aura/claim", auth, async (c) => {
   try {
     const { signAndSendTransaction } = await import('./utils/signer');
     console.log("🚀 Claim request:", { caller, amountWei, dataLen: data.length });
+    
+    // Verificar balance de la wallet agente antes de firmar
+    try {
+      const balanceCheck = await fetch(rpcUrl, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0', id: 0, method: 'eth_getBalance',
+          params: [c.env.AGENT_ADDRESS || '0x02756cB3a5413cd616d192C56dFdcE80Dd66706E', 'latest']
+        })
+      });
+      const balanceData: any = await balanceCheck.json();
+      console.log("💰 Balance agente:", balanceData?.result, "ETH:", balanceData?.result ? Number(BigInt(balanceData.result)) / 1e18 : 'N/A');
+    } catch (balErr: any) {
+      console.error("⚠️ No se pudo verificar balance:", balErr.message);
+    }
+    
     const txHash = await signAndSendTransaction(agentPk, {
       to: auraContract,
       data

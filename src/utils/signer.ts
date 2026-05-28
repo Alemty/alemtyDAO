@@ -373,9 +373,9 @@ export async function signAndSendTransaction(
   
   // 3. Fetch chain data from RPC (try multiple RPCs)
   const rpcUrls = [
-    rpcUrl,
     'https://base.drpc.org',
     'https://base-rpc.publicnode.com',
+    rpcUrl,
     'https://1rpc.io/base',
     'https://mainnet.base.org',
   ];
