@@ -1508,32 +1508,50 @@ function drawFarmScene(addr, st, animating) {
   });
 
   // ============================================================
-  // AVATAR (de perfil sobre la montaña)
+  // MINERO PIXEL ART (de perfil, sobre la montaña, pico al hombro)
   // ============================================================
   const px = mountBaseX+6, py = mountBaseY-14;
-  ctx.fillStyle='rgba(0,0,0,0.3)';ctx.fillRect(px-4,py+18,14,4);
-  ctx.fillStyle='#3a5a8a';ctx.fillRect(px-1,py-2,4,8);ctx.fillStyle='#d4a56a';ctx.fillRect(px-2,py+4,3,4);
-  ['#2a4a7a','#3a5a8a','#3a5a8a','#4a6a9a','#3a5a8a','#2a4a7a'].forEach((c,i)=>{ctx.fillStyle=c;ctx.fillRect(px-2,py-4+i*3,8,3);});
-  ctx.fillStyle='#6a4a2a';ctx.fillRect(px-2,py+8,8,2);ctx.fillStyle='#c47a2a';ctx.fillRect(px+4,py+8,2,2);
-  ctx.fillStyle='#1a2a4a';ctx.fillRect(px-2,py+14,4,8);ctx.fillRect(px+3,py+14,4,8);
-  ctx.fillStyle='#3a2a1a';ctx.fillRect(px-2,py+20,4,3);ctx.fillRect(px+3,py+20,4,3);
-  ctx.fillStyle='#d4a56a';ctx.fillRect(px,py-12,7,10);
-  ctx.fillStyle='#c89a5e';ctx.fillRect(px+7,py-8,3,3);ctx.fillRect(px+9,py-7,2,1);
-  ctx.fillStyle='#fff';ctx.fillRect(px+3,py-9,3,2);ctx.fillStyle='#222';ctx.fillRect(px+5,py-8,1,1);
-  ctx.fillStyle='#d4a56a';ctx.fillRect(px-2,py-9,2,3);
-  ['#7a4a1a','#8a5a2a','#9a6a3a'].forEach((c,i)=>{ctx.fillStyle=c;ctx.fillRect(px-1+i,py-16,2,5);});
-  ctx.fillStyle='#6a3a0a';ctx.fillRect(px-3,py-17,3,3);ctx.fillRect(px-4,py-18,2,2);
-  ctx.fillStyle='rgba(42,74,122,0.35)';ctx.fillRect(px-6,py,6,14);ctx.fillRect(px-8,py+6,4,8);
-
-  // ============================================================
-  // CAÑA + BOYA
-  // ============================================================
+  // Sombra
+  ctx.fillStyle='rgba(0,0,0,0.3)';ctx.fillRect(px-5,py+22,16,5);
+  // Botas
+  ctx.fillStyle='#4a3a2a';ctx.fillRect(px-2,py+18,4,4);ctx.fillRect(px+4,py+18,4,4);
+  // Piernas (gris azulado)
+  ctx.fillStyle='#3a4a5a';ctx.fillRect(px-2,py+10,4,9);ctx.fillRect(px+4,py+10,4,9);
+  // Cinturón con hebilla
+  ctx.fillStyle='#5a3a1a';ctx.fillRect(px-3,py+8,12,3);ctx.fillStyle='#d4a020';ctx.fillRect(px+3,py+8,3,3);
+  // Camisa naranja/rojiza de minero
+  ['#8a3a1a','#9a4a2a','#8a3a1a','#7a2a0a','#8a3a1a','#9a4a2a'].forEach((c,i)=>{ctx.fillStyle=c;ctx.fillRect(px-3,py-4+i*3,12,3);});
+  // Tirantes
+  ctx.fillStyle='#3a2a1a';ctx.fillRect(px-2,py-2,2,10);ctx.fillRect(px+6,py-2,2,10);
+  // Cabeza
+  ctx.fillStyle='#d4a56a';ctx.fillRect(px-1,py-12,8,10);
+  // Casco amarillo
+  ctx.fillStyle='#c4a020';ctx.fillRect(px-2,py-18,10,8);ctx.fillStyle='#e4c040';ctx.fillRect(px-1,py-16,8,4);
+  ctx.fillStyle='#b4901a';ctx.fillRect(px-3,py-12,2,3);ctx.fillStyle='#c4a020';ctx.fillRect(px-2,py-11,2,2);
+  // Faro frontal
+  ctx.fillStyle='#e8d060';ctx.fillRect(px+7,py-16,3,3);ctx.fillStyle='#f0e080';ctx.fillRect(px+8,py-15,2,2);
+  ctx.fillStyle='rgba(240,224,128,0.08)';ctx.beginPath();ctx.moveTo(px+10,py-15);ctx.lineTo(px+30,py-22);ctx.lineTo(px+30,py-10);ctx.closePath();ctx.fill();
+  // Gafas
+  ctx.fillStyle='#2a2a3a';ctx.fillRect(px+1,py-11,4,3);ctx.fillStyle='#4a4a6a';ctx.fillRect(px+2,py-10,2,1);
+  // Nariz
+  ctx.fillStyle='#c89a5e';ctx.fillRect(px+7,py-9,3,3);
+  // Barba/candado
+  ctx.fillStyle='#8a6a3a';ctx.fillRect(px,py-2,6,4);ctx.fillStyle='#7a5a2a';ctx.fillRect(px+1,py-1,4,3);
+  // Oreja
+  ctx.fillStyle='#d4a56a';ctx.fillRect(px-3,py-10,2,3);
+  // Brazo izquierdo (atrás, sostiene pico)
+  ctx.fillStyle='#9a4a2a';ctx.fillRect(px-4,py-2,4,7);ctx.fillStyle='#d4a56a';ctx.fillRect(px-3,py+4,3,3);
+  // Brazo derecho (al frente)
+  ctx.fillStyle='#9a4a2a';ctx.fillRect(px+7,py-2,4,5);ctx.fillStyle='#d4a56a';ctx.fillRect(px+10,py+2,3,3);
+  // PICO AL HOMBRO
+  ctx.fillStyle='#6a4a2a';ctx.fillRect(px-12,py-12,12,3);ctx.fillStyle='#5a3a1a';ctx.fillRect(px-12,py-11,12,2);
+  ctx.fillStyle='#8a8a9a';ctx.fillRect(px-14,py-16,4,6);ctx.fillRect(px-10,py-16,4,3);
+  ctx.fillStyle='#aaaabc';ctx.fillRect(px-13,py-15,3,4);ctx.fillStyle='#6a6a7a';ctx.fillRect(px-11,py-11,2,2);
+  ctx.fillStyle='#d4a020';ctx.fillRect(px-17,py-14,3,3); // punta dorada
+  // Piedritas decorativas
   if(!animating){
-    drawFishingRod(ctx,px+2,py-4,0);
-    ctx.strokeStyle='rgba(200,200,200,0.5)';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(px+22,py-16);ctx.quadraticCurveTo(px+60,py-28,pondCX-30,pondCY-8);ctx.stroke();
-    ctx.fillStyle='#ff4444';ctx.beginPath();ctx.arc(pondCX-30,pondCY-8,3,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#ff8888';ctx.beginPath();ctx.arc(pondCX-31,pondCY-9,1.5,0,Math.PI*2);ctx.fill();
+    [[px-16,py-8,2,'#6a5a4a'],[px-18,py-4,1,'#5a4a3a'],[px+12,py-6,2,'#7a6a5a']]
+      .forEach(([rx,ry,rs,rc])=>{ctx.fillStyle=rc;ctx.fillRect(rx,ry,rs,rs);});
   }
 
   // ============================================================
@@ -1542,36 +1560,6 @@ function drawFarmScene(addr, st, animating) {
   ctx.fillStyle='rgba(0,0,0,0.65)';ctx.fillRect(4,4,W-8,20);
   ctx.fillStyle='#ffe0a0';ctx.font='bold 9px monospace';ctx.fillText('⛏️  RECLAMO DIARIO — FARMEANDO AURA',14,16);
   ctx.fillStyle='rgba(255,224,160,0.3)';ctx.fillRect(10,21,120,1);ctx.fillRect(W-130,21,120,1);
-}
-
-function drawFishingRod(ctx, px, py, angle) {
-  ctx.save();
-  ctx.translate(px + 10, py - 14);
-  ctx.rotate(angle);
-  // Caña de bambú (más gruesa con textura)
-  ctx.strokeStyle = '#6a4a2a';
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(16, -12);
-  ctx.stroke();
-  ctx.strokeStyle = '#8a6a3a';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(14, -10);
-  ctx.stroke();
-  // Punta de la caña
-  ctx.strokeStyle = '#5a3a1a';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(16, -12);
-  ctx.lineTo(22, -16);
-  ctx.stroke();
-  // Anillo en punta
-  ctx.fillStyle = '#aaa';
-  ctx.fillRect(21, -17, 3, 2);
-  ctx.restore();
 }
 
 function drawChest(ctx, cx, cy, size) {
@@ -1651,105 +1639,92 @@ function startFarming(addr, container, currentStreak) {
 
   function animateCast() {
     const progress = frame / totalFrames;
-    // Ángulo de la caña: sube y baja
-    const angle = -0.3 + Math.sin(progress * Math.PI) * 0.6;
+    // El pico sube y baja golpeando la roca
+    const swing = Math.sin(progress * Math.PI) * 0.5;
+    const picAngle = -0.3 + swing;
 
-    // Redibujar escena sin caña (st ya no se usa globalmente)
     drawFarmScene(addr, null, true);
 
-    // Dibujar caña con ángulo
-    drawFishingRod(ctx, px, py, angle);
+    // Dibujar pico animado en mano (rotando)
+    ctx.save();
+    ctx.translate(px + 2, py - 2);
+    ctx.rotate(picAngle);
+    // Mango
+    ctx.fillStyle = '#6a4a2a';
+    ctx.fillRect(-14, -12, 14, 3);
+    // Cabeza del pico
+    ctx.fillStyle = '#8a8a9a';
+    ctx.fillRect(-16, -16, 4, 6);
+    ctx.fillRect(-12, -16, 4, 3);
+    ctx.fillStyle = '#d4a020';
+    ctx.fillRect(-19, -14, 3, 3);
+    ctx.restore();
 
-    // Línea de pesca
-    const lineLen = 20 + progress * 50;
-    const lx = px + 16 + Math.cos(-angle + 0.2) * 8;
-    const ly = py - 4 + Math.sin(-angle + 0.2) * 8;
-    const endX = lx;
-    const endY = ly + lineLen;
-
-    ctx.strokeStyle = '#ccc';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(lx, ly);
-    ctx.lineTo(endX, Math.min(endY, lineEndY + 10));
-    ctx.stroke();
-
-    // Boya
-    const boyaY = Math.min(endY, lineEndY + 10);
-    const bounce = Math.sin(progress * 8) * 2;
-    ctx.fillStyle = '#ff4444';
-    ctx.beginPath();
-    ctx.arc(endX, boyaY + bounce, 3, 0, Math.PI * 2);
-    ctx.fill();
+    // Partículas volando (chispas/piedras)
+    for(let i = 0; i < 3; i++) {
+      const px2 = px + 8 + Math.sin(progress*12 + i*2.1) * 10;
+      const py2 = py - 4 + Math.cos(progress*10 + i*1.7) * 8;
+      ctx.fillStyle = `hsl(${30 + i*20}, 60%, ${50 + Math.sin(progress*8 + i)*20}%)`;
+      ctx.fillRect(px2, py2, 2, 2);
+    }
 
     frame++;
     if (frame <= totalFrames) {
       requestAnimationFrame(animateCast);
     } else {
-      // Fase 2: Esperar un momento (simular que pica)
-      setTimeout(() => animateReelIn(addr, container, ctx, currentStreak), 800);
+      setTimeout(() => animateMineReward(addr, container, ctx, currentStreak), 600);
     }
   }
 
-  function animateReelIn(addr, container, ctx, currentStreak) {
-    // Fase 2: Recoger línea con cofre
+  function animateMineReward(addr, container, ctx, currentStreak) {
     let frame2 = 0;
     const totalFrames2 = 25;
-    // Determinar reward ANTES de la animación
     const reward = getRandomFarmReward(currentStreak);
 
-    function reelStep() {
+    function mineStep() {
       const p = frame2 / totalFrames2;
-      // Línea recogiéndose
-      const lx = px + 16;
-      const ly = py - 4;
-      const lineLen = 60 * (1 - p);
-      const endX = lx;
-      const endY = ly + lineLen;
 
       drawFarmScene(addr, null, true);
-      drawFishingRod(ctx, px, py, -0.2 + p * 0.2);
 
-      // Línea
-      ctx.strokeStyle = '#ccc';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(lx, ly);
-      ctx.lineTo(endX, endY);
-      ctx.stroke();
+      // Pico en posición final
+      ctx.save();
+      ctx.translate(px + 2, py - 2);
+      ctx.rotate(-0.1 + p * 0.1);
+      ctx.fillStyle = '#6a4a2a'; ctx.fillRect(-14, -12, 14, 3);
+      ctx.fillStyle = '#8a8a9a'; ctx.fillRect(-16, -16, 4, 6);
+      ctx.fillStyle = '#d4a020'; ctx.fillRect(-19, -14, 3, 3);
+      ctx.restore();
 
-      // Cofre que sube desde el agua
-      const chestY = endY - 10 + (1 - p) * 30;
-      const chestX = endX + Math.sin(p * 6) * 3;
-
-      // Agua salpicando (más detalle)
-      ctx.fillStyle = 'rgba(100,200,240,0.4)';
-      for (let i = 0; i < 5; i++) {
-        const sx = chestX + (i - 2) * 7 + Math.sin(p * 10 + i * 1.5) * 4;
-        const sy = chestY + 12 + Math.random() * 6;
-        ctx.fillRect(sx - 2, sy - 2, 4, 4);
+      // Partículas de minería
+      ctx.fillStyle = `rgba(200,180,100,${0.5 * (1-p)})`;
+      for (let i = 0; i < 6; i++) {
+        const sx = px - 10 + Math.sin(p * 15 + i * 1.2) * (15 * p);
+        const sy = py - 8 + Math.cos(p * 12 + i * 0.8) * (10 * p);
+        ctx.fillRect(sx, sy, 2, 2);
       }
-      // Gotas volando
-      ctx.fillStyle = 'rgba(180,230,255,0.3)';
-      for (let i = 0; i < 3; i++) {
-        const gx = chestX + Math.sin(p * 12 + i * 2) * 14;
-        const gy = chestY - 2 - i * 5 + Math.sin(p * 8 + i) * 3;
-        ctx.fillRect(gx, gy, 2, 2);
+      ctx.fillStyle = `rgba(180,150,80,${0.3 * (1-p)})`;
+      for (let i = 0; i < 4; i++) {
+        const sx = px - 14 + Math.sin(p * 18 + i * 2) * (12 * p);
+        const sy = py - 12 + Math.cos(p * 14 + i * 1.5) * (8 * p);
+        ctx.fillRect(sx, sy, 1, 1);
       }
 
-      if (p > 0.4) {
-        drawChest(ctx, chestX, chestY, 16 + p * 8);
+      // Cofre emergiendo del piso (al lado del minero)
+      const chestY = py + 20 - p * 25;
+      const chestX = px + 14 + Math.sin(p * 4) * 2;
+
+      if (p > 0.3) {
+        drawChest(ctx, chestX, chestY, 14 + p * 10);
       }
 
       frame2++;
       if (frame2 <= totalFrames2) {
-        requestAnimationFrame(reelStep);
+        requestAnimationFrame(mineStep);
       } else {
-        // Mostrar resultado y enviar claim al backend
         showFarmResult(addr, container, reward, ctx, currentStreak);
       }
     }
-    reelStep();
+    mineStep();
   }
 
   animateCast();
