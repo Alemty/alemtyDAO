@@ -45,24 +45,26 @@ html.light .defi-bg {
   display: inline-flex;
   align-items: baseline;
   flex-wrap: wrap;
-  margin: 0 0 14px;
+  margin: 0;
 }
 .defi-root .h1.defi-brand .defi-brand-em {
-  color: #00ffd5;
+  color: var(--primary);
   text-shadow: 0 0 18px rgba(0,255,213,.18);
 }
-html.light .defi-root .h1.defi-brand .defi-brand-em { text-shadow: none; }
+html.light .defi-root .h1.defi-brand .defi-brand-em { color: var(--primary); text-shadow: none; }
 .defi-root .h1.defi-brand .defi-brand-base { color: var(--text); }
 
 .defi-brand-tag {
-  margin-left: 10px;
-  font-size: 10px;
+  display: inline-block;
+  margin-top: 2px;
+  margin-bottom: 14px;
+  font-size: 9px;
   font-weight: 900;
-  letter-spacing: .08em;
-  padding: 4px 10px;
+  letter-spacing: .1em;
+  padding: 3px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(59,130,246,.3);
-  background: rgba(59,130,246,.1);
+  border: 1px solid rgba(59,130,246,.25);
+  background: rgba(59,130,246,.08);
   color: var(--defi-blue);
   text-transform: uppercase;
 }
