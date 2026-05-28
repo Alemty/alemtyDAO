@@ -195,7 +195,7 @@ app.get("/api/me/stats", auth, async (c) => {
   const auraContract = c.env.AURA_CONTRACT;
   if (auraContract) {
     try {
-      const rpcUrl = c.env.AURA_RPC_URL || 'https://mainnet.base.org';
+      const rpcUrl = 'https://base.drpc.org';
       const data = '0x70a08231' + address.slice(2).padStart(64, '0');
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2000);
