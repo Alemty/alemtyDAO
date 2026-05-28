@@ -383,12 +383,12 @@ export async function signAndSendTransaction(
   let gasPriceHex = '0x59682f00';
   let chainIdHex = '0x2105';
   let gasLimitHex = '0x52080';
-  let rpcFound = false;
+  let rpcFound: string | null = null;
   
   for (const rpc of uniqueRpcs) {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
+      const timer = setTimeout(() => controller.abort(), 8000);
       
       const [nonceRes, gasPriceRes, chainIdRes] = await Promise.all([
         fetch(rpc, {
@@ -408,7 +408,7 @@ export async function signAndSendTransaction(
         })
       ]);
       
-      clearTimeout(timeout);
+      clearTimeout(timer);
       
       const [nonceData, gasPriceData, chainIdData]: any[] = await Promise.all([
         nonceRes.json(), gasPriceRes.json(), chainIdRes.json()
@@ -435,7 +435,8 @@ export async function signAndSendTransaction(
         
         break; // Success, stop trying
       }
-    } catch (_) {
+    } catch (err: any) {
+      console.error(`⚠️ RPC ${rpc} failed:`, err.message?.slice(0, 60) || 'unknown error');
       continue; // Try next RPC
     }
   }
