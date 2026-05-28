@@ -123,8 +123,11 @@ function drawTradingChart(pairKey, tfKey) {
   const minY = Math.min(...series), maxY = Math.max(...series);
   const range = Math.max(1e-9, maxY - minY);
 
-  // Grid — detectar tema
-  const light = document.documentElement.classList.contains('light');
+  // Grid — detectar tema por color de fondo real del contenedor
+  const bgEl = canvas.closest('.trading-section') || canvas.parentElement;
+  const bgColor = bgEl ? getComputedStyle(bgEl).backgroundColor : '';
+  const isRgb = bgColor.match(/rgb\((\d+)/);
+  const light = isRgb ? parseInt(isRgb[1]) > 128 : document.documentElement.classList.contains('light');
   ctx.strokeStyle = light ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.10)';
   ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
