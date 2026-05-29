@@ -933,120 +933,43 @@ function renderDexTab(modal) {
   if (claimBtn && totalRewards > 0) {
     claimBtn.addEventListener('click', async () => {
       claimBtn.disabled = true;
-      claimBtn.textContent = '⏳ Preparando tx...';
+      claimBtn.textContent = '⏳ Reclamando...';
       const statusEl = c.querySelector('#claimStatus');
-      statusEl.textContent = 'Obteniendo datos on-chain...';
+      statusEl.textContent = 'El agente está procesando tu reclaim...';
 
       try {
         const token = getJWT();
         if (!token) {
-          statusEl.textContent = '❌ Debes conectar tu wallet primero.';
+          statusEl.textContent = '❌ Conecta tu wallet primero.';
           claimBtn.disabled = false;
           claimBtn.textContent = '⚡ Reclaim Rewards (todo)';
           return;
         }
 
-        // Verificar que MetaMask está disponible
-        if (!window.ethereum) {
-          statusEl.textContent = '❌ MetaMask no detectado. Instala MetaMask para firmar la tx.';
-          claimBtn.disabled = false;
-          claimBtn.textContent = '⚡ Reclaim Rewards (todo)';
-          return;
-        }
-
-        const claimRes = await fetch(API_BASE + '/api/aura/claim', {
+        const res = await fetch(API_BASE + '/api/aura/reclaim', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify({
-            amount: String(auraReclamable * 1e18) // convertir a wei
-          })
+          headers: { 'Authorization': 'Bearer ' + token }
         });
-        const claimData = await claimRes.json();
+        const data = await res.json();
 
-        if (!claimData.ok) {
-          statusEl.textContent = '❌ ' + (claimData.error || 'Error al reclamar AURA');
+        if (!data.ok) {
+          statusEl.textContent = '❌ ' + (data.error || 'Error al reclamar');
           claimBtn.disabled = false;
           claimBtn.textContent = '⚡ Reclaim Rewards (todo)';
           return;
         }
 
-        // 2. Firmar con MetaMask
-        statusEl.textContent = '⏳ Abriendo MetaMask para firmar la transacción...';
-        let txHash;
-        try {
-          txHash = await window.ethereum.request({
-            method: 'eth_sendTransaction',
-            params: claimData.params
-          });
-        } catch (mmErr) {
-          statusEl.textContent = '❌ El usuario rechazó la transacción en MetaMask.';
-          claimBtn.disabled = false;
-          claimBtn.textContent = '⚡ Reclaim Rewards (todo)';
-          return;
-        }
-        
-        if (!txHash) {
-          statusEl.textContent = '❌ Error al firmar la transacción.';
-          claimBtn.disabled = false;
-          claimBtn.textContent = '⚡ Reclaim Rewards (todo)';
-          return;
-        }
-
-        // 3. Esperar confirmación consultando el RPC
-        statusEl.textContent = `✅ Tx enviada: ${txHash.slice(0, 14)}... Esperando confirmación...`;
-
-        // Esperar hasta 60s por confirmación
-        const checkInterval = 3000;
-        const maxWait = 60000;
-        let waited = 0;
-
-        await new Promise(resolve => {
-          const checkTx = setInterval(async () => {
-            try {
-              const receiptRes = await fetch('https://base.drpc.org', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  jsonrpc: '2.0', id: 1, method: 'eth_getTransactionReceipt',
-                  params: [txHash]
-                })
-              });
-              const receiptJson = await receiptRes.json();
-              if (receiptJson?.result && receiptJson.result.blockNumber) {
-                clearInterval(checkTx);
-                resolve(undefined);
-              }
-            } catch (_) {}
-            waited += checkInterval;
-            if (waited >= maxWait) {
-              clearInterval(checkTx);
-              resolve(undefined);
-            }
-          }, checkInterval);
-        });
-
-        statusEl.textContent = `✅ Tx confirmada: ${txHash.slice(0, 14)}...`;
-
-        // 3. Notificar al backend que el reclamo se completó — limpia farm_claims y actualiza aura_claimed
-        try {
-          await fetch(API_BASE + '/api/farm/reclaim-complete', {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + token }
-          });
-        } catch (_) {} // best-effort
-
+        const short = data.txHash?.slice(0, 14) + '...';
+        statusEl.innerHTML = `✅ Reclamado — <a href="https://basescan.org/tx/${data.txHash}"
+          target="_blank" rel="noopener">${short} ↗</a>`;
         claimBtn.textContent = '✅ Reclamado';
 
-        // 6. Recargar stats
+        // Recargar stats
         __ME_STATS__ = await fetchMeStats();
         syncProfile();
+
       } catch (e) {
-        const msg = e?.message || e?.code || 'desconocido';
-        if (msg.includes('4001') || msg.includes('denied') || msg.includes('rejected')) {
-          statusEl.textContent = '⛔ Transacción rechazada por el usuario.';
-        } else {
-          statusEl.textContent = '❌ Error: ' + msg;
-        }
+        statusEl.textContent = '❌ Error: ' + (e.message || 'desconocido');
         claimBtn.disabled = false;
         claimBtn.textContent = '⚡ Reclaim Rewards (todo)';
       }

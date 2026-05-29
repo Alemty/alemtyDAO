@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 import { auth } from "./middleware/auth";
+import { agentSendTx } from "./utils/signer";
 
 // ✅ Router legacy (no tocar)
 import { router } from "./router";
@@ -595,6 +596,87 @@ app.get("/api/aura/distributor-balance", async (c) => {
     });
   } catch (e: any) {
     return c.json({ ok: false, error: `Error: ${e.message}` }, 500);
+  }
+});
+
+/* =========================================================
+   AURA — Reclaim completo: quema off-chain + transfiere on-chain
+   POST /api/aura/reclaim
+   Auth: Bearer JWT
+   El agente firma y envía la tx desde la wallet distribuidora (0x8ed91b...)
+   hacia la wallet del usuario. Luego actualiza aura_claimed en D1.
+   ========================================================= */
+app.post("/api/aura/reclaim", auth, async (c) => {
+  const address = c.get("address");
+  const auraContract = c.env.AURA_CONTRACT;
+  const agentKey    = c.env.AURA_PRIVATE_KEY;
+
+  if (!auraContract || !agentKey) {
+    return c.json({ ok: false, error: "Agente no configurado" }, 500);
+  }
+
+  // 1. Calcular auraReclamable (mismo cálculo que /api/me/stats)
+  const farmRow: any = await c.env.DB.prepare(
+    "SELECT COALESCE(SUM(amount), 0) AS total FROM farm_claims WHERE address = ?"
+  ).bind(address).first();
+  const auraFarmed = Number(farmRow?.total || 0);
+
+  const statsRow: any = await c.env.DB.prepare(
+    "SELECT dharma, aura_claimed FROM user_stats WHERE address = ?"
+  ).bind(address).first();
+  const dharma      = Number(statsRow?.dharma || 0);
+  const auraClaimed = Number(statsRow?.aura_claimed || 0);
+
+  const auraReclamable = Math.max(0, (dharma + auraFarmed) - auraClaimed);
+
+  if (auraReclamable <= 0) {
+    return c.json({ ok: false, error: "No tienes AURA pendiente de reclamar" });
+  }
+
+  const auraWei = BigInt(Math.floor(auraReclamable)) * 10n ** 18n;
+
+  // 2. Registrar intento en log (status: pending)
+  const logResult = await c.env.DB.prepare(
+    "INSERT INTO reclaim_log (address, aura_burned, status) VALUES (?, ?, 'pending')"
+  ).bind(address, auraReclamable).run();
+  const logId = logResult.meta.last_row_id;
+
+  try {
+    // 3. Construir calldata: transfer(address, uint256)
+    const selector   = '0xa9059cbb';
+    const toPadded   = address.slice(2).toLowerCase().padStart(64, '0');
+    const amtPadded  = auraWei.toString(16).padStart(64, '0');
+    const data       = selector + toPadded + amtPadded;
+
+    // 4. El agente firma y envía la tx on-chain
+    const txHash = await agentSendTx(c.env, auraContract, data);
+
+    // 5. Actualizar aura_claimed en D1 (quema off-chain)
+    await c.env.DB.prepare(
+      `INSERT INTO user_stats (address, aura_claimed, updated_at)
+       VALUES (?, ?, unixepoch())
+       ON CONFLICT(address) DO UPDATE
+       SET aura_claimed = aura_claimed + ?, updated_at = unixepoch()`
+    ).bind(address, auraReclamable, auraReclamable).run();
+
+    // 6. Limpiar farm_claims
+    await c.env.DB.prepare(
+      "DELETE FROM farm_claims WHERE address = ?"
+    ).bind(address).run();
+
+    // 7. Actualizar log como exitoso
+    await c.env.DB.prepare(
+      "UPDATE reclaim_log SET tx_hash = ?, status = 'confirmed' WHERE id = ?"
+    ).bind(txHash, logId).run();
+
+    return c.json({ ok: true, txHash, auraReclamable });
+
+  } catch (e: any) {
+    // Revertir log
+    await c.env.DB.prepare(
+      "UPDATE reclaim_log SET status = 'failed' WHERE id = ?"
+    ).bind(logId).run();
+    return c.json({ ok: false, error: e.message }, 500);
   }
 });
 

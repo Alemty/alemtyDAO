@@ -524,3 +524,22 @@ function _deriveAddress(privateKeyHex: string): string {
   const addressHash = keccak256(pubKeyUncompressed.slice(1));
   return '0x' + bytesToHex(addressHash.slice(12));
 }
+
+// =============================================
+// 7. agentSendTx — wrapper simplificado para firmar y enviar
+//    desde la wallet agente (distribuidora). Usa signAndSendTransaction
+//    internamente y solo requiere env, to, data.
+// =============================================
+export async function agentSendTx(
+  env: { AURA_PRIVATE_KEY: string; AURA_RPC_URL?: string },
+  to: string,
+  data: string
+): Promise<string> {
+  const rpcUrl = env.AURA_RPC_URL || 'https://1rpc.io/base';
+  const privKey = env.AURA_PRIVATE_KEY;
+
+  // Derivar la dirección del agente para pasarla como from (evita re-derivación incorrecta)
+  const agentAddr = _deriveAddress(privKey);
+
+  return signAndSendTransaction(privKey, { to, data, from: agentAddr }, rpcUrl);
+}
