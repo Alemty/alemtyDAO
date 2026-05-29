@@ -147,8 +147,11 @@ function drawTradingChart(pairKey, tfKey) {
     const y = padT + plotH * (1 - (v - minY) / range);
     if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
   });
-  ctx.lineTo(padL + plotW, padT + plotH); ctx.lineTo(padL, padT + plotH); ctx.closePath();
-  ctx.fillStyle = grad; ctx.fill();
+  ctx.lineTo(padL + plotW, padT + plotH);
+  ctx.lineTo(padL, padT + plotH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
 
   // Line
   const lineGrad = ctx.createLinearGradient(0, padT, W, padT);

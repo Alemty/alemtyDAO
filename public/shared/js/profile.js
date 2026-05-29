@@ -518,9 +518,9 @@ export function buildProfileModal() {
             <button class="tab-btn active" data-tab="estado">ESTADO</button>
             <button class="tab-btn" data-tab="actividad">User</button>
             <button class="tab-btn" data-tab="dm">DM</button>
+            <button class="tab-btn" data-tab="farm">🎣 FARM</button>
             <button class="tab-btn" data-tab="dex">DEX</button>
             <button class="tab-btn" data-tab="tienda">🛒</button>
-            <button class="tab-btn" data-tab="farm">🎣 FARM</button>
           </div>
           <div class="profile-fixed">
             <div class="pf-balances" id="pfBalances">
@@ -529,7 +529,7 @@ export function buildProfileModal() {
               <div class="token token-karma" id="pfKarmaToken"><span class="lbl">Karma</span><span class="val" id="pfKarmaVal">—</span></div>
               <div class="token token-alem"><span class="lbl">$ALEM</span><span class="val" id="pfAlem">—</span></div>
               <div class="token token-vealem"><span class="lbl">veALEM</span><span class="val" id="pfVeAlem">—</span></div>
-              <div class="token-aura-reclaim" id="pfAuraHint"><span class="lbl">AURA por reclamar</span><span class="val">—</span></div>
+              <div class="token token-aura-reclaim" id="pfAuraHint"></div>
             </div>
           </div>
           <div class="profile-content" id="pfContent"></div>
@@ -589,23 +589,16 @@ export async function syncProfile() {
   modal.querySelector("#pfKarmaBar").style.width = karmaValue > 0 ? "30%" : "0%";
 
   modal.querySelector("#pfDharma").textContent = addr ? String(dharma) : "—";
-  const auraLabel = addr
-    ? (auraReclamable > 0 ? `${String(aura)} (${String(auraReclamable)} por reclamar)` : String(aura))
-    : "—";
+  const auraLabel = addr ? String(aura) : "—";
   modal.querySelector("#pfAura").textContent = auraLabel;
   const auraHint = modal.querySelector("#pfAuraHint");
   if (auraHint) {
-    const lbl = auraHint.querySelector('.lbl');
-    const val = auraHint.querySelector('.val');
     if (addr && auraReclamable > 0) {
-      if (lbl) lbl.textContent = 'AURA por reclamar';
-      if (val) val.textContent = `${String(auraReclamable)} AURA`;
-    } else if (addr && auraBalance !== '0') {
-      if (lbl) lbl.textContent = 'AURA on-chain';
-      if (val) val.textContent = `${auraBalance} AURA`;
+      auraHint.innerHTML = `<span class="lbl">Reclamar</span><span class="val" style="color:#a855f7;">${String(auraReclamable)} AURA</span>`;
+    } else if (addr && auraReclamable <= 0) {
+      auraHint.innerHTML = `<span class="lbl">AURA por reclamar</span><span class="val" style="color:#a855f7;">0</span>`;
     } else {
-      if (lbl) lbl.textContent = 'AURA por reclamar';
-      if (val) val.textContent = '—';
+      auraHint.innerHTML = '';
     }
   }
   modal.querySelector("#pfAlem").textContent = addr ? "0" : "—";
@@ -638,8 +631,8 @@ function renderTab(tab, modal) {
   if (tab === "dex") {
     return renderDexTab(modal);
   }
-  if (tab === "tienda") { renderTiendaTab(modal); return; }
   if (tab === "farm") { renderFarmTab(modal); return; }
+  if (tab === "tienda") { renderTiendaTab(modal); return; }
 }
 
 function renderEstadoTab(modal) {
@@ -956,83 +949,90 @@ function renderDexTab(modal) {
           return;
         }
 
-        // 1. Pedir al backend que prepare la tx
         const claimRes = await fetch(API_BASE + '/api/aura/claim', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
           body: JSON.stringify({
-            to: getDid(),
             amount: String(auraReclamable * 1e18) // convertir a wei
           })
         });
         const claimData = await claimRes.json();
 
-        if (!claimData.ok || !claimData.tx) {
-          statusEl.textContent = '❌ ' + (claimData.error || 'Error al preparar tx');
+        if (!claimData.ok) {
+          statusEl.textContent = '❌ ' + (claimData.error || 'Error al reclamar AURA');
           claimBtn.disabled = false;
           claimBtn.textContent = '⚡ Reclaim Rewards (todo)';
           return;
         }
 
-        // 2. Pedir al usuario que cambie a Base Mainnet en MetaMask
-        const BASE_CHAIN_ID = '0x2105'; // 8453
-        let currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
-        if (currentChainId !== BASE_CHAIN_ID) {
-          try {
-            await window.ethereum.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: BASE_CHAIN_ID }]
-            });
-          } catch (switchError) {
-            if (switchError.code === 4902) {
-              await window.ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [{
-                  chainId: BASE_CHAIN_ID,
-                  chainName: 'Base Mainnet',
-                  nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-                  rpcUrls: ['https://mainnet.base.org'],
-                  blockExplorerUrls: ['https://basescan.org']
-                }]
-              });
-            } else {
-              throw switchError;
-            }
-          }
+        // 2. Firmar con MetaMask
+        statusEl.textContent = '⏳ Abriendo MetaMask para firmar la transacción...';
+        let txHash;
+        try {
+          txHash = await window.ethereum.request({
+            method: 'eth_sendTransaction',
+            params: claimData.params
+          });
+        } catch (mmErr) {
+          statusEl.textContent = '❌ El usuario rechazó la transacción en MetaMask.';
+          claimBtn.disabled = false;
+          claimBtn.textContent = '⚡ Reclaim Rewards (todo)';
+          return;
+        }
+        
+        if (!txHash) {
+          statusEl.textContent = '❌ Error al firmar la transacción.';
+          claimBtn.disabled = false;
+          claimBtn.textContent = '⚡ Reclaim Rewards (todo)';
+          return;
         }
 
-        // 3. Enviar la tx a MetaMask para que el usuario la firme
-        statusEl.textContent = '✍️ Firma la transacción en MetaMask...';
-        const txHash = await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [claimData.tx]
-        });
+        // 3. Esperar confirmación consultando el RPC
+        statusEl.textContent = `✅ Tx enviada: ${txHash.slice(0, 14)}... Esperando confirmación...`;
 
-        // 4. Tx enviada, esperar confirmación (opcional)
-        statusEl.textContent = `✅ Tx enviada: ${txHash.slice(0, 10)}... Esperando confirmación...`;
+        // Esperar hasta 60s por confirmación
+        const checkInterval = 3000;
+        const maxWait = 60000;
+        let waited = 0;
 
-        // Esperar 1 confirmación
         await new Promise(resolve => {
           const checkTx = setInterval(async () => {
             try {
-              const receipt = await window.ethereum.request({
-                method: 'eth_getTransactionReceipt',
-                params: [txHash]
+              const receiptRes = await fetch('https://base.drpc.org', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  jsonrpc: '2.0', id: 1, method: 'eth_getTransactionReceipt',
+                  params: [txHash]
+                })
               });
-              if (receipt && receipt.blockNumber) {
+              const receiptJson = await receiptRes.json();
+              if (receiptJson?.result && receiptJson.result.blockNumber) {
                 clearInterval(checkTx);
                 resolve(undefined);
               }
             } catch (_) {}
-          }, 2000);
-          // Timeout después de 60s
-          setTimeout(() => { clearInterval(checkTx); resolve(undefined); }, 60000);
+            waited += checkInterval;
+            if (waited >= maxWait) {
+              clearInterval(checkTx);
+              resolve(undefined);
+            }
+          }, checkInterval);
         });
 
-        statusEl.textContent = `✅ Tx confirmada: ${txHash.slice(0, 10)}...`;
+        statusEl.textContent = `✅ Tx confirmada: ${txHash.slice(0, 14)}...`;
+
+        // 3. Notificar al backend que el reclamo se completó — limpia farm_claims y actualiza aura_claimed
+        try {
+          await fetch(API_BASE + '/api/farm/reclaim-complete', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+        } catch (_) {} // best-effort
+
         claimBtn.textContent = '✅ Reclamado';
 
-        // 5. Recargar stats
+        // 6. Recargar stats
         __ME_STATS__ = await fetchMeStats();
         syncProfile();
       } catch (e) {
@@ -1289,6 +1289,7 @@ async function buyItem(id, seller, price) {
 
 /* =========================================================
    FARM TAB — Reclamo diario de AURA con mini-game pixel art
+   Endpoints: POST /api/farm/claim + GET /api/farm/status
    ========================================================= */
 
 let _farmCache = null;
@@ -1317,154 +1318,178 @@ async function submitFarmClaim(amount, streak) {
       body: JSON.stringify({ amount, streak })
     });
     return await res.json();
-  } catch { return null; }
+  } catch {}
+  return null;
 }
 
-function getRandomFarmReward(streak) {
-  streak = streak || 0; const roll = Math.random(), diff = Math.min(streak * 0.05, 0.5);
-  let reward;
-  if (roll < 0.35 - diff * 0.2) reward = 0.1;
-  else if (roll < 0.60 - diff * 0.15) reward = 0.5;
-  else if (roll < 0.78 - diff * 0.1) reward = 1;
-  else if (roll < 0.90 - diff * 0.05) reward = 5;
-  else if (roll < 0.97) reward = 10;
-  else if (roll < 0.995) reward = 50;
-  else reward = 100;
-  return Math.min(Math.round(reward * (1 + Math.floor(streak / 7) * 0.5) * 10) / 10, 100);
+function renderFarmTab(modal) {
+  const c = modal.querySelector("#pfContent");
+  if (!c) return;
+  const addr = getDid();
+  if (!addr) {
+    c.innerHTML = `<div class="pf-box"><div class="h2">🎣 FARM</div><p class="muted">Conecta tu wallet para pescar AURA.</p></div>`;
+    return;
+  }
+
+  c.innerHTML = `<div class="pf-box farm-container"><div style="padding:20px;text-align:center;opacity:.5;">🎣 Cargando...</div></div>`;
+
+  loadFarmStatus().then(status => {
+    const canClaim = status?.canClaim !== false;
+    const streak = status?.streak || 0;
+    const totalFarmed = status?.totalFarmed || 0;
+    const history = status?.history || [];
+    const claimedToday = status?.claimedToday || false;
+    let localStreak = streak;
+
+    c.innerHTML = `
+      <div class="pf-box farm-container">
+        <div class="h2" style="font-size:15px;display:flex;align-items:center;gap:8px;">
+          ⛏️ Farmeando AURA
+          <span class="farm-streak" id="farmStreak" style="font-size:11px;font-weight:400;opacity:.6;">Racha: ${streak} día${streak !== 1 ? 's' : ''}</span>
+        </div>
+        <div style="font-size:11px;opacity:.6;text-align:center;margin-bottom:2px;">Total acumulado: <strong style="color:var(--primary,#00ffd5);">${totalFarmed} AURA</strong></div>
+
+        <div style="position:relative;width:360px;margin:6px auto;border-radius:14px;overflow:hidden;background:var(--bg-card,#0d1520);border:1px solid rgba(255,255,255,.08);">
+          <canvas id="farmCanvas" width="360" height="260" style="display:block;width:100%;height:auto;image-rendering:pixelated;"></canvas>
+
+          <div id="farmOverlay" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.72);z-index:5;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:20px;">
+            <div id="farmResultIcon" style="font-size:48px;margin-bottom:6px;">🎁</div>
+            <div id="farmResultTitle" style="font-size:18px;font-weight:700;"></div>
+            <div id="farmResultSub" style="font-size:13px;opacity:.7;margin-top:4px;"></div>
+            <button id="farmCloseResult" class="tab-btn" style="margin-top:14px;font-size:12px;padding:6px 18px;">Cerrar</button>
+          </div>
+        </div>
+
+        <button id="farmBtn" class="tab-btn" style="width:100%;margin-top:6px;font-size:14px;padding:10px;${!canClaim?'opacity:.4;cursor:not-allowed;':''}" ${!canClaim?'disabled':''}>
+          ${canClaim ? '🎣 Lanzar caña!' : '⏳ Ya pescaste hoy'}
+        </button>
+        <div id="farmTimer" style="font-size:11px;opacity:.5;text-align:center;margin-top:4px;"></div>
+
+        <div class="farm-history" id="farmHistory" style="margin-top:10px;font-size:12px;opacity:.7;">
+          ${history.length === 0 ? 'Aún no has pescado nada.' : ''}
+        </div>
+      </div>
+    `;
+
+    drawFarmScene();
+
+    const btn = c.querySelector('#farmBtn');
+    if (btn && canClaim) {
+      btn.addEventListener('click', () => {
+        btn.disabled = true; btn.style.opacity = '.4'; btn.textContent = '🎣 Pesca en curso...';
+        startFarming(addr, c, localStreak);
+      });
+    }
+
+    renderFarmHistory(c, history);
+
+    c.querySelector('#farmCloseResult')?.addEventListener('click', () => {
+      const ov = c.querySelector('#farmOverlay');
+      if (ov) ov.style.display = 'none';
+      syncProfile();
+    });
+
+    if (!canClaim && claimedToday) updateFarmCountdown(c);
+  });
 }
 
+/* ===== CANVAS ===== */
 function drawFarmScene() {
   const canvas = document.getElementById('farmCanvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const W = 360, H = 260;
 
-  for (let y = 0; y < 50; y++) { const t = y / 50; ctx.fillStyle = `rgb(${8 + t * 18},${12 + t * 22},${30 + t * 25})`; ctx.fillRect(0, y, W, 2); }
-  for (let i = 0; i < 10; i++) { ctx.fillStyle = `rgb(${190 + i * 6},${190 + i * 6},215)`; ctx.fillRect((i * 31 + 7) % W, (i * 23 + 5) % 42, 2, 2); }
+  for (let y = 0; y < 50; y++) { const t = y/50; ctx.fillStyle = `rgb(${8+t*18},${12+t*22},${30+t*25})`; ctx.fillRect(0, y, W, 2); }
+  for (let i = 0; i < 10; i++) { ctx.fillStyle = `rgb(${190+i*6},${190+i*6},215)`; ctx.fillRect((i*31+7)%W, (i*23+5)%42, 2, 2); }
+
   for (let x = 0; x < W; x += 4) {
-    const h = Math.sin(x * 0.025) * 10 + 10;
-    for (let dy = 0; dy < h; dy += 2) { ctx.fillStyle = (Math.floor(x / 4) + Math.floor(dy / 2)) % 2 === 0 ? '#1a3a2a' : '#1e4230'; ctx.fillRect(x, 42 + dy, 4, 2); }
+    const h = Math.sin(x*0.025)*10+10;
+    for (let dy = 0; dy < h; dy += 2) { ctx.fillStyle = (Math.floor(x/4)+Math.floor(dy/2))%2===0?'#1a3a2a':'#1e4230'; ctx.fillRect(x, 42+dy, 4, 2); }
   }
+
   const mx = 48, my = 120;
-  ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(mx - 18, my + 70, 56, 6);
-  ctx.fillStyle = '#2a1a0a'; ctx.fillRect(mx - 16, my + 58, 52, 14);
-  [{ w: 48, x: 0, c: '#3a2a1a' }, { w: 44, x: 2, c: '#4a3a2a' }, { w: 40, x: 4, c: '#5a4a3a' }, { w: 38, x: 5, c: '#4a3a2a' }, { w: 34, x: 7, c: '#5a4a3a' }, { w: 30, x: 9, c: '#6a5a4a' }, { w: 26, x: 11, c: '#5a4a3a' }, { w: 22, x: 13, c: '#6a5a4a' }, { w: 18, x: 15, c: '#4a3a2a' }, { w: 14, x: 17, c: '#5a4a3a' }, { w: 12, x: 18, c: '#6a5a4a' }, { w: 10, x: 19, c: '#5a4a3a' }, { w: 8, x: 20, c: '#7a6a5a' }, { w: 6, x: 21, c: '#6a5a4a' }].forEach((l, i) => ctx.fillRect(mx - 12 + l.x, my + i * 5, l.w, 5) || (ctx.fillStyle = l.c));
-  ctx.fillStyle = '#3a2a1a'; ctx.fillRect(mx + 4, my - 18, 10, 18); ctx.fillStyle = '#5a4a3a'; ctx.fillRect(mx + 5, my - 14, 8, 12); ctx.fillStyle = '#7a6a5a'; ctx.fillRect(mx + 6, my - 8, 6, 6);
-  ctx.fillStyle = 'rgba(0,0,0,0.1)'; [[2, 6, 2, 10], [8, 14, 2, 8], [14, 4, 2, 6], [20, 10, 2, 8], [6, 22, 2, 6], [18, 28, 2, 5], [10, 36, 3, 4], [4, 44, 2, 6], [22, 42, 2, 5]].forEach(([gx, gy, gw, gh]) => ctx.fillRect(mx + gx, my + gy, gw, gh));
-  ctx.fillStyle = 'rgba(30,60,30,0.3)'; ctx.fillRect(mx - 10, my + 60, 44, 4); ctx.fillRect(mx - 6, my + 56, 34, 3);
-  const pondX = 170, pondY = 168, prx = 98, pry = 38;
-  ctx.fillStyle = '#1a3a4a'; ctx.beginPath(); ctx.ellipse(pondX + 2, pondY + 3, prx + 2, pry + 2, 0, 0, Math.PI * 2); ctx.fill();
-  ['#1a4a6a', '#1e5070', '#22587a', '#266084', '#2a688e'].forEach((c, i) => { const t = i / 4, yoff = Math.round(-pry + i * (pry * 2 / 5)), hw = Math.round(Math.sqrt(Math.max(0, 1 - (yoff / pry) ** 2)) * prx); ctx.fillStyle = c; ctx.fillRect(pondX - hw, pondY + yoff, hw * 2, Math.ceil(pry * 2 / 5) + 1); });
-  for (let i = 0; i < 5; i++) { const wy = pondY - 10 + i * 7, w = Math.sin(Date.now() * .001 + i) * 3; for (let wx = pondX - 75; wx < pondX + 75; wx += 4) ctx.fillRect(wx, wy + Math.sin(wx * 0.08 + i * 1.5 + w) * 2, 4, 1); }
-  for (let y = 192; y < H; y += 3) for (let x = 0; x < W; x += 4) { const d = (Math.floor(x / 4) + Math.floor(y / 3)) % 3; ctx.fillStyle = d === 0 ? '#5a4a3a' : (d === 1 ? '#635444' : '#4a3a2a'); ctx.fillRect(x, y, 4, 3); }
-  for (let i = 0; i < 20; i++) { ctx.fillStyle = i % 2 === 0 ? '#3a6a3a' : '#2a5a2a'; ctx.fillRect((i * 19 + 5) % W, 191, 3, 3); }
-  [[310, 200], [340, 206]].forEach(([tx, ty]) => { ctx.fillStyle = '#5a3a1a'; ctx.fillRect(tx - 1, ty - 14, 3, 18); ctx.fillStyle = '#1a4a1a'; ctx.fillRect(tx - 8, ty - 22, 16, 10); ctx.fillRect(tx - 5, ty - 26, 10, 8); ctx.fillStyle = '#2a6a2a'; ctx.fillRect(tx - 6, ty - 20, 12, 6); ctx.fillRect(tx - 3, ty - 24, 6, 4); });
-  const px = mx + 6, py = my - 14;
-  ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(px - 4, py + 18, 14, 4);
-  ctx.fillStyle = '#3a5a8a'; ctx.fillRect(px - 1, py - 2, 4, 8); ctx.fillStyle = '#d4a56a'; ctx.fillRect(px - 2, py + 4, 3, 4);
-  ['#2a4a7a', '#3a5a8a', '#3a5a8a', '#4a6a9a', '#3a5a8a', '#2a4a7a'].forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(px - 2, py - 4 + i * 3, 8, 3); });
-  ctx.fillStyle = '#6a4a2a'; ctx.fillRect(px - 2, py + 8, 8, 2); ctx.fillStyle = '#c47a2a'; ctx.fillRect(px + 4, py + 8, 2, 2);
-  ctx.fillStyle = '#1a2a4a'; ctx.fillRect(px - 2, py + 14, 4, 8); ctx.fillRect(px + 3, py + 14, 4, 8);
-  ctx.fillStyle = '#3a2a1a'; ctx.fillRect(px - 2, py + 20, 4, 3); ctx.fillRect(px + 3, py + 20, 4, 3);
-  ctx.fillStyle = '#d4a56a'; ctx.fillRect(px, py - 12, 7, 10); ctx.fillStyle = '#c89a5e'; ctx.fillRect(px + 7, py - 8, 3, 3); ctx.fillRect(px + 9, py - 7, 2, 1);
-  ctx.fillStyle = '#fff'; ctx.fillRect(px + 3, py - 9, 3, 2); ctx.fillStyle = '#222'; ctx.fillRect(px + 5, py - 8, 1, 1); ctx.fillStyle = '#d4a56a'; ctx.fillRect(px - 2, py - 9, 2, 3);
-  ['#7a4a1a', '#8a5a2a', '#9a6a3a'].forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(px - 1 + i, py - 16, 2, 5); });
-  ctx.fillStyle = '#6a3a0a'; ctx.fillRect(px - 3, py - 17, 3, 3); ctx.fillRect(px - 4, py - 18, 2, 2);
-  ctx.fillStyle = 'rgba(42,74,122,0.35)'; ctx.fillRect(px - 6, py, 6, 14); ctx.fillRect(px - 8, py + 6, 4, 8);
-  ctx.fillStyle = 'rgba(0,0,0,0.65)'; ctx.fillRect(4, 4, W - 8, 20);
-  ctx.fillStyle = '#ffe0a0'; ctx.font = 'bold 9px monospace'; ctx.fillText('🎣  RECLAMO DIARIO — FARMEANDO AURA', 14, 16);
-  ctx.fillStyle = 'rgba(255,224,160,0.3)'; ctx.fillRect(10, 21, 120, 1); ctx.fillRect(W - 130, 21, 120, 1);
+  ctx.fillStyle='rgba(0,0,0,0.2)';ctx.fillRect(mx-18,my+70,56,6);
+  ctx.fillStyle='#2a1a0a';ctx.fillRect(mx-16,my+58,52,14);
+  [{w:48,x:0,c:'#3a2a1a'},{w:44,x:2,c:'#4a3a2a'},{w:40,x:4,c:'#5a4a3a'},{w:38,x:5,c:'#4a3a2a'},{w:34,x:7,c:'#5a4a3a'},{w:30,x:9,c:'#6a5a4a'},{w:26,x:11,c:'#5a4a3a'},{w:22,x:13,c:'#6a5a4a'},{w:18,x:15,c:'#4a3a2a'},{w:14,x:17,c:'#5a4a3a'},{w:12,x:18,c:'#6a5a4a'},{w:10,x:19,c:'#5a4a3a'},{w:8,x:20,c:'#7a6a5a'},{w:6,x:21,c:'#6a5a4a'}].forEach((l,i)=>ctx.fillRect(mx-12+l.x,my+i*5,l.w,5)||(ctx.fillStyle=l.c));
+  ctx.fillStyle='#3a2a1a';ctx.fillRect(mx+4,my-18,10,18);ctx.fillStyle='#5a4a3a';ctx.fillRect(mx+5,my-14,8,12);ctx.fillStyle='#7a6a5a';ctx.fillRect(mx+6,my-8,6,6);
+  ctx.fillStyle='rgba(0,0,0,0.1)';[[2,6,2,10],[8,14,2,8],[14,4,2,6],[20,10,2,8],[6,22,2,6],[18,28,2,5],[10,36,3,4],[4,44,2,6],[22,42,2,5]].forEach(([gx,gy,gw,gh])=>ctx.fillRect(mx+gx,my+gy,gw,gh));
+  ctx.fillStyle='rgba(30,60,30,0.3)';ctx.fillRect(mx-10,my+60,44,4);ctx.fillRect(mx-6,my+56,34,3);
+
+  const pondX=170,pondY=168,prx=98,pry=38;
+  ctx.fillStyle='#1a3a4a';ctx.beginPath();ctx.ellipse(pondX+2,pondY+3,prx+2,pry+2,0,0,Math.PI*2);ctx.fill();
+  ['#1a4a6a','#1e5070','#22587a','#266084','#2a688e'].forEach((c,i)=>{const t=i/4,yoff=Math.round(-pry+i*(pry*2/5)),hw=Math.round(Math.sqrt(Math.max(0,1-(yoff/pry)**2))*prx);ctx.fillStyle=c;ctx.fillRect(pondX-hw,pondY+yoff,hw*2,Math.ceil(pry*2/5)+1);});
+  for(let i=0;i<5;i++){const wy=pondY-10+i*7,w=Math.sin(Date.now()*.001+i)*3;for(let wx=pondX-75;wx<pondX+75;wx+=4)ctx.fillRect(wx,wy+Math.sin(wx*0.08+i*1.5+w)*2,4,1);}
+
+  for(let y=192;y<H;y+=3)for(let x=0;x<W;x+=4){const d=(Math.floor(x/4)+Math.floor(y/3))%3;ctx.fillStyle=d===0?'#5a4a3a':(d===1?'#635444':'#4a3a2a');ctx.fillRect(x,y,4,3);}
+  for(let i=0;i<20;i++){ctx.fillStyle=i%2===0?'#3a6a3a':'#2a5a2a';ctx.fillRect((i*19+5)%W,191,3,3);}
+
+  [[310,200],[340,206]].forEach(([tx,ty])=>{ctx.fillStyle='#5a3a1a';ctx.fillRect(tx-1,ty-14,3,18);ctx.fillStyle='#1a4a1a';ctx.fillRect(tx-8,ty-22,16,10);ctx.fillRect(tx-5,ty-26,10,8);ctx.fillStyle='#2a6a2a';ctx.fillRect(tx-6,ty-20,12,6);ctx.fillRect(tx-3,ty-24,6,4);});
+
+  const px=mx+6,py=my-14;
+  ctx.fillStyle='rgba(0,0,0,0.3)';ctx.fillRect(px-4,py+18,14,4);
+  ctx.fillStyle='#3a5a8a';ctx.fillRect(px-1,py-2,4,8);ctx.fillStyle='#d4a56a';ctx.fillRect(px-2,py+4,3,4);
+  ['#2a4a7a','#3a5a8a','#3a5a8a','#4a6a9a','#3a5a8a','#2a4a7a'].forEach((c,i)=>{ctx.fillStyle=c;ctx.fillRect(px-2,py-4+i*3,8,3);});
+  ctx.fillStyle='#6a4a2a';ctx.fillRect(px-2,py+8,8,2);ctx.fillStyle='#c47a2a';ctx.fillRect(px+4,py+8,2,2);
+  ctx.fillStyle='#1a2a4a';ctx.fillRect(px-2,py+14,4,8);ctx.fillRect(px+3,py+14,4,8);
+  ctx.fillStyle='#3a2a1a';ctx.fillRect(px-2,py+20,4,3);ctx.fillRect(px+3,py+20,4,3);
+  ctx.fillStyle='#d4a56a';ctx.fillRect(px,py-12,7,10);ctx.fillStyle='#c89a5e';ctx.fillRect(px+7,py-8,3,3);ctx.fillRect(px+9,py-7,2,1);
+  ctx.fillStyle='#fff';ctx.fillRect(px+3,py-9,3,2);ctx.fillStyle='#222';ctx.fillRect(px+5,py-8,1,1);ctx.fillStyle='#d4a56a';ctx.fillRect(px-2,py-9,2,3);
+  ['#7a4a1a','#8a5a2a','#9a6a3a'].forEach((c,i)=>{ctx.fillStyle=c;ctx.fillRect(px-1+i,py-16,2,5);});
+  ctx.fillStyle='#6a3a0a';ctx.fillRect(px-3,py-17,3,3);ctx.fillRect(px-4,py-18,2,2);
+  ctx.fillStyle='rgba(42,74,122,0.35)';ctx.fillRect(px-6,py,6,14);ctx.fillRect(px-8,py+6,4,8);
+
+  ctx.fillStyle='rgba(0,0,0,0.65)';ctx.fillRect(4,4,W-8,20);
+  ctx.fillStyle='#ffe0a0';ctx.font='bold 9px monospace';ctx.fillText('⛏️  RECLAMO DIARIO — FARMEANDO AURA',14,16);
+  ctx.fillStyle='rgba(255,224,160,0.3)';ctx.fillRect(10,21,120,1);ctx.fillRect(W-130,21,120,1);
 }
 
-function renderFarmTab(modal) {
-  const c = modal.querySelector('#pfContent');
-  if (!c) return;
-  const addr = getDid();
-  if (!addr) {
-    c.innerHTML = '<div class="pf-box"><div class="h2">🎣 Farm</div><p class="muted">Conecta tu wallet para farmear AURA.</p></div>';
-    return;
-  }
-  c.innerHTML =
-    '<div class="pf-box">' +
-    '<div class="h2">🎣 Farm — Reclamo Diario</div>' +
-    '<canvas id="farmCanvas" width="360" height="260" style="width:100%;max-width:360px;border-radius:12px;display:block;margin:0 auto;"></canvas>' +
-    '<div id="farmOverlay" style="display:none;position:relative;">' +
-    '<div id="farmResultIcon" style="font-size:48px;text-align:center;"></div>' +
-    '<div id="farmResultTitle" style="font-size:20px;font-weight:700;text-align:center;"></div>' +
-    '<div id="farmResultSub" class="muted" style="text-align:center;"></div></div>' +
-    '<div style="display:flex;justify-content:center;margin-top:8px;">' +
-    '<button id="farmBtn" class="btn" type="button" style="width:100%;max-width:200px;">🎣 Pescar AURA</button></div>' +
-    '<div id="farmStreak" class="small muted" style="text-align:center;margin-top:4px;"></div>' +
-    '<div id="farmTimer" class="small" style="text-align:center;"></div>' +
-    '<div id="farmHistory" class="small muted" style="margin-top:8px;"></div></div>';
-  drawFarmScene();
-  loadFarmStatus().then(data => {
-    if (!data) return;
-    const canClaim = data.canClaim;
-    const claimedToday = data.claimedToday;
-    const localStreak = data.streak || 0;
-    const history = data.history || [];
-    const streakEl = c.querySelector('#farmStreak');
-    if (streakEl) streakEl.textContent = `Racha: ${localStreak} día${localStreak !== 1 ? 's' : ''}`;
-    if (canClaim) {
-      const btn = c.querySelector('#farmBtn');
-      if (btn) {
-        btn.addEventListener('click', () => {
-          btn.disabled = true; btn.style.opacity = '.4'; btn.textContent = '🎣 Pesca en curso...';
-          startFarming(addr, c, localStreak);
-        });
-      }
-    } else if (claimedToday) {
-      const btn = c.querySelector('#farmBtn');
-      if (btn) { btn.disabled = true; btn.style.opacity = '.4'; btn.textContent = '✅ Ya pescaste hoy'; }
-      updateFarmCountdown(c);
-    }
-    renderFarmHistory(c, history);
-  });
-}
-
+/* ===== ANIMACIÓN ===== */
 function startFarming(addr, container, currentStreak) {
   const canvas = document.getElementById('farmCanvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const mx = 48, my = 120, px = mx + 6, py = my - 14, pondX = 170 - 30, pondY = 168 - 8;
+  const mx=48,my=120,px=mx+6,py=my-14,pondX=170-30,pondY=168-8;
   let frame = 0;
   const totalFrames = 30;
 
   function drawRod(angle) {
-    ctx.save(); ctx.translate(px + 12, py - 4); ctx.rotate(angle);
-    ctx.strokeStyle = '#6a4a2a'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(20, -18); ctx.stroke();
-    ctx.strokeStyle = '#8a6a3a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(2, -1); ctx.lineTo(18, -16); ctx.stroke();
-    ctx.strokeStyle = '#5a3a1a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(20, -18); ctx.lineTo(28, -24); ctx.stroke();
-    ctx.fillStyle = '#aaa'; ctx.fillRect(27, -25, 3, 3); ctx.restore();
+    ctx.save();ctx.translate(px+12, py-4);ctx.rotate(angle);
+    ctx.strokeStyle='#6a4a2a';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(20,-18);ctx.stroke();
+    ctx.strokeStyle='#8a6a3a';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(2,-1);ctx.lineTo(18,-16);ctx.stroke();
+    ctx.strokeStyle='#5a3a1a';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(20,-18);ctx.lineTo(28,-24);ctx.stroke();
+    ctx.fillStyle='#aaa';ctx.fillRect(27,-25,3,3);ctx.restore();
+  }
+
+  function lineToPond(angle, extend) {
+    const tipX=px+12+Math.cos(-angle)*28, tipY=py-4+Math.sin(-angle)*24;
+    const endX=tipX+(pondX-tipX)*extend, endY=tipY+(pondY-tipY)*extend;
+    ctx.strokeStyle='rgba(200,200,200,0.4)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(tipX,tipY);ctx.quadraticCurveTo(tipX+(pondX-tipX)*0.5+10,tipY+(pondY-tipY)*0.4,endX,endY);ctx.stroke();
+    ctx.fillStyle='#ff4444';ctx.beginPath();ctx.arc(endX,endY+Math.sin(frame*0.5)*2,3,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ff8888';ctx.beginPath();ctx.arc(endX-1,endY-1+Math.sin(frame*0.5)*2,1.5,0,Math.PI*2);ctx.fill();
   }
 
   function animateCast() {
-    const p = frame / totalFrames, angle = -0.4 + Math.sin(p * Math.PI) * 0.5;
-    const tipX = px + 12 + Math.cos(-angle) * 28, tipY = py - 4 + Math.sin(-angle) * 24;
-    const endX = tipX + (pondX - tipX) * Math.min(p * 1.2, 1), endY = tipY + (pondY - tipY) * Math.min(p * 1.2, 1);
-    drawFarmScene(); drawRod(angle);
-    ctx.strokeStyle = 'rgba(200,200,200,0.4)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(tipX, tipY); ctx.quadraticCurveTo(tipX + (pondX - tipX) * 0.5 + 10, tipY + (pondY - tipY) * 0.4, endX, endY); ctx.stroke();
-    ctx.fillStyle = '#ff4444'; ctx.beginPath(); ctx.arc(endX, endY + Math.sin(frame * 0.5) * 2, 3, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#ff8888'; ctx.beginPath(); ctx.arc(endX - 1, endY - 1 + Math.sin(frame * 0.5) * 2, 1.5, 0, Math.PI * 2); ctx.fill();
-    frame++; if (frame <= totalFrames) requestAnimationFrame(animateCast); else setTimeout(() => animateReelIn(), 800);
+    const p = frame/totalFrames, angle = -0.4+Math.sin(p*Math.PI)*0.5;
+    drawFarmScene(); drawRod(angle); lineToPond(angle, Math.min(p*1.2,1));
+    frame++; if(frame<=totalFrames) requestAnimationFrame(animateCast); else setTimeout(()=>animateReelIn(), 800);
   }
 
   function animateReelIn() {
-    let f2 = 0; const total2 = 30, reward = getRandomFarmReward(currentStreak);
+    let f2=0; const total2=30, reward=getRandomFarmReward(currentStreak);
     function step() {
-      const p = f2 / total2, invP = 1 - p, angle = -0.2 + p * 0.15;
+      const p=f2/total2, invP=1-p, angle=-0.2+p*0.15;
       drawFarmScene(); drawRod(angle);
-      const tipX2 = px + 12 + Math.cos(0.2) * 28, tipY2 = py - 4 + Math.sin(0.2) * 24;
-      const curX = tipX2 + (pondX - tipX2) * invP, curY = tipY2 + (pondY - tipY2) * invP;
-      ctx.strokeStyle = 'rgba(200,200,200,0.4)'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(tipX2, tipY2); ctx.quadraticCurveTo(tipX2 + (pondX - tipX2) * 0.5 * invP + 10, tipY2 + (pondY - tipY2) * 0.4 * invP, curX, curY); ctx.stroke();
-      const chestX = pondX + Math.sin(p * 6) * 3, chestY = pondY + 12 - p * 28;
-      ctx.fillStyle = 'rgba(100,200,240,0.3)';
-      for (let i = 0; i < 6; i++) ctx.fillRect(chestX + (i - 2.5) * 6 + Math.sin(p * 8 + i * 1.3) * 5 - 2, chestY + 10 + Math.random() * 8 - 2, 4, 4);
-      if (p > 0.35) drawChest(ctx, chestX, chestY, Math.floor(18 + p * 8));
-      f2++; if (f2 <= total2) requestAnimationFrame(step); else showFarmResult(addr, container, reward, ctx, currentStreak);
+      const tipX=px+12+Math.cos(0.2)*28, tipY=py-4+Math.sin(0.2)*24;
+      const curX=tipX+(pondX-tipX)*invP, curY=tipY+(pondY-tipY)*invP;
+      ctx.strokeStyle='rgba(200,200,200,0.4)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(tipX,tipY);ctx.quadraticCurveTo(tipX+(pondX-tipX)*0.5*invP+10,tipY+(pondY-tipY)*0.4*invP,curX,curY);ctx.stroke();
+      const chestX=pondX+Math.sin(p*6)*3, chestY=pondY+12-p*28;
+      ctx.fillStyle='rgba(100,200,240,0.3)';
+      for(let i=0;i<6;i++)ctx.fillRect(chestX+(i-2.5)*6+Math.sin(p*8+i*1.3)*5-2,chestY+10+Math.random()*8-2,4,4);
+      if(p>0.35) drawChest(ctx, chestX, chestY, Math.floor(18+p*8));
+      f2++; if(f2<=total2) requestAnimationFrame(step); else showFarmResult(addr, container, reward, ctx, currentStreak);
     }
     step();
   }
@@ -1472,70 +1497,81 @@ function startFarming(addr, container, currentStreak) {
   animateCast();
 }
 
-function drawChest(ctx, cx, cy, size) {
-  const s = size || 24, hs = s >> 1, qs = Math.floor(s * 0.3);
-  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(cx - hs - 1, cy + qs + 1, s + 2, 5);
-  ['#6a3a1a', '#7a4a2a', '#6a3a1a', '#8a5a3a', '#6a3a1a'].forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(cx - hs, cy - qs + i * Math.ceil(s * 0.12), s, Math.ceil(s * 0.12) + 1); });
-  ['#8a5a3a', '#9a6a4a', '#8a5a3a', '#a07a5a'].forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(cx - hs - 1, cy - qs - 5 + i * 3, s + 2, 3); });
-  ctx.fillStyle = '#c49840'; ctx.fillRect(cx - hs - 1, cy - qs - 6, s + 2, 2); ctx.fillRect(cx - hs - 1, cy - qs + 5, s + 2, 2);
-  ctx.fillStyle = '#333'; ctx.fillRect(cx - 2, cy - 2, 4, 5); ctx.fillStyle = '#ffd700'; ctx.fillRect(cx - 1, cy - 1, 2, 3); ctx.fillStyle = '#fff8dc'; ctx.fillRect(cx - 1, cy - 1, 1, 1);
+function getRandomFarmReward(streak) {
+  streak=streak||0; const roll=Math.random(), diff=Math.min(streak*0.05,0.5);
+  let reward;
+  if(roll<0.35-diff*0.2) reward=0.1; else if(roll<0.60-diff*0.15) reward=0.5;
+  else if(roll<0.78-diff*0.1) reward=1; else if(roll<0.90-diff*0.05) reward=5;
+  else if(roll<0.97) reward=10; else if(roll<0.995) reward=50; else reward=100;
+  return Math.min(Math.round(reward*(1+Math.floor(streak/7)*0.5)*10)/10,100);
 }
 
+function drawChest(ctx, cx, cy, size) {
+  const s=size||24, hs=s>>1, qs=Math.floor(s*0.3);
+  ctx.fillStyle='rgba(0,0,0,0.25)';ctx.fillRect(cx-hs-1,cy+qs+1,s+2,5);
+  ['#6a3a1a','#7a4a2a','#6a3a1a','#8a5a3a','#6a3a1a'].forEach((c,i)=>{ctx.fillStyle=c;ctx.fillRect(cx-hs,cy-qs+i*Math.ceil(s*0.12),s,Math.ceil(s*0.12)+1);});
+  ['#8a5a3a','#9a6a4a','#8a5a3a','#a07a5a'].forEach((c,i)=>{ctx.fillStyle=c;ctx.fillRect(cx-hs-1,cy-qs-5+i*3,s+2,3);});
+  ctx.fillStyle='#c49840';ctx.fillRect(cx-hs-1,cy-qs-6,s+2,2);ctx.fillRect(cx-hs-1,cy-qs+5,s+2,2);
+  ctx.fillStyle='#333';ctx.fillRect(cx-2,cy-2,4,5);ctx.fillStyle='#ffd700';ctx.fillRect(cx-1,cy-1,2,3);ctx.fillStyle='#fff8dc';ctx.fillRect(cx-1,cy-1,1,1);
+  [[cx-hs+3,cy-qs+2],[cx+hs-4,cy-qs+2],[cx-hs+3,cy+qs-2],[cx+hs-4,cy+qs-2]].forEach(([rx,ry])=>{ctx.fillStyle='#c49840';ctx.fillRect(rx,ry,3,3);ctx.fillStyle='#ffd700';ctx.fillRect(rx,ry,2,2);ctx.fillStyle='#fff8dc';ctx.fillRect(rx,ry,1,1);});
+  ctx.fillStyle='rgba(255,220,160,0.2)';ctx.fillRect(cx-hs+4,cy-qs-3,s-8,3);
+}
+
+/* ===== RESULTADO ===== */
 function showFarmResult(addr, container, reward, ctx, currentStreak) {
-  const newStreak = (currentStreak || 0) + 1, mx = 48, my = 120, px = mx + 6, py = my - 14, cx = px + 22, cy = py + 6;
+  const newStreak=(currentStreak||0)+1, mx=48,my=120,px=mx+6,py=my-14,cx=px+22,cy=py+6;
+
   drawFarmScene();
-  const overlay = container.querySelector('#farmOverlay'), icon = container.querySelector('#farmResultIcon'), title = container.querySelector('#farmResultTitle'), sub = container.querySelector('#farmResultSub');
-  if (overlay && title && sub && icon) overlay.style.display = 'flex';
-  const d = reward < 1 ? reward.toFixed(1) : reward;
-  if (reward >= 100) { icon.textContent = '👑'; title.textContent = `👑 ¡${d} AURA — JACKPOT!`; sub.textContent = '¡Cofre legendario!'; }
-  else if (reward >= 50) { icon.textContent = '💎'; title.textContent = `💎 ¡${d} AURA — Legendario!`; sub.textContent = '¡Tesoro increíble!'; }
-  else if (reward >= 10) { icon.textContent = '🌟'; title.textContent = `🌟 ¡${d} AURA — Cofre valioso!`; sub.textContent = 'Brillo especial en el cofre.'; }
-  else if (reward >= 5) { icon.textContent = '🎁'; title.textContent = `🎁 ¡${d} AURA!`; sub.textContent = 'Buena pesca.'; }
-  else if (reward >= 1) { icon.textContent = '📦'; title.textContent = `📦 ¡${d} AURA!`; sub.textContent = 'Cofre modesto pero bienvenido.'; }
-  else { icon.textContent = '🪙'; title.textContent = `🪙 ¡${d} AURA!`; sub.textContent = 'Pequeñito pero es AURA.'; }
+  ctx.fillStyle='rgba(0,0,0,0.2)';ctx.fillRect(cx-12,cy+8,24,5);
+  ['#6a3a1a','#7a4a2a','#6a3a1a','#8a5a3a','#7a4a2a'].forEach((c,i)=>{ctx.fillStyle=c;ctx.fillRect(cx-10,cy+i*3,20,3);});
+  ctx.fillStyle='#8a5a3a';ctx.fillRect(cx-11,cy-10,22,4);ctx.fillStyle='#9a6a4a';ctx.fillRect(cx-10,cy-9,20,2);
+  ctx.fillStyle='#666';ctx.fillRect(cx-4,cy-10,3,3);ctx.fillRect(cx+1,cy-10,3,3);
+  ctx.fillStyle='#ffd700';ctx.fillRect(cx-6,cy+2,5,3);ctx.fillRect(cx+2,cy+3,4,2);ctx.fillRect(cx-2,cy+1,3,4);
+  ctx.fillStyle='#ffec80';ctx.fillRect(cx-5,cy+3,2,1);ctx.fillRect(cx+3,cy+4,2,1);
+  for(let i=0;i<10;i++){ctx.fillStyle=['#ffd700','#fff','#ffec80','#ff8800'][i%4];ctx.fillRect(cx-10+Math.random()*22,cy-12-Math.random()*12,Math.random()>.5?2:1,Math.random()>.5?2:1);}
+
+  const overlay=container.querySelector('#farmOverlay'), icon=container.querySelector('#farmResultIcon'), title=container.querySelector('#farmResultTitle'), sub=container.querySelector('#farmResultSub'), btn=container.querySelector('#farmBtn'), d=reward<1?reward.toFixed(1):reward;
+  if(overlay&&title&&sub&&icon) overlay.style.display='flex';
+
+  if(reward>=100){icon.textContent='👑';title.textContent=`👑 ¡${d} AURA — JACKPOT!`;sub.textContent='¡Cofre legendario!';}
+  else if(reward>=50){icon.textContent='💎';title.textContent=`💎 ¡${d} AURA — Legendario!`;sub.textContent='¡Tesoro increíble!';}
+  else if(reward>=10){icon.textContent='🌟';title.textContent=`🌟 ¡${d} AURA — Cofre valioso!`;sub.textContent='Brillo especial en el cofre.';}
+  else if(reward>=5){icon.textContent='🎁';title.textContent=`🎁 ¡${d} AURA!`;sub.textContent='Buena pesca.';}
+  else if(reward>=1){icon.textContent='📦';title.textContent=`📦 ¡${d} AURA!`;sub.textContent='Cofre modesto pero bienvenido.';}
+  else{icon.textContent='🪙';title.textContent=`🪙 ¡${d} AURA!`;sub.textContent='Pequeñito pero es AURA.';}
+
   submitFarmClaim(reward, newStreak).then(resp => {
-    if (resp && resp.ok) {
-      setTimeout(() => syncProfile(), 300);
-      const btn = container.querySelector('#farmBtn');
-      if (btn) { btn.disabled = true; btn.style.opacity = '.4'; btn.textContent = '⏳ Vuelve mañana'; }
-      const se = container.querySelector('#farmStreak'); if (se) se.textContent = `Racha: ${newStreak} día${newStreak !== 1 ? 's' : ''}`;
+    if(resp?.ok){
+      setTimeout(()=>syncProfile(),300);
+      if(btn){btn.disabled=true;btn.style.opacity='.4';btn.textContent='⏳ Vuelve mañana';}
+      const se=container.querySelector('#farmStreak');if(se)se.textContent=`Racha: ${newStreak} día${newStreak!==1?'s':''}`;
       updateFarmCountdown(container);
     } else {
-      if (title) title.textContent = '❌ Error en servidor';
-      if (sub) sub.textContent = (resp && resp.error) || 'Intenta de nuevo.';
-      const btn = container.querySelector('#farmBtn');
-      if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = '🎣 Reintentar'; }
+      if(title)title.textContent='❌ Error en servidor';
+      if(sub)sub.textContent=resp?.error||'Intenta de nuevo.';
+      if(btn){btn.disabled=false;btn.style.opacity='1';btn.textContent='🎣 Reintentar';}
     }
-  }).catch(() => {
-    if (title) title.textContent = '❌ Error de conexión';
-    if (sub) sub.textContent = 'Revisa tu conexión.';
-    const btn = container.querySelector('#farmBtn');
-    if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = '🎣 Reintentar'; }
+  }).catch(()=>{
+    if(title)title.textContent='❌ Error de conexión';
+    if(sub)sub.textContent='Revisa tu conexión.';
+    if(btn){btn.disabled=false;btn.style.opacity='1';btn.textContent='🎣 Reintentar';}
   });
 }
 
+/* ===== COUNTDOWN ===== */
 function updateFarmCountdown(container) {
-  const timer = container.querySelector('#farmTimer'); if (!timer) return;
-  function tick() {
-    const n = new Date(), m = new Date(n);
-    m.setDate(m.getDate() + 1); m.setHours(0, 0, 0, 0);
-    const d = m.getTime() - n.getTime();
-    if (d <= 0) { timer.textContent = '🎣 ¡Ya puedes pescar!'; return; }
-    timer.textContent = `⏳ ${Math.floor(d / 3600000)}h ${Math.floor((d % 3600000) / 60000)}m ${Math.floor((d % 60000) / 1000)}s`;
-    setTimeout(tick, 1000);
-  }
+  const timer=container.querySelector('#farmTimer'); if(!timer) return;
+  function tick(){const n=new Date(),m=new Date(n);m.setDate(m.getDate()+1);m.setHours(0,0,0,0);const d=m.getTime()-n.getTime();if(d<=0){timer.textContent='🎣 ¡Ya puedes pescar!';return;}timer.textContent=`⏳ ${Math.floor(d/3600000)}h ${Math.floor((d%3600000)/60000)}m ${Math.floor((d%60000)/1000)}s`;setTimeout(tick,1000);}
   tick();
 }
 
+/* ===== HISTORIAL ===== */
 function renderFarmHistory(container, history) {
-  const el = container.querySelector('#farmHistory'); if (!el) return;
-  if (!history || !history.length) { el.textContent = 'Aún no has pescado nada.'; return; }
-  el.innerHTML = '<div style="display:flex;flex-wrap:wrap;">Últimas capturas: ' + history.slice(0, 10).map(h => {
-    const d = new Date(h.date + 'T00:00:00'); let icon = '🪙';
-    if (h.amount >= 100) icon = '👑'; else if (h.amount >= 50) icon = '💎'; else if (h.amount >= 10) icon = '🌟'; else if (h.amount >= 5) icon = '🎁'; else if (h.amount >= 1) icon = '📦';
-    return `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;white-space:nowrap;">${icon} ${d.getDate()}/${d.getMonth() + 1}: <strong>${h.amount} AURA</strong></span>`;
-  }).join('') + '</div>';
+  const el=container.querySelector('#farmHistory'); if(!el) return;
+  if(!history||!history.length){el.textContent='Aún no has pescado nada.';return;}
+  el.innerHTML='<div style="display:flex;flex-wrap:wrap;">Últimas capturas: '+history.slice(0,10).map(h=>{
+    const d=new Date(h.date+'T00:00:00'); let icon='🪙';
+    if(h.amount>=100)icon='👑';else if(h.amount>=50)icon='💎';else if(h.amount>=10)icon='🌟';else if(h.amount>=5)icon='🎁';else if(h.amount>=1)icon='📦';
+    return `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;white-space:nowrap;">${icon} ${d.getDate()}/${d.getMonth()+1}: <strong>${h.amount} AURA</strong></span>`;
+  }).join('')+'</div>';
 }
-
-// Export farm functions used by shell/profile modal
-export { loadFarmStatus, renderFarmTab };
