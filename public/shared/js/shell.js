@@ -9,18 +9,40 @@ import { syncProfile, buildProfileModal } from "./profile.js";
 import { updateNotifUI, openNotifModal, closeModal, closeAllPanels, openModal, buildNotifModal } from "./notifications.js";
 import { isModOrAdminNow, buildModModal } from "./moderation.js";
 
+const SUBDOMAIN_MAP = {
+  id: "alemty", dao: "dao", defi: "defi",
+  dex: "dex",   ia: "ia",   ar: "ar",
+};
+
+function getRouteHref(key) {
+  const h = location.hostname;
+  if (h === "localhost" || h === "127.0.0.1" || h.startsWith("192.168.")) {
+    return key === "id" ? "/" : `/${key}/`;
+  }
+  const parts = h.split(".");
+  const currentSub = parts[0];
+  const targetSub = SUBDOMAIN_MAP[key];
+  if (currentSub === targetSub) return "/";
+  if (key === "id" && (currentSub === "alemty" || parts.length === 2)) return "/";
+  const baseDomain = parts.slice(1).join(".");
+  return `https://${targetSub}.${baseDomain}/`;
+}
+
 const ROUTES = [
-  { key: "id",    label: "ID",    ico: "🪪", href: "/" },
-  { key: "dao",   label: "DAO",   ico: "🏛️", href: "/dao/" },
-  { key: "defi",  label: "DEFI",  ico: "🧩", href: "/defi/" },
-  { key: "dex",   label: "DEX",   ico: "🔁", href: "/dex/" },
-  { key: "ia",    label: "IA",    ico: "🤖", href: "/ia/" },
-  { key: "ar",    label: "AR",    ico: "🕶️", href: "/ar/" }
+  { key: "id",   label: "ID",   ico: "🪪" },
+  { key: "dao",  label: "DAO",  ico: "🏛️" },
+  { key: "defi", label: "DEFI", ico: "🧩" },
+  { key: "dex",  label: "DEX",  ico: "🔁" },
+  { key: "ia",   label: "IA",   ico: "🤖" },
+  { key: "ar",   label: "AR",   ico: "🕶️" },
 ];
 
 function currentFolder() {
   const p = location.pathname.split("/").filter(Boolean);
-  return p[0] || "id";
+  if (p[0] && SUBDOMAIN_MAP[p[0]]) return p[0];
+  const sub = location.hostname.split(".")[0];
+  const keyBySubdomain = Object.entries(SUBDOMAIN_MAP).find(([, v]) => v === sub)?.[0];
+  return keyBySubdomain || p[0] || "id";
 }
 
 function el(t, a = {}, h = "") {
@@ -78,7 +100,7 @@ export function mountShell() {
   const bottomNav = el("nav", { class: "bottom-nav", id: "bottomNav" });
   const bottomInner = el("div", { class: "bottom-nav-inner" });
   ROUTES.forEach(r => {
-    const a = el("a", { class: "bottom-btn", href: r.href, "data-key": r.key, "aria-label": r.key },
+    const a = el("a", { class: "bottom-btn", href: getRouteHref(r.key), "data-key": r.key, "aria-label": r.key },
       `<span class="ico">${r.ico}</span><span class="lbl">${r.label}</span>`);
     if (r.key === hostKey) a.classList.add("active");
     bottomInner.appendChild(a);
