@@ -177,42 +177,87 @@ app.get("/api/me/stats", auth, async (c) => {
 
   const dharma = pointsReceived + likesReceived;
 
-  // AURA se genera 1:1 con Dharma (cada like/point = +1 AURA acumulado).
-  // El minteo on-chain ocurre por epoch (semanal) — Rulebook §5.1 — para evitar
-  // gas por cada interacción. El usuario reclama su AURA acumulado en 1 tx semanal.
-  // El perfil muestra: auraGenerado (total acumulado off-chain) y auraReclamable
-  // (lo generado en el epoch actual que aún no se minteó).
-  // El balance on-chain (auraBalance) es lo que el usuario tiene disponible para gastar/swapear.
+  // AURA off-chain: dharma genera 1 AURA por cada punto, farm genera AURA extra
+  // AURA on-chain: balance real del contrato ERC-20 en Base
+  // "AURA por reclamar" = (dharma + auraFarmed) - auraOnChain
+  // NUNCA se suman off-chain + on-chain. Son conceptos separados.
 
-  // TODO: almacenar en D1 el último epoch reclamado por usuario para calcular auraReclamable
-  const aura = dharma; // total generado off-chain (visual)
-  let auraReclamable = 0; // generado en epoch actual, pendiente de mintear
+  const farmRow: any = await c.env.DB.prepare(
+    "SELECT COALESCE(SUM(amount), 0) AS total FROM farm_claims WHERE address = ?"
+  ).bind(address).first();
+  const auraFarmed = Number(farmRow?.total || 0);
+
+  // AURA off-chain total generado por interacciones (dharma + farm)
+  const auraAccumulado = dharma + auraFarmed;
+
+  // AURA on-chain: balance real desde el contrato ERC-20
+  // Se consulta via RPC y se cachea en user_stats.aura_balance (60s)
+  let auraOnChain = 0;
   let auraBalance = '0';
+
+  // auraClaimed: cuánto AURA se ha marcado como "reclamado" off-chain
+  // (se actualiza cuando el usuario hace Reclaim y la tx se confirma)
+  // Se usa para calcular auraReclamable = auraAccumulado - auraClaimed
+  // Esto evita que el balance on-chain total (incluyendo mints iniciales)
+  // afecte el cálculo del reclamable.
+  const claimedRow: any = await c.env.DB.prepare(
+    "SELECT aura_claimed FROM user_stats WHERE address = ?"
+  ).bind(address).first();
+  const auraClaimed = Number(claimedRow?.aura_claimed ?? 0);
+
+  // Consultar balance on-chain via RPC con caché en D1
   const auraContract = c.env.AURA_CONTRACT;
-  if (auraContract) {
-    try {
-      const rpcUrl = c.env.AURA_RPC_URL || 'https://mainnet.base.org';
-      const data = '0x70a08231' + address.slice(2).padStart(64, '0');
-      const rpcRes = await fetch(rpcUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'eth_call',
-          params: [{ to: auraContract, data }, 'latest']
-        })
-      });
-      if (rpcRes.ok) {
-        const json: any = await rpcRes.json();
-        if (json?.result && json.result !== '0x') {
-          auraBalance = String(BigInt(json.result) / 10n ** 16n / 100n);
+  const cachedRow: any = await c.env.DB.prepare(
+    "SELECT aura_balance, updated_at FROM user_stats WHERE address = ?"
+  ).bind(address).first();
+  const now = Math.floor(Date.now() / 1000);
+  const cacheValid = cachedRow && (now - (cachedRow.updated_at || 0)) < 60;
+  if (cacheValid && Number(cachedRow.aura_balance) > 0) {
+    auraOnChain = Number(cachedRow.aura_balance);
+    auraBalance = String(auraOnChain);
+  }
+
+  // Consultar RPC si no hay caché
+  if (auraContract && !cacheValid) {
+    const rpcUrls = [
+      'https://1rpc.io/base',
+      'https://base-rpc.publicnode.com',
+    ];
+    const data = '0x70a08231' + address.slice(2).padStart(64, '0');
+    for (const rpcUrl of rpcUrls) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const rpcRes = await fetch(rpcUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0', id: 1, method: 'eth_call',
+            params: [{ to: auraContract, data }, 'latest']
+          }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        if (rpcRes.ok) {
+          const json: any = await rpcRes.json();
+          if (json?.result && json.result !== '0x') {
+            auraOnChain = Number(BigInt(json.result) / 10n ** 16n / 100n);
+            auraBalance = String(auraOnChain);
+            // Guardar en D1 el balance on-chain cachead0
+            await c.env.DB.prepare(
+              "INSERT OR REPLACE INTO user_stats (address, aura_balance, updated_at, points_received, likes_received, dharma_total, level, karma_debt) VALUES (?, ?, ?, COALESCE((SELECT points_received FROM user_stats WHERE address = ?), 0), COALESCE((SELECT likes_received FROM user_stats WHERE address = ?), 0), COALESCE((SELECT dharma_total FROM user_stats WHERE address = ?), 0), COALESCE((SELECT level FROM user_stats WHERE address = ?), 1), 0)"
+            ).bind(address, auraOnChain, now, address, address, address, address).run();
+            break;
+          }
         }
-      }
-    } catch (e) {
-      console.warn('⚠️ AURA RPC error:', e);
+      } catch (_) {}
     }
   }
+
+  // aura = balance on-chain real (lo que el usuario puede gastar/swapear)
+  const aura = auraOnChain;
+  // auraReclamable = acumulado off-chain - lo ya reclamado (nunca resta balance on-chain)
+  const auraReclamable = Math.max(0, auraAccumulado - auraClaimed);
 
   return c.json({
     ok: true,
@@ -232,8 +277,8 @@ app.get("/api/me/stats", auth, async (c) => {
     },
     tokenomics: {
       dharma,
-      aura,           // total generado off-chain (visual, coincide con dharma)
-      auraReclamable, // pendiente de mintear on-chain este epoch
+      aura,           // balance on-chain real (o fallback off-chain)
+      auraReclamable, // pendiente de reclamar (solo farm)
       auraBalance,    // balance on-chain real (después de gastos/swaps)
     },
   });
@@ -264,137 +309,128 @@ app.get("/api/me/verify", auth, async (c) => {
 });
 
 /* =========================================================
+   AURA — Approve del agente (para permitir transferFrom)
+   POST /api/aura/approve-agent
+   Aprueba al contrato AURA para gastar tokens de la wallet agente (max uint256)
+   ========================================================= */
+app.post("/api/aura/approve-agent", async (c) => {
+  const agentAddr = '0x02756cb3a5413cd616d192c56dfdce80dd66706e';
+  const auraContract = c.env.AURA_CONTRACT;
+  if (!auraContract) {
+    return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
+  }
+  const rpcUrl = 'https://1rpc.io/base';
+
+  // approve(spender=contratoAURA, amount=type(uint256).max)
+  const approveSelector = '0x095ea7b3';
+  const spenderPadded = auraContract.slice(2).toLowerCase().padStart(64, '0');
+  const maxUint = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+  const data = approveSelector + spenderPadded + maxUint;
+
+  // Consultar nonce y gas del RPC (requests secuenciales, no paralelas para evitar rate limit)
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 15000);
+  try {
+    const nonceRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionCount', params: [agentAddr, 'latest'] }), signal: ac.signal });
+    const nonceData: any = await nonceRes.json();
+    if (!nonceData?.result) return c.json({ ok: false, error: 'No se pudo obtener nonce del RPC' }, 500);
+
+    const gasPriceRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] }), signal: ac.signal });
+    const gasPriceData: any = await gasPriceRes.json();
+    if (!gasPriceData?.result) return c.json({ ok: false, error: 'No se pudo obtener gasPrice del RPC' }, 500);
+
+    const chainIdRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] }), signal: ac.signal });
+    const chainIdData: any = await chainIdRes.json();
+    if (!chainIdData?.result) return c.json({ ok: false, error: 'No se pudo obtener chainId del RPC' }, 500);
+
+    clearTimeout(timer);
+    
+    return c.json({
+      ok: true,
+      method: 'eth_sendTransaction',
+      params: [{
+        from: agentAddr,
+        to: auraContract,
+        data: data,
+        nonce: nonceData.result,
+        gasPrice: gasPriceData.result,
+        chainId: chainIdData.result
+      }],
+      message: 'Copia estos params a MetaMask o llama a eth_sendTransaction desde el frontend con window.ethereum.request({ method: "eth_sendTransaction", params: [...] })'
+    });
+  } catch (e: any) {
+    console.error("❌ Error en approve:", e.message);
+    return c.json({ ok: false, error: `Error: ${e.message}` }, 500);
+  }
+});
+
+/* =========================================================
    AURA — Claim de recompensas (Rulebook §5.1)
    POST /api/aura/claim
-   Body: { to: string, amount: string (wei) }
-   Devuelve: tx preparada lista para firmar con MetaMask
-   El usuario firma desde el frontend (sin private key en el Worker)
-========================================================= */
+   Body: { amount: string (wei) }
+   Prepara una tx de transfer(address,uint256) para firmar desde MetaMask.
+   Devuelve los parámetros para eth_sendTransaction.
+   ========================================================= */
 app.post("/api/aura/claim", auth, async (c) => {
   const caller = c.get("address");
   const payload = await c.req.json().catch(() => ({} as any));
-  const to = String(payload.to || caller).toLowerCase();
-  const amountWei = String(payload.amount || "0");
+  let amountWei = String(payload.amount || "0");
   const auraContract = c.env.AURA_CONTRACT;
-  const rpcUrl = c.env.AURA_RPC_URL || 'https://mainnet.base.org';
+  const rpcUrl = 'https://1rpc.io/base';
+  const agentAddr = '0x02756cb3a5413cd616d192c56dfdce80dd66706e';
 
   if (!auraContract) {
     return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
   }
 
-  // 1. Validar hard cap on-chain
-  try {
-    const supplyData = '0x18160ddd'; // totalSupply()
-    const capData = '0xfb86a404';    // hardCap()
-    const [supplyRes, capRes] = await Promise.all([
-      fetch(rpcUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: auraContract, data: supplyData }, 'latest'] })
-      }),
-      fetch(rpcUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_call', params: [{ to: auraContract, data: capData }, 'latest'] })
-      })
-    ]);
-    const supplyJson: any = await supplyRes.json();
-    const capJson: any = await capRes.json();
-    if (supplyJson?.result && capJson?.result) {
-      const currentSupply = BigInt(supplyJson.result);
-      const hardCap = BigInt(capJson.result);
-      const amount = BigInt(amountWei);
-      if (currentSupply + amount > hardCap) {
-        return c.json({ ok: false, error: 'ExceedsHardCap', currentSupply: currentSupply.toString(), hardCap: hardCap.toString() }, 400);
-      }
-    }
-  } catch (e: any) {
-    console.warn('⚠️ Error validando hard cap:', e.message);
-  }
-
-  // 2. Obtener nonce del minter (0x6A202f...) para construir la tx
-  let nonce = '0x0';
-  try {
-    const nonceRes = await fetch(rpcUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 3,
-        method: 'eth_getTransactionCount',
-        params: ['0x6A202f991c4C1df079449BE9847b1DaC3F51854f', 'latest']
-      })
-    });
-    const nonceJson: any = await nonceRes.json();
-    if (nonceJson?.result) nonce = nonceJson.result;
-  } catch (e: any) {
-    console.warn('⚠️ Error obteniendo nonce:', e.message);
-  }
-
-  // 3. Construir datos de la tx (mint(address,uint256) = 0x40c10f19)
-  const mintSelector = '0x40c10f19';
-  const toPadded = to.slice(2).padStart(64, '0');
+  // Construir datos de la tx: transfer(address,uint256)
+  const transferSelector = '0xa9059cbb';
+  const toPadded = caller.slice(2).toLowerCase().padStart(64, '0');
   const amountPadded = BigInt(amountWei).toString(16).padStart(64, '0');
-  const data = mintSelector + toPadded + amountPadded;
+  const data = transferSelector + toPadded + amountPadded;
 
-  // 4. Estimar gas
-  let gasEstimate = '0x52080'; // 336k default
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 15000);
   try {
-    const gasRes = await fetch(rpcUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 4,
-        method: 'eth_estimateGas',
-        params: [{
-          from: '0x6A202f991c4C1df079449BE9847b1DaC3F51854f',
-          to: auraContract,
-          data
-        }]
-      })
-    });
-    const gasJson: any = await gasRes.json();
-    if (gasJson?.result) gasEstimate = gasJson.result;
-  } catch (e: any) {
-    console.warn('⚠️ Error estimando gas:', e.message);
-  }
+    const nonceRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionCount', params: [agentAddr, 'latest'] }), signal: ac.signal });
+    const nonceData: any = await nonceRes.json();
+    if (!nonceData?.result) return c.json({ ok: false, error: 'No se pudo obtener nonce del RPC' }, 500);
 
-  // 5. Obtener gas price
-  let gasPrice = '0x59682f00'; // 1.5 gwei default
-  try {
-    const gasPriceRes = await fetch(rpcUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 5, method: 'eth_gasPrice', params: [] })
-    });
-    const gpJson: any = await gasPriceRes.json();
-    if (gpJson?.result) gasPrice = gpJson.result;
-  } catch (e: any) {
-    console.warn('⚠️ Error obteniendo gas price:', e.message);
-  }
+    const gasPriceRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] }), signal: ac.signal });
+    const gasPriceData: any = await gasPriceRes.json();
+    if (!gasPriceData?.result) return c.json({ ok: false, error: 'No se pudo obtener gasPrice del RPC' }, 500);
 
-  // 6. Devolver tx preparada para que el frontend la firme con eth_sendTransaction
-  // El from es la wallet minter (0x6A202f...) — el usuario debe tenerla en MetaMask
-  return c.json({
-    ok: true,
-    tx: {
-      from: '0x6A202f991c4C1df079449BE9847b1DaC3F51854f',
-      to: auraContract,
-      data,
-      nonce,
-      gas: gasEstimate,
-      gasPrice,
-      value: '0x0',
-      chainId: '0x2105' // 8453 Base Mainnet
-    },
-    metadata: {
-      to,
-      amountWei,
-      amountReadable: (Number(amountWei) / 1e18).toFixed(4),
-      auraContract
-    }
-  });
+    const chainIdRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] }), signal: ac.signal });
+    const chainIdData: any = await chainIdRes.json();
+    if (!chainIdData?.result) return c.json({ ok: false, error: 'No se pudo obtener chainId del RPC' }, 500);
+
+    clearTimeout(timer);
+    
+    return c.json({
+      ok: true,
+      method: 'eth_sendTransaction',
+      params: [{
+        from: agentAddr,
+        to: auraContract,
+        data: data,
+        value: '0x0',
+        nonce: nonceData.result,
+        gasPrice: gasPriceData.result,
+        chainId: chainIdData.result
+      }],
+      metadata: {
+        from: agentAddr,
+        to: caller,
+        amountWei,
+        amountReadable: (Number(amountWei) / 1e18).toFixed(4),
+        auraContract
+      },
+      message: 'Usa window.ethereum.request({ method: "eth_sendTransaction", params: [...] }) desde el frontend para firmar con MetaMask'
+    });
+  } catch (e: any) {
+    console.error("❌ Error en claim:", e.message);
+    return c.json({ ok: false, error: `Error al preparar claim: ${e.message}` }, 500);
+  }
 });
 
 // Endpoint legacy para compatibilidad (instrucciones manuales)
@@ -407,10 +443,122 @@ app.post("/api/aura/mint", auth, async (c) => {
 });
 
 /* =========================================================
+   FARM — Reclamo diario de AURA (mini-game)
+   POST /api/farm/claim + GET /api/farm/status
+   IMPORTANTE: debe ir ANTES de app.all("/api/*") legacy router
+========================================================= */
+
+app.get("/api/farm/status", auth, async (c) => {
+  const address = c.get("address");
+  const today = new Date().toISOString().slice(0, 10);
+
+  const claimToday = await c.env.DB.prepare(
+    "SELECT amount, streak FROM farm_claims WHERE address = ? AND claim_date = ?"
+  ).bind(address, today).first();
+
+  // Último claim para calcular streak
+  const lastClaim: any = await c.env.DB.prepare(
+    "SELECT claim_date, streak FROM farm_claims WHERE address = ? ORDER BY created_at DESC LIMIT 1"
+  ).bind(address).first();
+
+  // Total acumulado farmeado
+  const totalRow: any = await c.env.DB.prepare(
+    "SELECT COALESCE(SUM(amount), 0) AS total FROM farm_claims WHERE address = ?"
+  ).bind(address).first();
+
+  // Historial reciente (últimos 10)
+  const history: any[] = await c.env.DB.prepare(
+    "SELECT claim_date, amount, streak FROM farm_claims WHERE address = ? ORDER BY created_at DESC LIMIT 10"
+  ).bind(address).all();
+
+  return c.json({
+    ok: true,
+    canClaim: !claimToday,
+    claimedToday: !!claimToday,
+    todayAmount: claimToday ? Number(claimToday.amount) : 0,
+    streak: lastClaim ? Number(lastClaim.streak) : 0,
+    totalFarmed: Number(totalRow?.total || 0),
+    history: (history.results || []).map(h => ({
+      date: h.claim_date,
+      amount: Number(h.amount),
+      streak: Number(h.streak)
+    }))
+  });
+});
+
+app.post("/api/farm/claim", auth, async (c) => {
+  const address = c.get("address");
+  const payload = await c.req.json().catch(() => ({} as any));
+  const amount = Number(payload.amount) || 0;
+  const streak = Number(payload.streak) || 1;
+
+  // Validar límites
+  if (amount <= 0 || amount > 100) {
+    return c.json({ ok: false, error: "Cantidad inválida (0-100 AURA)" }, 400);
+  }
+
+  // Validar que no haya reclamado hoy
+  const today = new Date().toISOString().slice(0, 10);
+  const existing = await c.env.DB.prepare(
+    "SELECT id FROM farm_claims WHERE address = ? AND claim_date = ?"
+  ).bind(address, today).first();
+
+  if (existing) {
+    return c.json({ ok: false, error: "Ya reclamaste hoy. Vuelve mañana." }, 429);
+  }
+
+  // Insertar claim
+  // NOTA: No escribimos en aura_ledger ni user_stats aquí porque
+  // /api/me/stats ya suma farm_claims.SUM(amount) → auraFarmed → auraReclamable.
+  // Así evitamos problemas de overflow con BigInt/Number para cantidades en wei.
+  await c.env.DB.prepare(
+    "INSERT INTO farm_claims (address, claim_date, amount, streak) VALUES (?, ?, ?, ?)"
+  ).bind(address, today, String(amount), streak).run();
+
+  return c.json({
+    ok: true,
+    amount,
+    streak,
+    today,
+    message: `🎣 Has pescado ${amount} AURA!`
+  });
+});
+
+app.post("/api/farm/reclaim-complete", auth, async (c) => {
+  const address = c.get("address");
+
+  // Sumar farm claims al aura_claimed antes de limpiar
+  const farmRow: any = await c.env.DB.prepare(
+    "SELECT COALESCE(SUM(amount), 0) AS total FROM farm_claims WHERE address = ?"
+  ).bind(address).first();
+  const totalFarm = Number(farmRow?.total || 0);
+
+  // Incrementar aura_claimed en user_stats
+  await c.env.DB.prepare(
+    "INSERT INTO user_stats (address, aura_claimed, updated_at) VALUES (?, ?, unixepoch()) ON CONFLICT(address) DO UPDATE SET aura_claimed = aura_claimed + ?, updated_at = unixepoch()"
+  ).bind(address, totalFarm).run();
+
+  // Limpiar farm_claims del usuario
+  await c.env.DB.prepare("DELETE FROM farm_claims WHERE address = ?").bind(address).run();
+
+  return c.json({ ok: true, message: "Farm claims reclamados y aura_claimed actualizado." });
+});
+
+/* =========================================================
    ROUTERS (montar ANTES del legacy)
 ========================================================= */
 app.route("/api/posts", posts);
 app.route("/api/rooms", rooms);
+
+// Endpoint debug para verificar env vars (ruta única que no captura legacy)
+app.get("/___debug", async (c) => {
+  const contract = c.env.AURA_CONTRACT || '(no configurado)';
+  return c.json({
+    AURA_CONTRACT: contract,
+    AURA_RPC_URL: c.env.AURA_RPC_URL || '(no configurado)',
+    contractLength: contract.length,
+  });
+});
 
 /* =========================================================
    LEGACY ROUTER (API EXTRA – NO TOCAR)
