@@ -193,8 +193,7 @@ app.get("/api/me/stats", auth, async (c) => {
   const auraAccumulado = dharma + auraFarmed;
 
   // AURA on-chain: balance real desde el contrato ERC-20
-  // PRIMERO: leer caché de D1 — esto es rápido y no falla.
-  // SIEMPRE usar el caché como valor base, incluso si es 0.
+  // PRIMERO: leer caché de D1 (actualizado hasta 60s) — esto es rápido y no falla
   let aura = 0;
   let auraBalance = '0';
   let auraCacheUpdatedAt = 0;
@@ -204,8 +203,11 @@ app.get("/api/me/stats", auth, async (c) => {
     ).bind(address).first();
     if (cachedRow) {
       auraCacheUpdatedAt = Number(cachedRow.updated_at || 0);
-      aura = Number(cachedRow.aura_balance || 0);
-      auraBalance = String(aura);
+      const cachedBalance = Number(cachedRow.aura_balance || 0);
+      if (cachedBalance > 0) {
+        aura = cachedBalance;
+        auraBalance = String(aura);
+      }
     }
   } catch (_) {}
 
@@ -215,25 +217,24 @@ app.get("/api/me/stats", auth, async (c) => {
   ).bind(address).first();
   const auraClaimed = Number(claimedRow?.aura_claimed ?? 0);
 
-  // Consultar balance on-chain via RPC SOLO si el caché tiene más de 300s (5 min)
-  // o si nunca se ha consultado (auraCacheUpdatedAt === 0)
+  // Consultar balance on-chain via RPC SOLO si el caché tiene más de 60s
+  // o si el caché es 0 (nunca consultado)
   const auraContract = c.env.AURA_CONTRACT;
   const now = Math.floor(Date.now() / 1000);
-  const neverQueried = auraCacheUpdatedAt === 0;
-  const cacheExpired = (now - auraCacheUpdatedAt) > 300;
-  const shouldQueryRpc = auraContract && (neverQueried || cacheExpired);
+  const cacheExpired = (now - auraCacheUpdatedAt) > 60;
+  const shouldQueryRpc = auraContract && (aura === 0 || cacheExpired);
 
   if (shouldQueryRpc) {
-    // RPCs que funcionan desde Cloudflare Workers
     const rpcUrls = [
-      'https://base-rpc.publicnode.com',
+      c.env.AURA_RPC_URL || 'https://mainnet.base.org',
       'https://1rpc.io/base',
+      'https://base-rpc.publicnode.com',
     ].filter(Boolean);
     const data = '0x70a08231' + address.slice(2).padStart(64, '0');
     for (const rpcUrl of rpcUrls) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
         const rpcRes = await fetch(rpcUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -245,29 +246,35 @@ app.get("/api/me/stats", auth, async (c) => {
         });
         clearTimeout(timeoutId);
         if (rpcRes.ok) {
-          const text = await rpcRes.text();
-          let json: any;
-          try { json = JSON.parse(text); } catch { continue; }
+          const json: any = await rpcRes.json();
           if (json?.result && json.result !== '0x') {
-            const newAura = Number(BigInt(json.result) / 10n ** 16n / 100n);
-            aura = newAura;
+            // División correcta: BigInt / 10^16 / 100 = BigInt / 10^18
+            aura = Number(BigInt(json.result) / 10n ** 16n / 100n);
             auraBalance = String(aura);
-            // Guardar en D1 (UPDATE parcial)
+            // Guardar solo aura_balance y updated_at en D1 (UPDATE parcial)
             await c.env.DB.prepare(
               "UPDATE user_stats SET aura_balance = ?, updated_at = ? WHERE address = ?"
             ).bind(aura, now, address).run();
             break;
-          } else if (json?.result === '0x') {
-            // Balance es literalmente 0 (nunca ha recibido AURA)
-            aura = 0;
-            auraBalance = '0';
-            await c.env.DB.prepare(
-              "UPDATE user_stats SET aura_balance = 0, updated_at = ? WHERE address = ?"
-            ).bind(now, address).run();
-            break;
+          } else {
+            // RPC respondió pero balance es 0 — NO sobrescribir caché anterior,
+            // solo actualizar timestamp si ya había un valor positivo
+            if (aura > 0) {
+              await c.env.DB.prepare(
+                "UPDATE user_stats SET updated_at = ? WHERE address = ?"
+              ).bind(now, address).run();
+            }
           }
         }
-      } catch (_) { /* intentar siguiente RPC: ignorar fallo, conservar caché */ }
+      } catch (_) { /* intentar siguiente RPC */ }
+    }
+    // Si todos los RPCs fallaron y no tenemos aura, intentar INSERT inicial
+    if (aura === 0) {
+      try {
+        await c.env.DB.prepare(
+          "INSERT OR IGNORE INTO user_stats (address, aura_balance, updated_at) VALUES (?, 0, ?)"
+        ).bind(address, now).run();
+      } catch (_) {}
     }
   }
 
@@ -721,36 +728,6 @@ app.all("/api/*", (c) => {
 /* =========================================================
    FRONTEND SPA FALLBACK
 ========================================================= */
-
-// Middleware: detectar subdominio ar.alemty.eth
-// y servir el HTML de /ar/ cuando la raíz es solicitada.
-app.all("*", async (c, next) => {
-  const host = c.req.header("host") ?? "";
-  const url = new URL(c.req.raw.url);
-  const isArSubdomain = /^ar\./i.test(host) || /^ar\./i.test(url.hostname);
-
-  if (isArSubdomain && (url.pathname === "/" || url.pathname === "")) {
-    // Pedir el asset /ar/index.html en lugar del index raíz
-    const arReq = new Request(
-      new URL("/ar/index.html", c.req.raw.url),
-      c.req.raw
-    );
-    return c.env.ASSETS.fetch(arReq);
-  }
-
-  // Si es subdominio AR pero con otra ruta (ej /js/app.js -> /ar/js/app.js)
-  if (isArSubdomain && !url.pathname.startsWith("/ar/") && !url.pathname.startsWith("/api/") && !url.pathname.startsWith("/shared/") && !url.pathname.startsWith("/settings/")) {
-    const arReq = new Request(
-      new URL("/ar" + url.pathname, c.req.raw.url),
-      c.req.raw
-    );
-    return c.env.ASSETS.fetch(arReq);
-  }
-
-  return next();
-});
-
-// SPA fallback original
 app.all("*", async (c) => {
   return c.env.ASSETS.fetch(c.req.raw);
 });
