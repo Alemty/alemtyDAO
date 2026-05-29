@@ -206,52 +206,51 @@ app.get("/api/me/stats", auth, async (c) => {
   const auraContract = c.env.AURA_CONTRACT;
   if (auraContract) {
     const rpcUrls = [
+      c.env.AURA_RPC_URL || 'https://mainnet.base.org',
       'https://1rpc.io/base',
       'https://base-rpc.publicnode.com',
-      c.env.AURA_RPC_URL || 'https://mainnet.base.org',
     ].filter(Boolean);
     const data = '0x70a08231' + address.slice(2).padStart(64, '0');
     for (const rpcUrl of rpcUrls) {
       try {
-        const res = await fetch(rpcUrl, {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const rpcRes = await fetch(rpcUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             jsonrpc: '2.0', id: 1, method: 'eth_call',
             params: [{ to: auraContract, data }, 'latest']
           }),
-          signal: AbortSignal.timeout(10000)
+          signal: controller.signal
         });
-        if (res.ok) {
-          const json: any = await res.json();
+        clearTimeout(timeoutId);
+        if (rpcRes.ok) {
+          const json: any = await rpcRes.json();
           if (json?.result && json.result !== '0x') {
-            // Parsear correctamente: 18 decimales de AURA
-            // BigInt(result) / 1e18 nos da el número con decimales
-            const raw = BigInt(json.result);
-            // Convertir a número legible: dividir por 10^18
-            const wholePart = raw / 10n ** 18n;
-            const decimalPart = raw % 10n ** 18n;
-            const decimalStr = String(decimalPart).padStart(18, '0').slice(0, 4);
-            aura = Number(wholePart) + Number('0.' + decimalStr);
-            auraBalance = aura.toFixed(4);
-            // Guardar en D1 el balance on-chain
+            // División correcta: BigInt / 10^16 / 100 = BigInt / 10^18
+            aura = Number(BigInt(json.result) / 10n ** 16n / 100n);
+            auraBalance = String(aura);
+            // Guardar en D1 el balance on-chain cachead0
             await c.env.DB.prepare(
               "INSERT OR REPLACE INTO user_stats (address, aura_balance, updated_at, points_received, likes_received, dharma_total, level, karma_debt) VALUES (?, ?, ?, COALESCE((SELECT points_received FROM user_stats WHERE address = ?), 0), COALESCE((SELECT likes_received FROM user_stats WHERE address = ?), 0), COALESCE((SELECT dharma_total FROM user_stats WHERE address = ?), 0), COALESCE((SELECT level FROM user_stats WHERE address = ?), 1), 0)"
             ).bind(address, aura, Math.floor(Date.now() / 1000), address, address, address, address).run();
             break;
           }
         }
-      } catch (_) {}
+      } catch (_) { /* intentar siguiente RPC */ }
     }
-    // Si no se pudo consultar RPC, intentar usar caché de D1
+    // Fallback a caché persistente si RPC falló
     if (aura === 0) {
-      const cachedRow: any = await c.env.DB.prepare(
-        "SELECT aura_balance FROM user_stats WHERE address = ? AND aura_balance > 0"
-      ).bind(address).first();
-      if (cachedRow && Number(cachedRow.aura_balance) > 0) {
-        aura = Number(cachedRow.aura_balance);
-        auraBalance = String(aura);
-      }
+      try {
+        const cachedRow: any = await c.env.DB.prepare(
+          "SELECT aura_balance FROM user_stats WHERE address = ? AND aura_balance > 0"
+        ).bind(address).first();
+        if (cachedRow && Number(cachedRow.aura_balance) > 0) {
+          aura = Number(cachedRow.aura_balance);
+          auraBalance = String(aura);
+        }
+      } catch (_) {}
     }
   }
 
