@@ -19,4 +19,7 @@ docs/~$*.pptx
 .wrangler/
 .dev.vars
 
-echo .dev.vars >> .gitignore
+# Environment / secrets
+.env
+.env.*
+.dev.vars
