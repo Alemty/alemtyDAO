@@ -525,7 +525,7 @@ export function buildProfileModal() {
           <div class="profile-fixed">
             <div class="pf-balances" id="pfBalances">
               <div class="token token-dharma"><span class="lbl">Dharma</span><span class="val" id="pfDharma">—</span></div>
-              <div class="token token-aura" title="Aura generado por interacciones (likes/points). Reclama el saldo pendiente en la pestaña DEX para mintear on-chain."><span class="lbl">Aura</span><span class="val" id="pfAura">—</span></div>
+              <div class="token token-aura" title="AURA on-chain — balance real en el contrato ERC-20 en Base Mainnet. Se incrementa cuando reclamas rewards en la pestaña DEX."><span class="lbl">AURA on-chain</span><span class="val" id="pfAura">—</span></div>
               <div class="token token-karma" id="pfKarmaToken"><span class="lbl">Karma</span><span class="val" id="pfKarmaVal">—</span></div>
               <div class="token token-alem"><span class="lbl">$ALEM</span><span class="val" id="pfAlem">—</span></div>
               <div class="token token-vealem"><span class="lbl">veALEM</span><span class="val" id="pfVeAlem">—</span></div>
@@ -882,29 +882,29 @@ function renderDexTab(modal) {
   const auraReclamable = s?.tokenomics?.auraReclamable ?? 0;
   const auraBalance = s?.tokenomics?.auraBalance ?? '0';
 
-  // Rewards simulados (TODO: conectar a datos reales on-chain cuando existan)
+  // Rewards: AURA on-chain + pendiente de reclamar + futuros ($ALEM, bribes, fees)
   const rewards = {
-    aura: { label: '🔵 AURA por reclamar', value: String(auraReclamable), tooltip: 'AURA acumulado por interacciones (likes/points) pendiente de mintear on-chain' },
-    alem: { label: '🟡 $ALEM', value: '0', tooltip: 'Rewards de pool LP AURA/ALEM' },
-    bribes: { label: '💎 Bribes', value: '0', tooltip: 'Incentivos de voto en gauge' },
-    fees: { label: '💧 Fees LP', value: '0', tooltip: 'Comisiones acumuladas por proveer liquidez' },
+    aura: { label: '🔵 AURA por reclamar', value: String(auraReclamable), tooltip: 'AURA acumulado por interacciones (likes/points + farm) pendiente de recibir on-chain desde la wallet distribuidora' },
+    alem: { label: '🟡 $ALEM', value: '0', tooltip: 'Rewards de pool LP AURA/ALEM (próximamente)' },
+    bribes: { label: '💎 Bribes', value: '0', tooltip: 'Incentivos de voto en gauge (próximamente)' },
+    fees: { label: '💧 Fees LP', value: '0', tooltip: 'Comisiones acumuladas por proveer liquidez (próximamente)' },
   };
 
   const totalRewards = Object.values(rewards).reduce((sum, r) => sum + Number(r.value), 0);
 
   c.innerHTML = `
     <div class="pf-box">
-      <div class="h2">DEX · Recompensas</div>
-      <p class="small muted">Tus recompensas acumuladas. Reclama todo en una sola transacción cuando quieras.</p>
+      <div class="h2">DEX · Tokenomics</div>
+      <p class="small muted">AURA on-chain vs pendiente de reclamar. El AURA se transfiere desde la wallet distribuidora del ecosistema.</p>
 
       <div class="pf-rewards-summary">
         <div class="pf-stat-card">
-          <div class="small muted">Total recompensas</div>
-          <div class="h1" style="font-size:22px;margin:4px 0;">${totalRewards}</div>
+          <div class="small muted">AURA en tu wallet (on-chain)</div>
+          <div class="h1" style="font-size:22px;margin:4px 0;color:#6EC8FF;">${auraBalance}</div>
         </div>
         <div class="pf-stat-card">
-          <div class="small muted">AURA on-chain</div>
-          <div class="h1" style="font-size:22px;margin:4px 0;">${auraBalance}</div>
+          <div class="small muted">AURA por reclamar (off-chain)</div>
+          <div class="h1" style="font-size:22px;margin:4px 0;color:#a855f7;">${String(auraReclamable)}</div>
         </div>
       </div>
 
@@ -916,6 +916,11 @@ function renderDexTab(modal) {
           </div>
         `).join('')}
       </div>
+
+      <p class="small muted" style="margin-top:8px;font-size:10px;text-align:center;">
+        🔄 <strong>Flujo:</strong> Interacciones → AURA off-chain (${String(auraReclamable)}) 
+        → Reclaim → Wallet distribuidora te transfiere AURA → AURA on-chain (${auraBalance})
+      </p>
 
       <button class="tab-btn" id="claimRewardsBtn" style="width:100%;margin-top:8px;padding:10px;font-weight:700;background:var(--accent,#00ffd5);color:#000;border:none;border-radius:8px;cursor:pointer;" ${totalRewards === 0 ? 'disabled' : ''}>
         ${totalRewards === 0 ? '✨ No hay recompensas pendientes' : '⚡ Reclaim Rewards (todo)'}

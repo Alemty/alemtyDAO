@@ -279,7 +279,42 @@ html.light .token-vealem {
   background: linear-gradient(135deg, rgba(255,159,67,.10), rgba(255,159,67,.02));
 }
 
-.hint.vealem { margin-top: 6px; color: #B084FF; }
+/* Token morado "Por Reclamar" (6to token, como los otros 5) */
+.token-aura-reclaim {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 10px 6px;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 11px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  color: #a855f7;
+  background: linear-gradient(135deg, rgba(168,85,247,.15), rgba(168,85,247,.04));
+  border: 1px solid rgba(168,85,247,.25);
+  box-shadow: 0 0 12px rgba(168,85,247,.06);
+}
+html.light .token-aura-reclaim {
+  background: linear-gradient(135deg, rgba(168,85,247,.10), rgba(168,85,247,.02));
+}
+.token-aura-reclaim .lbl {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  opacity: .7;
+  font-weight: 600;
+}
+.token-aura-reclaim .val {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  color: #a855f7;
+  font-weight: 900;
+}
 
 /* ===== Mobile: scroll horizontal en profile-fixed ===== */
 @media (max-width: 480px) {
