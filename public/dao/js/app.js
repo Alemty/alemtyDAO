@@ -1317,8 +1317,11 @@ if (prof) {
   closeModal('daoModal');
 
   // Abrir modal de perfil compartido con la dirección clickeada
+  // Si es otro usuario (no el propio), abrir directo en DM
   if (window.openProfileModal) {
-    window.openProfileModal(addr);
+    const myAddr = (window.__connectedDid || '').toLowerCase();
+    const targetTab = (addr && addr.toLowerCase() !== myAddr) ? 'dm' : undefined;
+    window.openProfileModal(addr, targetTab);
   } else {
     // Fallback: mostrar dirección completa inline
     document.getElementById('daoModalTitle').textContent = 'Perfil';
@@ -4484,3 +4487,16 @@ document.addEventListener('click', async (e) => {
     }
   });
 })();
+
+// ✅ Abrir post desde hash (#post-{id}) — permite navegar desde otros subdominios
+function openPostFromHash() {
+  const m = location.hash.match(/^#post-(\d+)$/);
+  if (m) {
+    location.hash = '';
+    setTimeout(() => window.openPostModal?.(m[1]), 100);
+  }
+}
+window.addEventListener('load', openPostFromHash);
+window.addEventListener('hashchange', openPostFromHash);
+// También ejecutar ahora en caso de que el hash ya esté en la URL
+openPostFromHash();

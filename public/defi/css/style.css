@@ -1,28 +1,13 @@
 /* ==========================================================
-   defi.alemty.eth — Estilos del subdominio DeFi
-   Scoped a .defi-root
+   defi.alemty.eth — TRADING TERMINAL
    ========================================================== */
 
-/* ---------- TOKENS ---------- */
 .defi-root {
-  --defi-emerald: #00ffd5;
-  --defi-azure: #00a3ff;
-  --defi-fs-h1: clamp(1.6rem, 3.2vw, 2.2rem);
-  --defi-fs-title: clamp(13px, 1.05vw, 15px);
-  --defi-fs-meta: clamp(11px, 0.95vw, 12.5px);
-  --defi-fs-tag: 11px;
-  --defi-fs-btn: 12px;
-  --defi-fs-chart: clamp(12.5px, 1.05vw, 14px);
-  --defi-gap: 10px;
-}
-
-html.light .defi-root {
-  --defi-emerald: #0db9a6;
-  --defi-azure: #0aa0ff;
-}
-
-/* ---------- FONDO VIVO ---------- */
-.defi-root {
+  --defi-blue: #3b82f6;
+  --defi-green: #22c55e;
+  --defi-indigo: #6366f1;
+  --defi-purple: #a855f7;
+  --defi-pink: #ec4899;
   background: var(--bg);
   min-height: 100vh;
   position: relative;
@@ -30,34 +15,66 @@ html.light .defi-root {
 
 .defi-bg {
   position: fixed;
-  inset: 0;
-  z-index: 0;
+  inset: 0; z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(680px 420px at 18% 0%, rgba(0,255,213,.16), transparent 62%),
-    radial-gradient(540px 320px at 82% 18%, rgba(0,163,255,.13), transparent 60%),
+    radial-gradient(800px 500px at 20% 10%, rgba(59,130,246,.12), transparent 60%),
+    radial-gradient(700px 400px at 80% 20%, rgba(168,85,247,.10), transparent 55%),
+    radial-gradient(600px 400px at 50% 80%, rgba(34,197,94,.08), transparent 50%),
     var(--bg);
 }
-
-/* Light */
 html.light .defi-bg {
   background:
-    radial-gradient(820px 500px at 18% -10%, rgba(0,255,213,.28), transparent 60%),
-    radial-gradient(720px 420px at 85% 15%, rgba(0,149,255,.22), transparent 62%),
-    radial-gradient(900px 500px at 50% 110%, rgba(255,255,255,.60), transparent 70%),
+    radial-gradient(800px 500px at 20% 10%, rgba(59,130,246,.18), transparent 60%),
+    radial-gradient(700px 400px at 80% 20%, rgba(168,85,247,.14), transparent 55%),
+    radial-gradient(600px 400px at 50% 80%, rgba(34,197,94,.10), transparent 50%),
     var(--bg);
 }
 
-/* ---------- CONTAINER ---------- */
 .defi-root .container {
   background: transparent !important;
-  position: relative;
-  z-index: 1;
+  position: relative; z-index: 1;
   padding-top: var(--topbar-h);
   padding-bottom: calc(78px + var(--web3-disc-h, 22px));
 }
 
-/* ---------- CARD SYSTEM (DAO-style) ---------- */
+/* ---------- BRAND ---------- */
+.defi-root .h1.defi-brand {
+  font-weight: 1000;
+  letter-spacing: -0.02em;
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin: 0;
+}
+.defi-root .defi-brand-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 0 0 14px;
+}
+.defi-root .h1.defi-brand .defi-brand-em {
+  color: var(--primary);
+  text-shadow: 0 0 18px rgba(0,255,213,.18);
+}
+html.light .defi-root .h1.defi-brand .defi-brand-em { color: var(--primary); text-shadow: none; }
+.defi-root .h1.defi-brand .defi-brand-base { color: var(--text); }
+
+.defi-brand-tag {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .1em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(59,130,246,.25);
+  background: rgba(59,130,246,.08);
+  color: var(--defi-blue);
+  text-transform: uppercase;
+}
+
+/* ---------- CARD BASE ---------- */
 .defi-root .card {
   background: var(--ui-surface) !important;
   border: 1px solid var(--ui-border) !important;
@@ -68,7 +85,6 @@ html.light .defi-bg {
   overflow: hidden;
   box-shadow: inset 0 0 0 1px var(--ui-inset);
 }
-
 .defi-root .card::after {
   content: "";
   position: absolute;
@@ -77,119 +93,18 @@ html.light .defi-bg {
   border-radius: inherit;
   background: radial-gradient(420px 220px at 15% 0%, var(--glow-a), transparent 65%),
               radial-gradient(420px 220px at 85% 100%, var(--glow-b), transparent 70%);
-  opacity: .22;
+  opacity: .18;
   filter: blur(14px);
 }
-
 .defi-root .card > * { position: relative; z-index: 1; }
-
 html.light .defi-root .card {
   background: rgba(255,255,255,.55) !important;
-  border: 1px solid rgba(13, 185, 166, .15) !important;
+  border: 1px solid rgba(13,185,166,.15) !important;
   box-shadow: 0 12px 32px rgba(0,0,0,.06), 0 0 0 1px rgba(255,255,255,.72) inset !important;
 }
 
-html.light .defi-root .card::after {
-  background: radial-gradient(420px 220px at 15% 0%, rgba(13,185,166,.10), transparent 65%),
-              radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.10), transparent 70%);
-  opacity: .55;
-  filter: blur(14px);
-}
-
-/* ---------- MODAL (DAO-style) ---------- */
-.defi-root .modal-card {
-  max-height: calc(100vh - var(--app-topbar-h, var(--topbar-h)) - 28px);
-  background: var(--ui-surface);
-  border: 1px solid var(--ui-border);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(0,255,213,.18) inset;
-}
-
-html.light .defi-root .modal-card {
-  background: rgba(255,255,255,1);
-  border: 1px solid rgba(13, 185, 166, .15);
-  box-shadow: 0 24px 60px rgba(0,0,0,.10), 0 0 0 1px rgba(255,255,255,.72) inset;
-}
-
-html.light .defi-root .modal-card::after {
-  background: radial-gradient(420px 220px at 15% 0%, rgba(13,185,166,.22), transparent 60%),
-              radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.18), transparent 65%);
-  opacity: .85;
-  filter: blur(14px);
-}
-
-/* Sub-cards en DEFI light */
-html.light .defi-root .chart-card,
-html.light .defi-root .mini {
-  background: rgba(255,255,255,.22) !important;
-  border: 1px solid rgba(13,185,166,.12) !important;
-  box-shadow: 0 6px 18px rgba(0,0,0,.04), 0 0 0 1px rgba(255,255,255,.5) inset !important;
-}
-
-/* ---------- TIPOGRAFÍA ---------- */
-.defi-root .h1 { font-size: var(--defi-fs-h1); letter-spacing: -0.02em; }
-.defi-root .muted { opacity: .75; }
-.defi-root .small.muted { opacity: .82; }
-
-.defi-root .h1.defi-brand { font-weight: 1000; letter-spacing: -0.02em; display: inline-flex; align-items: baseline; flex-wrap: wrap; }
-.defi-root .h1.defi-brand .defi-brand-em { color: var(--defi-emerald); text-shadow: 0 0 18px rgba(0,255,213,.18); }
-html.light .defi-root .h1.defi-brand .defi-brand-em { text-shadow: none; }
-.defi-root .h1.defi-brand .defi-brand-base { color: var(--text); text-shadow: none; }
-
-.defi-root .t { font-weight: 950; font-size: var(--defi-fs-chart); line-height: 1.15; letter-spacing: -0.01em; overflow-wrap: anywhere; }
-
-/* ---------- BOTONES ---------- */
-.defi-root .btn {
-  border-radius: 999px;
-  border: 1px solid rgba(0,255,213,.35);
-  padding: 8px 10px;
-  background: rgba(0,255,213,.08);
-  font-weight: 950;
-  cursor: pointer;
-}
-.defi-root .btn:hover { background: rgba(0,255,213,.12); border-color: rgba(0,255,213,.55); }
-.defi-root .btn.primary { border: 0; color: #061018; background: linear-gradient(135deg, var(--defi-emerald), var(--defi-azure)); }
-html.light .defi-root .btn { color: rgba(14,26,24,.92); background: rgba(13,185,166,.14); border-color: rgba(13,185,166,.40); }
-html.light .defi-root .btn.primary { color: #fff; background: linear-gradient(135deg, #0db9a6, #0aa0ff); }
-
-/* ---------- LAYOUT ---------- */
-.defi-row4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--defi-gap); }
-.defi-row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--defi-gap); }
-.defi-charts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--defi-gap); grid-auto-flow: row dense; }
-
-.defi-mini { padding: 10px 12px; min-height: 124px; display: flex; flex-direction: column; gap: 10px; justify-content: space-between; }
-.mini-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.mini-title { font-weight: 1000; font-size: var(--defi-fs-title); line-height: 1.12; letter-spacing: -0.01em; overflow-wrap: anywhere; }
-.mini-meta { margin-top: 4px; font-size: var(--defi-fs-meta); line-height: 1.22; opacity: .75; }
-.mini-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.mini-tag { border-radius: 999px; border: 1px solid rgba(0,255,213,.15); padding: 5px 9px; font-size: var(--defi-fs-tag); font-weight: 900; }
-.mini-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.mini-actions .btn { width: 100%; font-size: var(--defi-fs-btn); padding: 8px 10px; }
-
-.chart-card { padding: 10px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; min-width: 0; grid-column: span 1; min-height: 0; }
-.chart-pie { grid-column: span 2; min-height: 220px; }
-.chart-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.chart-card canvas:not(#chartPie) { width: 100%; max-width: 100%; height: auto; aspect-ratio: 360 / 160; min-height: 128px; flex: 1 1 auto; }
-
-.pie-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: center; min-width: 0; flex: 1 1 auto; min-height: 0; }
-#chartPie { justify-self: center; align-self: center; width: 220px; max-width: 100%; height: auto; }
-
-@media (min-width: 901px) { #mintPieWrap.chart-pie { grid-column: span 1; max-width: 520px; } }
-@media (max-width: 820px) { .pie-grid { grid-template-columns: 1fr; } }
-
-.pie-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.pie-pct { font-weight: 950; font-size: 12px; opacity: .95; flex: 0 0 auto; }
-.pie-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.swatch { width: 12px; height: 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.20); flex: 0 0 auto; }
-
-.modal-chart { border-radius: 18px; padding: 12px; margin-top: 10px; border: 1px solid rgba(0,255,213,.15); }
-
-.defi-root .icon-btn.mini { width: 34px; height: 34px; border-radius: 12px; }
-
-/* ===== TRADING CHARTS (Binance-style) ===== */
+/* ===== TRADING CHART SECTION ===== */
 .trading-section {
-  margin-bottom: 18px;
   background: var(--ui-surface);
   border: 1px solid var(--ui-border);
   border-radius: var(--radius-card);
@@ -199,28 +114,27 @@ html.light .defi-root .btn.primary { color: #fff; background: linear-gradient(13
   position: relative;
   box-shadow: inset 0 0 0 1px var(--ui-inset);
 }
-
 .trading-section::after {
   content: "";
   position: absolute;
   inset: -2px;
   pointer-events: none;
   border-radius: inherit;
-  background: radial-gradient(620px 300px at 15% 10%, rgba(0,255,213,.20), transparent 55%),
-              radial-gradient(520px 260px at 85% 90%, rgba(0,163,255,.16), transparent 60%);
+  background: radial-gradient(620px 300px at 15% 10%, rgba(59,130,246,.15), transparent 55%),
+              radial-gradient(520px 260px at 85% 90%, rgba(168,85,247,.12), transparent 60%);
   opacity: .65;
   filter: blur(16px);
 }
-
 .trading-section > * { position: relative; z-index: 1; }
 
+/* Pair tabs */
 .trading-tabs {
   display: flex;
   gap: 2px;
   padding: 10px 14px 0;
   border-bottom: 1px solid color-mix(in oklab, var(--ui-border), transparent 40%);
+  flex-wrap: wrap;
 }
-
 .trading-tab {
   padding: 8px 18px;
   border: 0;
@@ -234,46 +148,69 @@ html.light .defi-root .btn.primary { color: #fff; background: linear-gradient(13
   transition: color .15s, background .15s;
   position: relative;
 }
-
-.trading-tab:hover {
-  color: var(--text);
-  background: color-mix(in oklab, var(--ui-surface), transparent 30%);
-}
-
-.trading-tab.active {
-  color: var(--primary);
-  background: color-mix(in oklab, var(--ui-surface), transparent 10%);
-}
-
+.trading-tab:hover { color: var(--text); background: color-mix(in oklab, var(--ui-surface), transparent 30%); }
+.trading-tab.active { color: var(--primary); background: color-mix(in oklab, var(--ui-surface), transparent 10%); }
 .trading-tab.active::after {
   content: "";
   position: absolute;
-  bottom: 0;
-  left: 10%;
-  right: 10%;
+  bottom: 0; left: 10%; right: 10%;
   height: 2px;
   background: var(--primary);
   border-radius: 2px 2px 0 0;
 }
+html.light .trading-tab.active { color: #0db9a6; }
 
-html.light .trading-tab.active {
-  color: #0db9a6;
+.live-dot {
+  color: #22c55e;
+  font-size: 8px;
+  margin-left: 4px;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .3; }
 }
 
+/* Timeframe bar */
+.tf-bar {
+  display: flex;
+  gap: 2px;
+  padding: 6px 14px;
+  border-bottom: 1px solid color-mix(in oklab, var(--ui-border), transparent 50%);
+}
+.tf-btn {
+  padding: 4px 12px;
+  border: 0;
+  background: transparent;
+  color: color-mix(in oklab, var(--text), transparent 40%);
+  font-family: var(--font-alt), var(--font);
+  font-weight: 800;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color .15s, background .15s;
+}
+.tf-btn:hover { color: var(--text); background: rgba(255,255,255,.05); }
+.tf-btn.active {
+  color: #fff;
+  background: rgba(59,130,246,.25);
+  border: 1px solid rgba(59,130,246,.35);
+}
+html.light .tf-btn.active { color: #1e40af; background: rgba(59,130,246,.12); border-color: rgba(59,130,246,.25); }
+
+/* Chart canvas area */
 .trading-chart-wrap {
   position: relative;
   padding: 8px 14px 4px;
-  min-height: 260px;
+  min-height: 240px;
 }
-
 #tradingChart {
   width: 100%;
   height: auto;
-  aspect-ratio: 1100 / 380;
+  aspect-ratio: 1100 / 360;
   display: block;
   border-radius: 8px;
 }
-
 .trading-overlay {
   position: absolute;
   top: 16px;
@@ -283,7 +220,6 @@ html.light .trading-tab.active {
   flex-direction: column;
   gap: 4px;
 }
-
 .trading-price {
   font-size: 28px;
   font-weight: 1000;
@@ -292,34 +228,30 @@ html.light .trading-tab.active {
   text-shadow: 0 2px 20px rgba(0,0,0,.35);
   font-variant-numeric: tabular-nums;
 }
-
-.trading-price.up { color: #00ff88; }
-.trading-price.down { color: #ff3b5c; }
-
+.trading-price.up { color: #22c55e; }
+.trading-price.down { color: #ef4444; }
 .trading-change {
   font-size: 14px;
   font-weight: 800;
   opacity: .85;
   letter-spacing: -0.2px;
 }
+.trading-change.up { color: #22c55e; }
+.trading-change.down { color: #ef4444; }
 
-.trading-change.up { color: #00ff88; }
-.trading-change.down { color: #ff3b5c; }
-
+/* Stats row */
 .trading-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 0;
   border-top: 1px solid color-mix(in oklab, var(--ui-border), transparent 40%);
   padding: 10px 14px;
 }
-
 .trading-stat {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
-
 .ts-label {
   font-size: 10px;
   font-weight: 700;
@@ -327,7 +259,7 @@ html.light .trading-tab.active {
   letter-spacing: .08em;
   opacity: .55;
 }
-
+html.light .ts-label { opacity: .7; color: #475569; }
 .ts-val {
   font-size: 13px;
   font-weight: 900;
@@ -337,45 +269,197 @@ html.light .trading-tab.active {
 html.light .trading-section {
   background: rgba(255,255,255,.55);
   border: 1px solid rgba(13,185,166,.15);
-  box-shadow: 0 12px 32px rgba(0,0,0,.06), 0 0 0 1px rgba(255,255,255,.72) inset;
+}
+html.light .trading-price {
+  text-shadow: 0 1px 6px rgba(255,255,255,.9), 0 2px 20px rgba(255,255,255,.7);
+}
+html.light .trading-price.up { color: #059669; }
+html.light .trading-price.down { color: #dc2626; }
+html.light .trading-change.up { color: #059669; }
+html.light .trading-change.down { color: #dc2626; }
+html.light .ts-val { color: #1e293b; }
+
+/* ===== BOTTOM ROW: 3 panels ===== */
+.defi-bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
 }
 
-html.light .trading-tab.active {
-  color: #0db9a6;
+.defi-panel {
+  padding: 14px;
 }
 
-html.light .trading-price { text-shadow: 0 2px 12px rgba(0,0,0,.08); }
+.defi-panel-title {
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  opacity: .85;
+  margin-bottom: 10px;
+}
 
-/* Trading responsive */
+/* ----- Swap panel ----- */
+.defi-trade-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.defi-trade-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  opacity: .7;
+  min-width: 18px;
+}
+.defi-trade-select {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  color: inherit;
+  font-weight: 900;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.defi-trade-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.04);
+  color: inherit;
+  font-size: 14px;
+  font-weight: 900;
+}
+.defi-trade-input:disabled { opacity: .6; }
+.defi-trade-mid { display: flex; justify-content: center; padding: 4px 0; }
+.defi-trade-flip {
+  width: 36px; height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  cursor: pointer;
+  font-size: 16px;
+  transition: background .15s;
+}
+.defi-trade-flip:hover { background: rgba(255,255,255,.1); }
+.defi-trade-rate {
+  text-align: center;
+  font-size: 11px;
+  opacity: .6;
+  margin: 4px 0;
+  min-height: 16px;
+}
+.defi-trade-status {
+  margin-top: 6px;
+  font-size: 11px;
+  min-height: 16px;
+  opacity: .8;
+  text-align: center;
+}
+
+.defi-panel-btn {
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  border-radius: 12px;
+  border: 0;
+  font-weight: 950;
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.defi-panel-btn:hover { opacity: .85; }
+.defi-panel-btn.primary {
+  background: linear-gradient(135deg, var(--defi-blue), var(--defi-purple));
+  color: #fff;
+}
+
+/* ----- Controls panel ----- */
+.defi-control-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.defi-control { display: flex; flex-direction: column; gap: 5px; }
+.defi-control-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; opacity: .8; }
+.defi-control-row { display: flex; gap: 6px; }
+.defi-control-input {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.04);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  min-width: 0;
+}
+.defi-control-input:focus { outline: none; border-color: var(--defi-blue); }
+.defi-control-btn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 0;
+  font-weight: 900;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity .15s;
+}
+.defi-control-btn:hover { opacity: .8; }
+.defi-control-btn.danger { background: rgba(239,68,68,.2); color: #ef4444; border: 1px solid rgba(239,68,68,.3); }
+.defi-control-btn.success { background: rgba(34,197,94,.2); color: #22c55e; border: 1px solid rgba(34,197,94,.3); }
+.defi-control-btn.primary { background: linear-gradient(135deg, #00ffd5, #00a3ff); color: #061018; }
+.defi-control-status { font-size: 10px; min-height: 15px; opacity: .75; }
+
+/* ----- Oracles panel ----- */
+.defi-oracles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.defi-oracle {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in oklab, var(--border), transparent 30%);
+  font-size: 11px;
+  font-weight: 800;
+}
+.defi-oracle-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.defi-oracle-status { font-size: 12px; }
+.defi-oracle-status.online { color: #22c55e; }
+.defi-oracle-status.pending { color: #f59e0b; }
+.defi-oracle-data { text-align: right; opacity: .7; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.defi-oracles-foot { margin-top: 6px; text-align: center; opacity: .6; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .defi-bottom-row { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 820px) {
-  .trading-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .trading-stats { grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .trading-price { font-size: 22px; }
 }
 
 @media (max-width: 520px) {
   .trading-tabs { padding: 8px 10px 0; gap: 0; }
   .trading-tab { padding: 6px 12px; font-size: 11px; }
+  .tf-bar { padding: 4px 10px; }
+  .tf-btn { padding: 3px 8px; font-size: 10px; }
   .trading-chart-wrap { padding: 4px 10px 2px; min-height: 180px; }
-  #tradingChart { aspect-ratio: 1100 / 340; }
+  #tradingChart { aspect-ratio: 1100 / 300; }
   .trading-price { font-size: 18px; }
   .trading-change { font-size: 12px; }
-  .trading-stats { padding: 8px 10px; }
-  .trading-stat { gap: 1px; }
+  .trading-stats { grid-template-columns: repeat(2, 1fr); padding: 8px 10px; }
   .ts-val { font-size: 12px; }
-}
-
-@media (max-width: 900px) {
-  .defi-row4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .defi-row2 { grid-template-columns: 1fr; }
-  .defi-charts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
-@media (max-width: 820px) {
-  .defi-charts { grid-template-columns: 1fr; }
-  .chart-pie { grid-column: span 1; }
-}
-
-@media (max-width: 520px) {
-  .defi-row4, .defi-row2, .defi-charts { grid-template-columns: 1fr; }
-  .mini-actions { grid-template-columns: 1fr; }
+  .defi-bottom-row { grid-template-columns: 1fr; }
+  .defi-oracle { grid-template-columns: 1fr; text-align: center; }
 }
