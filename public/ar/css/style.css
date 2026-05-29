@@ -1,6 +1,6 @@
 /* ==========================================================
    ar.alemty.eth — Estilos del subdominio AR
-   Scoped al body (sin clase raíz específica)
+   Fase 6: Mapamundi OVRLands interactivo
    ========================================================== */
 
 /* Fondo glow */
@@ -65,8 +65,244 @@ html.light .card {
   box-shadow: 0 12px 32px rgba(0,0,0,.06), 0 0 0 1px rgba(255,255,255,.72) inset !important;
 }
 
-/* ===== Modal offset ===== */
+/* ===== MODAL ===== */
 .modal-card { margin-top: calc(var(--topbar-h) + 16px); }
 
-/* ===== Brand ===== */
+/* ===== BRAND ===== */
 .h1 { font-weight: 1000; letter-spacing: -0.02em; }
+
+/* ===== MAPA ===== */
+.ar-map-card {
+  padding: 0 !important;
+  overflow: hidden;
+  min-height: 420px;
+}
+
+.ar-map-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ui-border);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ar-map-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ar-map-title .badge {
+  background: var(--accent);
+  color: #000;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.ar-map-filters {
+  display: flex;
+  gap: 6px;
+}
+
+.ar-map-filters .btn.active {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+.ar-map-container {
+  width: 100%;
+  height: 480px;
+  min-height: 360px;
+  position: relative;
+  z-index: 1;
+}
+
+.ar-map-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-top: 1px solid var(--ui-border);
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* ===== Leaflet overrides ===== */
+.leaflet-container {
+  font-family: "Inter", system-ui, sans-serif !important;
+  background: #1a1a2e !important;
+}
+
+html.light .leaflet-container {
+  background: #e8f0f0 !important;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  background: var(--ui-surface) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  border: 1px solid var(--ui-border) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,.3) !important;
+  color: var(--fg) !important;
+}
+
+.leaflet-popup-tip {
+  background: var(--ui-surface) !important;
+  border: 1px solid var(--ui-border) !important;
+}
+
+.leaflet-popup-close-button {
+  color: var(--fg) !important;
+  font-size: 18px !important;
+  top: 6px !important;
+  right: 6px !important;
+}
+
+.leaflet-control-zoom a {
+  background: var(--ui-surface) !important;
+  color: var(--fg) !important;
+  border: 1px solid var(--ui-border) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: rgba(0,255,213,.1) !important;
+}
+
+.leaflet-control-layers {
+  background: var(--ui-surface) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 8px !important;
+  color: var(--fg) !important;
+}
+
+.leaflet-control-layers-toggle {
+  background-color: var(--ui-surface) !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 4px;
+}
+
+.leaflet-control-attribution {
+  background: transparent !important;
+  color: rgba(255,255,255,.3) !important;
+}
+
+html.light .leaflet-control-attribution {
+  color: rgba(0,0,0,.3) !important;
+}
+
+.leaflet-control-attribution a {
+  color: rgba(255,255,255,.4) !important;
+}
+
+html.light .leaflet-control-attribution a {
+  color: rgba(0,0,0,.4) !important;
+}
+
+/* ===== Tooltip ===== */
+.ovr-tooltip {
+  background: var(--ui-surface) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  border: 1px solid var(--accent) !important;
+  border-radius: 8px !important;
+  color: var(--fg) !important;
+  font-size: 12px !important;
+  padding: 4px 10px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,.3) !important;
+}
+
+.ovr-tooltip::before {
+  border-top-color: var(--accent) !important;
+}
+
+/* ===== Popup interno ===== */
+.ovr-popup {
+  min-width: 220px;
+}
+
+.ovr-popup-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ui-border);
+  margin-bottom: 8px;
+}
+
+.ovr-popup-icon {
+  font-size: 24px;
+}
+
+.ovr-popup-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ovr-popup-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ovr-popup-row .k {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.ovr-popup-row .v {
+  font-size: 12px;
+}
+
+.ovr-popup-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.ovr-popup-actions .btn {
+  flex: 1;
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+/* ===== Pulso animado en markers ===== */
+.ovr-pulse {
+  animation: ovrPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes ovrPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* ===== Status bar DID ===== */
+#arDidStatus.connected {
+  color: var(--accent);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+  .ar-map-container {
+    height: 340px;
+    min-height: 280px;
+  }
+
+  .ar-map-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ar-map-filters {
+    width: 100%;
+  }
+
+  .ar-map-filters .btn {
+    flex: 1;
+  }
+}

@@ -1,10 +1,9 @@
-
 <!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=0.7, maximum-scale=1, user-scalable=yes">
-  <title>ar.alemty.eth · AR</title>
+  <title>ar.alemty.eth · AR · Mapamundi OVR</title>
 
   <!-- CSS GLOBAL -->
   <link rel="stylesheet" href="/settings/theme.css">
@@ -32,51 +31,85 @@
 
     <!-- HEADER -->
     <section class="card">
-      <div class="h1">AR · alemty.eth</div>
+      <div class="h1">🕶️ AR · alemty.eth</div>
       <p class="muted">
-        Módulo de Realidad Aumentada.
-        Identidad, símbolos y capas espaciales.
+        <strong>Fase 6</strong> — Mapamundi OVR · 198 Lands geolocalizados en Monterrey, NL.
+        <br>Realidad Aumentada + Identidad ENS + Agentes IA.
       </p>
     </section>
 
-    <!-- FEATURES -->
-    <section class="grid" style="margin-top:16px;">
-      <div class="col-6">
-        <div class="card clickable" data-open="spaces">
-          <div class="h2">Espacios</div>
-          <p class="small muted">
-            Anclaje de identidades, símbolos y objetos AR en ubicaciones reales.
-          </p>
-          <button class="btn">Explorar espacios</button>
-        </div>
-      </div>
-
-      <div class="col-6">
-        <div class="card clickable" data-open="layers">
-          <div class="h2">Capas</div>
-          <p class="small muted">
-            Capas narrativas, rituales o informativas sobre el entorno.
-          </p>
-          <button class="btn">Ver capas</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- STATUS -->
+    <!-- MAPA MUNDI -->
     <section class="grid" style="margin-top:16px;">
       <div class="col-12">
-        <div class="card clickable" data-open="status">
-          <div class="h2">Estado del módulo</div>
-          <p class="small muted">
-            El módulo AR se encuentra en fase conceptual.
-            Integrará ENS, agentes IA y coordenadas espaciales.
-          </p>
+        <div class="card ar-map-card">
+          <div class="ar-map-head">
+            <div class="ar-map-title">
+              <span class="h3">🗺️ OVRLands</span>
+              <span class="badge" id="landCountBadge">198</span>
+            </div>
+            <div class="ar-map-filters">
+              <button class="btn btn-sm active" data-filter="all">Todos</button>
+              <button class="btn btn-sm" data-filter="cluster">Clusters</button>
+            </div>
+          </div>
+          <div id="arMap" class="ar-map-container"></div>
+          <div class="ar-map-legend">
+            <span class="small muted">● Cada punto = 1 OVRLand (hexágono AR ~30m)</span>
+            <span class="small muted">● Colores únicos por token ID</span>
+            <a class="small" href="https://ovr.ai" target="_blank" rel="noopener">🌐 OVR Platform →</a>
+          </div>
         </div>
       </div>
     </section>
 
-    <footer class="small muted" style="margin-top:24px;">
-      Módulo AR · alemty.eth
+    <!-- FEATURES GRID -->
+    <section class="grid" style="margin-top:16px;">
+      <div class="col-4">
+        <div class="card clickable" data-open="spaces">
+          <div style="font-size:32px;text-align:center;">🌍</div>
+          <div class="h3" style="text-align:center;">Espacios</div>
+          <p class="small muted" style="text-align:center;">
+            198 OVRLands anclados al espacio físico.
+          </p>
+          <button class="btn" style="width:100%;">Explorar</button>
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="card clickable" data-open="layers">
+          <div style="font-size:32px;text-align:center;">🧅</div>
+          <div class="h3" style="text-align:center;">Capas</div>
+          <p class="small muted" style="text-align:center;">
+            Capas narrativas, IA e identidad.
+          </p>
+          <button class="btn" style="width:100%;">Ver capas</button>
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="card clickable" data-open="status">
+          <div style="font-size:32px;text-align:center;">📡</div>
+          <div class="h3" style="text-align:center;">Estado</div>
+          <p class="small muted" style="text-align:center;">
+            Fase 6 activa · Roadmap.
+          </p>
+          <button class="btn" style="width:100%;">Ver estado</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- DID STATUS BAR -->
+    <section class="grid" style="margin-top:16px;">
+      <div class="col-12">
+        <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 16px;">
+          <span>🕶️ DID:</span>
+          <span class="v code" id="arDidStatus">🔴 Desconectado</span>
+        </div>
+      </div>
+    </section>
+
+    <footer class="small muted" style="margin-top:24px;text-align:center;">
+      Módulo AR · Fase 6 · ar.alemty.eth
     </footer>
   </main>
 
