@@ -721,6 +721,36 @@ app.all("/api/*", (c) => {
 /* =========================================================
    FRONTEND SPA FALLBACK
 ========================================================= */
+
+// Middleware: detectar subdominio ar.alemty.eth
+// y servir el HTML de /ar/ cuando la raíz es solicitada.
+app.all("*", async (c, next) => {
+  const host = c.req.header("host") ?? "";
+  const url = new URL(c.req.raw.url);
+  const isArSubdomain = /^ar\./i.test(host) || /^ar\./i.test(url.hostname);
+
+  if (isArSubdomain && (url.pathname === "/" || url.pathname === "")) {
+    // Pedir el asset /ar/index.html en lugar del index raíz
+    const arReq = new Request(
+      new URL("/ar/index.html", c.req.raw.url),
+      c.req.raw
+    );
+    return c.env.ASSETS.fetch(arReq);
+  }
+
+  // Si es subdominio AR pero con otra ruta (ej /js/app.js -> /ar/js/app.js)
+  if (isArSubdomain && !url.pathname.startsWith("/ar/") && !url.pathname.startsWith("/api/") && !url.pathname.startsWith("/shared/") && !url.pathname.startsWith("/settings/")) {
+    const arReq = new Request(
+      new URL("/ar" + url.pathname, c.req.raw.url),
+      c.req.raw
+    );
+    return c.env.ASSETS.fetch(arReq);
+  }
+
+  return next();
+});
+
+// SPA fallback original
 app.all("*", async (c) => {
   return c.env.ASSETS.fetch(c.req.raw);
 });

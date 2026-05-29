@@ -15,7 +15,7 @@ const ROUTES = [
   { key: "defi",  label: "DEFI",  ico: "🧩", href: "/defi/" },
   { key: "dex",   label: "DEX",   ico: "🔁", href: "/dex/" },
   { key: "ia",    label: "IA",    ico: "🤖", href: "/ia/" },
-  { key: "ar",    label: "AR",    ico: "🕶️", href: "#" }
+  { key: "ar",    label: "AR",    ico: "🕶️", href: "/ar/" }
 ];
 
 function currentFolder() {
