@@ -1,51 +1,123 @@
-/* ==========================================================
-   ar.alemty.eth — Estilos del subdominio AR
-   Fase 6: Mapamundi OVRLands interactivo
-   ========================================================== */
+/* =========================================================
+   ar.alemty.eth — Mapamundi OVRLands interactivo
+   Scoped a #pageAR únicamente (como ia.alemty.eth)
+   ========================================================= */
 
-/* Fondo glow */
-body {
-  min-height: 100vh;
+#pageAR {
+  --ar-emerald: #00ffd5;
+  --ar-azure: #00a3ff;
+  --ar-fs-h1: clamp(1.6rem, 3.2vw, 2.2rem);
+  --ar-fs-meta: clamp(11px, 0.95vw, 12.5px);
+}
+
+html.light #pageAR {
+  --ar-emerald: #0db9a6;
+  --ar-azure: #0aa0ff;
+}
+
+#pageAR {
   background: var(--bg);
+  min-height: 100vh;
   position: relative;
 }
 
-body::before {
+#pageAR::before {
   content: "";
   position: fixed;
-  inset: -20vh;
-  z-index: -1;
+  inset: 0;
+  z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(600px 400px at 20% 0%, rgba(0,255,213,.12), transparent 60%),
-    radial-gradient(500px 300px at 80% 20%, rgba(0,163,255,.10), transparent 60%);
-  opacity: .95;
+    radial-gradient(680px 420px at 18% 0%, rgba(0,255,213,.16), transparent 62%),
+    radial-gradient(540px 320px at 82% 18%, rgba(0,163,255,.13), transparent 60%),
+    var(--bg);
 }
 
-html.light body::before {
+html.light #pageAR::before {
   background:
-    radial-gradient(820px 500px at 18% -10%, rgba(0,255,213,.22), transparent 60%),
-    radial-gradient(720px 420px at 85% 15%, rgba(0,149,255,.18), transparent 62%),
-    radial-gradient(900px 500px at 50% 110%, rgba(255,255,255,.55), transparent 70%);
-  opacity: 1;
+    radial-gradient(820px 500px at 18% -10%, rgba(0,255,213,.28), transparent 60%),
+    radial-gradient(720px 420px at 85% 15%, rgba(0,149,255,.22), transparent 62%),
+    radial-gradient(900px 500px at 50% 110%, rgba(255,255,255,.60), transparent 70%),
+    var(--bg);
 }
 
-/* Container */
-.container { padding-top: var(--topbar-h); }
+/* Glass UI en light: mismo sistema que IA/DEFI */
+html.light #pageAR .card,
+html.light #pageAR .metric-card,
+html.light #pageAR .glass-card {
+  background: rgba(255,255,255,.55) !important;
+  border: 1px solid rgba(13,185,166,.15) !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,.06), 0 0 0 1px rgba(255,255,255,.72) inset !important;
+}
 
-/* ===== Cards estilo DAO unificado ===== */
-.card {
-  background: var(--ui-surface) !important;
-  border: 1px solid var(--ui-border) !important;
+html.light #pageAR .card::after,
+html.light #pageAR .metric-card::after,
+html.light #pageAR .glass-card::after {
+  background: radial-gradient(420px 220px at 15% 0%, rgba(13,185,166,.10), transparent 65%),
+              radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.10), transparent 70%) !important;
+  opacity: .55 !important;
+  filter: blur(14px) !important;
+}
+
+/* Z-index del contenido */
+#pageAR > .container {
+  position: relative;
+  z-index: 1;
+  padding-top: var(--topbar-h);
+  padding-bottom: calc(78px + var(--web3-disc-h, 22px));
+}
+
+/* ===== BRAND: ar.alemty.eth (como ia.alemty.eth) ===== */
+#pageAR .ar-brand {
+  font-weight: 1000;
+  font-size: var(--ar-fs-h1);
+  letter-spacing: -0.02em;
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+#pageAR .ar-brand .ar-brand-em {
+  color: var(--ar-emerald);
+  text-shadow: 0 0 18px rgba(0,255,213,.18);
+}
+
+html.light #pageAR .ar-brand .ar-brand-em {
+  text-shadow: none;
+}
+
+#pageAR .ar-brand .ar-brand-base {
+  color: var(--text);
+  text-shadow: none;
+}
+
+#pageAR .ar-subtitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+
+/* ===== CARD GLOW SYSTEM (igual que IA/DEFI/DAO) ===== */
+#pageAR .card,
+#pageAR .metric-card,
+#pageAR .glass-card {
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
   border-radius: var(--radius-card);
-  box-shadow: inset 0 0 0 1px var(--ui-inset) !important;
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   position: relative;
   overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--ui-inset);
+  transition: transform 200ms ease-out, border-color 200ms ease-out;
 }
 
-.card::after {
+#pageAR .card::after,
+#pageAR .metric-card::after,
+#pageAR .glass-card::after {
   content: "";
   position: absolute;
   inset: -1px;
@@ -57,64 +129,71 @@ html.light body::before {
   filter: blur(14px);
 }
 
-.card > * { position: relative; z-index: 1; }
-
-html.light .card {
-  background: rgba(255,255,255,.55) !important;
-  border: 1px solid rgba(13, 185, 166, .15) !important;
-  box-shadow: 0 12px 32px rgba(0,0,0,.06), 0 0 0 1px rgba(255,255,255,.72) inset !important;
+#pageAR .card > *,
+#pageAR .metric-card > *,
+#pageAR .glass-card > * {
+  position: relative;
+  z-index: 1;
 }
 
-/* ===== MODAL ===== */
-.modal-card { margin-top: calc(var(--topbar-h) + 16px); }
+#pageAR .card.clickable {
+  cursor: pointer;
+}
 
-/* ===== BRAND ===== */
-.h1 { font-weight: 1000; letter-spacing: -0.02em; }
+/* ===== SECTION TITLE (como IA) ===== */
+#pageAR .section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0 12px;
+}
+
+#pageAR .section-title h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+}
+
+#pageAR .section-title .badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--ar-emerald);
+  background: rgba(0,255,213,.10);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,255,213,.15);
+}
 
 /* ===== MAPA ===== */
-.ar-map-card {
+#pageAR .ar-map-card {
   padding: 0 !important;
   overflow: hidden;
   min-height: 420px;
 }
 
-.ar-map-head {
+#pageAR .ar-map-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
+  justify-content: flex-end;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--ui-border);
-  flex-wrap: wrap;
-  gap: 8px;
 }
 
-.ar-map-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.ar-map-title .badge {
-  background: var(--accent);
-  color: #000;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 20px;
-}
-
-.ar-map-filters {
+#pageAR .ar-map-filters {
   display: flex;
   gap: 6px;
 }
 
-.ar-map-filters .btn.active {
-  background: var(--accent);
+#pageAR .ar-map-filters .btn.active {
+  background: var(--ar-emerald);
   color: #000;
-  border-color: var(--accent);
+  border-color: var(--ar-emerald);
 }
 
-.ar-map-container {
+#pageAR .ar-map-container {
   width: 100%;
   height: 480px;
   min-height: 360px;
@@ -122,11 +201,11 @@ html.light .card {
   z-index: 1;
 }
 
-.ar-map-legend {
+#pageAR .ar-map-legend {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-top: 1px solid var(--ui-border);
   flex-wrap: wrap;
   gap: 4px;
@@ -205,10 +284,10 @@ html.light .leaflet-control-attribution a {
 }
 
 /* ===== Tooltip ===== */
-.ovr-tooltip {
+.ar-tooltip {
   background: var(--ui-surface) !important;
   backdrop-filter: var(--glass-blur) !important;
-  border: 1px solid var(--accent) !important;
+  border: 1px solid var(--ar-emerald) !important;
   border-radius: 8px !important;
   color: var(--fg) !important;
   font-size: 12px !important;
@@ -216,16 +295,16 @@ html.light .leaflet-control-attribution a {
   box-shadow: 0 4px 12px rgba(0,0,0,.3) !important;
 }
 
-.ovr-tooltip::before {
-  border-top-color: var(--accent) !important;
+.ar-tooltip::before {
+  border-top-color: var(--ar-emerald) !important;
 }
 
 /* ===== Popup interno ===== */
-.ovr-popup {
+.ar-popup {
   min-width: 220px;
 }
 
-.ovr-popup-head {
+.ar-popup-head {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -234,75 +313,65 @@ html.light .leaflet-control-attribution a {
   margin-bottom: 8px;
 }
 
-.ovr-popup-icon {
+.ar-popup-icon {
   font-size: 24px;
 }
 
-.ovr-popup-body {
+.ar-popup-body {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.ovr-popup-row {
+.ar-popup-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.ovr-popup-row .k {
+.ar-popup-row .k {
   font-size: 11px;
   color: var(--muted);
 }
 
-.ovr-popup-row .v {
+.ar-popup-row .v {
   font-size: 12px;
 }
 
-.ovr-popup-actions {
+.ar-popup-actions {
   display: flex;
   gap: 6px;
   margin-top: 10px;
 }
 
-.ovr-popup-actions .btn {
+.ar-popup-actions .btn {
   flex: 1;
   font-size: 11px;
   padding: 4px 8px;
 }
 
 /* ===== Pulso animado en markers ===== */
-.ovr-pulse {
-  animation: ovrPulse 2.5s ease-in-out infinite;
+.leaflet-interactive {
+  animation: arPulse 2.5s ease-in-out infinite;
 }
 
-@keyframes ovrPulse {
-  0%, 100% { opacity: 0.7; }
+@keyframes arPulse {
+  0%, 100% { opacity: 0.75; }
   50% { opacity: 1; }
 }
 
-/* ===== Status bar DID ===== */
+/* ===== Status DID ===== */
 #arDidStatus.connected {
-  color: var(--accent);
+  color: var(--ar-emerald);
 }
+
+/* ===== Bottom safe ===== */
+.bottom-safe { height: 20px; }
 
 /* ===== Responsive ===== */
 @media (max-width: 600px) {
-  .ar-map-container {
+  #pageAR .ar-map-container {
     height: 340px;
     min-height: 280px;
-  }
-
-  .ar-map-head {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .ar-map-filters {
-    width: 100%;
-  }
-
-  .ar-map-filters .btn {
-    flex: 1;
   }
 }
