@@ -970,10 +970,37 @@ function renderDexTab(modal) {
           return;
         }
 
-        // 2. Firmar con MetaMask
-        statusEl.textContent = '⏳ Abriendo MetaMask para firmar la transacción...';
+        // 2. Verificar que estamos en la red correcta (Base Mainnet)
+        try {
+          const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+          if (chainId !== '0x2105') {
+            try {
+              await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: '0x2105' }]
+              });
+            } catch (switchErr: any) {
+              if (switchErr.code === 4902) {
+                await window.ethereum.request({
+                  method: 'wallet_addEthereumChain',
+                  params: [{
+                    chainId: '0x2105',
+                    chainName: 'Base Mainnet',
+                    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                    rpcUrls: ['https://mainnet.base.org'],
+                    blockExplorerUrls: ['https://basescan.org']
+                  }]
+                });
+              }
+            }
+          }
+        } catch (_) {}
+
+        // 3. Firmar con MetaMask
+        statusEl.textContent = '⏳ Abriendo MetaMask para firmar la transacción...\nAsegúrate de tener la wallet 0x8ed91b... (agente) importada en MetaMask.';
         let txHash;
         try {
+          // Intentar con eth_sendTransaction
           txHash = await window.ethereum.request({
             method: 'eth_sendTransaction',
             params: claimData.params

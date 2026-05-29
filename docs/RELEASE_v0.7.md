@@ -121,11 +121,21 @@ Las siguientes variables deben configurarse como secrets en Cloudflare Workers:
 ## Consulta RPC (balance on-chain)
 
 El balance on-chain se consulta mediante `eth_call` al contrato AURA en Base Mainnet.
-Usa 3 RPCs de fallback en este orden:
+Usa 2 RPCs de fallback en este orden (RPCs que funcionan desde Cloudflare Workers):
 
-1. `AURA_RPC_URL` (configurado explícitamente)
-2. `https://1rpc.io/base`
-3. `https://base-rpc.publicnode.com`
+1. `https://base-rpc.publicnode.com` (rápido, sin rate limit)
+2. `https://1rpc.io/base` (fallback)
+
+**Timeout:** 8 segundos por RPC via `AbortController` manual.
+**Parseo de respuesta:** `rpcRes.text()` + `JSON.parse()` (en vez de `rpcRes.json()` directo, para evitar errores de parseo).
+**Parseo BigInt:** `BigInt(result) / 10n ** 16n / 100n` = división por 10^18.
+**Caché:** El balance se cachea en D1 (`user_stats.aura_balance`). Se actualiza con `UPDATE` parcial (no `INSERT OR REPLACE` destructivo). Si RPC responde con `0x` (balance cero), se guarda 0. Si RPC falla, se conserva el último valor conocido.
+
+### Caché inteligente
+- **Siempre leer caché primero** (rápido, sin RPC)
+- Solo consultar RPC si caché expiró (>60s) o nunca se consultó
+- `UPDATE` parcial (solo `aura_balance` y `updated_at`)
+- Si RPC da 0 y ya había balance positivo, se conserva el valor anterior
 
 **Timeout:** 5 segundos por RPC via `AbortController` manual (`AbortSignal.timeout()` no está soportado en Cloudflare Workers).
 
