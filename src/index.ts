@@ -30,6 +30,8 @@ export type Bindings = {
   AURA_CONTRACT: string;
   AURA_PRIVATE_KEY: string;
   AURA_RPC_URL: string;
+  MINTER_ADDRESS: string;
+  DISTRIBUTOR_ADDRESS: string;
 };
 
 export type Vars = {
@@ -314,7 +316,7 @@ app.get("/api/me/verify", auth, async (c) => {
    Aprueba al contrato AURA para gastar tokens de la wallet agente (max uint256)
    ========================================================= */
 app.post("/api/aura/approve-agent", async (c) => {
-  const agentAddr = '0x02756cb3a5413cd616d192c56dfdce80dd66706e';
+  const agentAddr = '0x8ed91bc2777577f9e9694a60dff515da8d13c9ac'; // Wallet Distribuidora (documentada en WALLETS.md)
   const auraContract = c.env.AURA_CONTRACT;
   if (!auraContract) {
     return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
@@ -377,7 +379,7 @@ app.post("/api/aura/claim", auth, async (c) => {
   let amountWei = String(payload.amount || "0");
   const auraContract = c.env.AURA_CONTRACT;
   const rpcUrl = 'https://1rpc.io/base';
-  const agentAddr = '0x02756cb3a5413cd616d192c56dfdce80dd66706e';
+  const agentAddr = '0x8ed91bc2777577f9e9694a60dff515da8d13c9ac'; // Wallet Distribuidora (documentada en WALLETS.md)
 
   if (!auraContract) {
     return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
@@ -433,13 +435,147 @@ app.post("/api/aura/claim", auth, async (c) => {
   }
 });
 
-// Endpoint legacy para compatibilidad (instrucciones manuales)
+/* =========================================================
+   AURA — Mint del minter a la wallet distribuidora (via CDP)
+   POST /api/aura/mint
+   Solo accesible desde la wallet minter autenticada.
+   Mintea AURA desde el contrato a la wallet distribuidora para que
+   el agente pueda distribuirlos a los usuarios que reclaman.
+   ========================================================= */
 app.post("/api/aura/mint", auth, async (c) => {
-  return c.json({
-    ok: false,
-    error: "Usa POST /api/aura/claim en su lugar. Este endpoint prepara la tx para firmar con MetaMask.",
-    instructions: "Haz POST a /api/aura/claim con { amount: 'string en wei' } y firma la tx devuelta con eth_sendTransaction desde el frontend."
-  }, 400);
+  const caller = c.get("address");
+  const minterAddress = c.env.MINTER_ADDRESS || '0x6A202f991c4C1df079449BE9847b1DaC3F51854f';
+  const distributorAddress = c.env.DISTRIBUTOR_ADDRESS || '0x8ed91bc2777577f9e9694a60dff515da8d13c9ac';
+  const auraContract = c.env.AURA_CONTRACT;
+  const rpcUrl = 'https://1rpc.io/base';
+
+  // Solo la wallet minter puede llamar este endpoint
+  if (caller.toLowerCase() !== minterAddress.toLowerCase()) {
+    return c.json({ ok: false, error: "Solo la wallet minter puede acuñar AURA" }, 403);
+  }
+
+  const payload = await c.req.json().catch(() => ({} as any));
+  const amountWei = String(payload.amount || "0");
+  if (!amountWei || amountWei === "0") {
+    return c.json({ ok: false, error: "Se requiere amount (en wei)" }, 400);
+  }
+
+  if (!auraContract) {
+    return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
+  }
+
+  // Llamar mint(address,uint256) en el contrato AURA
+  const mintSelector = '0x40c10f19';
+  const toPadded = distributorAddress.slice(2).toLowerCase().padStart(64, '0');
+  const amountPadded = BigInt(amountWei).toString(16).padStart(64, '0');
+  const data = mintSelector + toPadded + amountPadded;
+
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 15000);
+  try {
+    const nonceRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionCount', params: [minterAddress, 'latest'] }), signal: ac.signal });
+    const nonceData: any = await nonceRes.json();
+    if (!nonceData?.result) return c.json({ ok: false, error: 'No se pudo obtener nonce del RPC' }, 500);
+
+    const gasPriceRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] }), signal: ac.signal });
+    const gasPriceData: any = await gasPriceRes.json();
+    if (!gasPriceData?.result) return c.json({ ok: false, error: 'No se pudo obtener gasPrice del RPC' }, 500);
+
+    const chainIdRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] }), signal: ac.signal });
+    const chainIdData: any = await chainIdRes.json();
+    if (!chainIdData?.result) return c.json({ ok: false, error: 'No se pudo obtener chainId del RPC' }, 500);
+
+    clearTimeout(timer);
+
+    return c.json({
+      ok: true,
+      method: 'eth_sendTransaction',
+      params: [{
+        from: minterAddress,
+        to: auraContract,
+        data: data,
+        value: '0x0',
+        nonce: nonceData.result,
+        gasPrice: gasPriceData.result,
+        chainId: chainIdData.result
+      }],
+      metadata: {
+        to: distributorAddress,
+        amountWei,
+        amountReadable: (Number(amountWei) / 1e18).toFixed(4),
+        auraContract
+      },
+      message: 'Firma esta tx desde la wallet minter para acuñar AURA a la wallet distribuidora.'
+    });
+  } catch (e: any) {
+    console.error("❌ Error en mint:", e.message);
+    return c.json({ ok: false, error: `Error: ${e.message}` }, 500);
+  }
+});
+
+/* =========================================================
+   AURA — Verificar saldo del agente distribuidor
+   GET /api/aura/distributor-balance
+   Devuelve el balance de AURA y ETH de la wallet distribuidora.
+   El worker usa esto para decidir si necesita recargar.
+   ========================================================= */
+app.get("/api/aura/distributor-balance", async (c) => {
+  const distributorAddress = c.env.DISTRIBUTOR_ADDRESS || '0x8ed91bc2777577f9e9694a60dff515da8d13c9ac';
+  const auraContract = c.env.AURA_CONTRACT;
+  const rpcUrl = 'https://1rpc.io/base';
+
+  if (!auraContract) {
+    return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
+  }
+
+  try {
+    // Balance de AURA del distribuidor
+    const balanceData = '0x70a08231' + distributorAddress.slice(2).toLowerCase().padStart(64, '0');
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 10000);
+
+    const res = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0', id: 1, method: 'eth_call',
+        params: [{ to: auraContract, data: balanceData }, 'latest']
+      }),
+      signal: ac.signal
+    });
+    clearTimeout(timer);
+
+    const json: any = await res.json();
+    let auraBalance = '0';
+    if (json?.result && json.result !== '0x') {
+      auraBalance = String(Number(BigInt(json.result) / 10n ** 16n / 100n));
+    }
+
+    // Balance de ETH del distribuidor
+    const ethRes = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0', id: 2, method: 'eth_getBalance',
+        params: [distributorAddress, 'latest']
+      })
+    });
+    const ethJson: any = await ethRes.json();
+    let ethBalance = '0';
+    if (ethJson?.result && ethJson.result !== '0x') {
+      ethBalance = String(Number(BigInt(ethJson.result) / 10n ** 15n / 1000n));
+    }
+
+    return c.json({
+      ok: true,
+      distributorAddress,
+      auraBalance,
+      ethBalance,
+      auraContract
+    });
+  } catch (e: any) {
+    return c.json({ ok: false, error: `Error: ${e.message}` }, 500);
+  }
 });
 
 /* =========================================================
