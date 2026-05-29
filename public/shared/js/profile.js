@@ -949,8 +949,6 @@ function renderDexTab(modal) {
           return;
         }
 
-        // 1. Pedir al backend que prepare la tx de transfer
-        statusEl.textContent = '⏳ Preparando tx de transfer...';
         const claimRes = await fetch(API_BASE + '/api/aura/claim', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
