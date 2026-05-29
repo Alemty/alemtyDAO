@@ -181,7 +181,7 @@ app.get("/api/me/stats", auth, async (c) => {
 
   // AURA off-chain: dharma genera 1 AURA por cada punto, farm genera AURA extra
   // AURA on-chain: balance real del contrato ERC-20 en Base
-  // "AURA por reclamar" = (dharma + auraFarmed) - auraOnChain
+  // "AURA por reclamar" = (dharma + auraFarmed) - auraClaimed
   // NUNCA se suman off-chain + on-chain. Son conceptos separados.
 
   const farmRow: any = await c.env.DB.prepare(
@@ -193,71 +193,68 @@ app.get("/api/me/stats", auth, async (c) => {
   const auraAccumulado = dharma + auraFarmed;
 
   // AURA on-chain: balance real desde el contrato ERC-20
-  // Se consulta via RPC y se cachea en user_stats.aura_balance (60s)
-  let auraOnChain = 0;
+  let aura = 0;
   let auraBalance = '0';
 
   // auraClaimed: cuánto AURA se ha marcado como "reclamado" off-chain
-  // (se actualiza cuando el usuario hace Reclaim y la tx se confirma)
-  // Se usa para calcular auraReclamable = auraAccumulado - auraClaimed
-  // Esto evita que el balance on-chain total (incluyendo mints iniciales)
-  // afecte el cálculo del reclamable.
   const claimedRow: any = await c.env.DB.prepare(
     "SELECT aura_claimed FROM user_stats WHERE address = ?"
   ).bind(address).first();
   const auraClaimed = Number(claimedRow?.aura_claimed ?? 0);
 
-  // Consultar balance on-chain via RPC con caché en D1
+  // Consultar balance on-chain via RPC con múltiples RPCs fallback
   const auraContract = c.env.AURA_CONTRACT;
-  const cachedRow: any = await c.env.DB.prepare(
-    "SELECT aura_balance, updated_at FROM user_stats WHERE address = ?"
-  ).bind(address).first();
-  const now = Math.floor(Date.now() / 1000);
-  const cacheValid = cachedRow && (now - (cachedRow.updated_at || 0)) < 60;
-  if (cacheValid && Number(cachedRow.aura_balance) > 0) {
-    auraOnChain = Number(cachedRow.aura_balance);
-    auraBalance = String(auraOnChain);
-  }
-
-  // Consultar RPC si no hay caché
-  if (auraContract && !cacheValid) {
+  if (auraContract) {
     const rpcUrls = [
       'https://1rpc.io/base',
       'https://base-rpc.publicnode.com',
-    ];
+      c.env.AURA_RPC_URL || 'https://mainnet.base.org',
+    ].filter(Boolean);
     const data = '0x70a08231' + address.slice(2).padStart(64, '0');
     for (const rpcUrl of rpcUrls) {
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
-        const rpcRes = await fetch(rpcUrl, {
+        const res = await fetch(rpcUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             jsonrpc: '2.0', id: 1, method: 'eth_call',
             params: [{ to: auraContract, data }, 'latest']
           }),
-          signal: controller.signal
+          signal: AbortSignal.timeout(10000)
         });
-        clearTimeout(timeoutId);
-        if (rpcRes.ok) {
-          const json: any = await rpcRes.json();
+        if (res.ok) {
+          const json: any = await res.json();
           if (json?.result && json.result !== '0x') {
-            auraOnChain = Number(BigInt(json.result) / 10n ** 16n / 100n);
-            auraBalance = String(auraOnChain);
-            // Guardar en D1 el balance on-chain cachead0
+            // Parsear correctamente: 18 decimales de AURA
+            // BigInt(result) / 1e18 nos da el número con decimales
+            const raw = BigInt(json.result);
+            // Convertir a número legible: dividir por 10^18
+            const wholePart = raw / 10n ** 18n;
+            const decimalPart = raw % 10n ** 18n;
+            const decimalStr = String(decimalPart).padStart(18, '0').slice(0, 4);
+            aura = Number(wholePart) + Number('0.' + decimalStr);
+            auraBalance = aura.toFixed(4);
+            // Guardar en D1 el balance on-chain
             await c.env.DB.prepare(
               "INSERT OR REPLACE INTO user_stats (address, aura_balance, updated_at, points_received, likes_received, dharma_total, level, karma_debt) VALUES (?, ?, ?, COALESCE((SELECT points_received FROM user_stats WHERE address = ?), 0), COALESCE((SELECT likes_received FROM user_stats WHERE address = ?), 0), COALESCE((SELECT dharma_total FROM user_stats WHERE address = ?), 0), COALESCE((SELECT level FROM user_stats WHERE address = ?), 1), 0)"
-            ).bind(address, auraOnChain, now, address, address, address, address).run();
+            ).bind(address, aura, Math.floor(Date.now() / 1000), address, address, address, address).run();
             break;
           }
         }
       } catch (_) {}
     }
+    // Si no se pudo consultar RPC, intentar usar caché de D1
+    if (aura === 0) {
+      const cachedRow: any = await c.env.DB.prepare(
+        "SELECT aura_balance FROM user_stats WHERE address = ? AND aura_balance > 0"
+      ).bind(address).first();
+      if (cachedRow && Number(cachedRow.aura_balance) > 0) {
+        aura = Number(cachedRow.aura_balance);
+        auraBalance = String(aura);
+      }
+    }
   }
 
-  // aura = balance on-chain real (lo que el usuario puede gastar/swapear)
-  const aura = auraOnChain;
   // auraReclamable = acumulado off-chain - lo ya reclamado (nunca resta balance on-chain)
   const auraReclamable = Math.max(0, auraAccumulado - auraClaimed);
 
@@ -279,9 +276,9 @@ app.get("/api/me/stats", auth, async (c) => {
     },
     tokenomics: {
       dharma,
-      aura,           // balance on-chain real (o fallback off-chain)
-      auraReclamable, // pendiente de reclamar (solo farm)
-      auraBalance,    // balance on-chain real (después de gastos/swaps)
+      aura,           // balance on-chain real (AURA en tu wallet)
+      auraReclamable, // pendiente de reclamar off-chain
+      auraBalance,    // balance on-chain real (formateado)
     },
   });
 });
