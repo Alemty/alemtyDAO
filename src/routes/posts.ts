@@ -112,7 +112,19 @@ posts.get("/me/notifications", auth, async (c) => {
     ).bind(address, limit).all();
     const comments = (cmtsRaw.results || []).map((r: any) => ({ by: r.author, postId: String(r.post_id), postTitle: r.title, ts: r.created_at, body: r.body }));
 
-    return c.json({ ok: true, likes, points, comments });
+    // Últimos posts del usuario (para activity tab)
+    const myPostsRaw = await c.env.DB.prepare(
+      "SELECT id, title, body, created_at FROM posts WHERE author = ? ORDER BY created_at DESC LIMIT 5"
+    ).bind(address).all();
+    const myPosts = (myPostsRaw.results || []).map((r: any) => ({ id: String(r.id), title: r.title, body: r.body, created_at: r.created_at }));
+
+    // Últimos comentarios hechos por el usuario (en posts de otros)
+    const myCommentsRaw = await c.env.DB.prepare(
+      "SELECT c.id, c.post_id, p.title, c.body, c.created_at FROM comments c JOIN posts p ON p.id = c.post_id WHERE c.author = ? ORDER BY c.created_at DESC LIMIT 5"
+    ).bind(address).all();
+    const myComments = (myCommentsRaw.results || []).map((r: any) => ({ id: String(r.id), postId: String(r.post_id), postTitle: r.title, body: r.body, created_at: r.created_at }));
+
+    return c.json({ ok: true, likes, points, comments, myPosts, myComments });
   } catch (e) {
     return c.json({ ok: false, error: String(e) }, 500);
   }

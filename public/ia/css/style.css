@@ -1,1 +1,621 @@
-/* stub */
+/* =========================================================
+   ia.alemty.eth — Dashboard de Agentes Inteligentes
+   Scoped a #pageIA únicamente
+   ========================================================= */
+
+#pageIA {
+  --ia-emerald: #00ffd5;
+  --ia-azure: #00a3ff;
+  --ia-danger: #FF4D6A;
+  --ia-warning: #FFB347;
+  --ia-success: #00E676;
+  --ia-info: #00B4FF;
+  --ia-fs-h1: clamp(1.6rem, 3.2vw, 2.2rem);
+  --ia-fs-meta: clamp(11px, 0.95vw, 12.5px);
+}
+
+html.light #pageIA {
+  --ia-emerald: #0db9a6;
+  --ia-azure: #0aa0ff;
+}
+
+#pageIA {
+  background: var(--bg);
+  min-height: 100vh;
+  position: relative;
+}
+
+#pageIA::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(680px 420px at 18% 0%, rgba(0,255,213,.16), transparent 62%),
+    radial-gradient(540px 320px at 82% 18%, rgba(0,163,255,.13), transparent 60%),
+    var(--bg);
+}
+
+html.light #pageIA::before {
+  background:
+    radial-gradient(820px 500px at 18% -10%, rgba(0,255,213,.28), transparent 60%),
+    radial-gradient(720px 420px at 85% 15%, rgba(0,149,255,.22), transparent 62%),
+    radial-gradient(900px 500px at 50% 110%, rgba(255,255,255,.60), transparent 70%),
+    var(--bg);
+}
+
+/* Glass UI en light: mismo sistema que DEFI */
+html.light #pageIA .card,
+html.light #pageIA .metric-card,
+html.light #pageIA .agent-card,
+html.light #pageIA .admin-panel,
+html.light #pageIA .glass-card {
+  background: rgba(255,255,255,.55) !important;
+  border: 1px solid rgba(13,185,166,.15) !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,.06), 0 0 0 1px rgba(255,255,255,.72) inset !important;
+}
+
+html.light #pageIA .card::after,
+html.light #pageIA .metric-card::after,
+html.light #pageIA .agent-card::after,
+html.light #pageIA .admin-panel::after,
+html.light #pageIA .glass-card::after {
+  background: radial-gradient(420px 220px at 15% 0%, rgba(13,185,166,.10), transparent 65%),
+              radial-gradient(420px 220px at 85% 100%, rgba(0,163,255,.10), transparent 70%) !important;
+  opacity: .55 !important;
+  filter: blur(14px) !important;
+}
+
+html.light #pageIA .asset-counter {
+  background: rgba(13,185,166,.04);
+  border-color: rgba(13,185,166,.12);
+}
+
+/* Z-index del contenido */
+#pageIA > .container {
+  position: relative;
+  z-index: 1;
+  padding-top: var(--topbar-h);
+  padding-bottom: calc(78px + var(--web3-disc-h, 22px));
+}
+
+/* ===== TITLE: ia.alemty.eth ===== */
+#pageIA .ia-brand {
+  font-weight: 1000;
+  font-size: var(--ia-fs-h1);
+  letter-spacing: -0.02em;
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+#pageIA .ia-brand .ia-brand-em {
+  color: var(--ia-emerald);
+  text-shadow: 0 0 18px rgba(0,255,213,.18);
+}
+
+html.light #pageIA .ia-brand .ia-brand-em {
+  text-shadow: none;
+}
+
+#pageIA .ia-brand .ia-brand-base {
+  color: var(--text);
+  text-shadow: none;
+}
+
+#pageIA .ia-subtitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+
+/* ===== CARD GLOW SYSTEM (igual que DEFI/DAO) ===== */
+#pageIA .card,
+#pageIA .metric-card,
+#pageIA .agent-card,
+#pageIA .admin-panel,
+#pageIA .glass-card {
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--ui-inset);
+  transition: transform 200ms ease-out, border-color 200ms ease-out;
+}
+
+#pageIA .card::after,
+#pageIA .metric-card::after,
+#pageIA .agent-card::after,
+#pageIA .admin-panel::after,
+#pageIA .glass-card::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(420px 220px at 15% 0%, var(--glow-a), transparent 65%),
+              radial-gradient(420px 220px at 85% 100%, var(--glow-b), transparent 70%);
+  opacity: .22;
+  filter: blur(14px);
+}
+
+#pageIA .card > *,
+#pageIA .metric-card > *,
+#pageIA .agent-card > *,
+#pageIA .admin-panel > *,
+#pageIA .glass-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+#pageIA .card:hover,
+#pageIA .metric-card:hover,
+#pageIA .agent-card:hover,
+#pageIA .admin-panel:hover {
+  transform: translateY(-1px);
+  border-color: rgba(0,255,213,.22);
+}
+
+/* ===== METRICS GRID ===== */
+#pageIA .metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+#pageIA .metric-card {
+  padding: 18px 20px;
+}
+
+#pageIA .metric-card .metric-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 6px;
+  position: relative;
+  z-index: 1;
+}
+
+#pageIA .metric-card .metric-value {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 950;
+  letter-spacing: -0.5px;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+#pageIA .metric-card .metric-change {
+  font-size: 11px;
+  font-weight: 800;
+  position: relative;
+  z-index: 1;
+}
+
+#pageIA .metric-card .metric-change.up { color: var(--ia-success); }
+#pageIA .metric-card .metric-change.down { color: var(--ia-danger); }
+
+/* ===== SECTION TITLES ===== */
+#pageIA .section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0 12px;
+}
+
+#pageIA .section-title h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+}
+
+#pageIA .section-title .badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--ia-emerald);
+  background: rgba(0,255,213,.10);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,255,213,.15);
+}
+
+/* ===== AGENT CARDS ===== */
+#pageIA .agents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+#pageIA .agent-card {
+  padding: 18px;
+}
+
+#pageIA .agent-card .agent-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+#pageIA .agent-card .agent-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: rgba(0,163,255,.12);
+  border: 1px solid rgba(0,255,213,.15);
+}
+
+#pageIA .agent-card .agent-info {
+  flex: 1;
+  min-width: 0;
+}
+
+#pageIA .agent-card .agent-name {
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: -0.2px;
+}
+
+#pageIA .agent-card .agent-role {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+#pageIA .agent-card .agent-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  position: relative;
+  z-index: 1;
+}
+
+#pageIA .agent-card .agent-status.online {
+  color: var(--ia-success);
+  background: rgba(0,230,118,.10);
+  border: 1px solid rgba(0,230,118,.15);
+}
+
+#pageIA .agent-card .agent-status.busy {
+  color: var(--ia-warning);
+  background: rgba(255,179,71,.10);
+  border: 1px solid rgba(255,179,71,.15);
+}
+
+#pageIA .agent-card .agent-status.offline {
+  color: var(--muted);
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+}
+
+#pageIA .agent-card .agent-body { position: relative; z-index: 1; }
+
+#pageIA .agent-card .agent-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+#pageIA .agent-card .agent-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#pageIA .agent-card .agent-stat .stat-label {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+
+#pageIA .agent-card .agent-stat .stat-value {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+/* ===== ASSET COUNTER (Tierras + Ladrillos) ===== */
+#pageIA .asset-counter {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  background: rgba(0,255,213,0.04);
+  border: 1px solid rgba(0,255,213,0.10);
+  border-radius: 10px;
+}
+#pageIA .asset-counter-group {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+#pageIA .asset-counter-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+#pageIA .asset-counter-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+#pageIA .asset-counter-val {
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(135deg, var(--ia-emerald), var(--ia-azure));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+#pageIA .asset-counter-label {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--muted);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#pageIA .asset-counter-divider {
+  width: 1px;
+  background: rgba(0,255,213,0.12);
+  flex-shrink: 0;
+}
+
+#pageIA .agent-card .agent-actions {
+  display: flex;
+  gap: 8px;
+}
+
+#pageIA .agent-card .agent-actions .btn-sm {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,255,213,.35);
+  background: rgba(0,255,213,.08);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 800;
+  transition: background 200ms ease-out, border-color 200ms ease-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+#pageIA .agent-card .agent-actions .btn-sm:hover {
+  background: rgba(0,255,213,.12);
+  border-color: rgba(0,255,213,.55);
+}
+
+#pageIA .agent-card .agent-actions .btn-sm.primary {
+  background: linear-gradient(135deg, var(--ia-emerald), var(--ia-azure));
+  color: #08101a;
+  border: 0;
+}
+
+html.light #pageIA .agent-card .agent-actions .btn-sm {
+  color: rgba(14,26,24,.92);
+  background: rgba(13,185,166,.14);
+  border-color: rgba(13,185,166,.40);
+}
+
+html.light #pageIA .agent-card .agent-actions .btn-sm.primary {
+  color: #fff;
+  background: linear-gradient(135deg, #0db9a6, #0aa0ff);
+  border: 0;
+}
+
+/* ===== ACTIVITY FEED ===== */
+#pageIA .activity-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#pageIA .activity-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.02);
+  transition: background 200ms ease-out;
+  position: relative;
+  z-index: 1;
+}
+
+#pageIA .activity-item:hover {
+  background: rgba(255,255,255,.04);
+}
+
+#pageIA .activity-item .act-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  background: rgba(0,163,255,.08);
+}
+
+#pageIA .activity-item .act-body {
+  flex: 1;
+  min-width: 0;
+}
+
+#pageIA .activity-item .act-text {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+#pageIA .activity-item .act-time {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+#pageIA .activity-item .act-agent {
+  font-size: 10px;
+  color: var(--ia-azure);
+  font-weight: 700;
+}
+
+/* ===== ADMIN PANEL ===== */
+#pageIA .admin-section { margin-top: 20px; }
+
+#pageIA .admin-panel {
+  border: 1px solid rgba(255,77,106,.15);
+  padding: 18px;
+}
+
+#pageIA .admin-panel .admin-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+#pageIA .admin-panel .admin-head .admin-icon { font-size: 20px; }
+
+#pageIA .admin-panel .admin-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+#pageIA .admin-panel .admin-body { position: relative; z-index: 1; }
+
+#pageIA .admin-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+#pageIA .admin-controls .ctrl-btn {
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,255,213,.35);
+  background: rgba(0,255,213,.08);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 200ms ease-out, border-color 200ms ease-out;
+}
+
+#pageIA .admin-controls .ctrl-btn:hover {
+  background: rgba(0,255,213,.12);
+  border-color: rgba(0,255,213,.55);
+}
+
+#pageIA .admin-controls .ctrl-btn.danger {
+  border-color: rgba(255,77,106,.35);
+  background: rgba(255,77,106,.08);
+}
+
+#pageIA .admin-controls .ctrl-btn.danger:hover {
+  background: rgba(255,77,106,.12);
+  border-color: rgba(255,77,106,.45);
+}
+
+html.light #pageIA .admin-controls .ctrl-btn {
+  color: rgba(14,26,24,.92);
+  background: rgba(13,185,166,.14);
+  border-color: rgba(13,185,166,.40);
+}
+
+html.light #pageIA .admin-controls .ctrl-btn.danger {
+  background: rgba(255,77,106,.10);
+  border-color: rgba(255,77,106,.25);
+}
+
+#pageIA .admin-restricted {
+  font-size: 11px;
+  color: var(--ia-warning);
+  font-weight: 700;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255,179,71,.06);
+  border: 1px solid rgba(255,179,71,.12);
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== BOTTOM SAFE ===== */
+#pageIA .bottom-safe { height: 30px; }
+
+/* ===== LIGHT THEME ADJUSTMENTS ===== */
+html.light #pageIA .admin-restricted {
+  background: rgba(255,179,71,.06);
+  border-color: rgba(255,179,71,.15);
+}
+
+html.light #pageIA .activity-item {
+  background: rgba(0,0,0,.02);
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 480px) {
+  #pageIA .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  #pageIA .metric-card { padding: 14px; }
+  #pageIA .agents-grid { grid-template-columns: 1fr; gap: 12px; }
+  #pageIA .charts-grid { grid-template-columns: 1fr; }
+  #pageIA .chart-card { min-height: 220px; }
+  #pageIA .admin-controls { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #pageIA * { animation: none !important; transition: none !important; }
+}

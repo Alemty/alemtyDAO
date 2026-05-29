@@ -14,7 +14,7 @@ const ROUTES = [
   { key: "dao",   label: "DAO",   ico: "🏛️", href: "/dao/" },
   { key: "defi",  label: "DEFI",  ico: "🧩", href: "/defi/" },
   { key: "dex",   label: "DEX",   ico: "🔁", href: "/dex/" },
-  { key: "ia",    label: "IA",    ico: "🤖", href: "#" },
+  { key: "ia",    label: "IA",    ico: "🤖", href: "/ia/" },
   { key: "ar",    label: "AR",    ico: "🕶️", href: "#" }
 ];
 
@@ -125,6 +125,17 @@ export function mountShell() {
             <img class="yt-ico" src="/assets/icons/youtube.svg" alt="" aria-hidden="true">
             Tutorial de registro en Metamask
           </a>
+        </div>
+      </div>
+
+      <!-- Servicios de la DAO -->
+      <div class="acc" data-acc="services">
+        <button class="acc-h" type="button" data-open="services" aria-expanded="false">
+          <span>🛡️ Servicios</span><span class="chev">▾</span>
+        </button>
+        <div class="acc-p" id="accServices">
+          <div class="small muted" style="margin:0 0 10px;">Consultora Web3 descentralizada — 6 agentes inteligentes al servicio del ecosistema.</div>
+          <button class="drawer-link did-blue" id="servicesModalBtn" type="button">📋 Ver todos los servicios</button>
         </div>
       </div>
 
@@ -254,12 +265,32 @@ export function mountShell() {
   });
 
   // Exponer global para abrir perfil desde otros módulos (app.js, notifications.js)
-  window.openProfileModal = async function openProfileModal(addr) {
+  window.openProfileModal = async function openProfileModal(addr, tab) {
     // Guardar la dirección clickeada en localStorage temporal para syncProfile
-    if (addr) localStorage.setItem('alemty.profile.viewing', addr);
+    if (addr) {
+      localStorage.setItem('alemty.profile.viewing', addr);
+      // Guardar la dirección visitada para que DM la use
+      localStorage.setItem('alemty.profile.viewingAddr', addr);
+    }
+    if (tab) localStorage.setItem('alemty.profile.defaultTab', tab);
     await syncProfile();
     openModal("profileModal");
   };
+
+  // Al abrir perfil de otro usuario, activar pestaña DM automáticamente
+  window.addEventListener('modal:opened', (e) => {
+    if (e.detail?.modalId !== 'profileModal') return;
+    const defaultTab = localStorage.getItem('alemty.profile.defaultTab') || '';
+    localStorage.removeItem('alemty.profile.defaultTab');
+    if (defaultTab) {
+      setTimeout(() => {
+        const btn = document.querySelector(`.tab-btn[data-tab="${defaultTab}"]`);
+        if (btn) btn.click();
+      }, 50);
+    }
+    // Limpiar la dirección visitada después de usarla
+    setTimeout(() => localStorage.removeItem('alemty.profile.viewingAddr'), 100);
+  });
 
   window.addEventListener("did:changed", async () => { await syncProfile(); void updateNotifUI(); });
 
@@ -284,6 +315,151 @@ export function mountShell() {
   document.body.appendChild(modModal);
   modModal.querySelector("#modClose")?.addEventListener("click", () => closeModal("modModal"));
   modModal.querySelector("#modBackdrop")?.addEventListener("click", () => closeModal("modModal"));
+
+  // ========== SERVICES MODAL ==========
+  document.getElementById("servicesModal")?.remove();
+  const servicesModal = el("div", { class: "modal", id: "servicesModal", "aria-hidden": "true" });
+  servicesModal.innerHTML = `
+    <div class="modal-backdrop" id="servicesBackdrop"></div>
+    <div class="modal-card" style="max-width:680px;">
+      <div class="modal-headbar">
+        <strong>🛡️ Servicios de la DAO</strong>
+        <button class="icon-btn" id="servicesClose" type="button" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;">
+        <div style="font-size:12px;font-weight:700;opacity:.75;border-bottom:1px solid var(--border);padding-bottom:8px;">
+          Consultora Web3 descentralizada · alemty.eth · Productos y servicios del ecosistema
+        </div>
+
+        <!-- CATEGORÍA: ACTIVOS DIGITALES -->
+        <div style="font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--ia-emerald,#00ffd5);margin-top:4px;">
+          📦 Renta y venta de activos digitales
+        </div>
+
+        <div class="service-card">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:22px;">🗺️</span>
+            <div><strong>Tierras OVR</strong> · 198 parcelas en Polygon</div>
+          </div>
+          <div class="small muted" style="margin-top:6px;">
+            Renta o adquiere parcelas del metaverso Over the Reality. Las tierras incluyen escenas AR interactivas,
+            coordenadas geográficas reales y posibilidad de activar quests para visitantes. Ideal para marcas,
+            artistas y eventos. <strong>Stock: 198 tierras · 24 con escenas AR activas</strong>.
+          </div>
+        </div>
+
+        <div class="service-card">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:22px;">🧱</span>
+            <div><strong>NFTs coleccionables</strong> · 684 assets en 146 colecciones</div>
+          </div>
+          <div class="small muted" style="margin-top:6px;">
+            Portfolio diversificado de NFTs en Polygon: wearables de Decentraland (DCLMF, MVMF22, Pride),
+            HAPE Apparel, AKCB, Another-1 x Templa, Rad TV, y más. Venta directa o trading
+            entre colecciones del ecosistema.
+          </div>
+        </div>
+
+        <div class="service-card">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:22px;">🤖</span>
+            <div><strong>Asistentes IA en parcelas</strong> · Agentes virtuales inmersivos</div>
+          </div>
+          <div class="small muted" style="margin-top:6px;">
+            Despliegue de asistentes de inteligencia artificial dentro de las parcelas OVR y terrenos virtuales.
+            Los agentes guían visitantes, responden preguntas sobre tokenomics, activan escenas AR y
+            facilitan interacciones automatizadas. Compatible con Over the Reality y mundos abiertos.
+          </div>
+        </div>
+
+        <!-- CATEGORÍA: AGENTES INTELIGENTES -->
+        <div style="font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--ia-azure,#00a3ff);margin-top:6px;">
+          🤖 Agentes inteligentes del ecosistema
+        </div>
+
+        <div class="service-card">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:22px;">🗣️</span>
+            <div><strong>Foro Admin</strong> · Moderador DAO</div>
+          </div>
+          <div class="small muted" style="margin-top:6px;">
+            Gestiona el foro de gobernanza: aprueba propuestas, modera discusiones, ayuda a miembros.
+            <strong>dao.alemty.eth</strong>
+          </div>
+        </div>
+
+        <div class="service-card">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:22px;">⚖️</span>
+            <div><strong>Pool Balancer</strong> · Equilibrador DEX</div>
+          </div>
+          <div class="small muted" style="margin-top:6px;">
+            Pools AMM, rebalances ALEM/WETH, optimización contra impermanent loss.
+            <strong>dex.alemty.eth</strong>
+          </div>
+        </div>
+
+        <div class="service-card">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:22px;">📊</span>
+            <div><strong>DEFI Oracle</strong> · Charts y feeds en tiempo real</div>
+          </div>
+          <div class="small muted" style="margin-top:6px;">
+            Gráficos de trading, feeds Chainlink, monitoreo de pools y cálculo de APY.
+            <strong>defi.alemty.eth</strong>
+          </div>
+        </div>
+
+        <div class="service-card">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:22px;">🏛️</span>
+            <div><strong>Governance Bot</strong> · veALEMTY y nobleza</div>
+          </div>
+          <div class="small muted" style="margin-top:6px;">
+            Locks de veALEM, propuestas DAO, sistema de nobleza (Reyes/Príncipes/Duques).
+            <strong>dao.alemty.eth</strong>
+          </div>
+        </div>
+
+        <div class="service-card">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:22px;">⚡</span>
+            <div><strong>AutoBot</strong> · CI/CD · Telegram · Discord</div>
+          </div>
+          <div class="small muted" style="margin-top:6px;">
+            Deploys IPFS vía Pinata, notificaciones a comunidad, builds en GitHub Actions.
+          </div>
+        </div>
+
+        <div class="service-card">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:22px;">🌍</span>
+            <div><strong>OVR Assistant</strong> · AR y parcelas</div>
+          </div>
+          <div class="small muted" style="margin-top:6px;">
+            198 tierras OVR, escenas AR, quests y rutas inmersivas. Wallet <strong>0x6a20…1854f</strong>.
+            <strong>ar.alemty.eth</strong>
+          </div>
+        </div>
+
+        <!-- ADMIN + PORTFOLIO -->
+        <div class="small muted" style="border-top:1px solid var(--border);padding-top:10px;">
+          🛡️ <strong>Panel de Administración</strong> — Control centralizado desde ia.alemty.eth.
+          Reinicio de agentes, sincronización de pools, actualización de OVRlands, parada de emergencia (Constitución §Emergencias).
+        </div>
+        <div class="small muted">
+          📦 <strong>Portfolio:</strong> 198 tierras OVR · 684 NFTs en 146 colecciones · Tokens AURA/ALEM pendientes de minteo.
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(servicesModal);
+
+  document.getElementById("servicesModalBtn")?.addEventListener("click", () => {
+    closeDrawer();
+    openModal("servicesModal");
+  });
+  document.getElementById("servicesClose")?.addEventListener("click", () => closeModal("servicesModal"));
+  document.getElementById("servicesBackdrop")?.addEventListener("click", () => closeModal("servicesModal"));
 
   // ========== INIT ==========
   syncProfile();

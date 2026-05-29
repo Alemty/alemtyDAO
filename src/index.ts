@@ -13,6 +13,12 @@ import { posts } from "./routes/posts";
 // ✅ Rooms router
 import { rooms } from "./routes/rooms";
 
+// Helper
+function shortAddr(addr: string): string {
+  if (!addr || addr.length < 10) return addr || '';
+  return addr.slice(0, 6) + '…' + addr.slice(-4);
+}
+
 /* =========================
    Tipos
 ========================= */
@@ -21,6 +27,9 @@ export type Bindings = {
   SESSION_SECRET: string;
   JWT_SECRET: string;
   ASSETS: Fetcher;
+  AURA_CONTRACT: string;
+  AURA_PRIVATE_KEY: string;
+  AURA_RPC_URL: string;
 };
 
 export type Vars = {
@@ -156,8 +165,99 @@ app.get("/api/me/stats", auth, async (c) => {
   ).bind(address).first();
   const commentsReceived = Number((commentsReceivedRow as any)?.n ?? 0);
 
+  // ✅ Reacciones DADAS por el usuario
+  const likesGivenRow = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM reactions WHERE address = ? AND type = 'like'"
+  ).bind(address).first();
+  const pointsGivenRow = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM reactions WHERE address = ? AND type = 'point'"
+  ).bind(address).first();
+  const likesGiven = Number((likesGivenRow as any)?.n ?? 0);
+  const pointsGiven = Number((pointsGivenRow as any)?.n ?? 0);
+
   const dharma = pointsReceived + likesReceived;
-  const aura = dharma;
+
+  // AURA off-chain: dharma genera 1 AURA por cada punto, farm genera AURA extra
+  // AURA on-chain: balance real del contrato ERC-20 en Base
+  // "AURA por reclamar" = (dharma + auraFarmed) - auraOnChain
+  // NUNCA se suman off-chain + on-chain. Son conceptos separados.
+
+  const farmRow: any = await c.env.DB.prepare(
+    "SELECT COALESCE(SUM(amount), 0) AS total FROM farm_claims WHERE address = ?"
+  ).bind(address).first();
+  const auraFarmed = Number(farmRow?.total || 0);
+
+  // AURA off-chain total generado por interacciones (dharma + farm)
+  const auraAccumulado = dharma + auraFarmed;
+
+  // AURA on-chain: balance real desde el contrato ERC-20
+  // Se consulta via RPC y se cachea en user_stats.aura_balance (60s)
+  let auraOnChain = 0;
+  let auraBalance = '0';
+
+  // auraClaimed: cuánto AURA se ha marcado como "reclamado" off-chain
+  // (se actualiza cuando el usuario hace Reclaim y la tx se confirma)
+  // Se usa para calcular auraReclamable = auraAccumulado - auraClaimed
+  // Esto evita que el balance on-chain total (incluyendo mints iniciales)
+  // afecte el cálculo del reclamable.
+  const claimedRow: any = await c.env.DB.prepare(
+    "SELECT aura_claimed FROM user_stats WHERE address = ?"
+  ).bind(address).first();
+  const auraClaimed = Number(claimedRow?.aura_claimed ?? 0);
+
+  // Consultar balance on-chain via RPC con caché en D1
+  const auraContract = c.env.AURA_CONTRACT;
+  const cachedRow: any = await c.env.DB.prepare(
+    "SELECT aura_balance, updated_at FROM user_stats WHERE address = ?"
+  ).bind(address).first();
+  const now = Math.floor(Date.now() / 1000);
+  const cacheValid = cachedRow && (now - (cachedRow.updated_at || 0)) < 60;
+  if (cacheValid && Number(cachedRow.aura_balance) > 0) {
+    auraOnChain = Number(cachedRow.aura_balance);
+    auraBalance = String(auraOnChain);
+  }
+
+  // Consultar RPC si no hay caché
+  if (auraContract && !cacheValid) {
+    const rpcUrls = [
+      'https://1rpc.io/base',
+      'https://base-rpc.publicnode.com',
+    ];
+    const data = '0x70a08231' + address.slice(2).padStart(64, '0');
+    for (const rpcUrl of rpcUrls) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const rpcRes = await fetch(rpcUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0', id: 1, method: 'eth_call',
+            params: [{ to: auraContract, data }, 'latest']
+          }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        if (rpcRes.ok) {
+          const json: any = await rpcRes.json();
+          if (json?.result && json.result !== '0x') {
+            auraOnChain = Number(BigInt(json.result) / 10n ** 16n / 100n);
+            auraBalance = String(auraOnChain);
+            // Guardar en D1 el balance on-chain cachead0
+            await c.env.DB.prepare(
+              "INSERT OR REPLACE INTO user_stats (address, aura_balance, updated_at, points_received, likes_received, dharma_total, level, karma_debt) VALUES (?, ?, ?, COALESCE((SELECT points_received FROM user_stats WHERE address = ?), 0), COALESCE((SELECT likes_received FROM user_stats WHERE address = ?), 0), COALESCE((SELECT dharma_total FROM user_stats WHERE address = ?), 0), COALESCE((SELECT level FROM user_stats WHERE address = ?), 1), 0)"
+            ).bind(address, auraOnChain, now, address, address, address, address).run();
+            break;
+          }
+        }
+      } catch (_) {}
+    }
+  }
+
+  // aura = balance on-chain real (lo que el usuario puede gastar/swapear)
+  const aura = auraOnChain;
+  // auraReclamable = acumulado off-chain - lo ya reclamado (nunca resta balance on-chain)
+  const auraReclamable = Math.max(0, auraAccumulado - auraClaimed);
 
   return c.json({
     ok: true,
@@ -166,6 +266,10 @@ app.get("/api/me/stats", auth, async (c) => {
       posts: Number((postsRow as any)?.n ?? 0),
       comments: Number((commentsRow as any)?.n ?? 0),
     },
+    given: {
+      likesGiven,
+      pointsGiven,
+    },
     received: {
       pointsReceived,
       likesReceived,
@@ -173,7 +277,9 @@ app.get("/api/me/stats", auth, async (c) => {
     },
     tokenomics: {
       dharma,
-      aura,
+      aura,           // balance on-chain real (o fallback off-chain)
+      auraReclamable, // pendiente de reclamar (solo farm)
+      auraBalance,    // balance on-chain real (después de gastos/swaps)
     },
   });
 });
@@ -203,10 +309,256 @@ app.get("/api/me/verify", auth, async (c) => {
 });
 
 /* =========================================================
+   AURA — Approve del agente (para permitir transferFrom)
+   POST /api/aura/approve-agent
+   Aprueba al contrato AURA para gastar tokens de la wallet agente (max uint256)
+   ========================================================= */
+app.post("/api/aura/approve-agent", async (c) => {
+  const agentAddr = '0x02756cb3a5413cd616d192c56dfdce80dd66706e';
+  const auraContract = c.env.AURA_CONTRACT;
+  if (!auraContract) {
+    return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
+  }
+  const rpcUrl = 'https://1rpc.io/base';
+
+  // approve(spender=contratoAURA, amount=type(uint256).max)
+  const approveSelector = '0x095ea7b3';
+  const spenderPadded = auraContract.slice(2).toLowerCase().padStart(64, '0');
+  const maxUint = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+  const data = approveSelector + spenderPadded + maxUint;
+
+  // Consultar nonce y gas del RPC (requests secuenciales, no paralelas para evitar rate limit)
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 15000);
+  try {
+    const nonceRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionCount', params: [agentAddr, 'latest'] }), signal: ac.signal });
+    const nonceData: any = await nonceRes.json();
+    if (!nonceData?.result) return c.json({ ok: false, error: 'No se pudo obtener nonce del RPC' }, 500);
+
+    const gasPriceRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] }), signal: ac.signal });
+    const gasPriceData: any = await gasPriceRes.json();
+    if (!gasPriceData?.result) return c.json({ ok: false, error: 'No se pudo obtener gasPrice del RPC' }, 500);
+
+    const chainIdRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] }), signal: ac.signal });
+    const chainIdData: any = await chainIdRes.json();
+    if (!chainIdData?.result) return c.json({ ok: false, error: 'No se pudo obtener chainId del RPC' }, 500);
+
+    clearTimeout(timer);
+    
+    return c.json({
+      ok: true,
+      method: 'eth_sendTransaction',
+      params: [{
+        from: agentAddr,
+        to: auraContract,
+        data: data,
+        nonce: nonceData.result,
+        gasPrice: gasPriceData.result,
+        chainId: chainIdData.result
+      }],
+      message: 'Copia estos params a MetaMask o llama a eth_sendTransaction desde el frontend con window.ethereum.request({ method: "eth_sendTransaction", params: [...] })'
+    });
+  } catch (e: any) {
+    console.error("❌ Error en approve:", e.message);
+    return c.json({ ok: false, error: `Error: ${e.message}` }, 500);
+  }
+});
+
+/* =========================================================
+   AURA — Claim de recompensas (Rulebook §5.1)
+   POST /api/aura/claim
+   Body: { amount: string (wei) }
+   Prepara una tx de transfer(address,uint256) para firmar desde MetaMask.
+   Devuelve los parámetros para eth_sendTransaction.
+   ========================================================= */
+app.post("/api/aura/claim", auth, async (c) => {
+  const caller = c.get("address");
+  const payload = await c.req.json().catch(() => ({} as any));
+  let amountWei = String(payload.amount || "0");
+  const auraContract = c.env.AURA_CONTRACT;
+  const rpcUrl = 'https://1rpc.io/base';
+  const agentAddr = '0x02756cb3a5413cd616d192c56dfdce80dd66706e';
+
+  if (!auraContract) {
+    return c.json({ ok: false, error: "AURA_CONTRACT no configurado" }, 500);
+  }
+
+  // Construir datos de la tx: transfer(address,uint256)
+  const transferSelector = '0xa9059cbb';
+  const toPadded = caller.slice(2).toLowerCase().padStart(64, '0');
+  const amountPadded = BigInt(amountWei).toString(16).padStart(64, '0');
+  const data = transferSelector + toPadded + amountPadded;
+
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 15000);
+  try {
+    const nonceRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionCount', params: [agentAddr, 'latest'] }), signal: ac.signal });
+    const nonceData: any = await nonceRes.json();
+    if (!nonceData?.result) return c.json({ ok: false, error: 'No se pudo obtener nonce del RPC' }, 500);
+
+    const gasPriceRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] }), signal: ac.signal });
+    const gasPriceData: any = await gasPriceRes.json();
+    if (!gasPriceData?.result) return c.json({ ok: false, error: 'No se pudo obtener gasPrice del RPC' }, 500);
+
+    const chainIdRes = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] }), signal: ac.signal });
+    const chainIdData: any = await chainIdRes.json();
+    if (!chainIdData?.result) return c.json({ ok: false, error: 'No se pudo obtener chainId del RPC' }, 500);
+
+    clearTimeout(timer);
+    
+    return c.json({
+      ok: true,
+      method: 'eth_sendTransaction',
+      params: [{
+        from: agentAddr,
+        to: auraContract,
+        data: data,
+        value: '0x0',
+        nonce: nonceData.result,
+        gasPrice: gasPriceData.result,
+        chainId: chainIdData.result
+      }],
+      metadata: {
+        from: agentAddr,
+        to: caller,
+        amountWei,
+        amountReadable: (Number(amountWei) / 1e18).toFixed(4),
+        auraContract
+      },
+      message: 'Usa window.ethereum.request({ method: "eth_sendTransaction", params: [...] }) desde el frontend para firmar con MetaMask'
+    });
+  } catch (e: any) {
+    console.error("❌ Error en claim:", e.message);
+    return c.json({ ok: false, error: `Error al preparar claim: ${e.message}` }, 500);
+  }
+});
+
+// Endpoint legacy para compatibilidad (instrucciones manuales)
+app.post("/api/aura/mint", auth, async (c) => {
+  return c.json({
+    ok: false,
+    error: "Usa POST /api/aura/claim en su lugar. Este endpoint prepara la tx para firmar con MetaMask.",
+    instructions: "Haz POST a /api/aura/claim con { amount: 'string en wei' } y firma la tx devuelta con eth_sendTransaction desde el frontend."
+  }, 400);
+});
+
+/* =========================================================
+   FARM — Reclamo diario de AURA (mini-game)
+   POST /api/farm/claim + GET /api/farm/status
+   IMPORTANTE: debe ir ANTES de app.all("/api/*") legacy router
+========================================================= */
+
+app.get("/api/farm/status", auth, async (c) => {
+  const address = c.get("address");
+  const today = new Date().toISOString().slice(0, 10);
+
+  const claimToday = await c.env.DB.prepare(
+    "SELECT amount, streak FROM farm_claims WHERE address = ? AND claim_date = ?"
+  ).bind(address, today).first();
+
+  // Último claim para calcular streak
+  const lastClaim: any = await c.env.DB.prepare(
+    "SELECT claim_date, streak FROM farm_claims WHERE address = ? ORDER BY created_at DESC LIMIT 1"
+  ).bind(address).first();
+
+  // Total acumulado farmeado
+  const totalRow: any = await c.env.DB.prepare(
+    "SELECT COALESCE(SUM(amount), 0) AS total FROM farm_claims WHERE address = ?"
+  ).bind(address).first();
+
+  // Historial reciente (últimos 10)
+  const history: any[] = await c.env.DB.prepare(
+    "SELECT claim_date, amount, streak FROM farm_claims WHERE address = ? ORDER BY created_at DESC LIMIT 10"
+  ).bind(address).all();
+
+  return c.json({
+    ok: true,
+    canClaim: !claimToday,
+    claimedToday: !!claimToday,
+    todayAmount: claimToday ? Number(claimToday.amount) : 0,
+    streak: lastClaim ? Number(lastClaim.streak) : 0,
+    totalFarmed: Number(totalRow?.total || 0),
+    history: (history.results || []).map(h => ({
+      date: h.claim_date,
+      amount: Number(h.amount),
+      streak: Number(h.streak)
+    }))
+  });
+});
+
+app.post("/api/farm/claim", auth, async (c) => {
+  const address = c.get("address");
+  const payload = await c.req.json().catch(() => ({} as any));
+  const amount = Number(payload.amount) || 0;
+  const streak = Number(payload.streak) || 1;
+
+  // Validar límites
+  if (amount <= 0 || amount > 100) {
+    return c.json({ ok: false, error: "Cantidad inválida (0-100 AURA)" }, 400);
+  }
+
+  // Validar que no haya reclamado hoy
+  const today = new Date().toISOString().slice(0, 10);
+  const existing = await c.env.DB.prepare(
+    "SELECT id FROM farm_claims WHERE address = ? AND claim_date = ?"
+  ).bind(address, today).first();
+
+  if (existing) {
+    return c.json({ ok: false, error: "Ya reclamaste hoy. Vuelve mañana." }, 429);
+  }
+
+  // Insertar claim
+  // NOTA: No escribimos en aura_ledger ni user_stats aquí porque
+  // /api/me/stats ya suma farm_claims.SUM(amount) → auraFarmed → auraReclamable.
+  // Así evitamos problemas de overflow con BigInt/Number para cantidades en wei.
+  await c.env.DB.prepare(
+    "INSERT INTO farm_claims (address, claim_date, amount, streak) VALUES (?, ?, ?, ?)"
+  ).bind(address, today, String(amount), streak).run();
+
+  return c.json({
+    ok: true,
+    amount,
+    streak,
+    today,
+    message: `🎣 Has pescado ${amount} AURA!`
+  });
+});
+
+app.post("/api/farm/reclaim-complete", auth, async (c) => {
+  const address = c.get("address");
+
+  // Sumar farm claims al aura_claimed antes de limpiar
+  const farmRow: any = await c.env.DB.prepare(
+    "SELECT COALESCE(SUM(amount), 0) AS total FROM farm_claims WHERE address = ?"
+  ).bind(address).first();
+  const totalFarm = Number(farmRow?.total || 0);
+
+  // Incrementar aura_claimed en user_stats
+  await c.env.DB.prepare(
+    "INSERT INTO user_stats (address, aura_claimed, updated_at) VALUES (?, ?, unixepoch()) ON CONFLICT(address) DO UPDATE SET aura_claimed = aura_claimed + ?, updated_at = unixepoch()"
+  ).bind(address, totalFarm).run();
+
+  // Limpiar farm_claims del usuario
+  await c.env.DB.prepare("DELETE FROM farm_claims WHERE address = ?").bind(address).run();
+
+  return c.json({ ok: true, message: "Farm claims reclamados y aura_claimed actualizado." });
+});
+
+/* =========================================================
    ROUTERS (montar ANTES del legacy)
 ========================================================= */
 app.route("/api/posts", posts);
 app.route("/api/rooms", rooms);
+
+// Endpoint debug para verificar env vars (ruta única que no captura legacy)
+app.get("/___debug", async (c) => {
+  const contract = c.env.AURA_CONTRACT || '(no configurado)';
+  return c.json({
+    AURA_CONTRACT: contract,
+    AURA_RPC_URL: c.env.AURA_RPC_URL || '(no configurado)',
+    contractLength: contract.length,
+  });
+});
 
 /* =========================================================
    LEGACY ROUTER (API EXTRA – NO TOCAR)
@@ -222,6 +574,221 @@ app.all("/api/*", (c) => {
 ========================================================= */
 app.all("*", async (c) => {
   return c.env.ASSETS.fetch(c.req.raw);
+});
+
+/* =========================================================
+   DM (Direct Messages) — Chat tipo MSN
+========================================================= */
+
+// GET /api/dm/conversations — Lista de conversaciones del usuario
+app.get("/api/dm/conversations", auth, async (c) => {
+  const address = c.get("address");
+
+  const rows = await c.env.DB.prepare(`
+    SELECT DISTINCT
+      CASE WHEN sender = ? THEN recipient ELSE sender END AS peer,
+      (SELECT body FROM dms WHERE (sender = ? AND recipient = peer) OR (sender = peer AND recipient = ?) ORDER BY created_at DESC LIMIT 1) AS last_msg,
+      (SELECT created_at FROM dms WHERE (sender = ? AND recipient = peer) OR (sender = peer AND recipient = ?) ORDER BY created_at DESC LIMIT 1) AS last_at,
+      (SELECT COUNT(*) FROM dms WHERE recipient = ? AND sender = peer AND read = 0) AS unread
+    FROM dms
+    WHERE sender = ? OR recipient = ?
+    ORDER BY last_at DESC
+  `).bind(address, address, address, address, address, address, address, address).all();
+
+  // Obtener ENS/display name de cada peer
+  const conversations = [];
+  for (const row of (rows.results || [])) {
+    const peer: any = row;
+    const userRow: any = await c.env.DB.prepare("SELECT ens FROM users WHERE address = ? LIMIT 1").bind(peer.peer).first();
+    conversations.push({
+      peer: peer.peer,
+      displayName: userRow?.ens || shortAddr(peer.peer),
+      lastMsg: peer.last_msg || '',
+      lastAt: peer.last_at || '',
+      unread: peer.unread || 0
+    });
+  }
+
+  return c.json({ ok: true, conversations });
+});
+
+// GET /api/dm/:peer — Mensajes con un usuario específico
+app.get("/api/dm/:peer", auth, async (c) => {
+  const address = c.get("address");
+  const peer = c.req.param('peer').toLowerCase();
+  const before = c.req.query('before'); // paginación: timestamp ISO
+
+  let query = `
+    SELECT id, sender, recipient, body, read, created_at
+    FROM dms
+    WHERE (sender = ? AND recipient = ?) OR (sender = ? AND recipient = ?)
+  `;
+  const params: any[] = [address, peer, peer, address];
+
+  if (before) {
+    query += ` AND created_at < ?`;
+    params.push(before);
+  }
+
+  query += ` ORDER BY created_at DESC LIMIT 50`;
+
+  const rows = await c.env.DB.prepare(query).bind(...params).all();
+
+  // Marcar como leídos los mensajes del peer hacia el usuario
+  await c.env.DB.prepare("UPDATE dms SET read = 1 WHERE sender = ? AND recipient = ? AND read = 0")
+    .bind(peer, address).run();
+
+  return c.json({
+    ok: true,
+    messages: (rows.results || []).reverse(),
+    peer
+  });
+});
+
+// POST /api/dm/send — Enviar mensaje a un usuario
+app.post("/api/dm/send", auth, async (c) => {
+  const address = c.get("address");
+  const { to, body } = await c.req.json();
+
+  if (!to || !body || typeof body !== 'string' || body.trim().length === 0) {
+    return c.json({ ok: false, error: "Faltan campos: to (address) y body (texto)" }, 400);
+  }
+  if (body.length > 2000) {
+    return c.json({ ok: false, error: "Mensaje demasiado largo (máx 2000 caracteres)" }, 400);
+  }
+
+  const peer = to.toLowerCase();
+  if (peer === address.toLowerCase()) {
+    return c.json({ ok: false, error: "No puedes enviarte mensajes a ti mismo" }, 400);
+  }
+
+  const result = await c.env.DB.prepare(
+    "INSERT INTO dms (sender, recipient, body) VALUES (?, ?, ?)"
+  ).bind(address, peer, body.trim()).run();
+
+  return c.json({
+    ok: true,
+    message: {
+      id: result.meta.last_row_id,
+      sender: address,
+      recipient: peer,
+      body: body.trim(),
+      read: 0,
+      created_at: new Date().toISOString()
+    }
+  });
+});
+
+// POST /api/dm/read/:peer — Marcar conversación como leída
+app.post("/api/dm/read/:peer", auth, async (c) => {
+  const address = c.get("address");
+  const peer = c.req.param('peer').toLowerCase();
+
+  await c.env.DB.prepare("UPDATE dms SET read = 1 WHERE sender = ? AND recipient = ? AND read = 0")
+    .bind(peer, address).run();
+
+  return c.json({ ok: true });
+});
+
+// GET /api/dm/unread — Total de mensajes no leídos
+app.get("/api/dm/unread", auth, async (c) => {
+  const address = c.get("address");
+  const row: any = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM dms WHERE recipient = ? AND read = 0"
+  ).bind(address).first();
+
+  return c.json({ ok: true, unread: Number(row?.n ?? 0) });
+});
+
+/* =========================
+   🛒 MARKETPLACE P2P (NFTs por AURA)
+========================= */
+
+// Listar items en venta
+app.get("/api/market/items", async (c) => {
+  const rows: any[] = await c.env.DB.prepare(
+    `SELECT m.id, m.seller, m.nft_name, m.nft_image, m.nft_contract, m.nft_token_id,
+            m.price_aura, m.created_at,
+            COALESCE(u.display_name, '') AS seller_name
+     FROM marketplace m
+     LEFT JOIN user_profiles u ON u.address = m.seller
+     WHERE m.sold = 0
+     ORDER BY m.created_at DESC
+     LIMIT 50`
+  ).all();
+  return c.json({ ok: true, items: rows.results ?? [] });
+});
+
+// Listar items propios (vendidos + activos)
+app.get("/api/market/my", auth, async (c) => {
+  const address = c.get("address");
+  const rows: any[] = await c.env.DB.prepare(
+    `SELECT * FROM marketplace WHERE seller = ? ORDER BY created_at DESC`
+  ).bind(address).all();
+  return c.json({ ok: true, items: rows.results ?? [] });
+});
+
+// Publicar item en venta
+app.post("/api/market/list", auth, async (c) => {
+  const address = c.get("address");
+  const body: any = await c.req.json();
+  const { nftName, nftImage, nftContract, nftTokenId, priceAura } = body;
+
+  if (!nftName || !priceAura || priceAura <= 0) {
+    return c.json({ ok: false, error: "Faltan campos obligatorios (nftName, priceAura)" }, 400);
+  }
+
+  await c.env.DB.prepare(
+    `INSERT INTO marketplace (seller, nft_name, nft_image, nft_contract, nft_token_id, price_aura)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).bind(address, nftName.trim(), nftImage ?? '', nftContract ?? '', nftTokenId ?? '', priceAura).run();
+
+  return c.json({ ok: true });
+});
+
+// Comprar item (transferir AURA + marcar vendido)
+app.post("/api/market/buy/:id", auth, async (c) => {
+  const buyer = c.get("address");
+  const id = Number(c.req.param("id"));
+  if (!Number.isFinite(id)) return c.json({ ok: false, error: "ID inválido" }, 400);
+
+  const item: any = await c.env.DB.prepare(
+    "SELECT * FROM marketplace WHERE id = ? AND sold = 0"
+  ).bind(id).first();
+
+  if (!item) return c.json({ ok: false, error: "Item no disponible o ya vendido" }, 404);
+  if (item.seller === buyer) return c.json({ ok: false, error: "No puedes comprarte tu propio item" }, 400);
+
+  // Devolvemos los datos para que el frontend prepare la tx de AURA
+  return c.json({
+    ok: true,
+    item: {
+      id: item.id,
+      seller: item.seller,
+      nftName: item.nft_name,
+      priceAura: item.price_aura,
+    },
+    buyer,
+    // El frontend debe llamar claim-like para transferir AURA del buyer al seller
+    // luego marcar como vendido via POST /api/market/sold/:id
+  });
+});
+
+// Confirmar venta (marcar como vendido después de la tx en cadena)
+app.post("/api/market/sold/:id", auth, async (c) => {
+  const address = c.get("address");
+  const id = Number(c.req.param("id"));
+  if (!Number.isFinite(id)) return c.json({ ok: false, error: "ID inválido" }, 400);
+
+  const item: any = await c.env.DB.prepare(
+    "SELECT * FROM marketplace WHERE id = ? AND sold = 0"
+  ).bind(id).first();
+
+  if (!item) return c.json({ ok: false, error: "Item no encontrado" }, 404);
+  if (item.seller !== address) return c.json({ ok: false, error: "Solo el vendedor puede confirmar" }, 403);
+
+  await c.env.DB.prepare("UPDATE marketplace SET sold = 1 WHERE id = ?").bind(id).run();
+  return c.json({ ok: true });
 });
 
 export default app;

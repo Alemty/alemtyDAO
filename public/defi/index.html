@@ -1,9 +1,7 @@
-
 <!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <!-- Theme init -->
   <script>
     (function () {
       try {
@@ -16,159 +14,172 @@
   </script>
 
   <meta name="viewport" content="width=device-width, initial-scale=0.7, maximum-scale=1, user-scalable=yes" />
-  <title>defi.alemty.eth</title>
+  <title>defi.alemty.eth — Trading Terminal</title>
 
-  <!-- CSS GLOBAL -->
   <link rel="stylesheet" href="/settings/theme.css">
   <link rel="stylesheet" href="/shared/css/module.css">
   <link rel="stylesheet" href="/shared/css/shell.css">
   <link rel="stylesheet" href="/shared/css/profile.css">
   <link rel="stylesheet" href="/shared/css/notifications.css">
   <link rel="stylesheet" href="/shared/css/moderation.css">
-
-  <!-- DeFi CSS -->
   <link rel="stylesheet" href="/defi/css/style.css">
 
-  <!-- Fuente -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=Quicksand:wght@300..500&display=swap" rel="stylesheet">
 </head>
-
 <body class="defi-root">
-  <!-- Shell -->
-  
-<header id="topbar"></header>
-<nav id="navbar"></nav>
+  <header id="topbar"></header>
+  <nav id="navbar"></nav>
 
-<div class="web3-disclaimer">
-  © alemty.eth · ENS · IPFS · FINANZAS DESCENTRALIZADAS
-</div>
-
-
-  <!-- Fondo vivo -->
+  <div class="web3-disclaimer">© alemty.eth · ENS · IPFS · TERMINAL DE TRADING DEFI</div>
   <div class="defi-bg"></div>
 
-  <main class="container" style="margin-top:16px;">
-    
-<div class="h1 defi-brand" aria-label="defi.alemty.eth">
-  <span class="defi-brand-em">defi</span><span class="defi-brand-em">.</span><span class="defi-brand-base">alemty</span><span class="defi-brand-base">.</span><span class="defi-brand-em">eth</span>
-</div>
+  <main class="container" style="margin-top:12px;">
 
-    <p class="muted">Reporte visual: emisión, volatilidad y puente hacia DEX.</p>
-
-    <!-- ===== TRADING CHARTS (3 grandes, estilo Binance) ===== -->
-    <section class="trading-section" aria-label="Gráficos de trading">
-      <div class="trading-tabs">
-        <button class="trading-tab active" data-pair="AURA/USD">AURA/USD</button>
-        <button class="trading-tab" data-pair="ALEM/USD">ALEM/USD</button>
-        <button class="trading-tab" data-pair="ETH/USD">ETH/USD</button>
+    <div class="defi-brand-wrap">
+      <div class="h1 defi-brand" aria-label="defi.alemty.eth">
+        <span class="defi-brand-em">defi</span><span class="defi-brand-em">.</span><span class="defi-brand-base">alemty</span><span class="defi-brand-base">.</span><span class="defi-brand-em">eth</span>
       </div>
+      <div class="defi-brand-tag">TRADING TERMINAL</div>
+    </div>
+
+    <!-- ===== TRADING CHART (full width) ===== -->
+    <section class="trading-section" aria-label="Gráfico de trading">
+      <!-- Pair tabs -->
+      <div class="trading-tabs">
+        <button class="trading-tab active" data-pair="ALEM/ETH">ALEM / ETH</button>
+        <button class="trading-tab" data-pair="AURA/ALEM">AURA / ALEM</button>
+        <button class="trading-tab" data-pair="ALEM/USD">ALEM / USD</button>
+        <button class="trading-tab" data-pair="veALEM/ETH">veALEM / ETH</button>
+        <button class="trading-tab" data-pair="veALEM/USDC">veALEM / USDC</button>
+        <button class="trading-tab" data-pair="ETH/USD">ETH / USD <span class="live-dot">●</span></button>
+      </div>
+
+      <!-- Timeframe bar -->
+      <div class="tf-bar">
+        <button class="tf-btn" data-tf="MAX">MAX</button>
+        <button class="tf-btn" data-tf="1Y">1Y</button>
+        <button class="tf-btn" data-tf="1M">1M</button>
+        <button class="tf-btn" data-tf="1W">1W</button>
+        <button class="tf-btn" data-tf="1D" id="tfDefault">1D</button>
+        <button class="tf-btn" data-tf="1H">1H</button>
+      </div>
+
+      <!-- Canvas -->
       <div class="trading-chart-wrap">
-        <canvas id="tradingChart" width="1100" height="400"></canvas>
+        <canvas id="tradingChart" width="1100" height="380"></canvas>
         <div class="trading-overlay" id="tradingOverlay">
           <div class="trading-price" id="tradingPrice">—</div>
           <div class="trading-change" id="tradingChange">—</div>
         </div>
       </div>
+
+      <!-- Stats row -->
       <div class="trading-stats" id="tradingStats">
-        <div class="trading-stat"><span class="ts-label">24h Vol</span><span class="ts-val" id="tsVol">—</span></div>
-        <div class="trading-stat"><span class="ts-label">24h High</span><span class="ts-val" id="tsHigh">—</span></div>
-        <div class="trading-stat"><span class="ts-label">24h Low</span><span class="ts-val" id="tsLow">—</span></div>
-        <div class="trading-stat"><span class="ts-label">Market Cap</span><span class="ts-val" id="tsMc">—</span></div>
+        <div class="trading-stat"><span class="ts-label">Apertura</span><span class="ts-val" id="tsOpen">—</span></div>
+        <div class="trading-stat"><span class="ts-label">Máximo</span><span class="ts-val" id="tsHigh">—</span></div>
+        <div class="trading-stat"><span class="ts-label">Mínimo</span><span class="ts-val" id="tsLow">—</span></div>
+        <div class="trading-stat"><span class="ts-label">Cierre</span><span class="ts-val" id="tsClose">—</span></div>
+        <div class="trading-stat"><span class="ts-label">Volatilidad</span><span class="ts-val" id="tsVol">—</span></div>
+        <div class="trading-stat"><span class="ts-label">Volumen</span><span class="ts-val" id="tsVolAmt">—</span></div>
       </div>
     </section>
 
-    <!-- 4 TOKENS (mini cards en una línea) -->
-    <section class="defi-row4" aria-label="Tokens principales">
-      <article class="card defi-mini" id="cardDharma"></article>
-      <article class="card defi-mini" id="cardKarma"></article>
-      <article class="card defi-mini" id="cardAura"></article>
-      <article class="card defi-mini" id="cardAlem"></article>
-    </section>
+    <!-- ===== BOTTOM ROW: Swap + Controles + Oráculos ===== -->
+    <div class="defi-bottom-row">
 
-    <!-- 2 CARDS EXTRA (mini en línea) -->
-    <section class="defi-row2" style="margin-top:12px;" aria-label="Gobernanza y pools">
-      <article class="card defi-mini" id="cardAlemVeAlem"></article>
-      <article class="card defi-mini" id="cardPoolVeAlemVeStake"></article>
-    </section>
+      <!-- SWAP -->
+      <section class="card defi-panel" aria-label="Intercambio rápido">
+        <div class="defi-panel-title">💰 Intercambio Rápido</div>
 
-    <!-- CHARTS GRID: Pie pequeño + 3 charts pequeños -->
-    <section class="defi-charts" style="margin-top:14px;" aria-label="Gráficas">
-      <!-- Pie pequeño -->
-      <div class="card chart-card chart-pie" id="mintPieWrap" data-chart="mintPie" role="button" tabindex="0" aria-label="Abrir detalle de Mint">
-        <div class="chart-head">
-          <div>
-            <div class="t">Mint: división + total</div>
-            <div class="small muted" id="mintTotalText">—</div>
+        <div class="defi-trade-row">
+          <label class="defi-trade-label">De</label>
+          <select class="defi-trade-select" id="tradeFrom">
+            <option value="ALEM">ALEM</option>
+            <option value="AURA">AURA</option>
+            <option value="ETH">ETH</option>
+            <option value="USDC">USDC</option>
+          </select>
+          <input class="defi-trade-input" id="tradeAmount" inputmode="decimal" placeholder="0.0" />
+        </div>
+
+        <div class="defi-trade-mid">
+          <button class="defi-trade-flip" id="tradeFlip" type="button" aria-label="Invertir">⇅</button>
+        </div>
+
+        <div class="defi-trade-row">
+          <label class="defi-trade-label">A</label>
+          <select class="defi-trade-select" id="tradeTo">
+            <option value="ETH">ETH</option>
+            <option value="ALEM">ALEM</option>
+            <option value="AURA">AURA</option>
+            <option value="USDC">USDC</option>
+          </select>
+          <input class="defi-trade-input" id="tradeOut" disabled placeholder="—" />
+        </div>
+
+        <div class="defi-trade-rate" id="tradeRate">—</div>
+
+        <button class="defi-panel-btn primary" id="tradeBtn" type="button">🚀 Ejecutar Swap</button>
+        <div class="defi-trade-status" id="tradeStatus"></div>
+      </section>
+
+      <!-- CONTROLS: SL / TP / Schedule -->
+      <section class="card defi-panel" aria-label="Controles de trading">
+        <div class="defi-panel-title">🎯 Órdenes Avanzadas</div>
+
+        <div class="defi-control-stack">
+          <div class="defi-control">
+            <div class="defi-control-label">🛑 Stop Loss</div>
+            <div class="defi-control-row">
+              <input class="defi-control-input" id="slPrice" inputmode="decimal" placeholder="Precio" />
+              <button class="defi-control-btn danger" id="slBtn">Set SL</button>
+            </div>
+            <div class="defi-control-status" id="slStatus"></div>
           </div>
-          <button class="icon-btn mini" type="button" data-action="open-mint" aria-label="Abrir mint">↗</button>
+
+          <div class="defi-control">
+            <div class="defi-control-label">✅ Take Profit</div>
+            <div class="defi-control-row">
+              <input class="defi-control-input" id="tpPrice" inputmode="decimal" placeholder="Precio" />
+              <button class="defi-control-btn success" id="tpBtn">Set TP</button>
+            </div>
+            <div class="defi-control-status" id="tpStatus"></div>
+          </div>
+
+          <div class="defi-control">
+            <div class="defi-control-label">⏰ Programar Trading</div>
+            <div class="defi-control-row">
+              <input class="defi-control-input" id="schedDate" type="datetime-local" />
+              <button class="defi-control-btn primary" id="schedBtn">Programar</button>
+            </div>
+            <div class="defi-control-status" id="schedStatus"></div>
+          </div>
         </div>
+      </section>
 
-        <div class="pie-grid">
-          <canvas id="chartPie" width="200" height="150" aria-label="Gráfica de pastel mint"></canvas>
-          <div class="pie-bar" id="pieBar" aria-label="Leyenda de mint"></div>
+      <!-- ORÁCULOS -->
+      <section class="card defi-panel" aria-label="Oráculos y agentes">
+        <div class="defi-panel-title">🔮 Oráculos — Agentes</div>
+        <div class="defi-oracles-list">
+          <div class="defi-oracle"><span class="defi-oracle-name">Pool Balancer</span><span class="defi-oracle-status online">●</span><span class="defi-oracle-data">ALEM/WETH: 0.01384</span></div>
+          <div class="defi-oracle"><span class="defi-oracle-name">DEFI Oracle</span><span class="defi-oracle-status online">●</span><span class="defi-oracle-data">Feeds: ETH/USD</span></div>
+          <div class="defi-oracle"><span class="defi-oracle-name">Governance Bot</span><span class="defi-oracle-status online">●</span><span class="defi-oracle-data">veALEM: 42,850</span></div>
+          <div class="defi-oracle"><span class="defi-oracle-name">OVR Assistant</span><span class="defi-oracle-status pending">◌</span><span class="defi-oracle-data">Sincronizando</span></div>
+          <div class="defi-oracle"><span class="defi-oracle-name">AutoBot (CI/CD)</span><span class="defi-oracle-status pending">◌</span><span class="defi-oracle-data">Audit pending</span></div>
+          <div class="defi-oracle"><span class="defi-oracle-name">Foro Admin</span><span class="defi-oracle-status online">●</span><span class="defi-oracle-data">3 propuestas</span></div>
         </div>
-      </div>
+        <div class="defi-oracles-foot muted small">En vivo cuando los agentes estén en Base Mainnet.</div>
+      </section>
 
-      <!-- Aura -->
-      <div class="card chart-card" id="chartAuraWrap" data-chart="aura" role="button" tabindex="0" aria-label="Abrir detalle de Aura">
-        <div class="chart-head">
-          <div class="t">Aura: emisión por epoch</div>
-          <button class="icon-btn mini" type="button" data-action="open-aura" aria-label="Abrir aura">↗</button>
-        </div>
-        <canvas id="chartAura" width="360" height="130" aria-label="Gráfica aura"></canvas>
-        <div class="small muted">Decay + piso mínimo.</div>
-      </div>
+    </div>
 
-      <!-- ALEM -->
-      <div class="card chart-card" id="chartAlemWrap" data-chart="alem" role="button" tabindex="0" aria-label="Abrir detalle de ALEM">
-        <div class="chart-head">
-          <div class="t">ALEM: emisión por señal</div>
-          <button class="icon-btn mini" type="button" data-action="open-alem" aria-label="Abrir alem">↗</button>
-        </div>
-        <canvas id="chartAlem" width="360" height="130" aria-label="Gráfica alem"></canvas>
-        <div class="small muted">Solo eventos calificados.</div>
-      </div>
-
-      <!-- Cap -->
-      <div class="card chart-card" id="chartCapWrap" data-chart="cap" role="button" tabindex="0" aria-label="Abrir detalle de cap">
-        <div class="chart-head">
-          <div class="t">Aura cap dinámico</div>
-          <button class="icon-btn mini" type="button" data-action="open-cap" aria-label="Abrir cap">↗</button>
-        </div>
-        <canvas id="chartCap" width="360" height="130" aria-label="Gráfica cap"></canvas>
-        <div class="small muted">Cap crece con el pool.</div>
-      </div>
-    </section>
-
-    <!-- Roadmap botón (abre modal) -->
-    <section style="margin-top:14px;">
-      <button class="btn" id="openRoadmap" type="button">Ver Roadmap DEX</button>
-    </section>
-
-    <footer class="small muted" style="margin-top:18px;">
-      alemty · DeFi · Reporte v1 · No financiero / no equity / no promesa de retorno.
+    <footer class="small muted" style="margin-top:18px;text-align:center;">
+      defi.alemty.eth · ETH/USD via CoinGecko · No financiero / no equity · <strong>Código es ley.</strong>
     </footer>
   </main>
 
-  <!-- MODAL ÚNICO (sheet estilo DAO) -->
-  <div class="modal" id="defiModal" aria-hidden="true">
-    <div class="modal-backdrop" data-close="defiModal"></div>
-    <div class="modal-card">
-      <div class="modal-headbar">
-        <strong id="defiModalTitle">Detalle</strong>
-        <button class="icon-btn" type="button" data-close="defiModal">✕</button>
-      </div>
-      <div class="modal-body" id="defiModalBody"></div>
-    </div>
-  </div>
-
-  <!-- JS -->
   <script type="module" src="/defi/js/app.js"></script>
 </body>
 </html>
-
-
-
-
