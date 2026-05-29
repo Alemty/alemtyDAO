@@ -193,8 +193,23 @@ app.get("/api/me/stats", auth, async (c) => {
   const auraAccumulado = dharma + auraFarmed;
 
   // AURA on-chain: balance real desde el contrato ERC-20
+  // PRIMERO: leer caché de D1 (actualizado hasta 60s) — esto es rápido y no falla
   let aura = 0;
   let auraBalance = '0';
+  let auraCacheUpdatedAt = 0;
+  try {
+    const cachedRow: any = await c.env.DB.prepare(
+      "SELECT aura_balance, updated_at FROM user_stats WHERE address = ?"
+    ).bind(address).first();
+    if (cachedRow) {
+      auraCacheUpdatedAt = Number(cachedRow.updated_at || 0);
+      const cachedBalance = Number(cachedRow.aura_balance || 0);
+      if (cachedBalance > 0) {
+        aura = cachedBalance;
+        auraBalance = String(aura);
+      }
+    }
+  } catch (_) {}
 
   // auraClaimed: cuánto AURA se ha marcado como "reclamado" off-chain
   const claimedRow: any = await c.env.DB.prepare(
@@ -202,9 +217,14 @@ app.get("/api/me/stats", auth, async (c) => {
   ).bind(address).first();
   const auraClaimed = Number(claimedRow?.aura_claimed ?? 0);
 
-  // Consultar balance on-chain via RPC con múltiples RPCs fallback
+  // Consultar balance on-chain via RPC SOLO si el caché tiene más de 60s
+  // o si el caché es 0 (nunca consultado)
   const auraContract = c.env.AURA_CONTRACT;
-  if (auraContract) {
+  const now = Math.floor(Date.now() / 1000);
+  const cacheExpired = (now - auraCacheUpdatedAt) > 60;
+  const shouldQueryRpc = auraContract && (aura === 0 || cacheExpired);
+
+  if (shouldQueryRpc) {
     const rpcUrls = [
       c.env.AURA_RPC_URL || 'https://mainnet.base.org',
       'https://1rpc.io/base',
@@ -231,25 +251,29 @@ app.get("/api/me/stats", auth, async (c) => {
             // División correcta: BigInt / 10^16 / 100 = BigInt / 10^18
             aura = Number(BigInt(json.result) / 10n ** 16n / 100n);
             auraBalance = String(aura);
-            // Guardar en D1 el balance on-chain cachead0
+            // Guardar solo aura_balance y updated_at en D1 (UPDATE parcial)
             await c.env.DB.prepare(
-              "INSERT OR REPLACE INTO user_stats (address, aura_balance, updated_at, points_received, likes_received, dharma_total, level, karma_debt) VALUES (?, ?, ?, COALESCE((SELECT points_received FROM user_stats WHERE address = ?), 0), COALESCE((SELECT likes_received FROM user_stats WHERE address = ?), 0), COALESCE((SELECT dharma_total FROM user_stats WHERE address = ?), 0), COALESCE((SELECT level FROM user_stats WHERE address = ?), 1), 0)"
-            ).bind(address, aura, Math.floor(Date.now() / 1000), address, address, address, address).run();
+              "UPDATE user_stats SET aura_balance = ?, updated_at = ? WHERE address = ?"
+            ).bind(aura, now, address).run();
             break;
+          } else {
+            // RPC respondió pero balance es 0 — NO sobrescribir caché anterior,
+            // solo actualizar timestamp si ya había un valor positivo
+            if (aura > 0) {
+              await c.env.DB.prepare(
+                "UPDATE user_stats SET updated_at = ? WHERE address = ?"
+              ).bind(now, address).run();
+            }
           }
         }
       } catch (_) { /* intentar siguiente RPC */ }
     }
-    // Fallback a caché persistente si RPC falló
+    // Si todos los RPCs fallaron y no tenemos aura, intentar INSERT inicial
     if (aura === 0) {
       try {
-        const cachedRow: any = await c.env.DB.prepare(
-          "SELECT aura_balance FROM user_stats WHERE address = ? AND aura_balance > 0"
-        ).bind(address).first();
-        if (cachedRow && Number(cachedRow.aura_balance) > 0) {
-          aura = Number(cachedRow.aura_balance);
-          auraBalance = String(aura);
-        }
+        await c.env.DB.prepare(
+          "INSERT OR IGNORE INTO user_stats (address, aura_balance, updated_at) VALUES (?, 0, ?)"
+        ).bind(address, now).run();
       } catch (_) {}
     }
   }
