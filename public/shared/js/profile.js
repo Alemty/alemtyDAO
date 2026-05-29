@@ -529,7 +529,7 @@ export function buildProfileModal() {
               <div class="token token-karma" id="pfKarmaToken"><span class="lbl">Karma</span><span class="val" id="pfKarmaVal">—</span></div>
               <div class="token token-alem"><span class="lbl">$ALEM</span><span class="val" id="pfAlem">—</span></div>
               <div class="token token-vealem"><span class="lbl">veALEM</span><span class="val" id="pfVeAlem">—</span></div>
-              <div class="small muted hint vealem" id="pfAuraHint"></div>
+              <div class="token-aura-reclaim" id="pfAuraHint"><span class="lbl">AURA por reclamar</span><span class="val">—</span></div>
             </div>
           </div>
           <div class="profile-content" id="pfContent"></div>
@@ -595,12 +595,17 @@ export async function syncProfile() {
   modal.querySelector("#pfAura").textContent = auraLabel;
   const auraHint = modal.querySelector("#pfAuraHint");
   if (auraHint) {
+    const lbl = auraHint.querySelector('.lbl');
+    const val = auraHint.querySelector('.val');
     if (addr && auraReclamable > 0) {
-      auraHint.textContent = `🔵 ${String(auraReclamable)} AURA por reclamar · Ve a la pestaña DEX para mintear on-chain`;
+      if (lbl) lbl.textContent = 'AURA por reclamar';
+      if (val) val.textContent = `${String(auraReclamable)} AURA`;
     } else if (addr && auraBalance !== '0') {
-      auraHint.textContent = `🔵 ${auraBalance} AURA on-chain disponibles`;
+      if (lbl) lbl.textContent = 'AURA on-chain';
+      if (val) val.textContent = `${auraBalance} AURA`;
     } else {
-      auraHint.textContent = '';
+      if (lbl) lbl.textContent = 'AURA por reclamar';
+      if (val) val.textContent = '—';
     }
   }
   modal.querySelector("#pfAlem").textContent = addr ? "0" : "—";
