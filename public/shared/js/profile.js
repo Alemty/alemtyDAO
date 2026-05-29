@@ -1569,9 +1569,9 @@ function updateFarmCountdown(container) {
 function renderFarmHistory(container, history) {
   const el=container.querySelector('#farmHistory'); if(!el) return;
   if(!history||!history.length){el.textContent='Aún no has pescado nada.';return;}
-  el.innerHTML='<div style="display:flex;flex-wrap:wrap;">Últimas capturas: '+history.slice(0,10).map(h=>{
+  el.innerHTML='<div style="display:flex;flex-direction:column;gap:3px;"><div class="small muted" style="margin-bottom:2px;">📜 Últimas capturas</div>'+history.slice(0,10).map(h=>{
     const d=new Date(h.date+'T00:00:00'); let icon='🪙';
     if(h.amount>=100)icon='👑';else if(h.amount>=50)icon='💎';else if(h.amount>=10)icon='🌟';else if(h.amount>=5)icon='🎁';else if(h.amount>=1)icon='📦';
-    return `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;white-space:nowrap;">${icon} ${d.getDate()}/${d.getMonth()+1}: <strong>${h.amount} AURA</strong></span>`;
+    return `<div style="display:flex;justify-content:space-between;padding:3px 6px;border-radius:6px;background:rgba(255,255,255,.03);font-size:12px;"><span>${icon} ${d.getDate()}/${d.getMonth()+1}</span><span style="font-weight:700;">${h.amount} AURA</span></div>`;
   }).join('')+'</div>';
 }
