@@ -529,7 +529,7 @@ export function buildProfileModal() {
               <div class="token token-karma" id="pfKarmaToken"><span class="lbl">Karma</span><span class="val" id="pfKarmaVal">—</span></div>
               <div class="token token-alem"><span class="lbl">$ALEM</span><span class="val" id="pfAlem">—</span></div>
               <div class="token token-vealem"><span class="lbl">veALEM</span><span class="val" id="pfVeAlem">—</span></div>
-              <div class="token-aura-reclaim" id="pfAuraHint"><span class="lbl">AURA por reclamar</span><span class="val">—</span></div>
+              <div class="token token-aura-reclaim" id="pfAuraHint"><span class="lbl">Reclamar</span><span class="val">—</span></div>
             </div>
           </div>
           <div class="profile-content" id="pfContent"></div>
@@ -589,23 +589,15 @@ export async function syncProfile() {
   modal.querySelector("#pfKarmaBar").style.width = karmaValue > 0 ? "30%" : "0%";
 
   modal.querySelector("#pfDharma").textContent = addr ? String(dharma) : "—";
-  const auraLabel = addr
-    ? (auraReclamable > 0 ? `${String(aura)} (${String(auraReclamable)} por reclamar)` : String(aura))
-    : "—";
-  modal.querySelector("#pfAura").textContent = auraLabel;
+  modal.querySelector("#pfAura").textContent = addr ? String(aura) : "—";
   const auraHint = modal.querySelector("#pfAuraHint");
   if (auraHint) {
-    const lbl = auraHint.querySelector('.lbl');
-    const val = auraHint.querySelector('.val');
     if (addr && auraReclamable > 0) {
-      if (lbl) lbl.textContent = 'AURA por reclamar';
-      if (val) val.textContent = `${String(auraReclamable)} AURA`;
+      auraHint.innerHTML = `<span class="lbl">Reclamar</span><span class="val" style="color:#a855f7;">${String(auraReclamable)} AURA</span>`;
     } else if (addr && auraBalance !== '0') {
-      if (lbl) lbl.textContent = 'AURA on-chain';
-      if (val) val.textContent = `${auraBalance} AURA`;
+      auraHint.innerHTML = `<span class="lbl">On-chain</span><span class="val">${auraBalance}</span>`;
     } else {
-      if (lbl) lbl.textContent = 'AURA por reclamar';
-      if (val) val.textContent = '—';
+      auraHint.innerHTML = '';
     }
   }
   modal.querySelector("#pfAlem").textContent = addr ? "0" : "—";
