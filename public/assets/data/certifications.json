@@ -15,7 +15,7 @@
     "issuer": "Microsoft",
     "url": "https://productionezwebstorage.blob.core.windows.net/certificates/1663177_34568_CERTIFICATION_10334.pdf?sv=2020-08-04&st=2022-02-03T00%3A24%3A56Z&se=2052-02-03T00%3A24%3A56Z&sr=b&sp=r&sig=dx7QcEoD5g7UmdEi5CfeyL9aU0%2FhHVlf4FqrMDlTq%2BE%3D",
     "year": null,
-    "category": "🎮",
+    "category": "Games",
     "score": 5,
     "pinned": false
   },
@@ -65,7 +65,7 @@
     "issuer": "Microsoft",
     "url": "https://productionezwebstorage.blob.core.windows.net/certificates/1663177_46119_LP_12783.pdf?sv=2020-08-04&st=2022-02-03T00%3A27%3A13Z&se=2052-02-03T00%3A27%3A13Z&sr=b&sp=r&sig=sfNvcThehoRdf5HBoa9I00RZVxydI0hLqMti7Bw9pTc%3D",
     "year": 2020,
-    "category": "☁️",
+    "category": "Cloud",
     "score": 5,
     "pinned": false
   },
@@ -95,7 +95,7 @@
     "issuer": "Microsoft",
     "url": "https://productionezwebstorage.blob.core.windows.net/certificates/1663177_56520_CERTIFICATION_12231.pdf?sv=2020-08-04&st=2022-02-03T00%3A28%3A30Z&se=2052-02-03T00%3A28%3A30Z&sr=b&sp=r&sig=R6YJmUuP3J%2Ft8gJyLCWpUw0D6KygUbLOfkr%2B8cq3BIY%3D",
     "year": null,
-    "category": "🎮",
+    "category": "Games",
     "score": 5,
     "pinned": false
   },
@@ -115,7 +115,7 @@
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/1230-photoshop-basico/diploma/detalle/",
     "year": null,
-    "category": "🎨",
+    "category": "Design",
     "score": 5,
     "pinned": false
   },
@@ -125,7 +125,7 @@
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/2647-filtros-spark-ar/diploma/detalle/",
     "year": null,
-    "category": "🎨",
+    "category": "Design",
     "score": 5,
     "pinned": false
   },
@@ -135,7 +135,7 @@
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/2451-course/diploma/detalle/",
     "year": null,
-    "category": "🪙",
+    "category": "Cripto",
     "score": 5,
     "pinned": false
   },
@@ -145,7 +145,7 @@
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/2617-course/diploma/detalle/",
     "year": null,
-    "category": "🪙",
+    "category": "Cripto",
     "score": 5,
     "pinned": false
   },
@@ -225,7 +225,7 @@
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/2789-blender/diploma/detalle/",
     "year": null,
-    "category": "🎨",
+    "category": "Design",
     "score": 5,
     "pinned": false
   },
@@ -245,7 +245,7 @@
     "issuer": "Platzi",
     "url": "https://platzi.com/p/Alemty/curso/7891-ethereum-ecosistema/diploma/detalle/",
     "year": null,
-    "category": "🪙",
+    "category": "Cripto",
     "score": 5,
     "pinned": false
   },
@@ -265,7 +265,7 @@
     "issuer": "Microsoft",
     "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/27a051fb-4506-4de8-b609-85279b7431bc",
     "year": null,
-    "category": "🎮",
+    "category": "Games",
     "score": 5,
     "pinned": false
   },
@@ -305,7 +305,7 @@
     "issuer": "Microsoft",
     "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/af18507c-fb11-4780-b9e4-7c791ace5661",
     "year": null,
-    "category": "💼",
+    "category": "Jobs",
     "score": 5,
     "pinned": false
   },
@@ -345,7 +345,7 @@
     "issuer": "Microsoft",
     "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/ef39b784-1b63-468b-8f25-8b144f4680b2",
     "year": null,
-    "category": "🎓",
+    "category": "EDU",
     "score": 5,
     "pinned": false
   },
@@ -355,7 +355,7 @@
     "issuer": "Microsoft",
     "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/07c47dd1-840f-4b89-b913-02e226e331d2",
     "year": null,
-    "category": "☁️",
+    "category": "Cloud",
     "score": 5,
     "pinned": false
   },
@@ -365,7 +365,7 @@
     "issuer": "Microsoft",
     "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/3353fdc6-eecb-4d65-82cd-e42cae04a15f",
     "year": null,
-    "category": "🎮",
+    "category": "Games",
     "score": 5,
     "pinned": false
   },
@@ -405,7 +405,7 @@
     "issuer": "Microsoft",
     "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/42fbde5c-b429-46bf-b653-ad49c4ad34e1",
     "year": null,
-    "category": "🎮",
+    "category": "Games",
     "score": 5,
     "pinned": false
   },
@@ -485,7 +485,7 @@
     "issuer": "Microsoft",
     "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/d487b91c-f02f-494f-8677-180d1593c6a3",
     "year": null,
-    "category": "💼",
+    "category": "Jobs",
     "score": 5,
     "pinned": false
   },
@@ -495,7 +495,7 @@
     "issuer": "Microsoft",
     "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/5734db1a-e078-41cb-9d18-a5ce4fdd85d0",
     "year": null,
-    "category": "💼",
+    "category": "Jobs",
     "score": 5,
     "pinned": false
   },
@@ -505,7 +505,7 @@
     "issuer": "Microsoft",
     "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/97dc0760-a2fc-46c2-9b90-cdac946a8db6",
     "year": null,
-    "category": "💼",
+    "category": "Jobs",
     "score": 5,
     "pinned": false
   },
@@ -515,7 +515,7 @@
     "issuer": "Microsoft",
     "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/d7e33ca7-1eb0-4983-821e-a5c9cf8aebd1",
     "year": null,
-    "category": "🎮",
+    "category": "Games",
     "score": 5,
     "pinned": false
   },
@@ -535,7 +535,7 @@
     "issuer": "Microsoft",
     "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/d6e06a71-6eaf-4f56-92b6-003b8e01d332",
     "year": null,
-    "category": "☁️",
+    "category": "Cloud",
     "score": 5,
     "pinned": false
   },
@@ -545,7 +545,7 @@
     "issuer": "Microsoft",
     "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/17e4748d-5abd-4797-9655-96de48eb18c4",
     "year": null,
-    "category": "🎓",
+    "category": "EDU",
     "score": 5,
     "pinned": false
   },
@@ -565,7 +565,7 @@
     "issuer": "Microsoft",
     "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/725dbe01-f3c6-477a-ba44-3feebec87737",
     "year": null,
-    "category": "☁️",
+    "category": "Cloud",
     "score": 5,
     "pinned": false
   },
@@ -575,7 +575,7 @@
     "issuer": "Microsoft",
     "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/7f322c85-a7dc-49c6-b8bd-df904f5bb1e7",
     "year": null,
-    "category": "🎮",
+    "category": "Games",
     "score": 5,
     "pinned": false
   },
@@ -625,7 +625,7 @@
     "issuer": "Microsoft",
     "url": "https://expertzone-production.azurewebsites.net/api/certificates/pdf/37945566-b945-40e7-8c41-ed03d70fd60a",
     "year": null,
-    "category": "🎮",
+    "category": "Games",
     "score": 5,
     "pinned": false
   },

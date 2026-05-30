@@ -405,21 +405,24 @@ html.light .modal-backdrop {
 .modal-card {
   position: relative;
   width: min(980px, 92vw);
-  margin: calc(var(--app-topbar-h, var(--topbar-h)) + 12px) auto 0;
+  margin: calc(var(--app-topbar-h, var(--topbar-h, 56px)) + 10px) auto;
   z-index: 2;
   border-radius: 24px;
   border: 1px solid var(--ui-border);
   background: var(--ui-surface);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  overflow: visible;
+  overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(0,255,213,.18) inset;
-  max-height: calc(100vh - var(--app-topbar-h, var(--topbar-h)) - 110px);
+  max-height: calc(100vh - var(--app-topbar-h, var(--topbar-h, 56px)) - var(--web3-disc-h, 22px) - 40px);
   display: flex;
   flex-direction: column;
 }
 
 .modal-card::after { @extend %glow-halo; }
+.modal-card { scrollbar-width: none; -ms-overflow-style: none; }
+.modal-card::-webkit-scrollbar { display: none; }
 
 .modal-headbar {
   padding: 14px 16px;
@@ -993,14 +996,15 @@ html { overflow-y: auto; }
   .modal.open .modal-backdrop { position: fixed !important; inset: 0 !important; }
   .modal.open .modal-card {
     margin-top: calc(var(--app-topbar-h, 56px) + 8px) !important;
-    margin-bottom: var(--app-bottomnav-h, 64px) !important;
+    margin-bottom: calc(var(--app-bottomnav-h, 64px) + var(--web3-disc-h, 22px) + 8px) !important;
     margin-left: 0 !important;
     margin-right: 0 !important;
     width: calc(100vw - 20px) !important;
     max-width: calc(100vw - 20px) !important;
-    max-height: calc(100vh - var(--app-topbar-h, 56px) - var(--app-bottomnav-h, 64px) - 8px) !important;
+    max-height: calc(100vh - var(--app-topbar-h, 56px) - var(--app-bottomnav-h, 64px) - var(--web3-disc-h, 22px) - 16px) !important;
     border-radius: 20px !important;
-    overflow: hidden !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
     position: relative !important;
     box-shadow: none !important;
     display: flex !important;

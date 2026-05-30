@@ -518,7 +518,7 @@ export function buildProfileModal() {
             <button class="tab-btn active" data-tab="estado">ESTADO</button>
             <button class="tab-btn" data-tab="actividad">User</button>
             <button class="tab-btn" data-tab="dm">DM</button>
-            <button class="tab-btn" data-tab="farm">🎣 FARM</button>
+            <button class="tab-btn" data-tab="farm">FARM</button>
             <button class="tab-btn" data-tab="dex">DEX</button>
             <button class="tab-btn" data-tab="tienda">🛒</button>
           </div>
@@ -1272,13 +1272,13 @@ function renderFarmTab(modal) {
     c.innerHTML = `
       <div class="pf-box farm-container">
         <div class="h2" style="font-size:15px;display:flex;align-items:center;gap:8px;">
-          ⛏️ Farmeando AURA
+          Farmeando AURA
           <span class="farm-streak" id="farmStreak" style="font-size:11px;font-weight:400;opacity:.6;">Racha: ${streak} día${streak !== 1 ? 's' : ''}</span>
         </div>
         <div style="font-size:11px;opacity:.6;text-align:center;margin-bottom:2px;">Total acumulado: <strong style="color:var(--primary,#00ffd5);">${totalFarmed} AURA</strong></div>
 
-        <div style="position:relative;width:360px;margin:6px auto;border-radius:14px;overflow:hidden;background:var(--bg-card,#0d1520);border:1px solid rgba(255,255,255,.08);">
-          <canvas id="farmCanvas" width="360" height="260" style="display:block;width:100%;height:auto;image-rendering:pixelated;"></canvas>
+        <div style="position:relative;width:100%;max-width:360px;aspect-ratio:360/260;margin:6px auto;border-radius:14px;overflow:hidden;background:var(--bg-card,#0d1520);border:1px solid rgba(255,255,255,.08);">
+          <canvas id="farmCanvas" width="360" height="260" style="display:block;width:100%;height:100%;position:absolute;inset:0;image-rendering:pixelated;"></canvas>
 
           <div id="farmOverlay" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.72);z-index:5;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:20px;">
             <div id="farmResultIcon" style="font-size:48px;margin-bottom:6px;">🎁</div>
@@ -1289,7 +1289,7 @@ function renderFarmTab(modal) {
         </div>
 
         <button id="farmBtn" class="tab-btn" style="width:100%;margin-top:6px;font-size:14px;padding:10px;${!canClaim?'opacity:.4;cursor:not-allowed;':''}" ${!canClaim?'disabled':''}>
-          ${canClaim ? '🎣 Lanzar caña!' : '⏳ Ya pescaste hoy'}
+          ${canClaim ? 'Lanzar cebo' : 'Ya pescaste hoy'}
         </button>
         <div id="farmTimer" style="font-size:11px;opacity:.5;text-align:center;margin-top:4px;"></div>
 

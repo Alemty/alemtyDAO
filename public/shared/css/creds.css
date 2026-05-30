@@ -102,12 +102,13 @@
 }
 
 .cert-strip { display: block; }
-.cert-row { display: none; position: relative; overflow: visible; padding: 0; }
+.cert-row { display: none; position: relative; overflow-x: hidden; overflow-y: visible; padding: 0; }
 .cert-row.active { display: block; }
 
 .cert-marquee {
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
   padding: 10px 2px 18px;
   border-radius: 14px;
   border: 1px solid var(--border);
@@ -219,8 +220,8 @@
 }
 
 .cert-badge:hover img { filter: drop-shadow(0 14px 26px rgba(0,0,0,.48)); }
-.cert-row { overflow: visible !important; }
-.cert-marquee { overflow: hidden !important; }
+.cert-row { overflow-x: hidden; overflow-y: visible; }
+.cert-marquee { overflow-x: hidden; overflow-y: visible; }
 
 /* Light */
 html.light .cert-tab {
@@ -246,7 +247,7 @@ html.light .cert-tab.active {
 
 /* Float fix */
 .poap-row { overflow-x: hidden; overflow-y: visible; padding-top: 16px; padding-bottom: 22px; }
-.cert-row { overflow: visible; }
+.cert-row { overflow-x: hidden; overflow-y: visible; }
 .cert-marquee { overflow-x: hidden; overflow-y: visible; padding-top: 10px; padding-bottom: 16px; }
 
 :root {
@@ -263,7 +264,7 @@ html.light .cert-tab.active {
   border-radius: 14px;
 }
 
-.poap-marquee, .cert-marquee { overflow-x: hidden; overflow-y: hidden; }
+.poap-marquee, .cert-marquee { overflow-x: hidden; overflow-y: visible; }
 .poap-track, .cert-track { overflow: visible; }
 
 .poap, .cert-badge {
