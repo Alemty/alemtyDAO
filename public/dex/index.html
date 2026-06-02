@@ -110,16 +110,16 @@
       <section class="glass dex-card" id="poolsCard">
         <div class="dex-card-head">
           <div>
-            <h2 class="dex-title">Pools</h2>
-            <p class="dex-sub muted">Administra liquidez, vota y soborna pools clave de la DAO.</p>
+            <h2 class="dex-title" data-i18n="dex.pools">Pools</h2>
+            <p class="dex-sub muted" data-i18n="dex.poolsDesc">Administra liquidez, vota y soborna pools clave de la DAO.</p>
           </div>
 
           <div class="dex-tools">
-            <input class="dex-search" id="poolSearch" placeholder="Buscar pool…" />
+            <input class="dex-search" id="poolSearch" data-i18n-placeholder="dex.searchPool" placeholder="Buscar pool…" />
             <select class="dex-select" id="poolFilter">
-              <option value="all">Todos</option>
-              <option value="internal">Internos</option>
-              <option value="external">Externos</option>
+              <option value="all" data-i18n="dex.filterAll">Todos</option>
+              <option value="internal" data-i18n="dex.filterInternal">Internos</option>
+              <option value="external" data-i18n="dex.filterExternal">Externos</option>
             </select>
           </div>
         </div>
@@ -133,8 +133,8 @@
                 <span class="chip alem">ALEM</span>
               </div>
               <div class="dex-pool-meta">
-                <span class="tag">Interno</span>
-                <span class="muted">AMM social (tokenomics)</span>
+                <span class="tag" data-i18n="dex.internal">Interno</span>
+                <span class="muted" data-i18n="dex.poolSocial">AMM social (tokenomics)</span>
               </div>
             </div>
             <div class="dex-pool-right">
@@ -143,9 +143,9 @@
                 <div class="dex-metric"><span class="k muted">APR</span><span class="v">—</span></div>
               </div>
               <div class="dex-pool-actions">
-                <button class="dex-btn small" type="button">➕ Liquidez</button>
-                <button class="dex-btn small" type="button">🗳️ Votar</button>
-                <button class="dex-btn small" type="button">💰 Sobornar</button>
+                <button class="dex-btn small" type="button" data-i18n="dex.liquidityBtn">➕ Liquidez</button>
+                <button class="dex-btn small" type="button" data-i18n="dex.voteBtn">🗳️ Votar</button>
+                <button class="dex-btn small" type="button" data-i18n="dex.bribeBtn">💰 Sobornar</button>
               </div>
             </div>
           </article>
@@ -158,8 +158,8 @@
                 <span class="chip eth">ETH</span>
               </div>
               <div class="dex-pool-meta">
-                <span class="tag ext">Externo</span>
-                <span class="muted">Base (Ethereum L2)</span>
+                <span class="tag ext" data-i18n="dex.external">Externo</span>
+                <span class="muted" data-i18n="dex.poolExternal">Base (Ethereum L2)</span>
               </div>
             </div>
             <div class="dex-pool-right">
@@ -168,9 +168,9 @@
                 <div class="dex-metric"><span class="k muted">APR</span><span class="v">—</span></div>
               </div>
               <div class="dex-pool-actions">
-                <button class="dex-btn small" type="button">➕ Liquidez</button>
-                <button class="dex-btn small" type="button">🗳️ Votar</button>
-                <button class="dex-btn small" type="button">💰 Sobornar</button>
+                <button class="dex-btn small" type="button" data-i18n="dex.liquidityBtn">➕ Liquidez</button>
+                <button class="dex-btn small" type="button" data-i18n="dex.voteBtn">🗳️ Votar</button>
+                <button class="dex-btn small" type="button" data-i18n="dex.bribeBtn">💰 Sobornar</button>
               </div>
             </div>
           </article>
@@ -183,28 +183,28 @@
       <section class="glass dex-card" id="veStakeCard">
         <div class="dex-card-head">
           <div>
-            <h2 class="dex-title">🔒 Stake veALEM</h2>
-            <p class="dex-sub muted">Lockea ALEM para recibir veALEM. Mayor poder de voto y recompensas por lock más largo.</p>
+            <h2 class="dex-title" data-i18n="dex.veStake">🔒 Stake veALEM</h2>
+            <p class="dex-sub muted" data-i18n="dex.veStakeDesc">Lockea ALEM para recibir veALEM. Mayor poder de voto y recompensas por lock más largo.</p>
           </div>
         </div>
 
         <div class="vestake-layout">
           <!-- Left: lock options -->
           <div class="vestake-left">
-            <div class="vestake-label">Cantidad a lockear</div>
+            <div class="vestake-label" data-i18n="dex.lockAmount">Cantidad a lockear</div>
             <div class="vestake-input-row">
               <input class="vestake-input" id="veStakeAmount" inputmode="decimal" placeholder="0.0" />
-              <span class="vestake-max" id="veStakeMaxBtn">MAX</span>
+              <span class="vestake-max" id="veStakeMaxBtn" data-i18n="dex.max">MAX</span>
               <span class="vestake-token">ALEM</span>
             </div>
-            <div class="vestake-balance">Balance: <strong id="veStakeBalance">0</strong> ALEM</div>
+            <div class="vestake-balance" data-i18n="dex.balancePrefix">Balance:</div>
 
-            <div class="vestake-label" style="margin-top:14px;">Duración del lock</div>
+            <div class="vestake-label" style="margin-top:14px;" data-i18n="dex.lockDuration">Duración del lock</div>
             <div class="vestake-options" id="veStakeOptions">
               <label class="vestake-option" data-months="6">
                 <input type="radio" name="veLock" value="6" />
                 <span class="vestake-opt-inner">
-                  <span class="vestake-opt-title">6 meses</span>
+                  <span class="vestake-opt-title" data-i18n="dex.lock6m">6 meses</span>
                   <span class="vestake-opt-apr">~8% APR</span>
                   <span class="vestake-opt-ve">0.25x veALEM</span>
                 </span>
@@ -212,7 +212,7 @@
               <label class="vestake-option" data-months="12">
                 <input type="radio" name="veLock" value="12" />
                 <span class="vestake-opt-inner">
-                  <span class="vestake-opt-title">1 año</span>
+                  <span class="vestake-opt-title" data-i18n="dex.lock1y">1 año</span>
                   <span class="vestake-opt-apr">~15% APR</span>
                   <span class="vestake-opt-ve">0.50x veALEM</span>
                 </span>
@@ -220,7 +220,7 @@
               <label class="vestake-option" data-months="24">
                 <input type="radio" name="veLock" value="24" />
                 <span class="vestake-opt-inner">
-                  <span class="vestake-opt-title">2 años</span>
+                  <span class="vestake-opt-title" data-i18n="dex.lock2y">2 años</span>
                   <span class="vestake-opt-apr">~25% APR</span>
                   <span class="vestake-opt-ve">0.75x veALEM</span>
                 </span>
@@ -228,46 +228,46 @@
               <label class="vestake-option" data-months="48">
                 <input type="radio" name="veLock" value="48" checked />
                 <span class="vestake-opt-inner">
-                  <span class="vestake-opt-title">4 años</span>
+                  <span class="vestake-opt-title" data-i18n="dex.lock4y">4 años</span>
                   <span class="vestake-opt-apr">~40% APR</span>
                   <span class="vestake-opt-ve">1.0x veALEM</span>
                 </span>
               </label>
             </div>
 
-            <button class="vestake-btn" id="veStakeBtn" type="button">🔒 Lockear ALEM</button>
+            <button class="vestake-btn" id="veStakeBtn" type="button" data-i18n="dex.lockBtn">🔒 Lockear ALEM</button>
             <div class="vestake-status" id="veStakeStatus"></div>
           </div>
 
           <!-- Right: info panel -->
           <div class="vestake-right">
             <div class="vestake-info-card">
-              <div class="vestake-info-title">Tu posición</div>
+              <div class="vestake-info-title" data-i18n="dex.yourPosition">Tu posición</div>
               <div class="vestake-info-row">
-                <span>ALEM lockeado</span>
+                <span data-i18n="dex.lockedAlems">ALEM lockeado</span>
                 <span class="vestake-info-val" id="veInfoLocked">0</span>
               </div>
               <div class="vestake-info-row">
-                <span>veALEM obtenido</span>
+                <span data-i18n="dex.veObtained">veALEM obtenido</span>
                 <span class="vestake-info-val" id="veInfoVe">0</span>
               </div>
               <div class="vestake-info-row">
-                <span>Vencimiento</span>
+                <span data-i18n="dex.expiry">Vencimiento</span>
                 <span class="vestake-info-val" id="veInfoExpiry">—</span>
               </div>
               <div class="vestake-info-row">
-                <span>APR estimado</span>
+                <span data-i18n="dex.estApr">APR estimado</span>
                 <span class="vestake-info-val" id="veInfoApr">—</span>
               </div>
               <div class="vestake-info-row">
-                <span>Poder de voto</span>
+                <span data-i18n="dex.votePower">Poder de voto</span>
                 <span class="vestake-info-val" id="veInfoVote">—</span>
               </div>
             </div>
 
             <div class="vestake-info-card">
-              <div class="vestake-info-title">¿Qué es veALEM?</div>
-              <div class="small muted" style="line-height:1.5;">
+              <div class="vestake-info-title" data-i18n="dex.whatIsVe">¿Qué es veALEM?</div>
+              <div class="small muted" style="line-height:1.5;" data-i18n="dex.whatIsVeDesc">
                 veALEM es ALEM lockeado que te da poder de gobernanza en la DAO. 
                 Mientras más largo el lock, más veALEM recibes. El veALEM decae 
                 con el tiempo si no se renueva. Sin lock mínimo, sin penalidad 
@@ -282,8 +282,8 @@
       <section class="glass dex-card" id="nobilityCard">
         <div class="dex-card-head">
           <div>
-            <h2 class="dex-title">👑 Nobleza</h2>
-            <p class="dex-sub muted">Rangos políticos según veALEMTY activo. El poder se bloquea, el estatus se gana.</p>
+            <h2 class="dex-title" data-i18n="dex.nobility">👑 Nobleza</h2>
+            <p class="dex-sub muted" data-i18n="dex.nobilityDesc">Rangos políticos según veALEMTY activo. El poder se bloquea, el estatus se gana.</p>
           </div>
         </div>
 
@@ -297,90 +297,90 @@
               <div class="noble-tier">
                 <div class="noble-tier-head">
                   <span class="noble-tier-icon">👑</span>
-                  <span class="noble-tier-title">Reyes</span>
-                  <span class="noble-tier-sub">Top 3 veALEMTY</span>
+                  <span class="noble-tier-title" data-i18n="dex.kings">Reyes</span>
+                  <span class="noble-tier-sub" data-i18n="dex.kingsSub">Top 3 veALEMTY</span>
                 </div>
                 <div class="noble-row noble-row--king">
                   <span class="noble-rank">1</span>
                   <span class="noble-addr">alemty.eth</span>
                   <span class="noble-ve">2,450,000 veALEM</span>
-                  <span class="noble-badge king">👑 Rey</span>
+                  <span class="noble-badge king" data-i18n="dex.king">👑 Rey</span>
                 </div>
                 <div class="noble-row noble-row--king">
                   <span class="noble-rank">2</span>
                   <span class="noble-addr">0x7F3…bD92</span>
                   <span class="noble-ve">1,820,000 veALEM</span>
-                  <span class="noble-badge king">👑 Rey</span>
+                  <span class="noble-badge king" data-i18n="dex.king">👑 Rey</span>
                 </div>
                 <div class="noble-row noble-row--king">
                   <span class="noble-rank">3</span>
                   <span class="noble-addr">0x9A1…cF04</span>
                   <span class="noble-ve">1,650,000 veALEM</span>
-                  <span class="noble-badge king">👑 Rey</span>
+                  <span class="noble-badge king" data-i18n="dex.king">👑 Rey</span>
                 </div>
-                <div class="noble-tier-foot">Dirección estratégica · Propuestas estructurales</div>
+                <div class="noble-tier-foot" data-i18n="dex.kingFoot">Dirección estratégica · Propuestas estructurales</div>
               </div>
 
               <!-- 🤴 Príncipes — Top 4–15 -->
               <div class="noble-tier">
                 <div class="noble-tier-head">
                   <span class="noble-tier-icon">🤴</span>
-                  <span class="noble-tier-title">Príncipes</span>
-                  <span class="noble-tier-sub">Top 4–15 veALEMTY</span>
+                  <span class="noble-tier-title" data-i18n="dex.princes">Príncipes</span>
+                  <span class="noble-tier-sub" data-i18n="dex.princesSub">Top 4–15 veALEMTY</span>
                 </div>
                 <div class="noble-row">
                   <span class="noble-rank">4</span>
                   <span class="noble-addr">0xB2E…a871</span>
                   <span class="noble-ve">980,000 veALEM</span>
-                  <span class="noble-badge prince">🤴 Príncipe</span>
+                  <span class="noble-badge prince" data-i18n="dex.prince">🤴 Príncipe</span>
                 </div>
                 <div class="noble-row">
                   <span class="noble-rank">5</span>
                   <span class="noble-addr">0xF4C…3d60</span>
                   <span class="noble-ve">750,000 veALEM</span>
-                  <span class="noble-badge prince">🤴 Príncipe</span>
+                  <span class="noble-badge prince" data-i18n="dex.prince">🤴 Príncipe</span>
                 </div>
                 <div class="noble-row">
                   <span class="noble-rank">10</span>
                   <span class="noble-addr">0xD8A…9f12</span>
                   <span class="noble-ve">410,000 veALEM</span>
-                  <span class="noble-badge prince">🤴 Príncipe</span>
+                  <span class="noble-badge prince" data-i18n="dex.prince">🤴 Príncipe</span>
                 </div>
                 <div class="noble-row">
                   <span class="noble-rank">15</span>
                   <span class="noble-addr">0xE5B…2c78</span>
                   <span class="noble-ve">250,000 veALEM</span>
-                  <span class="noble-badge prince">🤴 Príncipe</span>
+                  <span class="noble-badge prince" data-i18n="dex.prince">🤴 Príncipe</span>
                 </div>
-                <div class="noble-tier-foot">Propuestas y voto</div>
+                <div class="noble-tier-foot" data-i18n="dex.princeFoot">Propuestas y voto</div>
               </div>
 
               <!-- 🏰 Duques — Top 16–50 -->
               <div class="noble-tier">
                 <div class="noble-tier-head">
                   <span class="noble-tier-icon">🏰</span>
-                  <span class="noble-tier-title">Duques</span>
-                  <span class="noble-tier-sub">Top 16–50 veALEMTY</span>
+                  <span class="noble-tier-title" data-i18n="dex.dukes">Duques</span>
+                  <span class="noble-tier-sub" data-i18n="dex.dukesSub">Top 16–50 veALEMTY</span>
                 </div>
                 <div class="noble-row">
                   <span class="noble-rank">20</span>
                   <span class="noble-addr">0x1C9…4a55</span>
                   <span class="noble-ve">120,000 veALEM</span>
-                  <span class="noble-badge duke">🏰 Duque</span>
+                  <span class="noble-badge duke" data-i18n="dex.duke">🏰 Duque</span>
                 </div>
                 <div class="noble-row">
                   <span class="noble-rank">35</span>
                   <span class="noble-addr">0x6A3…f78b</span>
                   <span class="noble-ve">65,000 veALEM</span>
-                  <span class="noble-badge duke">🏰 Duque</span>
+                  <span class="noble-badge duke" data-i18n="dex.duke">🏰 Duque</span>
                 </div>
                 <div class="noble-row">
                   <span class="noble-rank">50</span>
                   <span class="noble-addr">alemty.eth</span>
                   <span class="noble-ve">42,000 veALEM</span>
-                  <span class="noble-badge duke">🏰 Duque</span>
+                  <span class="noble-badge duke" data-i18n="dex.duke">🏰 Duque</span>
                 </div>
-                <div class="noble-tier-foot">Voto y deliberación</div>
+                <div class="noble-tier-foot" data-i18n="dex.dukeFoot">Voto y deliberación</div>
               </div>
 
             </div>
@@ -389,40 +389,40 @@
           <!-- Right: info & formula -->
           <div class="noble-right" style="display:flex;flex-direction:column;gap:14px;">
             <div class="vestake-info-card">
-              <div class="vestake-info-title">⚖️ Fórmula de Nobleza</div>
-              <div class="small" style="line-height:1.6;opacity:.85;">
+              <div class="vestake-info-title" data-i18n="dex.nobleFormula">⚖️ Fórmula de Nobleza</div>
+              <div class="small" style="line-height:1.6;opacity:.85;" data-i18n="dex.nobleFormulaDesc">
                 La nobleza se calcula exclusivamente sobre <strong>veALEMTY activo</strong>.
                 No sobre ALEM líquido ni balance en cartera.
               </div>
               <div class="noble-formula-box" style="margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.04);font-family:monospace;font-size:12px;line-height:1.5;">
                 veALEMTY = min(√ALEM_lock × (días/30), 500,000)<br/>
-                Rango = f(veALEMTY) según percentil global
+                <span data-i18n="dex.nobleFormulaRank">Rango = f(veALEMTY) según percentil global</span>
               </div>
             </div>
 
             <div class="vestake-info-card">
-              <div class="vestake-info-title">🪪 NFTs de Nobleza</div>
+              <div class="vestake-info-title" data-i18n="dex.nobleNfts">🪪 NFTs de Nobleza</div>
               <div class="small" style="line-height:1.6;opacity:.85;">
-                <span>❌ No transferibles</span><br/>
-                <span>🔨 Se mintean y queman automáticamente</span><br/>
-                <span>🏛️ Representan cargo político, no propiedad</span><br/>
-                <span>📉 Al perder veALEMTY suficiente, la nobleza se pierde</span>
+                <span data-i18n="dex.nobleNft1">❌ No transferibles</span><br/>
+                <span data-i18n="dex.nobleNft2">🔨 Se mintean y queman automáticamente</span><br/>
+                <span data-i18n="dex.nobleNft3">🏛️ Representan cargo político, no propiedad</span><br/>
+                <span data-i18n="dex.nobleNft4">📉 Al perder veALEMTY suficiente, la nobleza se pierde</span>
               </div>
             </div>
 
             <div class="vestake-info-card">
-              <div class="vestake-info-title">📜 Permisos por Rango</div>
+              <div class="vestake-info-title" data-i18n="dex.noblePerms">📜 Permisos por Rango</div>
               <div class="noble-perms" style="margin-top:6px;">
-                <div class="noble-perm-row"><span class="noble-perm-icon">👑</span><span class="noble-perm-label">Reyes</span><span class="noble-perm-desc">Dirección estratégica, propuestas estructurales</span></div>
-                <div class="noble-perm-row"><span class="noble-perm-icon">🤴</span><span class="noble-perm-label">Príncipes</span><span class="noble-perm-desc">Propuestas y voto</span></div>
-                <div class="noble-perm-row"><span class="noble-perm-icon">🏰</span><span class="noble-perm-label">Duques</span><span class="noble-perm-desc">Voto y deliberación</span></div>
+                <div class="noble-perm-row"><span class="noble-perm-icon">👑</span><span class="noble-perm-label" data-i18n="dex.kings">Reyes</span><span class="noble-perm-desc" data-i18n="dex.permKings">Dirección estratégica, propuestas estructurales</span></div>
+                <div class="noble-perm-row"><span class="noble-perm-icon">🤴</span><span class="noble-perm-label" data-i18n="dex.princes">Príncipes</span><span class="noble-perm-desc" data-i18n="dex.permPrinces">Propuestas y voto</span></div>
+                <div class="noble-perm-row"><span class="noble-perm-icon">🏰</span><span class="noble-perm-label" data-i18n="dex.dukes">Duques</span><span class="noble-perm-desc" data-i18n="dex.permDukes">Voto y deliberación</span></div>
               </div>
             </div>
 
             <div class="vestake-info-card">
-              <div class="vestake-info-title">🔍 Tu estatus</div>
-              <div class="small muted" style="margin-top:4px;">Conecta tu wallet para ver tu rango de nobleza.</div>
-              <div class="noble-preview" style="margin-top:8px;padding:10px 12px;border-radius:10px;border:1px dashed var(--border);text-align:center;font-size:13px;opacity:.7;">
+              <div class="vestake-info-title" data-i18n="dex.yourStatus">🔍 Tu estatus</div>
+              <div class="small muted" style="margin-top:4px;" data-i18n="dex.yourStatusDesc">Conecta tu wallet para ver tu rango de nobleza.</div>
+              <div class="noble-preview" style="margin-top:8px;padding:10px 12px;border-radius:10px;border:1px dashed var(--border);text-align:center;font-size:13px;opacity:.7;" data-i18n="dex.noNobility">
                 ⚡ Fuera del Top 50 no hay nobleza
               </div>
             </div>
