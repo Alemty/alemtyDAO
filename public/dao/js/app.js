@@ -1735,23 +1735,27 @@ function closeFloatingKebabIfOutside(e) {
 }
 
 
+let _bgRefreshing = false;
 async function getPostsSafe() {
   const local = loadJSON(DB_KEY, []); // siempre disponible
   const lastSync = parseInt(localStorage.getItem('alemty.posts.sync') || '0', 10);
   const stale = Date.now() - lastSync > 120_000; // 2 minutos
 
   // Si hay datos locales recientes y no queremos esperar, devuélvelos rápido
-  // mientras refrescamos en background
-  if (local.length > 0 && !stale) {
-    // Refresco en background sin bloquear el render
+  // mientras refrescamos en background (solo una vez a la vez)
+  if (local.length > 0 && !stale && !_bgRefreshing) {
+    _bgRefreshing = true;
     API.getPosts().then(posts => {
       if (Array.isArray(posts)) {
         saveJSON(DB_KEY, posts);
         localStorage.setItem('alemty.posts.sync', String(Date.now()));
         POSTS_CACHE = posts;
-        renderAll();
+        // Solo refrescar UI si es visible, sin encadenar getPostsSafe
+        renderAll(true);
       }
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => {
+      _bgRefreshing = false;
+    });
     return local;
   }
 
@@ -2655,8 +2659,8 @@ function renderPanel(){
   document.getElementById('panelDesc').textContent = t(m.descKey);
 }
 
-async function renderAll(){
-  const posts = await getPostsSafe();
+async function renderAll(skipCache = false){
+  const posts = skipCache ? POSTS_CACHE : await getPostsSafe();
   POSTS_CACHE = posts;
   renderTopicsSelect();
   renderPanel();
@@ -2668,10 +2672,9 @@ async function renderAll(){
   applyActionState(); // ✅ al final, cuando ya existe el DOM
 }
 
-// Re-render full UI on lang change
+// Re-render full UI on lang change (solo con cache, sin fetch)
 window.addEventListener('lang:changed', () => {
-  // Re-run renderAll with current cached posts
-  renderAll();
+  renderAll(true);
 });
 
 
