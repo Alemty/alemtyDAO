@@ -1119,18 +1119,18 @@ function getDocTitle(lang) {
 // ===== FLAGS SVG (inline para evitar dependencia de emojis) =====
 const FLAG_MX = `<svg viewBox="0 0 36 24" width="20" height="14" style="border-radius:2px;display:block;">
   <defs>
-    <clipPath id="clipMxDiagA"><polygon points="0,0 36,0 36,12 0,24"/></clipPath>
-    <clipPath id="clipMxDiagB"><polygon points="0,0 0,24 36,12 36,24"/></clipPath>
+    <clipPath id="clipDiagMx"><polygon points="36,0 0,24 0,0"/></clipPath>
+    <clipPath id="clipDiagEs"><polygon points="36,0 36,24 0,24"/></clipPath>
   </defs>
-  <!-- Mitad A (superior-izq → inferior-der diagonal): México -->
-  <g clip-path="url(#clipMxDiagA)">
+  <!-- México completo (triángulo sup-izq): verde-blanco-rojo -->
+  <g clip-path="url(#clipDiagMx)">
     <rect width="36" height="24" fill="#006847"/>
     <rect x="12" width="12" height="24" fill="#fff"/>
     <rect x="24" width="12" height="24" fill="#ce1126"/>
     <circle cx="18" cy="12" r="4" fill="#8b5e3c" opacity=".6"/>
   </g>
-  <!-- Mitad B: España -->
-  <g clip-path="url(#clipMxDiagB)">
+  <!-- España completo (triángulo inf-der): rojo-amarillo-rojo -->
+  <g clip-path="url(#clipDiagEs)">
     <rect width="36" height="24" fill="#c60b1e"/>
     <rect y="6" width="36" height="12" fill="#ffc400"/>
     <circle cx="18" cy="12" r="3.5" fill="#c60b1e"/>
@@ -1139,11 +1139,11 @@ const FLAG_MX = `<svg viewBox="0 0 36 24" width="20" height="14" style="border-r
 
 const FLAG_US = `<svg viewBox="0 0 36 24" width="20" height="14" style="border-radius:2px;display:block;">
   <defs>
-    <clipPath id="clipUsDiagA"><polygon points="0,0 36,0 36,12 0,24"/></clipPath>
-    <clipPath id="clipUsDiagB"><polygon points="0,0 0,24 36,12 36,24"/></clipPath>
+    <clipPath id="clipDiagUs"><polygon points="36,0 0,24 0,0"/></clipPath>
+    <clipPath id="clipDiagGb"><polygon points="36,0 36,24 0,24"/></clipPath>
   </defs>
-  <!-- Mitad A (diagonal): USA -->
-  <g clip-path="url(#clipUsDiagA)">
+  <!-- USA completo (triángulo sup-izq) -->
+  <g clip-path="url(#clipDiagUs)">
     <rect width="36" height="24" fill="#fff"/>
     <rect width="36" height="1.85" fill="#b22234" y="0"/>
     <rect width="36" height="1.85" fill="#b22234" y="3.7"/>
@@ -1188,8 +1188,8 @@ const FLAG_US = `<svg viewBox="0 0 36 24" width="20" height="14" style="border-r
     <circle cx="9.6" cy="10.8" r=".35" fill="#fff"/>
     <circle cx="12" cy="10.8" r=".35" fill="#fff"/>
   </g>
-  <!-- Mitad B (diagonal complementaria): GB -->
-  <g clip-path="url(#clipUsDiagB)">
+  <!-- GB completo (triángulo inf-der) -->
+  <g clip-path="url(#clipDiagGb)">
     <rect width="36" height="24" fill="#012169"/>
     <rect width="36" height="2.5" fill="#fff" y="0"/>
     <rect width="36" height="2.5" fill="#fff" y="21.5"/>
