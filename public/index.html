@@ -76,7 +76,7 @@
 <header id="topbar"></header>
 <nav id="navbar"></nav>
 
-<div class="web3-disclaimer">
+<div class="web3-disclaimer" data-i18n="disclaimer">
   © alemty.eth · ENS · IPFS · Identidad Digital Descentralizada
 </div>
 
@@ -116,12 +116,12 @@
   <section class="hero" style="padding:48px 0 20px;position:relative;overflow:hidden;">
     <div class="hero-glow"></div>
     <div class="hero-inner container">
-      <p class="kicker">Escuela de Ciencia · Filosofía · Gnosis · Web3.0</p>
+      <p class="kicker" data-i18n="id.kicker">Escuela de Ciencia · Filosofía · Gnosis · Web3.0</p>
       <h1>
-        Consultora Web Espacial<br>
+        <span data-i18n="id.heading">Consultora Web Espacial</span><br>
         <span class="emerald">alemtyDAO</span>
       </h1>
-      <p class="sub">DID - DAO - DEFI - DEX - IA - AR</p>
+      <p class="sub" data-i18n="id.subtitle">DID - DAO - DEFI - DEX - IA - AR</p>
     </div>
   </section>
 
@@ -139,31 +139,31 @@
     </p>
     <div class="pubkey">
       <code id="pubkey" data-full="0x6a202f991c4c1df079449be9847b1dac3f51854f">0x6a20…1854f</code>
-      <button class="copy-btn" id="copyBtn" type="button">Copiar</button>
-      <button class="copy-btn cred-btn" id="credsBtn" type="button">🏅 Credenciales</button>
-      <span id="copyOk" class="copy-ok" hidden>¡Copiado!</span>
+      <button class="copy-btn" id="copyBtn" type="button" data-i18n="id.copy">Copiar</button>
+      <button class="copy-btn cred-btn" id="credsBtn" type="button" data-i18n="id.credentials">🏅 Credenciales</button>
+      <span id="copyOk" class="copy-ok" hidden data-i18n="id.copied">¡Copiado!</span>
     </div>
   </section>
 
   <!-- ================= LIBRO ================= -->
   <section class="book-portal" aria-label="Lanzamiento del libro">
     <div class="book-frame" id="bookFrame">
-      <div class="book-badge" id="bookBadge">NUEVO · Libro</div>
-      <h3 class="book-title">La Simulación del Dragón</h3>
+      <div class="book-badge" id="bookBadge" data-i18n="id.book.badge">NUEVO · Libro</div>
+      <h3 class="book-title" data-i18n="id.book.title">La Simulación del Dragón</h3>
       <p class="book-sub">
-        Descarga gratuita directa desde IPFS.<br>
-        <span class="book-note">Comprar será una forma opcional de apoyar el trabajo.</span>
+        <span data-i18n="id.book.desc">Descarga gratuita directa desde IPFS.</span><br>
+        <span class="book-note" data-i18n="id.book.note">Comprar será una forma opcional de apoyar el trabajo.</span>
       </p>
       <div class="book-actions">
         <a class="btn-primary" id="downloadBook"
            href="https://gateway.pinata.cloud/ipfs/bafybeifjrhwedvyqnqembrxzrq5nkw5pmc65ew26bctrsojfyjnob5ahbm"
            download="LaSimulación-del-Dragón-alemty.eth.pdf"
-           target="_blank" rel="noopener noreferrer">Descargar PDF</a>
+           target="_blank" rel="noopener noreferrer" data-i18n="id.book.download">Descargar PDF</a>
         <a class="btn-primary buy-btn" id="buyBtn"
            href="https://www.amazon.es/dp/B0GS624W3C"
            target="_blank" rel="noopener noreferrer">
-          <span class="buy-main">Comprar</span>
-          <span class="buy-sub">Amazon</span>
+          <span class="buy-main" data-i18n="id.book.buy">Comprar</span>
+          <span class="buy-sub" data-i18n="id.book.buySub">Amazon</span>
         </a>
       </div>
       <div class="book-rune" aria-hidden="true">🐉</div>
@@ -172,7 +172,7 @@
 
   <!-- ================= SOCIAL ================= -->
   <section class="container">
-    <h3 class="section-title">Sígueme</h3>
+    <h3 class="section-title" data-i18n="id.follow">Sígueme</h3>
     <div class="cards-grid" id="cards"></div>
   </section>
 

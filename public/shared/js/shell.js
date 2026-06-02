@@ -8,6 +8,7 @@ import { siweLogin, clearSiwe, verifyAndRestoreSession } from "./siwe.js";
 import { syncProfile, buildProfileModal } from "./profile.js";
 import { updateNotifUI, openNotifModal, closeModal, closeAllPanels, openModal, buildNotifModal } from "./notifications.js";
 import { isModOrAdminNow, buildModModal } from "./moderation.js";
+import { initI18n, buildLangBtn, toggleLang, getLang, t, applyTranslations } from "./i18n.js";
 
 const ROUTES = [
   { key: "id",    label: "ID",    ico: "🪪", href: "/" },
@@ -45,6 +46,7 @@ export function mountShell() {
   window.__alemtyShellMounted = true;
 
   loadTheme();
+  initI18n();
   requestAnimationFrame(() => document.documentElement.classList.add("theme-ready"));
   bindEthereumAccountsChanged();
 
@@ -58,17 +60,18 @@ export function mountShell() {
 
   // ========== TOPBAR ==========
   const topInner = el("div", { class: "topbar-inner" });
-  const brand = el("a", { class: "brand-link", href: "/", "aria-label": "Ir a ID" },
+  const brand = el("a", { class: "brand-link", href: "/", "aria-label": "alemty.eth" },
     `<span class="brand">alemty<span class="dot">.</span><span class="eth">eth</span></span>`);
 
   const icons = el("div", { class: "iconbar" });
-  const themeBtn = el("button", { class: "icon-btn", id: "themeBtn", type: "button", "aria-label": "Tema" }, "🌘");
-  const profileBtn = el("button", { class: "icon-btn", id: "profileBtn", type: "button", "aria-label": "Perfil" }, "🧙🏻");
-  const notifBtn = el("button", { class: "icon-btn", id: "notifBtn", type: "button", "aria-label": "Notificaciones" },
+  const themeBtn = el("button", { class: "icon-btn", id: "themeBtn", type: "button", "data-i18n-aria": "topbar.theme", "aria-label": t("topbar.theme") }, "🌘");
+  const profileBtn = el("button", { class: "icon-btn", id: "profileBtn", type: "button", "data-i18n-aria": "topbar.profile", "aria-label": t("topbar.profile") }, "🧙🏻");
+  const notifBtn = el("button", { class: "icon-btn", id: "notifBtn", type: "button", "data-i18n-aria": "topbar.notifications", "aria-label": t("topbar.notifications") },
     `🔔<span class="badge" id="notifBadge" hidden>0</span>`);
-  const menuBtn = el("button", { class: "icon-btn", id: "menuBtn", type: "button", "aria-label": "Menú" }, "☰");
+  const menuBtn = el("button", { class: "icon-btn", id: "menuBtn", type: "button", "data-i18n-aria": "topbar.menu", "aria-label": t("topbar.menu") }, "☰");
 
-  icons.append(themeBtn, profileBtn, notifBtn, menuBtn);
+  const langBtn = buildLangBtn();
+  icons.append(langBtn, themeBtn, profileBtn, notifBtn, menuBtn);
   topInner.append(brand, icons);
   topbar.innerHTML = "";
   topbar.append(topInner);
@@ -97,31 +100,31 @@ export function mountShell() {
 
   drawer.innerHTML = `
     <div class="drawer-head">
-      <strong class="code">Menú</strong>
-      <button class="icon-btn" id="drawerClose" type="button" aria-label="Cerrar">✕</button>
+      <strong class="code" data-i18n="drawer.title">Menú</strong>
+      <button class="icon-btn" id="drawerClose" type="button" data-i18n-aria="drawer.close" aria-label="Cerrar">✕</button>
     </div>
     <div class="drawer-body">
 
       <!-- Identidad DID -->
       <div class="acc open" data-acc="did">
         <button class="acc-h" type="button" data-open="did" aria-expanded="true">
-          <span>Identidad DID</span><span class="chev">▾</span>
+          <span data-i18n="drawer.identity">Identidad DID</span><span class="chev">▾</span>
         </button>
         <div class="acc-p" id="accDid">
           <div class="did-mini">
-            <div class="did-mini-row"><span class="k">Estado:</span><span class="v code" id="didStatus">Desconectado</span></div>
-            <div class="did-mini-row"><span class="k">DID - SIWE:</span><span class="v code" id="siweStatus">⚠️ DID-SIWE</span></div>
+            <div class="did-mini-row"><span class="k" data-i18n="drawer.status">Estado:</span><span class="v code" id="didStatus" data-i18n="drawer.disconnected">Desconectado</span></div>
+            <div class="did-mini-row"><span class="k" data-i18n="drawer.didSiwe">DID – SIWE</span><span class="v code" id="siweStatus">⚠️ DID-SIWE</span></div>
             <span class="v code" id="didAddress" hidden>—</span>
           </div>
           <div class="did-actions grid2">
-            <button class="drawer-link did-blue" id="connectBtn" type="button">🦊 Iniciar Sesión</button>
+            <button class="drawer-link did-blue" id="connectBtn" type="button" data-i18n="drawer.login">🦊 Iniciar Sesión</button>
             <a class="drawer-link did-blue" id="registerBtn"
               href="https://chromewebstore.google.com/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn?hl=es"
-              target="_blank" rel="noopener noreferrer">🦊 Registrarse</a>
-            <button class="drawer-link did-blue" id="siweBtn" type="button">✅ Firma SIWE</button>
-            <button class="drawer-link did-blue" id="disconnectBtn" type="button">⛔ Cerrar Sesión</button>
+              target="_blank" rel="noopener noreferrer" data-i18n="drawer.register">🦊 Registrarse</a>
+            <button class="drawer-link did-blue" id="siweBtn" type="button" data-i18n="drawer.signSiwe">✅ Firma SIWE</button>
+            <button class="drawer-link did-blue" id="disconnectBtn" type="button" data-i18n="drawer.logout">⛔ Cerrar Sesión</button>
           </div>
-          <a class="drawer-link did-blue did-yt" id="tutorialLink" href="#" target="_blank" rel="noopener noreferrer">
+          <a class="drawer-link did-blue did-yt" id="tutorialLink" href="#" target="_blank" rel="noopener noreferrer" data-i18n="drawer.tutorial">
             <img class="yt-ico" src="/assets/icons/youtube.svg" alt="" aria-hidden="true">
             Tutorial de registro en Metamask
           </a>
@@ -131,23 +134,23 @@ export function mountShell() {
       <!-- Servicios de la DAO -->
       <div class="acc" data-acc="services">
         <button class="acc-h" type="button" data-open="services" aria-expanded="false">
-          <span>Servicios</span><span class="chev">▾</span>
+          <span data-i18n="drawer.services">Servicios</span><span class="chev">▾</span>
         </button>
         <div class="acc-p" id="accServices">
-          <div class="small muted" style="margin:0 0 10px;">Consultora Web3 descentralizada — 6 agentes inteligentes al servicio del ecosistema.</div>
-          <button class="drawer-link did-blue" id="servicesModalBtn" type="button">📋 Ver todos los servicios</button>
+          <div class="small muted" style="margin:0 0 10px;" data-i18n="drawer.servicesDesc">Consultora Web3 descentralizada — 6 agentes inteligentes al servicio del ecosistema.</div>
+          <button class="drawer-link did-blue" id="servicesModalBtn" type="button" data-i18n="drawer.servicesViewAll">📋 Ver todos los servicios</button>
         </div>
       </div>
 
       <!-- Acerca de -->
       <div class="acc" data-acc="about">
         <button class="acc-h" type="button" data-open="about" aria-expanded="false">
-          <span>Acerca de</span><span class="chev">▾</span>
+          <span data-i18n="drawer.about">Acerca de</span><span class="chev">▾</span>
         </button>
         <div class="acc-p" id="accAbout">
-          <div class="small muted" style="margin:0 0 10px;">Proyecto Web3 experimental. La DAO no es entidad legal; los tokens no son valores ni equity. Participación bajo propio riesgo.</div>
-          <div class="small muted" style="margin:0 0 12px;">Derechos de autor / IP: salvo acuerdo explícito por escrito, la propiedad intelectual del proyecto pertenece al fundador.</div>
-          <a class="drawer-link did-blue about-doc" href="https://github.com/Alemty/alemtyDAO/tree/main/docs" target="_blank" rel="noopener noreferrer">📚 Documentación oficial</a>
+          <div class="small muted" style="margin:0 0 10px;" data-i18n="drawer.aboutDesc1">Proyecto Web3 experimental. La DAO no es entidad legal; los tokens no son valores ni equity. Participación bajo propio riesgo.</div>
+          <div class="small muted" style="margin:0 0 12px;" data-i18n="drawer.aboutDesc2">Derechos de autor / IP: salvo acuerdo explícito por escrito, la propiedad intelectual del proyecto pertenece al fundador.</div>
+          <a class="drawer-link did-blue about-doc" href="https://github.com/Alemty/alemtyDAO/tree/main/docs" target="_blank" rel="noopener noreferrer" data-i18n="drawer.aboutDocs">📚 Documentación oficial</a>
         </div>
       </div>
     </div>`;
@@ -202,7 +205,10 @@ export function mountShell() {
 
   function syncDid() {
     const a = getDid();
-    didStatus.textContent = a ? `Conectado: ${shortHex(a)}` : 'Desconectado';
+    const lang = getLang();
+    const statusText = lang === 'en' ? 'Connected' : 'Conectado';
+    const disconnectedText = lang === 'en' ? 'Disconnected' : 'Desconectado';
+    didStatus.textContent = a ? `${statusText}: ${shortHex(a)}` : disconnectedText;
     const didAddressEl = drawer.querySelector("#didAddress");
     if (didAddressEl) {
       if (a) { didAddressEl.textContent = a; didAddressEl.title = a; }
@@ -228,6 +234,11 @@ export function mountShell() {
 
   window.addEventListener("did:changed", syncDid);
   window.addEventListener("did:changed", async () => { await updateNotifUI(); });
+  window.addEventListener("lang:changed", () => {
+    syncDid();
+    applyTranslations();
+    updateSiweStatus();
+  });
   syncDid();
 
   // ========== RESTORE SESSION FROM BACKEND ==========
@@ -323,11 +334,11 @@ export function mountShell() {
     <div class="modal-backdrop" id="servicesBackdrop"></div>
     <div class="modal-card" style="max-width:680px;">
       <div class="modal-headbar">
-        <strong>Servicios de la DAO</strong>
-        <button class="icon-btn" id="servicesClose" type="button" aria-label="Cerrar">✕</button>
+        <strong data-i18n="services.title">Servicios de la DAO</strong>
+        <button class="icon-btn" id="servicesClose" type="button" data-i18n-aria="services.close" aria-label="Cerrar">✕</button>
       </div>
       <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;">
-        <div style="font-size:12px;font-weight:700;opacity:.75;border-bottom:1px solid var(--border);padding-bottom:8px;">
+        <div style="font-size:12px;font-weight:700;opacity:.75;border-bottom:1px solid var(--border);padding-bottom:8px;" data-i18n="services.header">
           Consultora Web3 descentralizada · alemty.eth · Productos y servicios del ecosistema
         </div>
 

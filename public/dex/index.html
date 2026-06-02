@@ -41,8 +41,8 @@
   <header id="topbar"></header>
   <nav id="navbar"></nav>
 
-  <div class="web3-disclaimer">
-    © alemty.eth · ENS · IPFS · EXCHANGUE DESCENTRALIZADO
+  <div class="web3-disclaimer" data-i18n="dex.title">
+    © alemty.eth · ENS · IPFS · INTERCAMBIADOR DESCENTRALIZADO
   </div>
 
   <main id="pageDex" class="container" style="max-width:1100px;margin:0 auto;">
@@ -56,20 +56,20 @@
       <section class="glass dex-card" id="swapCard">
         <div class="dex-card-head">
           <div>
-            <h1 class="dex-title">Swap</h1>
-            <p class="dex-sub muted">Interno (Aura/ALEM) o Externo (ALEM/ETH en BASE).</p>
+            <h1 class="dex-title" data-i18n="dex.swap">Swap</h1>
+            <p class="dex-sub muted" data-i18n="dex.swapDesc">Interno (Aura/ALEM) o Externo (ALEM/ETH en BASE).</p>
           </div>
 
-          <div class="dex-seg" role="tablist" aria-label="Modo Swap">
-            <button class="dex-seg-btn active" data-mode="internal" type="button">Interno</button>
-            <button class="dex-seg-btn" data-mode="external" type="button">Externo</button>
+          <div class="dex-seg" role="tablist" data-i18n-aria="dex.swapMode" aria-label="Modo Swap">
+            <button class="dex-seg-btn active" data-mode="internal" type="button" data-i18n="dex.internal">Interno</button>
+            <button class="dex-seg-btn" data-mode="external" type="button" data-i18n="dex.external">Externo</button>
           </div>
         </div>
 
         <div class="dex-swap-stack">
           
           <div class="dex-swap-field">
-            <div class="dex-swap-label">De</div>
+            <div class="dex-swap-label" data-i18n="dex.from">De</div>
             <div class="dex-swap-input-row">
               <select class="dex-swap-select" id="swapFrom">
                 <option value="AURA">AURA</option>
@@ -81,11 +81,11 @@
           </div>
 
           <div class="dex-swap-mid">
-            <button class="dex-swap-flip" id="swapFlip" type="button" aria-label="Invertir">⇅</button>
+            <button class="dex-swap-flip" id="swapFlip" type="button" data-i18n-aria="dex.flip" aria-label="Invertir">⇅</button>
           </div>
 
           <div class="dex-swap-field">
-            <div class="dex-swap-label">A</div>
+            <div class="dex-swap-label" data-i18n="dex.to">A</div>
             <div class="dex-swap-input-row">
               <select class="dex-swap-select" id="swapTo">
                 <option value="ALEM">ALEM</option>
