@@ -466,7 +466,7 @@ function renderAdminSection() {
           <button class="ctrl-btn danger" data-admin="emergency-stop">🛑 ${t('ia.admin.emergencyStop')}</button>
         </div>
         <div style="margin-top:12px;font-size:12px;opacity:.75;">
-          <strong>${t('ia.admin.adminLabel')}:</strong> 0x6a20…1854f · Alejandro González
+          <strong>${t('ia.admin.adminLabel')}:</strong> 0x6a20…1854f · Alejandro Gutiérrez
           · <strong>${OVR_TOTAL}</strong> ${t('ia.admin.activeLands')} · <strong>${OVR_LANDS.filter(l => l.scene).length}</strong> ${t('ia.admin.arScenes')}
           · <strong>${TOTAL_ASSETS}</strong> NFTs en <strong>${ASSET_COLLECTIONS}</strong> ${t('ia.admin.collections')}
         </div>
