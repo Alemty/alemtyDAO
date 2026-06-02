@@ -2,6 +2,7 @@
 import { mountShell } from '../../shared/js/shell.js'
 import { mountCreds } from '../../shared/js/creds.js'
 import { $ } from '../../shared/js/core.js'
+import { t } from '../../shared/js/i18n.js'
 
 mountShell()
 
@@ -76,7 +77,7 @@ if (cards) {
   cards.innerHTML = LINKS.map(l => {
     return `<a class="social-card" href="${l.url}" target="_blank" rel="noopener noreferrer" aria-label="${l.platform}">
       <span class="icon-pane"><img class="ico" src="/${l.icon.replace(/^\/+/, '')}" alt="" loading="lazy"></span>
-      <span class="text-pane"><span class="platform">${l.platform}</span><span class="desc">${typeof t === 'function' ? t(l.i18nKey, l.desc) : l.desc}</span></span>
+      <span class="text-pane"><span class="platform">${l.platform}</span><span class="desc">${t(l.i18nKey, l.desc)}</span></span>
     </a>`
   }).join('')
 }
