@@ -5,6 +5,7 @@ import { $, esc, shortAddr } from './core.js';
 import { getDid } from './wallet.js';
 import { fetchMeStats, getJWT } from './api.js';
 import { API_BASE } from './api.js';
+import { t } from './i18n.js';
 
 // Niveles por Dharma
 const LEVELS = [
@@ -478,8 +479,8 @@ export function buildProfileModal() {
     <div class="modal-backdrop" id="profileBackdrop"></div>
     <div class="modal-card profile-card">
       <div class="modal-headbar">
-        <strong>Perfil</strong>
-        <button class="icon-btn" id="profileClose" type="button" aria-label="Cerrar">✕</button>
+        <strong data-i18n="profile.title">Perfil</strong>
+        <button class="icon-btn" id="profileClose" type="button" data-i18n-aria="profile.close" aria-label="Cerrar">✕</button>
       </div>
       <div class="profile-grid">
         <aside class="profile-left">
@@ -487,48 +488,48 @@ export function buildProfileModal() {
             <img id="pfAvatar" alt="Avatar"/>
           </div>
           <div class="profile-level">
-            <div class="lvl" id="pfLevel">Nivel —</div>
+            <div class="lvl" id="pfLevel" data-i18n="profile.level">Nivel —</div>
             <div class="rank" id="pfTitle">—</div>
           </div>
           <div class="profile-addr" id="pfAddr">—</div>
           <div class="profile-bars-left">
             <div class="barbox">
-              <div class="bar-top"><strong>Dharma</strong><span class="small muted" id="pfXpText">0</span></div>
+              <div class="bar-top"><strong data-i18n="profile.dharma">Dharma</strong><span class="small muted" id="pfXpText">0</span></div>
               <div class="bar-track"><div class="bar-fill dharma" id="pfXpBar" style="width:0%"></div></div>
             </div>
             <div class="barbox">
-              <div class="bar-top"><strong>Karma</strong><span class="small muted" id="pfKarmaText">0</span></div>
+              <div class="bar-top"><strong data-i18n="profile.karma">Karma</strong><span class="small muted" id="pfKarmaText">0</span></div>
               <div class="bar-track"><div class="bar-fill karma" id="pfKarmaBar" style="width:0%"></div></div>
             </div>
           </div>
           <div class="profile-slots">
             <div class="slot" id="slotNivelBox">
-              <div class="slot-k">Item (Nivel)</div>
+              <div class="slot-k" data-i18n="profile.slotItem">Item (Nivel)</div>
               <div class="slot-v" id="slotNivel">—</div>
             </div>
-            <div class="slot"><div class="slot-k">Rol</div><div class="slot-v" id="slotRol">—</div></div>
-            <div class="slot"><div class="slot-k">veNFT</div><div class="slot-v" id="slotVeNFT">—</div></div>
-            <div class="slot"><div class="slot-k">Assets</div><div class="slot-v" id="slotAssets">—</div></div>
-            <div class="slot"><div class="slot-k">Agent</div><div class="slot-v" id="slotAgent">—</div></div>
-            <div class="slot"><div class="slot-k">Lands</div><div class="slot-v" id="slotLands">—</div></div>
+            <div class="slot"><div class="slot-k" data-i18n="profile.slotRol">Rol</div><div class="slot-v" id="slotRol">—</div></div>
+            <div class="slot"><div class="slot-k" data-i18n="profile.slotVeNft">veNFT</div><div class="slot-v" id="slotVeNFT">—</div></div>
+            <div class="slot"><div class="slot-k" data-i18n="profile.slotAssets">Assets</div><div class="slot-v" id="slotAssets">—</div></div>
+            <div class="slot"><div class="slot-k" data-i18n="profile.slotAgent">Agent</div><div class="slot-v" id="slotAgent">—</div></div>
+            <div class="slot"><div class="slot-k" data-i18n="profile.slotLands">Lands</div><div class="slot-v" id="slotLands">—</div></div>
           </div>
         </aside>
         <section class="profile-right">
           <div class="profile-tabs" id="pfTabs">
-            <button class="tab-btn active" data-tab="estado">ESTADO</button>
-            <button class="tab-btn" data-tab="actividad">User</button>
-            <button class="tab-btn" data-tab="dm">DM</button>
-            <button class="tab-btn" data-tab="farm">FARM</button>
-            <button class="tab-btn" data-tab="dex">DEX</button>
+            <button class="tab-btn active" data-tab="estado" data-i18n="profile.tab.status">ESTADO</button>
+            <button class="tab-btn" data-tab="actividad" data-i18n="profile.tab.user">User</button>
+            <button class="tab-btn" data-tab="dm" data-i18n="profile.tab.dm">DM</button>
+            <button class="tab-btn" data-tab="farm" data-i18n="profile.tab.farm">FARM</button>
+            <button class="tab-btn" data-tab="dex" data-i18n="profile.tab.dex">DEX</button>
             <button class="tab-btn" data-tab="tienda">🛒</button>
           </div>
           <div class="profile-fixed">
             <div class="pf-balances" id="pfBalances">
-              <div class="token token-dharma"><span class="lbl">Dharma</span><span class="val" id="pfDharma">—</span></div>
-              <div class="token token-aura" title="AURA on-chain — balance real en el contrato ERC-20 en Base Mainnet. Se incrementa cuando reclamas rewards en la pestaña DEX."><span class="lbl">AURA on-chain</span><span class="val" id="pfAura">—</span></div>
-              <div class="token token-karma" id="pfKarmaToken"><span class="lbl">Karma</span><span class="val" id="pfKarmaVal">—</span></div>
+              <div class="token token-dharma"><span class="lbl" data-i18n="profile.dharma">Dharma</span><span class="val" id="pfDharma">—</span></div>
+              <div class="token token-aura" data-i18n="attr:title" title="AURA on-chain — balance real en el contrato ERC-20 en Base Mainnet. Se incrementa cuando reclamas rewards en la pestaña DEX."><span class="lbl" data-i18n="profile.auraOnChain">AURA on-chain</span><span class="val" id="pfAura">—</span></div>
+              <div class="token token-karma" id="pfKarmaToken"><span class="lbl" data-i18n="profile.karma">Karma</span><span class="val" id="pfKarmaVal">—</span></div>
               <div class="token token-alem"><span class="lbl">$ALEM</span><span class="val" id="pfAlem">—</span></div>
-              <div class="token token-vealem"><span class="lbl">veALEM</span><span class="val" id="pfVeAlem">—</span></div>
+              <div class="token token-vealem"><span class="lbl" data-i18n="profile.veAlem">veALEM</span><span class="val" id="pfVeAlem">—</span></div>
               <div class="token token-aura-reclaim" id="pfAuraHint"></div>
             </div>
           </div>
@@ -536,6 +537,8 @@ export function buildProfileModal() {
         </section>
       </div>
     </div>`;
+  // Aplicar traducciones después de construir el HTML
+  import('./i18n.js').then(m => m.applyTranslations());
   return el;
 }
 
@@ -553,7 +556,7 @@ export async function syncProfile() {
   const avatarBox = modal.querySelector("#pfAvatarBox");
   const avatarImg = modal.querySelector("#pfAvatar");
 
-  addrEl.textContent = addr ? `${addr.toLowerCase()} · alemty.eth` : "Conecta tu wallet (☰)";
+  addrEl.textContent = addr ? `${addr.toLowerCase()} · alemty.eth` : t('profile.connectWallet');
 
   const url = addr ? (localStorage.getItem(`level.nft.avatar.${addr.toLowerCase()}`) || "") : "";
   if (!url.trim()) {
@@ -575,7 +578,7 @@ export async function syncProfile() {
   const karmaValue = 0;
 
   const { current, next } = getLevelByDharma(dharma);
-  lvlEl.textContent = addr ? `${current.name} (${dharma} Dharma)` : "Nivel —";
+  lvlEl.textContent = addr ? `${current.name} (${dharma} Dharma)` : t('profile.levelDefault');
   titleEl.textContent = addr ? current.name : "—";
 
   const progressDen = Math.max(1, next.need - current.need);
@@ -594,9 +597,9 @@ export async function syncProfile() {
   const auraHint = modal.querySelector("#pfAuraHint");
   if (auraHint) {
     if (addr && auraReclamable > 0) {
-      auraHint.innerHTML = `<span class="lbl">Reclamar</span><span class="val" style="color:#a855f7;">${String(auraReclamable)} AURA</span>`;
+      auraHint.innerHTML = `<span class="lbl">${t('profile.rewards.reclaim')}</span><span class="val" style="color:#a855f7;">${String(auraReclamable)} AURA</span>`;
     } else if (addr && auraReclamable <= 0) {
-      auraHint.innerHTML = `<span class="lbl">AURA por reclamar</span><span class="val" style="color:#a855f7;">0</span>`;
+      auraHint.innerHTML = `<span class="lbl">${t('profile.rewards.pending')}</span><span class="val" style="color:#a855f7;">0</span>`;
     } else {
       auraHint.innerHTML = '';
     }
@@ -642,7 +645,7 @@ function renderEstadoTab(modal) {
   const s = __ME_STATS__;
 
   if (!addr) {
-    c.innerHTML = `<div class="pf-box"><div class="h2">Estado</div><p class="muted">Panel MMORPG. Conecta tu wallet desde ☰ para ver tu progreso.</p></div>`;
+    c.innerHTML = `<div class="pf-box"><div class="h2">${esc(t('profile.status'))}</div><p class="muted">${esc(t('profile.statusConnect'))}</p></div>`;
     return;
   }
 
@@ -650,7 +653,7 @@ function renderEstadoTab(modal) {
   const connectedFor = formatDuration(nowMs() - startedAt);
 
   if (!s) {
-    c.innerHTML = `<div class="pf-box"><div class="h2">Estado</div><p class="muted">Panel MMORPG.</p><div class="post-tags" style="margin-top:10px"><span class="pill">⏱️ Conectado: <span class="count">${connectedFor}</span></span><span class="pill">🧙‍♂️ DID: <span class="count">${addr.toLowerCase()}</span></span></div></div>`;
+    c.innerHTML = `<div class="pf-box"><div class="h2">${esc(t('profile.status'))}</div><p class="muted">${esc(t('profile.statusPanel'))}</p><div class="post-tags" style="margin-top:10px"><span class="pill">⏱️ ${esc(t('profile.connected'))}: <span class="count">${connectedFor}</span></span><span class="pill">🧙‍♂️ ${esc(t('profile.did'))}: <span class="count">${addr.toLowerCase()}</span></span></div></div>`;
     return;
   }
 
@@ -660,14 +663,14 @@ function renderEstadoTab(modal) {
   const dharma = s?.tokenomics?.dharma ?? 0;
   const aura = s?.tokenomics?.aura ?? 0;
 
-  c.innerHTML = `<div class="pf-box"><div class="h2">Estado</div><div class="pf-stats-grid">${[
-    `<div class="pf-stat-item"><span class="pf-stat-label">⏱️ Conectado</span><span class="pf-stat-value">${connectedFor}</span></div>`,
-    `<div class="pf-stat-item"><span class="pf-stat-label">🧙‍♂️ DID</span><span class="pf-stat-value" style="font-size:11px;font-family:var(--mono);word-break:break-word">${addr.toLowerCase()}</span></div>`
+  c.innerHTML = `<div class="pf-box"><div class="h2">${esc(t('profile.status'))}</div><div class="pf-stats-grid">${[
+    `<div class="pf-stat-item"><span class="pf-stat-label">⏱️ ${esc(t('profile.connected'))}</span><span class="pf-stat-value">${connectedFor}</span></div>`,
+    `<div class="pf-stat-item"><span class="pf-stat-label">🧙‍♂️ ${esc(t('profile.did'))}</span><span class="pf-stat-value" style="font-size:11px;font-family:var(--mono);word-break:break-word">${addr.toLowerCase()}</span></div>`
   ].join('')}</div><div class="pf-stats-grid" style="margin-top:8px">${[
-    `<div class="pf-stat-item"><span class="pf-stat-label">⭐ Points recibidos</span><span class="pf-stat-value">${fmtInt(pointsReceived)}</span></div>`,
-    `<div class="pf-stat-item"><span class="pf-stat-label">♥️ Likes recibidos</span><span class="pf-stat-value">${fmtInt(likesReceived)}</span></div>`,
-    `<div class="pf-stat-item"><span class="pf-stat-label">💬 Comentarios recibidos</span><span class="pf-stat-value">${fmtInt(commentsReceived)}</span></div>`
-  ].join('')}</div><div class="pf-stats-grid" style="margin-top:8px"><div class="pf-stat-item dharma"><span class="pf-stat-label">🟢 Dharma</span><span class="pf-stat-value">${fmtInt(dharma)}</span></div><div class="pf-stat-item aura"><span class="pf-stat-label">🔵 Aura</span><span class="pf-stat-value">${fmtInt(aura)}</span></div></div></div>`;
+    `<div class="pf-stat-item"><span class="pf-stat-label">⭐ ${esc(t('profile.pointsReceived'))}</span><span class="pf-stat-value">${fmtInt(pointsReceived)}</span></div>`,
+    `<div class="pf-stat-item"><span class="pf-stat-label">♥️ ${esc(t('profile.likesReceived'))}</span><span class="pf-stat-value">${fmtInt(likesReceived)}</span></div>`,
+    `<div class="pf-stat-item"><span class="pf-stat-label">💬 ${esc(t('profile.commentsReceived'))}</span><span class="pf-stat-value">${fmtInt(commentsReceived)}</span></div>`
+  ].join('')}</div><div class="pf-stats-grid" style="margin-top:8px"><div class="pf-stat-item dharma"><span class="pf-stat-label">🟢 ${esc(t('profile.dharma'))}</span><span class="pf-stat-value">${fmtInt(dharma)}</span></div><div class="pf-stat-item aura"><span class="pf-stat-label">🔵 ${esc(t('profile.auraOnChain'))}</span><span class="pf-stat-value">${fmtInt(aura)}</span></div></div></div>`;
 }
 
 function renderActividadTab(modal) {

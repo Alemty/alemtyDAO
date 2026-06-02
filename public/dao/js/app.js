@@ -1325,7 +1325,7 @@ if (prof) {
     window.openProfileModal(addr, targetTab);
   } else {
     // Fallback: mostrar dirección completa inline
-    document.getElementById('daoModalTitle').textContent = 'Perfil';
+    document.getElementById('daoModalTitle').textContent = t('profile.title');
     document.getElementById('daoModalBody').innerHTML = `
       <div class="sheet-item">
         <div class="m" style="font-family:var(--mono);word-break:break-all;">${esc(addr)}</div>
@@ -2846,7 +2846,7 @@ window.openPostModal = async function openPostModal(postId) {
 
   CURRENT_MODAL_POST_ID = idStr;
   CURRENT_MODAL_POST = p;
-  document.getElementById('daoModalTitle').textContent = 'Post';
+  document.getElementById('daoModalTitle').textContent = t('dao.post');
 
   const ui = loadUI();
   const replyingTo =
@@ -3142,7 +3142,7 @@ async function openRoomModal({ type, name }) {
   document.getElementById("daoModalBody").innerHTML = `
     <div style="display:grid;grid-template-columns:240px 1fr;gap:12px;">
       <aside style="border:1px solid var(--border);border-radius:16px;padding:10px;background:rgba(255,255,255,.04);">
-        <div class="small muted" style="margin-bottom:10px;">Secciones</div>
+        <div class="small muted" style="margin-bottom:10px;">${t('dao.sections')}</div>
         <div id="roomNav" style="display:flex;flex-direction:column;gap:8px;">
           ${cfg.sections
             .map(

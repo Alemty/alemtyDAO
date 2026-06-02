@@ -4,6 +4,7 @@ import { $, esc } from './core.js';
 import { getDid } from './wallet.js';
 import { fetchMeStats, API_BASE, getJWT } from './api.js';
 import { isModOrAdminNow } from './moderation.js';
+import { t } from './i18n.js';
 
 let __ME_STATS__ = null;
 let __TIMELINE__ = [];
@@ -37,19 +38,21 @@ export function buildNotifModal() {
     <div class="modal-backdrop" id="notifBackdrop"></div>
     <div class="modal-card notif-card">
       <div class="modal-headbar">
-        <button class="icon-btn" id="notifBack" type="button" aria-label="Atrás">←</button>
-        <strong>Notificaciones</strong>
-        <button class="icon-btn" id="notifClose" type="button" aria-label="Cerrar">✕</button>
+        <button class="icon-btn" id="notifBack" type="button" data-i18n-aria="notif.back" aria-label="Atrás">←</button>
+        <strong data-i18n="notif.title">Notificaciones</strong>
+        <button class="icon-btn" id="notifClose" type="button" data-i18n-aria="notif.close" aria-label="Cerrar">✕</button>
       </div>
-      <div class="notif-body" id="notifBody"><div class="small muted">Cargando…</div></div>
+      <div class="notif-body" id="notifBody"><div class="small muted" data-i18n="notif.loading">Cargando…</div></div>
       <div class="notif-footer" id="notifFooter" style="display:none;padding:10px 16px;border-top:1px solid var(--ui-border);">
         <div style="display:flex;gap:10px;justify-content:center;">
-          <button class="btn" id="notifPrev" type="button" disabled style="font-size:12px;padding:6px 14px;">← Anterior</button>
-          <span id="notifPageInfo" style="font-size:12px;font-weight:700;display:flex;align-items:center;opacity:.6;">Página 1</span>
-          <button class="btn" id="notifNext" type="button" style="font-size:12px;padding:6px 14px;">Siguiente →</button>
+          <button class="btn" id="notifPrev" type="button" disabled style="font-size:12px;padding:6px 14px;" data-i18n="notif.prev">← Anterior</button>
+          <span id="notifPageInfo" style="font-size:12px;font-weight:700;display:flex;align-items:center;opacity:.6;" data-i18n="notif.page">Página 1</span>
+          <button class="btn" id="notifNext" type="button" style="font-size:12px;padding:6px 14px;" data-i18n="notif.next">Siguiente →</button>
         </div>
       </div>
     </div>`;
+  // Apply translations immediately
+  import('./i18n.js').then(m => m.applyTranslations());
   return el;
 }
 
@@ -87,7 +90,7 @@ export async function updateNotifUI() {
 export async function openNotifModal() {
   const stats = await fetchNotifStats();
   var body = document.getElementById("notifBody");
-  if (body) body.innerHTML = '<div class="small muted">Cargando notificaciones...</div>';
+  if (body) body.innerHTML = '<div class="small muted">' + t('notif.loading') + '</div>';
   openModal("notifModal");
   var notifData = await fetchRecentNotifications();
   __TIMELINE__ = mergeByDate(notifData && notifData.likes, notifData && notifData.points, notifData && notifData.comments);
@@ -142,11 +145,11 @@ function renderNotifList({ stats, modPending }) {
   const isAuth = !!getJWT();
 
   if (!addr) {
-    body.innerHTML = `<div class="small muted">Conecta tu wallet y verifica SIWE para ver notificaciones.</div>`;
+    body.innerHTML = '<div class="small muted">' + t('notif.connectWallet') + '</div>';
     return;
   }
   if (!isAuth) {
-    body.innerHTML = '<div class="small muted">Verifica SIWE para habilitar notificaciones.</div>';
+    body.innerHTML = '<div class="small muted">' + t('notif.verifySiwe') + '</div>';
     return;
   }
 
@@ -164,11 +167,11 @@ function renderNotifList({ stats, modPending }) {
       var item = pageItems[i];
       var actionHtml = '';
       if (item.type === 'like') {
-        actionHtml = ' le dio like a';
+        actionHtml = ' ' + t('notif.actionLike') + ' ';
       } else if (item.type === 'point') {
-        actionHtml = ' te dio <strong>' + esc(item.detail) + '</strong> en';
+        actionHtml = ' ' + t('notif.actionPoint') + ' <strong>' + esc(item.detail) + '</strong> ' + t('notif.actionIn') + ' ';
       } else {
-        actionHtml = ' coment\u00f3 en';
+        actionHtml = ' ' + t('notif.actionComment') + ' ';
       }
       var snippetHtml = '';
       if (item.type === 'comment') {
@@ -178,7 +181,7 @@ function renderNotifList({ stats, modPending }) {
         '<span class="ico">' + item.ico + '</span>' +
         '<span class="txt">' +
           '<a href="#" class="notif-author-link" data-profile-open="' + esc(item.by) + '" style="font-size:11px;font-weight:700;text-decoration:none;color:inherit;">' + esc(shortAddr(item.by)) + '</a>' +
-          '<div style="font-size:9px;font-weight:500;opacity:.4;line-height:1;margin-bottom:2px;">ver perfil</div>' +
+          '<div style="font-size:9px;font-weight:500;opacity:.4;line-height:1;margin-bottom:2px;">' + t('notif.viewProfile') + '</div>' +
           '<span style="font-weight:400;">' + actionHtml + '</span>' +
           ' <em style="font-weight:600;">' + esc(item.postTitle || 'tu post') + '</em>' +
           snippetHtml +
@@ -187,7 +190,7 @@ function renderNotifList({ stats, modPending }) {
       '</div>';
     }
   } else {
-    itemsHtml = '<div class="small muted">No hay interacciones recientes.</div>';
+    itemsHtml = '<div class="small muted">' + t('notif.empty') + '</div>';
   }
 
   body.innerHTML =
@@ -244,7 +247,7 @@ function updatePagination(totalPages) {
   footer.style.display = 'block';
   prevBtn.disabled = (__PAGE__ <= 0);
   nextBtn.disabled = (__PAGE__ >= totalPages - 1);
-  pageInfo.textContent = 'P\u00e1gina ' + (__PAGE__ + 1) + ' de ' + totalPages;
+  pageInfo.textContent = t('notif.page') + ' ' + (__PAGE__ + 1) + ' ' + t('notif.pageOf') + ' ' + totalPages;
 
   var newPrev = prevBtn.cloneNode(true);
   var newNext = nextBtn.cloneNode(true);
