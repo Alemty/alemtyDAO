@@ -1118,28 +1118,32 @@ function getDocTitle(lang) {
 
 // ===== FLAGS SVG (inline para evitar dependencia de emojis) =====
 const FLAG_MX = `<svg viewBox="0 0 36 24" width="20" height="14" style="border-radius:2px;display:block;">
-  <!-- Mitad izquierda: México -->
-  <g clip-path="url(#clipLeft)">
+  <defs>
+    <clipPath id="clipMxDiagA"><polygon points="0,0 36,0 36,12 0,24"/></clipPath>
+    <clipPath id="clipMxDiagB"><polygon points="0,0 0,24 36,12 36,24"/></clipPath>
+  </defs>
+  <!-- Mitad A (superior-izq → inferior-der diagonal): México -->
+  <g clip-path="url(#clipMxDiagA)">
     <rect width="36" height="24" fill="#006847"/>
     <rect x="12" width="12" height="24" fill="#fff"/>
     <rect x="24" width="12" height="24" fill="#ce1126"/>
     <circle cx="18" cy="12" r="4" fill="#8b5e3c" opacity=".6"/>
   </g>
-  <!-- Mitad derecha: España -->
-  <g clip-path="url(#clipRight)">
+  <!-- Mitad B: España -->
+  <g clip-path="url(#clipMxDiagB)">
     <rect width="36" height="24" fill="#c60b1e"/>
     <rect y="6" width="36" height="12" fill="#ffc400"/>
     <circle cx="18" cy="12" r="3.5" fill="#c60b1e"/>
   </g>
-  <defs>
-    <clipPath id="clipLeft"><rect x="0" y="0" width="18" height="24"/></clipPath>
-    <clipPath id="clipRight"><rect x="18" y="0" width="18" height="24"/></clipPath>
-  </defs>
 </svg>`;
 
 const FLAG_US = `<svg viewBox="0 0 36 24" width="20" height="14" style="border-radius:2px;display:block;">
-  <!-- Mitad izquierda: USA -->
-  <g clip-path="url(#clipLeftUS)">
+  <defs>
+    <clipPath id="clipUsDiagA"><polygon points="0,0 36,0 36,12 0,24"/></clipPath>
+    <clipPath id="clipUsDiagB"><polygon points="0,0 0,24 36,12 36,24"/></clipPath>
+  </defs>
+  <!-- Mitad A (diagonal): USA -->
+  <g clip-path="url(#clipUsDiagA)">
     <rect width="36" height="24" fill="#fff"/>
     <rect width="36" height="1.85" fill="#b22234" y="0"/>
     <rect width="36" height="1.85" fill="#b22234" y="3.7"/>
@@ -1184,8 +1188,8 @@ const FLAG_US = `<svg viewBox="0 0 36 24" width="20" height="14" style="border-r
     <circle cx="9.6" cy="10.8" r=".35" fill="#fff"/>
     <circle cx="12" cy="10.8" r=".35" fill="#fff"/>
   </g>
-  <!-- Mitad derecha: GB -->
-  <g clip-path="url(#clipRightUS)">
+  <!-- Mitad B (diagonal complementaria): GB -->
+  <g clip-path="url(#clipUsDiagB)">
     <rect width="36" height="24" fill="#012169"/>
     <rect width="36" height="2.5" fill="#fff" y="0"/>
     <rect width="36" height="2.5" fill="#fff" y="21.5"/>
@@ -1199,10 +1203,6 @@ const FLAG_US = `<svg viewBox="0 0 36 24" width="20" height="14" style="border-r
     <rect x="0" y="11.25" width="36" height="1.5" fill="#fff"/>
     <rect x="17.4" y="0" width="1.2" height="24" fill="#fff"/>
   </g>
-  <defs>
-    <clipPath id="clipLeftUS"><rect x="0" y="0" width="18" height="24"/></clipPath>
-    <clipPath id="clipRightUS"><rect x="18" y="0" width="18" height="24"/></clipPath>
-  </defs>
 </svg>`;
 
 // ===== SVG FLAG BUTTON =====

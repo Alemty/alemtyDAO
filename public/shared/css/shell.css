@@ -1031,6 +1031,20 @@ html { overflow-y: auto; }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
+/* ===== MOBILE SIZE NORMALIZATION ===== */
+/* Evita diferencias de zoom entre páginas IA/DEX y el resto */
+@media (pointer: coarse) and (max-width: 520px) {
+  body[data-app="ia"] #pageIA,
+  body[data-app="dex"] #pageDex {
+    font-size: inherit;
+    -webkit-text-size-adjust: 100%;
+  }
+  body[data-app="ia"] #pageIA .ia-brand,
+  body[data-app="dex"] #pageDex .dex-title {
+    font-size: clamp(1.2rem, 5vw, 1.6rem);
+  }
+}
+
 .pill, .car-card, .post, .mini { touch-action: manipulation; }
 
 /* ===== KEBAB MENU (post actions) ===== */
