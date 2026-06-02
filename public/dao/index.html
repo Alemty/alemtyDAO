@@ -96,18 +96,18 @@
     <section class="grid" style="margin-top:16px;">
       <div class="col-6">
         <div class="card">
-          <div class="h2">Crear post</div>
-          <p class="small muted">Modo v1: Foro Online ENS IPFS SQL.</p>
+          <div class="h2" data-i18n="dao.createPost">Crear post</div>
+          <p class="small muted" data-i18n="dao.createPostSub">Modo v1: Foro Online ENS IPFS SQL.</p>
 
           <div class="form">
-            <input id="postTitle" placeholder="Título…" maxlength="120">
-            <textarea id="postBody" rows="5" placeholder="Escribe tu post…"></textarea>
+            <input id="postTitle" data-i18n="attr:placeholder" placeholder="Título…">
+            <textarea id="postBody" rows="5" data-i18n="attr:placeholder" placeholder="Escribe tu post…"></textarea>
 
             <div class="row">
               <select id="postTopic">
-                <option value="">Sin tema</option>
+                <option value="" data-i18n="dao.noTopic">Sin tema</option>
               </select>
-              <button class="btn primary" id="publishPost" type="button">Publicar</button>
+              <button class="btn primary" id="publishPost" type="button" data-i18n="dao.publish">Publicar</button>
             </div>
 
             <div class="small muted" id="publishStatus"></div>
@@ -117,7 +117,7 @@
 
       <div class="col-6">
         <div class="card clickable" id="latestCard" data-open-post="">
-          <div class="h2">Último post</div>
+          <div class="h2" data-i18n="dao.latestPost">Último post</div>
           <div class="small muted" id="latestMeta">—</div>
           <div class="latest-title" id="latestTitle">—</div>
           <div class="latest-snippet muted" id="latestSnippet">—</div>
@@ -156,12 +156,12 @@
         </div>
         
 <div class="card dao-side-card" id="daoSideActions">
-  <div class="h2">Salas</div>
-  <p class="small muted">Crea espacios de gobernanza o entra a backrooms.</p>
+  <div class="h2" data-i18n="dao.rooms">Salas</div>
+  <p class="small muted" data-i18n="dao.roomsSub">Crea espacios de gobernanza o entra a backrooms.</p>
 
   <div class="dao-side-actions">
-    <button class="btn primary" id="openGovRoom" type="button">🗳️ Gobernanza</button>
-    <button class="btn" id="openBackrooms2" type="button">🏚️ Backrooms</button>
+    <button class="btn primary" id="openGovRoom" type="button" data-i18n="dao.governanceBtn">🗳️ Gobernanza</button>
+    <button class="btn" id="openBackrooms2" type="button" data-i18n="dao.backroomsBtn">🏚️ Backrooms</button>
   </div>
 </div>
 
@@ -172,13 +172,13 @@
 <section class="card" style="margin-top:16px;">
   <div class="dao-feed-head">
     <div>
-      <div class="h2">Feed</div>
-      <div class="small muted">Explora, vota, abre posts y participa</div>
+      <div class="h2" data-i18n="dao.feed">Feed</div>
+      <div class="small muted" data-i18n="dao.feedSub">Explora, vota, abre posts y participa</div>
     </div>
 
     <div class="dao-feed-tools">
-      <input id="search" placeholder="Buscar…">
-      <button class="btn" id="clearSearch" type="button">Limpiar</button>
+      <input id="search" data-i18n="attr:placeholder" placeholder="Buscar…">
+      <button class="btn" id="clearSearch" type="button" data-i18n="dao.clearSearch">Limpiar</button>
     </div>
   </div>
 
@@ -189,7 +189,7 @@
     <section class="grid" style="margin-top:16px;">
       <div class="col-12">
         <div class="card">
-          <div class="h2">Top semana</div>
+          <div class="h2" data-i18n="dao.topWeek">Top semana</div>
           <div class="mini-grid" id="topWeek"></div>
         </div>
       </div>
@@ -198,7 +198,7 @@
     <section class="grid" style="margin-top:16px;">
       <div class="col-12">
         <div class="card">
-          <div class="h2">Top mes</div>
+          <div class="h2" data-i18n="dao.topMonth">Top mes</div>
           <div class="mini-grid" id="topMonth"></div>
         </div>
       </div>
