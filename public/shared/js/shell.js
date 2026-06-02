@@ -131,7 +131,7 @@ export function mountShell() {
       <!-- Servicios de la DAO -->
       <div class="acc" data-acc="services">
         <button class="acc-h" type="button" data-open="services" aria-expanded="false">
-          <span>🛡️ Servicios</span><span class="chev">▾</span>
+          <span>Servicios</span><span class="chev">▾</span>
         </button>
         <div class="acc-p" id="accServices">
           <div class="small muted" style="margin:0 0 10px;">Consultora Web3 descentralizada — 6 agentes inteligentes al servicio del ecosistema.</div>
@@ -323,7 +323,7 @@ export function mountShell() {
     <div class="modal-backdrop" id="servicesBackdrop"></div>
     <div class="modal-card" style="max-width:680px;">
       <div class="modal-headbar">
-        <strong>🛡️ Servicios de la DAO</strong>
+        <strong>Servicios de la DAO</strong>
         <button class="icon-btn" id="servicesClose" type="button" aria-label="Cerrar">✕</button>
       </div>
       <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;">
