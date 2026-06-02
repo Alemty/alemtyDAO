@@ -149,7 +149,7 @@ const DICT = {
 
     // DEFI page
     'defi.title': 'TERMINAL DE TRADING',
-    'defi.subtitle': 'TERMINAL DE TRADING DEFI',
+    'defi.subtitle': 'FINANZAS DESCENTRALIZADAS',
     'defi.brand': 'defi.alemty.eth',
     'defi.chart': 'Gráfico',
     'defi.swap': 'Intercambiar',
@@ -436,7 +436,7 @@ const DICT = {
     'dao.governance': 'Governance',
 
     'defi.title': 'TRADING TERMINAL',
-    'defi.subtitle': 'DEFI TRADING TERMINAL',
+    'defi.subtitle': 'DECENTRALIZED FINANCE',
     'defi.brand': 'defi.alemty.eth',
     'defi.chart': 'Chart',
     'defi.swap': 'Swap',
