@@ -79,12 +79,12 @@
 
       <!-- Stats row -->
       <div class="trading-stats" id="tradingStats">
-        <div class="trading-stat"><span class="ts-label">Apertura</span><span class="ts-val" id="tsOpen">—</span></div>
-        <div class="trading-stat"><span class="ts-label">Máximo</span><span class="ts-val" id="tsHigh">—</span></div>
-        <div class="trading-stat"><span class="ts-label">Mínimo</span><span class="ts-val" id="tsLow">—</span></div>
-        <div class="trading-stat"><span class="ts-label">Cierre</span><span class="ts-val" id="tsClose">—</span></div>
-        <div class="trading-stat"><span class="ts-label">Volatilidad</span><span class="ts-val" id="tsVol">—</span></div>
-        <div class="trading-stat"><span class="ts-label">Volumen</span><span class="ts-val" id="tsVolAmt">—</span></div>
+        <div class="trading-stat"><span class="ts-label" data-i18n="defi.open">Apertura</span><span class="ts-val" id="tsOpen">—</span></div>
+        <div class="trading-stat"><span class="ts-label" data-i18n="defi.high">Máximo</span><span class="ts-val" id="tsHigh">—</span></div>
+        <div class="trading-stat"><span class="ts-label" data-i18n="defi.low">Mínimo</span><span class="ts-val" id="tsLow">—</span></div>
+        <div class="trading-stat"><span class="ts-label" data-i18n="defi.close">Cierre</span><span class="ts-val" id="tsClose">—</span></div>
+        <div class="trading-stat"><span class="ts-label" data-i18n="defi.volatility">Volatilidad</span><span class="ts-val" id="tsVol">—</span></div>
+        <div class="trading-stat"><span class="ts-label" data-i18n="defi.volume">Volumen</span><span class="ts-val" id="tsVolAmt">—</span></div>
       </div>
     </section>
 
@@ -92,11 +92,11 @@
     <div class="defi-bottom-row">
 
       <!-- SWAP -->
-      <section class="card defi-panel" aria-label="Intercambio rápido">
-        <div class="defi-panel-title">💰 Intercambio Rápido</div>
+      <section class="card defi-panel" data-i18n-aria="defi.quickSwap" aria-label="Intercambio rápido">
+        <div class="defi-panel-title" data-i18n="defi.quickSwap">💰 Intercambio Rápido</div>
 
         <div class="defi-trade-row">
-          <label class="defi-trade-label">De</label>
+          <label class="defi-trade-label" data-i18n="defi.from">De</label>
           <select class="defi-trade-select" id="tradeFrom">
             <option value="ALEM">ALEM</option>
             <option value="AURA">AURA</option>
@@ -107,11 +107,11 @@
         </div>
 
         <div class="defi-trade-mid">
-          <button class="defi-trade-flip" id="tradeFlip" type="button" aria-label="Invertir">⇅</button>
+          <button class="defi-trade-flip" id="tradeFlip" type="button" data-i18n-aria="defi.flip" aria-label="Invertir">⇅</button>
         </div>
 
         <div class="defi-trade-row">
-          <label class="defi-trade-label">A</label>
+          <label class="defi-trade-label" data-i18n="defi.to">A</label>
           <select class="defi-trade-select" id="tradeTo">
             <option value="ETH">ETH</option>
             <option value="ALEM">ALEM</option>
@@ -123,19 +123,19 @@
 
         <div class="defi-trade-rate" id="tradeRate">—</div>
 
-        <button class="defi-panel-btn primary" id="tradeBtn" type="button">🚀 Ejecutar Swap</button>
+        <button class="defi-panel-btn primary" id="tradeBtn" type="button" data-i18n="defi.executeSwap">🚀 Ejecutar Swap</button>
         <div class="defi-trade-status" id="tradeStatus"></div>
       </section>
 
       <!-- CONTROLS: SL / TP / Schedule -->
-      <section class="card defi-panel" aria-label="Controles de trading">
-        <div class="defi-panel-title">🎯 Órdenes Avanzadas</div>
+      <section class="card defi-panel" data-i18n-aria="defi.tradingControls" aria-label="Controles de trading">
+        <div class="defi-panel-title" data-i18n="defi.advancedOrders">🎯 Órdenes Avanzadas</div>
 
         <div class="defi-control-stack">
           <div class="defi-control">
             <div class="defi-control-label">🛑 Stop Loss</div>
             <div class="defi-control-row">
-              <input class="defi-control-input" id="slPrice" inputmode="decimal" placeholder="Precio" />
+              <input class="defi-control-input" id="slPrice" inputmode="decimal" data-i18n-placeholder="defi.price" placeholder="Precio" />
               <button class="defi-control-btn danger" id="slBtn">Set SL</button>
             </div>
             <div class="defi-control-status" id="slStatus"></div>
@@ -144,17 +144,17 @@
           <div class="defi-control">
             <div class="defi-control-label">✅ Take Profit</div>
             <div class="defi-control-row">
-              <input class="defi-control-input" id="tpPrice" inputmode="decimal" placeholder="Precio" />
+              <input class="defi-control-input" id="tpPrice" inputmode="decimal" data-i18n-placeholder="defi.price" placeholder="Precio" />
               <button class="defi-control-btn success" id="tpBtn">Set TP</button>
             </div>
             <div class="defi-control-status" id="tpStatus"></div>
           </div>
 
           <div class="defi-control">
-            <div class="defi-control-label">⏰ Programar Trading</div>
+            <div class="defi-control-label" data-i18n="defi.scheduleTrading">⏰ Programar Trading</div>
             <div class="defi-control-row">
               <input class="defi-control-input" id="schedDate" type="datetime-local" />
-              <button class="defi-control-btn primary" id="schedBtn">Programar</button>
+              <button class="defi-control-btn primary" id="schedBtn" data-i18n="defi.schedule">Programar</button>
             </div>
             <div class="defi-control-status" id="schedStatus"></div>
           </div>
@@ -162,23 +162,23 @@
       </section>
 
       <!-- ORÁCULOS -->
-      <section class="card defi-panel" aria-label="Oráculos y agentes">
-        <div class="defi-panel-title">🔮 Oráculos — Agentes</div>
+      <section class="card defi-panel" data-i18n-aria="defi.oracles" aria-label="Oráculos y agentes">
+        <div class="defi-panel-title" data-i18n="defi.oracles">🔮 Oráculos — Agentes</div>
         <div class="defi-oracles-list">
           <div class="defi-oracle"><span class="defi-oracle-name">Pool Balancer</span><span class="defi-oracle-status online">●</span><span class="defi-oracle-data">ALEM/WETH: 0.01384</span></div>
           <div class="defi-oracle"><span class="defi-oracle-name">DEFI Oracle</span><span class="defi-oracle-status online">●</span><span class="defi-oracle-data">Feeds: ETH/USD</span></div>
           <div class="defi-oracle"><span class="defi-oracle-name">Governance Bot</span><span class="defi-oracle-status online">●</span><span class="defi-oracle-data">veALEM: 42,850</span></div>
-          <div class="defi-oracle"><span class="defi-oracle-name">OVR Assistant</span><span class="defi-oracle-status pending">◌</span><span class="defi-oracle-data">Sincronizando</span></div>
+          <div class="defi-oracle"><span class="defi-oracle-name">OVR Assistant</span><span class="defi-oracle-status pending">◌</span><span class="defi-oracle-data" data-i18n="defi.syncing">Sincronizando</span></div>
           <div class="defi-oracle"><span class="defi-oracle-name">AutoBot (CI/CD)</span><span class="defi-oracle-status pending">◌</span><span class="defi-oracle-data">Audit pending</span></div>
-          <div class="defi-oracle"><span class="defi-oracle-name">Foro Admin</span><span class="defi-oracle-status online">●</span><span class="defi-oracle-data">3 propuestas</span></div>
+          <div class="defi-oracle"><span class="defi-oracle-name">Foro Admin</span><span class="defi-oracle-status online">●</span><span class="defi-oracle-data" data-i18n="defi.proposals">3 propuestas</span></div>
         </div>
-        <div class="defi-oracles-foot muted small">En vivo cuando los agentes estén en Base Mainnet.</div>
+        <div class="defi-oracles-foot muted small" data-i18n="defi.oraclesFoot">En vivo cuando los agentes estén en Base Mainnet.</div>
       </section>
 
     </div>
 
-    <footer class="small muted" style="margin-top:18px;text-align:center;">
-      defi.alemty.eth · ETH/USD via CoinGecko · No financiero / no equity · <strong>Código es ley.</strong>
+    <footer class="small muted" style="margin-top:18px;text-align:center;" data-i18n="defi.footer">
+      defi.alemty.eth · ETH/USD via CoinGecko · No financiero / no equity · <strong data-i18n="defi.codeIsLaw">Código es ley.</strong>
     </footer>
   </main>
 
