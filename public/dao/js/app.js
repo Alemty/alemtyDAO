@@ -1,6 +1,7 @@
 
 import { mountShell } from '/shared/js/shell.js';
 import { API_BASE, getJWT, authHeaders, authHeadersGet, getDid } from '/shared/js/api.js';
+import { t } from '/shared/js/i18n.js';
 mountShell();
 
 // ✅ Access info (backend manda)
@@ -108,7 +109,7 @@ function mapPostFromApi(p) {
 
 const API = {
   async getPosts() {
-    
+
   const r = await fetch(`${API_BASE}/api/posts`, {
   cache: "no-store",
   headers: authHeadersGet(),
@@ -119,7 +120,7 @@ const API = {
     const arr = Array.isArray(data?.posts) ? data.posts : [];
     return arr.map(mapPostFromApi);
   },
-  
+
 
 async updatePost(postId, { title, body, topic }) {
   const r = await fetch(`${API_BASE}/api/posts/${postId}`, {
@@ -127,7 +128,7 @@ async updatePost(postId, { title, body, topic }) {
     headers: authHeaders(),
     body: JSON.stringify({ title, body, topic }),
   });
-  
+
 if (!r.ok) {
   const msg = await readErr(r);
   throw new Error(msg || 'updatePost failed');
@@ -177,7 +178,7 @@ async reactComment(postId, commentId, type) {
   // ✅ Trae post + comentarios reales (y anida replies)
   async getPost(postId) {
     // 1) Post
-    
+
 const r = await fetch(`${API_BASE}/api/posts/${postId}`, {
   cache: "no-store",
   headers: authHeadersGet(),
@@ -192,7 +193,7 @@ const r = await fetch(`${API_BASE}/api/posts/${postId}`, {
     // 2) Comments reales
     let rawComments = [];
     try {
-      
+
 const cr = await fetch(`${API_BASE}/api/posts/${postId}/comments`, {
   cache: "no-store",
   headers: authHeadersGet(),
@@ -207,7 +208,7 @@ const cr = await fetch(`${API_BASE}/api/posts/${postId}/comments`, {
     }
 
     // 3) Map a schema UI (comentarios planos)
-    
+
 const mapped = rawComments.map((c) => {
   const id = c?.id != null ? String(c.id) : (crypto.randomUUID?.() || String(Math.random()));
   const ts = c?.created_at ? Date.parse(c.created_at) : Date.now();
@@ -243,7 +244,7 @@ const mapped = rawComments.map((c) => {
 
         if (parent) {
           parent.replies = parent.replies || [];
-          
+
 
 parent.replies.push({
   id: c.id,
@@ -314,7 +315,7 @@ const ROOMS_KEY = 'alemty.dao.rooms.v1';
 const TOPICS_KEY = 'alemty.dao.topics.v1';
 
 // =========================
-// Rooms (Backrooms + Gobernanza) — Keys
+// Rooms (Backrooms + Gobernanza) - Keys
 // =========================
 const GOV_ROOMS_KEY = 'alemty.dao.govrooms.v1';
 const BACKROOMS_KEY = 'alemty.dao.backrooms.v1'; // <- nuevo (separa de ROOMS_KEY legacy)
@@ -388,7 +389,7 @@ const DEFAULT_TOPIC_GROUPS = [
   {
     label: '☕ COMUNIDAD',
     items: [
-      '☕ Off-Topic — El Café de la DAO',
+      '☕ Off-Topic - El Café de la DAO',
       '🧨 Memes & Shitposting',
       '🤝 Presentaciones & Networking',
       '🗣️ Anécdotas, Debates & Clasificados',
@@ -456,16 +457,16 @@ function fmt(ts){
 
 function shortHex(addr, start = 6, end = 4){
   const a = String(addr || '');
-  if (!a) return '—';
+  if (!a) return '-';
   if (a.length <= start + end) return a;
-  return `${a.slice(0, start)}…${a.slice(-end)}`;
+  return `${a.slice(0, start)}...${a.slice(-end)}`;
 }
 
 // (FASE 3) Por ahora no tienes ENS real en posts; si luego lo agregas,
 // aquí decides si muestra .eth o 0x...
 function displayAuthor(addr){
   const a = String(addr || '');
-  if (!a) return '—';
+  if (!a) return '-';
   return a.toLowerCase(); // completa, sin truncar
 }
 
@@ -478,10 +479,10 @@ function authorLinkHTML(addr){
 }
 
 /* =========================================================
-   ✅ FASE 3.5 — Invitación opción A (SIN backend)
+   ✅ FASE 3.5 - Invitación opción A (SIN backend)
    - Address Book local: ENS/DID/alias -> 0x...
    - Genera SQL y comando wrangler para meter a room_members
-   - La “autorización” real sigue siendo: owner/founder (canManage) en UI.
+   - La "autorización" real sigue siendo: owner/founder (canManage) en UI.
 ========================================================= */
 
 const ADDRESSBOOK_KEY = "alemty.addressbook.v1";
@@ -860,29 +861,29 @@ async function openEditPostModal(postId) {
   const post = p || CURRENT_MODAL_POST;
   if (!post) return;
 
-  const topic = String(post.topic || 'Sin tema');
+  const topic = String(post.topic || t('dao.noTopic'));
   const title = String(post.title || '');
   const body  = String(post.body || '');
 
-  document.getElementById('daoModalTitle').textContent = 'Editar post';
+  document.getElementById('daoModalTitle').textContent = t('dao.editPost');
   document.getElementById('daoModalBody').innerHTML = `
-  
+
     <div class="sheet-item">
-      <div class="t">Título</div>
+      <div class="t">${t('dao.title')}</div>
       <input id="editPostTitle" value="${esc(title)}" />
     </div>
     <div class="sheet-item">
-      <div class="t">Tema</div>
+      <div class="t">${t('dao.topic')}</div>
       <input id="editPostTopic" value="${esc(topic)}" />
-      <div class="small muted" style="margin-top:6px;">Puedes escribir un tema o dejar “Sin tema”.</div>
+      <div class="small muted" style="margin-top:6px;">${t('dao.topicHint')}</div>
     </div>
     <div class="sheet-item">
-      <div class="t">Contenido</div>
+      <div class="t">${t('dao.content')}</div>
       <textarea id="editPostBody" style="min-height:140px;">${esc(body)}</textarea>
     </div>
     <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
-      <button class="btn primary" type="button" data-post-save="${esc(String(postId))}">Guardar</button>
-      <button class="btn" type="button" data-close="1">Cancelar</button>
+      <button class="btn primary" type="button" data-post-save="${esc(String(postId))}">${t('dao.save')}</button>
+      <button class="btn" type="button" data-close="1">${t('dao.cancel')}</button>
     </div>
     <div id="editPostStatus" class="small muted" style="margin-top:10px;"></div>
   `;
@@ -892,15 +893,15 @@ async function openEditPostModal(postId) {
 
 
 async function openDeletePostModal(postId) {
-  document.getElementById('daoModalTitle').textContent = 'Eliminar post';
+  document.getElementById('daoModalTitle').textContent = t('dao.deletePost');
   document.getElementById('daoModalBody').innerHTML = `
     <div class="sheet-item">
-      <div class="t">Confirmación</div>
-      <div class="m">¿Seguro que quieres eliminar este post? Esta acción no se puede deshacer.</div>
+      <div class="t">${t('dao.confirmation')}</div>
+      <div class="m">${t('dao.deleteConfirmMsg')}</div>
     </div>
     <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
-      <button class="btn" type="button" data-close="1">Cancelar</button>
-      <button class="btn primary" type="button" data-post-delete-confirm="${esc(String(postId))}">Sí, eliminar</button>
+      <button class="btn" type="button" data-close="1">${t('dao.cancel')}</button>
+      <button class="btn primary" type="button" data-post-delete-confirm="${esc(String(postId))}">${t('dao.yesDelete')}</button>
     </div>
     <div id="deletePostStatus" class="small muted" style="margin-top:10px;"></div>
   `;
@@ -909,16 +910,16 @@ async function openDeletePostModal(postId) {
 
 
 async function openReportPostModal(postId) {
-  document.getElementById('daoModalTitle').textContent = 'Reportar post';
+  document.getElementById('daoModalTitle').textContent = t('dao.reportPost');
   document.getElementById('daoModalBody').innerHTML = `
     <div class="sheet-item">
-      <div class="t">Motivo</div>
-      <textarea id="reportPostReason" style="min-height:110px;" placeholder="Describe el motivo del reporte…"></textarea>
-      <div class="small muted" style="margin-top:6px;">Evita datos personales. Sé breve y claro.</div>
+      <div class="t">${t('dao.reason')}</div>
+      <textarea id="reportPostReason" style="min-height:110px;" placeholder="${t('dao.reportPlaceholder')}"></textarea>
+      <div class="small muted" style="margin-top:6px;">${t('dao.reportHint')}</div>
     </div>
     <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
-      <button class="btn" type="button" data-close="1">Cancelar</button>
-      <button class="btn primary" type="button" data-post-report-send="${esc(String(postId))}">Enviar reporte</button>
+      <button class="btn" type="button" data-close="1">${t('dao.cancel')}</button>
+      <button class="btn primary" type="button" data-post-report-send="${esc(String(postId))}">${t('dao.sendReport')}</button>
     </div>
     <div id="reportPostStatus" class="small muted" style="margin-top:10px;"></div>
   `;
@@ -963,22 +964,22 @@ if (saveBtn) {
   const status = document.getElementById('editPostStatus');
 
   if (title.length < 3 || body.length < 10) {
-    if (status) status.textContent = 'Completa título (3+) y contenido (10+).';
+    if (status) status.textContent = t('dao.validationRequired');
     return;
   }
 
   saveBtn.disabled = true;
   try {
-    if (status) status.textContent = 'Guardando…';
+    if (status) status.textContent = t('dao.saving');
     await API.updatePost(postId, { title, body, topic });
-    if (status) status.textContent = 'Guardado ✅';
+    if (status) status.textContent = t('dao.saved');
 
     closeModal();
     await renderAll();
     try { await openPostModal(postId); } catch {}
   } catch (err) {
     console.error(err);
-    const msg = (err && err.message) ? String(err.message) : 'Error guardando.';
+    const msg = (err && err.message) ? String(err.message) : t('dao.errorSaving');
     if (status) status.textContent = msg;
   } finally {
     saveBtn.disabled = false;
@@ -999,15 +1000,15 @@ if (delBtn) {
 
   delBtn.disabled = true;
   try {
-    if (status) status.textContent = 'Eliminando…';
+    if (status) status.textContent = t('dao.deleting');
     await API.deletePost(postId);
-    if (status) status.textContent = 'Eliminado ✅';
+    if (status) status.textContent = t('dao.deleted');
 
     closeModal();
     await renderAll();
   } catch (err) {
     console.error(err);
-    const msg = (err && err.message) ? String(err.message) : 'Error eliminando.';
+    const msg = (err && err.message) ? String(err.message) : t('dao.errorDeleting');
     if (status) status.textContent = msg;
   } finally {
     delBtn.disabled = false;
@@ -1031,7 +1032,7 @@ if (repBtn) {
 
   // ✅ Validación mínima
   if (reason.length < 3) {
-    if (status) status.textContent = 'Escribe un motivo (mínimo 3 caracteres).';
+    if (status) status.textContent = t('dao.reportValidation');
     return;
   }
 
@@ -1039,11 +1040,11 @@ if (repBtn) {
   repBtn.disabled = true;
 
   try {
-    if (status) status.textContent = 'Enviando…';
+    if (status) status.textContent = t('dao.sending');
 
     await API.reportPost(postId, reason);
 
-    if (status) status.textContent = 'Reporte enviado ✅';
+    if (status) status.textContent = t('dao.reportSent');
     // cerrar después de un toque
     setTimeout(() => { try { closeModal(); } catch {} }, 350);
 
@@ -1051,7 +1052,7 @@ if (repBtn) {
     console.error(err);
 
     // ✅ Mensaje más útil (si existe)
-    const msg = (err && err.message) ? String(err.message) : 'Error enviando reporte.';
+    const msg = (err && err.message) ? String(err.message) : t('dao.errorReporting');
     if (status) status.textContent = msg;
 
   } finally {
@@ -1115,7 +1116,7 @@ if (kb) {
   const now = Date.now();
   const isInModal = !!kb.closest('#daoModalBody');
 
-  // ✅ si el modal acaba de abrir, ignora cualquier toggle “fantasma”
+  // ✅ si el modal acaba de abrir, ignora cualquier toggle "fantasma"
   if (now < __kebabSuppressUntil || (isInModal && (now - __modalJustOpenedTs) < 450)) {
     e.preventDefault?.();
     e.stopPropagation?.();
@@ -1132,7 +1133,7 @@ if (kb) {
 
 
 // =========================
-// KEBAB ITEM (POSTS + COMMENTS) — FASE 4.1 / 5.2.3
+// KEBAB ITEM (POSTS + COMMENTS) - FASE 4.1 / 5.2.3
 // =========================
 const item = e.target.closest('[data-kebab-item]');
 if (item) {
@@ -1170,7 +1171,7 @@ if (item) {
   }
 
   // =========================
-  // ROOMS — editar / eliminar
+  // ROOMS - editar / eliminar
   // =========================
   if (action === 'room-edit') {
     const roomName = item.getAttribute('data-room-name');
@@ -1210,7 +1211,7 @@ if (item) {
   }
 
   // =========================
-  // COMMENTS / REPLIES — FASE 5.2.3
+  // COMMENTS / REPLIES - FASE 5.2.3
   // =========================
   if (action.startsWith('c-')) {
     const commentId = item.getAttribute('data-comment-id');
@@ -1225,7 +1226,7 @@ if (item) {
       return;
     }
 
-    
+
 if (action === 'c-delete') {
   if (!confirm('¿Eliminar este comentario?')) return;
 
@@ -1329,7 +1330,7 @@ if (prof) {
       <div class="sheet-item">
         <div class="m" style="font-family:var(--mono);word-break:break-all;">${esc(addr)}</div>
         <div class="small muted" style="margin-top:10px;">
-          Perfil público (stats) — SOON.
+          Perfil público (stats) - SOON.
         </div>
       </div>
     `;
@@ -1438,7 +1439,7 @@ if (pill) {
   }
 
   // Reacciones a comentarios / replies (backend-first + UI inmediata)
-  
+
 if (action === 'c-like' || action === 'c-points') {
   const commentId = String(pill.dataset.commentId || '');
   const replyId = pill.dataset.replyId ? String(pill.dataset.replyId) : '';
@@ -1529,7 +1530,7 @@ if (action === 'c-like' || action === 'c-points') {
     return;
   }
 
-  
+
 // Acciones del POST (backend-driven)
 const userId = getUserId();
 if (userId === 'visitor') return;
@@ -1628,7 +1629,7 @@ if (send) {
       const c = findComment(post, replying.commentId);
       if (!c) return post;
       c.replies = c.replies || [];
-      
+
 c.replies.push({
   id: uid(),
   ts: now(),
@@ -1642,7 +1643,7 @@ c.replies.push({
     }
 
     post.comments = post.comments || [];
-    
+
 post.comments.push({
   id: uid(),
   ts: now(),
@@ -1676,7 +1677,7 @@ if (pick) {
   closeModal();
   return;
 }
-} // ✅ <— ESTA LLAVE ES LA QUE FALTABA (CIERRA handleGlobalAction)
+} // ✅ <- ESTA LLAVE ES LA QUE FALTABA (CIERRA handleGlobalAction)
 
 // =========================
 // LISTENERS (dedupe pointerup + click)
@@ -1716,7 +1717,7 @@ document.addEventListener('scroll', () => closeAllKebabs(), { passive: true });
 function closeFloatingKebabIfOutside(e) {
   const floating = document.querySelector('.floating-kebab-menu');
   if (!floating) return;
-  
+
   // Si el click fue en el mismo botón que abrió el menú → toggle (cerrar)
   const btn = document.querySelector(`[data-_fk-id="${floating.dataset.fkId}"]`);
   if (btn && e.target.closest('.kebab-btn') === btn) {
@@ -1724,10 +1725,10 @@ function closeFloatingKebabIfOutside(e) {
     btn.dataset._fkId = '';
     return;
   }
-  
+
   // Si el click fue dentro del menú → no cerrar
   if (e.target.closest('.floating-kebab-menu')) return;
-  
+
   // Click fuera de todo → cerrar
   if (btn) btn.dataset._fkId = '';
   floating.remove();
@@ -1757,7 +1758,7 @@ async function getPostsSafe() {
   try {
     const posts = await API.getPosts();
 
-    // ✅ API respondió — siempre actualizamos localStorage, incluso si vacío
+    // ✅ API respondió - siempre actualizamos localStorage, incluso si vacío
     if (Array.isArray(posts)) {
       saveJSON(DB_KEY, posts);
       localStorage.setItem('alemty.posts.sync', String(Date.now()));
@@ -1846,7 +1847,7 @@ async function seedIfEmpty(){
     );
   }
 
-  // Topics “canon” (según tu nueva lista)
+  // Topics "canon" (según tu nueva lista)
   const TOPIC_WEB3 = pickTopic('Web3, Smart Contracts & Infraestructura DAO', 2);
   const TOPIC_AI   = pickTopic('Inteligencia Artificial & Agentes Autónomos', 1);
   const TOPIC_DEV  = pickTopic('Desarrollo de Software & Herramientas IA (Cursor/Claude)', 0);
@@ -1992,10 +1993,10 @@ function score(p){
    Panel + tabs
 ========================= */
 const PANEL_MODEL = {
-  'relevantes': { title:'Relevantes', desc:'Últimos 5 posts más relevantes en carrusel. Usa flechas.' },
-  'recientes': { title:'Recientes', desc:'Ordenado por fecha. Ideal para ver lo nuevo.' },
-  'top-semana': { title:'Top Semana', desc:'Ranking semanal por relevancia (likes/points/comentarios).' },
-  'top-mes': { title:'Top Mes', desc:'Ranking mensual por relevancia (likes/points/comentarios).' }
+  'relevantes': { titleKey:'dao.panel.relevant', descKey:'dao.panel.relevantDesc' },
+  'recientes': { titleKey:'dao.panel.recent', descKey:'dao.panel.recentDesc' },
+  'top-semana': { titleKey:'dao.panel.week', descKey:'dao.panel.weekDesc' },
+  'top-mes': { titleKey:'dao.panel.month', descKey:'dao.panel.monthDesc' }
 };
 let activeView = 'relevantes';
 
@@ -2098,8 +2099,8 @@ function renderCarousel(posts){
   if(!top5.length){
     track.innerHTML = `
       <div class="car-card">
-        <div class="car-title">Sin posts</div>
-        <div class="car-meta muted">Publica el primero.</div>
+        <div class="car-title">${esc(t('dao.noPosts'))}</div>
+        <div class="car-meta muted">${esc(t('dao.beFirst'))}</div>
       </div>
     `;
     dots.innerHTML = '';
@@ -2111,13 +2112,13 @@ function renderCarousel(posts){
 
   // 1) Render del carrusel (KPIs con clases semánticas)
   track.innerHTML = top5.map(p => `
-    <div class="car-card" data-open-post="${esc(p.id)}"> 
+    <div class="car-card" data-open-post="${esc(p.id)}">
 
 <div class="car-headrow">
   <div>
     <div class="car-title">${esc(p.title)}</div>
     <div class="car-author">${authorLinkHTML(p.author)}</div>
-    <div class="car-meta">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+    <div class="car-meta">${esc(p.topic || t('dao.noTopic'))} · ${esc(fmt(p.ts))}</div>
   </div>
 
   <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
@@ -2125,11 +2126,11 @@ function renderCarousel(posts){
   ${kebabMenuHTML(p)}
 </div>
 <div class="car-snippet">
-        ${esc((p.body || '').slice(0,160))}${(p.body || '').length > 160 ? '…' : ''}
+        ${esc((p.body || '').slice(0,160))}${(p.body || '').length > 160 ? '...' : ''}
       </div>
 
       <div class="car-kpis">
-        
+
 <span class="pill like" data-action="like" data-post-id="${esc(p.id)}">
   ♥️ <span class="count">${getLikesCount(p)}</span>
 </span>
@@ -2144,7 +2145,7 @@ function renderCarousel(posts){
     </div>
   `).join('');
 
-  
+
 // 2) Indicator bar (reemplaza dots)
 carIndex = Math.max(0, Math.min(carIndex, top5.length - 1));
 
@@ -2155,8 +2156,8 @@ dots.style.display = 'none';
 updateCarouselIndicator(top5.length, carIndex);
 
 
-  
-// 3) Aplicar transform cuando el layout ya exista (evita “descuadre”)
+
+// 3) Aplicar transform cuando el layout ya exista (evita "descuadre")
 requestAnimationFrame(() => {
   const first = track.firstElementChild;
   if(!first){
@@ -2277,7 +2278,7 @@ function enhanceTopicPicker(){
   btn.id = 'topicPickerBtn';
   btn.type = 'button';
   btn.className = 'btn';
-  btn.textContent = '📚 Elegir tema';
+  btn.textContent = '📚 ' + t('dao.chooseTopic');
   btn.style.whiteSpace = 'nowrap';
 
   btn.addEventListener('click', () => {
@@ -2295,8 +2296,9 @@ function renderTopicsSelect(){
   const model = loadTopicsModel();
   const groups = Array.isArray(model.groups) ? model.groups : [];
 
+  const noTopicOpt = t('dao.noTopic');
   sel.innerHTML =
-    `<option value="">Sin tema</option>` +
+    `<option value="">${esc(noTopicOpt)}</option>` +
     groups.map(g => {
       const label = esc(g.label);
       const items = (g.items || [])
@@ -2343,8 +2345,8 @@ function renderLatest(posts){
     card.dataset.openPost = '';
 
     if(metaEl) metaEl.textContent = '—';
-    if(titleEl) titleEl.textContent = 'Aún no hay posts';
-    if(snipEl) snipEl.textContent = 'Publica el primero.';
+    if(titleEl) titleEl.textContent = t('dao.noPosts');
+    if(snipEl) snipEl.textContent = t('dao.beFirst');
 
     setPillCount(likesEl, '♥️', 0);
     setPillCount(pointsEl, '⭐', 0);
@@ -2361,13 +2363,13 @@ function renderLatest(posts){
   // Importante: tu sistema de abrir modal usa esto
   card.dataset.openPost = latest.id;
 
- 
+
 
 metaEl.innerHTML = `
   <div class="post-headrow">
     <div>
       <div class="post-author">${authorLinkHTML(latest.author)}</div>
-      <div>${esc(latest.topic || 'Sin tema')} · ${esc(fmt(latest.ts))}</div>
+      <div>${esc(latest.topic || t('dao.noTopic'))} · ${esc(fmt(latest.ts))}</div>
     </div>
 
     <button class="kebab-btn" type="button" data-kebab="${esc(latest.id)}" aria-label="Opciones">⋮</button>
@@ -2378,10 +2380,10 @@ metaEl.innerHTML = `
 
 if(titleEl) titleEl.textContent = latest.title;
   if(snipEl) snipEl.textContent =
-    (latest.body || '').slice(0,180) + ((latest.body || '').length > 180 ? '…' : '');
+    (latest.body || '').slice(0,180) + ((latest.body || '').length > 180 ? '...' : '');
 
   // Contadores (compatibles con tu HTML: likes ya tiene <span.count>, points/comments tal vez no)
-  
+
 setPillCount(likesEl, '♥️', getLikesCount(latest));
 setPillCount(pointsEl, '⭐', getPointsCount(latest));
   setPillCount(commentsEl, '💬', getCommentsCount(latest));
@@ -2462,12 +2464,12 @@ function renderMiniGrid(elId, posts){
     return;
   }
 
-  
+
 el.innerHTML = list.map(p => `
   <div class="mini" data-open-post="${esc(p.id)}">
     <div class="post-headrow">
       <div>
-        <div class="t">${esc(p.title.slice(0,52))}${p.title.length>52?'…':''}</div>
+        <div class="t">${esc(p.title.slice(0,52))}${p.title.length>52?'...':''}</div>
         <div class="post-author" style="font-size:11px;">${authorLinkHTML(p.author)}</div>
         <div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
       </div>
@@ -2478,7 +2480,7 @@ el.innerHTML = list.map(p => `
     </div>
 
     <div class="mini-snippet">
-      ${esc((p.body || '').slice(0,110))}${(p.body || '').length > 110 ? '…' : ''}
+      ${esc((p.body || '').slice(0,110))}${(p.body || '').length > 110 ? '...' : ''}
     </div>
 
     <div class="k">
@@ -2534,7 +2536,7 @@ function renderFeed(posts){
   // ✅ Solo primeros 5 en el feed principal
   const visible = list.slice(0, FEED_PREVIEW_LIMIT);
 
-  
+
 const cards = visible.map(p => `
   <article class="post" data-open-post="${esc(p.id)}">
     <div class="post-body">
@@ -2543,7 +2545,7 @@ const cards = visible.map(p => `
         <div>
           <div class="post-title">${esc(p.title)}</div>
           <div class="post-meta">
-            ${authorLinkHTML(p.author)} · ${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}
+            ${authorLinkHTML(p.author)} · ${esc(p.topic || t('dao.noTopic'))} · ${esc(fmt(p.ts))}
           </div>
         </div>
 
@@ -2557,7 +2559,7 @@ const cards = visible.map(p => `
       </div>
 
       <div class="post-snippet">
-        ${esc((p.body || '').slice(0, 220))}${(p.body || '').length > 220 ? '…' : ''}
+        ${esc((p.body || '').slice(0, 220))}${(p.body || '').length > 220 ? '...' : ''}
       </div>
 
       <div class="post-tags">
@@ -2648,8 +2650,9 @@ let FEED_LAST_LIST = [];           // cache del último listado (según filtros)
 
 
 function renderPanel(){
-  document.getElementById('panelTitle').textContent = PANEL_MODEL[activeView].title;
-  document.getElementById('panelDesc').textContent = PANEL_MODEL[activeView].desc;
+  const m = PANEL_MODEL[activeView];
+  document.getElementById('panelTitle').textContent = t(m.titleKey);
+  document.getElementById('panelDesc').textContent = t(m.descKey);
 }
 
 async function renderAll(){
@@ -2665,6 +2668,12 @@ async function renderAll(){
   applyActionState(); // ✅ al final, cuando ya existe el DOM
 }
 
+// Re-render full UI on lang change
+window.addEventListener('lang:changed', () => {
+  // Re-run renderAll with current cached posts
+  renderAll();
+});
+
 
 function renderReplies(comment, postId){
   const ui = loadUI();
@@ -2674,7 +2683,7 @@ function renderReplies(comment, postId){
 
   const items = visible.map(r => `
 <div class="comment comment-l2" data-reply-id="${esc(r.id)}">
-  
+
 <div class="comment-headrow">
   <div>
     <span class="comment-author">
@@ -2702,7 +2711,7 @@ function renderReplies(comment, postId){
   })}
 </div>
 
-      
+
 
       <p>${esc(r.text)}</p>
       <div class="post-tags">
@@ -2739,9 +2748,9 @@ function renderComments(post){
   }
 
   return comments.map(c => `
-    
+
 <div class="comment comment-l1" data-comment-id="${esc(c.id)}">
-  
+
 <div class="comment-headrow">
   <div>
     <span class="comment-author">
@@ -2850,7 +2859,7 @@ window.openPostModal = async function openPostModal(postId) {
         <div>
           <div class="t">${esc(p.title)}</div>
           <div class="post-author">${authorLinkHTML(p.author)}</div>
-          <div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+          <div class="m">${esc(p.topic || t('dao.noTopic'))} · ${esc(fmt(p.ts))}</div>
         </div>
 
         <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
@@ -2882,13 +2891,13 @@ window.openPostModal = async function openPostModal(postId) {
 
       ${replyingTo ? `
         <div class="small muted" style="margin-top:10px;">
-          Respondiendo a comentario…
+          Respondiendo a comentario...
           <button class="btn" type="button" data-reply-cancel="${esc(p.id)}">Cancelar</button>
         </div>
       ` : ''}
 
       <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;">
-        <input id="commentText" placeholder="${replyingTo ? 'Escribe una respuesta…' : 'Escribe un comentario…'}">
+        <input id="commentText" placeholder="${replyingTo ? 'Escribe una respuesta...' : 'Escribe un comentario...'}">
         <button class="btn primary" type="button" data-send="${esc(p.id)}">
           ${replyingTo ? 'Responder' : 'Enviar'}
         </button>
@@ -3173,7 +3182,7 @@ async function openRoomModal({ type, name }) {
           type === "governance" ? "📄 Propuestas" : "💬 General"
         }</div>
         <div id="roomTabContent" class="small muted">
-          Contenido de sala — siguiente fase.
+          Contenido de sala - siguiente fase.
         </div>
       </section>
     </div>
@@ -3216,7 +3225,7 @@ async function openRoomModal({ type, name }) {
       <div class="sheet-item" style="margin-top:10px; ${canPost ? "" : "opacity:.6;"}">
         <div class="t">Escribir</div>
         <textarea id="roomChatInput"
-          placeholder="${canPost ? "Escribe un mensaje…" : "Inicia SIWE para escribir"}"
+          placeholder="${canPost ? "Escribe un mensaje..." : "Inicia SIWE para escribir"}"
           style="min-height:90px;" ${canPost ? "" : "disabled"}></textarea>
         <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
           <button class="btn primary" id="roomChatSend" type="button" ${canPost ? "" : "disabled"}>Enviar</button>
@@ -3232,7 +3241,7 @@ async function openRoomModal({ type, name }) {
       const now = new Date();
       const entry = {
         id: (crypto.randomUUID?.() || String(Math.random())).slice(0, 12),
-        author: me ? `${me.slice(0, 6)}…${me.slice(-4)}` : "anon",
+        author: me ? `${me.slice(0, 6)}...${me.slice(-4)}` : "anon",
         when: now.toLocaleString("es-MX"),
         text,
       };
@@ -3248,7 +3257,7 @@ async function openRoomModal({ type, name }) {
     });
   }
 
-  
+
 function setTab(id) {
   const sec = cfg.sections.find((x) => x.id === id) || cfg.sections[0];
   tabTitle.textContent = sec.label;
@@ -3357,7 +3366,7 @@ function setTab(id) {
           const btn = document.getElementById("roomSaveCfg");
           if (!vis || !pass || !btn) return;
 
-          
+
 // Sync UI password field
         const sync = () => {
           const isPwd = vis.value === "password";
@@ -3369,7 +3378,7 @@ function setTab(id) {
         sync();
 
 
-          
+
 // ✅ Guardar settings (backend)
         btn.onclick = async () => {
           const v = vis.value || "private";
@@ -3409,7 +3418,7 @@ function setTab(id) {
           };
 
 
-// ✅ Invitación (sin backend) — listeners
+// ✅ Invitación (sin backend) - listeners
         const inviteTarget = document.getElementById("inviteTarget");
         const inviteStatus = document.getElementById("inviteStatus");
         const btnSql = document.getElementById("inviteCopySql");
@@ -3429,7 +3438,7 @@ function setTab(id) {
       return;
     }
 
-    tabContent.textContent = "Contenido de sala — siguiente fase.";
+    tabContent.textContent = "Contenido de sala - siguiente fase.";
   }
 
   // ✅ listeners de navegación (tabs)
@@ -3494,7 +3503,7 @@ function openRoomsModal() {
     document.getElementById("daoModalTitle").textContent = "Backrooms";
     document.getElementById("daoModalBody").innerHTML = `
       <div class="small muted" style="padding:20px;text-align:center;">
-        Cargando salas…
+        Cargando salas...
       </div>
     `;
     openModal();
@@ -3547,20 +3556,20 @@ function openRoomsModal() {
       <div class="sheet-item" style="margin-top:10px;">
         <div class="t">Crear sala</div>
 
-        <input id="backroomName" placeholder="Nombre de la sala…" maxlength="48" />
+        <input id="backroomName" placeholder="Nombre de la sala..." maxlength="48" />
 
         <div style="margin-top:10px;">
           <div class="small muted" style="margin-bottom:6px;">Tipo de acceso</div>
           <select id="backroomVisibility" style="width:100%;">
-            <option value="public">🌐 Pública — cualquiera puede unirse</option>
-            <option value="private" selected>🔒 Privada — solo por invitación</option>
-            <option value="password">🔐 Contraseña — acceso con clave</option>
+            <option value="public">🌐 Pública - cualquiera puede unirse</option>
+            <option value="private" selected>🔒 Privada - solo por invitación</option>
+            <option value="password">🔐 Contraseña - acceso con clave</option>
           </select>
         </div>
 
         <div id="backroomPassWrap" style="margin-top:10px; display:none;">
           <div class="small muted" style="margin-bottom:6px;">Contraseña de la sala</div>
-          <input id="backroomPass" type="password" placeholder="Ingresa contraseña…" />
+          <input id="backroomPass" type="password" placeholder="Ingresa contraseña..." />
         </div>
 
         <div style="display:flex; gap:10px; margin-top:10px; align-items:center; flex-wrap:wrap;">
@@ -3579,7 +3588,7 @@ function openRoomsModal() {
       <!-- ✅ Buscar -->
       <div class="sheet-item" style="margin-top:10px;">
         <div class="t">Buscar salas</div>
-        <input id="roomsSearch" placeholder="Buscar…" value="${esc(q)}" />
+        <input id="roomsSearch" placeholder="Buscar..." value="${esc(q)}" />
         <div class="small muted" style="margin-top:6px;">
           Tip: escribe 2+ caracteres para filtrar.
         </div>
@@ -3644,7 +3653,7 @@ function openRoomsModal() {
       const pageItems = filtered.slice(start, start + PAGE_SIZE);
 
       metaEl.textContent = total
-        ? `Mostrando ${Math.min(total, start + 1)}–${Math.min(total, start + pageItems.length)} de ${total}`
+        ? `Mostrando ${Math.min(total, start + 1)}-${Math.min(total, start + pageItems.length)} de ${total}`
         : "Aún no hay salas. ¡Crea la primera!";
 
       pageInfoEl.textContent = `Página ${maxPage + 1 ? page + 1 : 0} de ${maxPage + 1}`;
@@ -3733,7 +3742,7 @@ function openRoomsModal() {
         const safeDays = Number.isFinite(days) ? Math.max(1, Math.min(365, days)) : 1;
         const cost = safeDays * 100;
 
-        if (statusEl) statusEl.textContent = `Costo: ${cost} Aura · Creando sala…`;
+        if (statusEl) statusEl.textContent = `Costo: ${cost} Aura · Creando sala...`;
 
         // ✅ Usa tu helper actualizado
         await apiCreateRoom("backroom", name, safeDays, visibility, visibility === "password" ? password : "");
@@ -3752,7 +3761,7 @@ function openRoomsModal() {
 }
 
 // =========================
-// GOVERNANZA — Access gate (Nobleza + Moderación + Founder)
+// GOVERNANZA - Access gate (Nobleza + Moderación + Founder)
 // Basado en docs:
 // - Gobernanza política: veALEMTY (no Aura)
 // - Nobleza: Rey/Príncipe/Duque (calculada sobre veALEMTY activo)
@@ -4026,7 +4035,7 @@ async function openGovernanceRoomsModal() {
     <div class="sheet-item">
       <div class="t">🗳️ Salas de Gobernanza</div>
       <div class="m small muted">
-        Propuestas y votaciones. (Acceso por roles / nobleza — backend lo enforceará).
+        Propuestas y votaciones. (Acceso por roles / nobleza - backend lo enforceará).
       </div>
       <div class="small muted" style="margin-top:8px;">
         Estado: ${access.okRead ? "✅ Autorizado" : "⛔ Restringido"}
@@ -4043,27 +4052,27 @@ async function openGovernanceRoomsModal() {
 
     <div class="sheet-item" style="margin-top:10px;">
       <div class="t">Buscar salas</div>
-      <input id="govSearch" placeholder="Buscar…" value="${esc(q)}" ${access.okRead ? "" : "disabled"} />
+      <input id="govSearch" placeholder="Buscar..." value="${esc(q)}" ${access.okRead ? "" : "disabled"} />
       <div class="small muted" style="margin-top:6px;">Tip: 2+ caracteres para filtrar.</div>
     </div>
 
     <div class="sheet-item" style="margin-top:10px; ${access.okWrite ? "" : "opacity:.55;"}">
       <div class="t">Crear sala</div>
 
-      <input id="govRoomName" placeholder="Nombre de la sala…" maxlength="48" ${access.okWrite ? "" : "disabled"} />
+      <input id="govRoomName" placeholder="Nombre de la sala..." maxlength="48" ${access.okWrite ? "" : "disabled"} />
 
       <div style="margin-top:10px;">
         <div class="small muted" style="margin-bottom:6px;">Tipo de acceso</div>
         <select id="govVisibility" style="width:100%;" ${access.okWrite ? "" : "disabled"}>
-          <option value="public">🌐 Pública — cualquiera puede unirse</option>
-          <option value="private" selected>🔒 Privada — solo por invitación</option>
-          <option value="password">🔐 Contraseña — acceso con clave</option>
+          <option value="public">🌐 Pública - cualquiera puede unirse</option>
+          <option value="private" selected>🔒 Privada - solo por invitación</option>
+          <option value="password">🔐 Contraseña - acceso con clave</option>
         </select>
       </div>
 
       <div id="govPassWrap" style="margin-top:10px; display:none;">
         <div class="small muted" style="margin-bottom:6px;">Contraseña</div>
-        <input id="govPass" type="password" placeholder="Ingresa contraseña…" ${access.okWrite ? "" : "disabled"} />
+        <input id="govPass" type="password" placeholder="Ingresa contraseña..." ${access.okWrite ? "" : "disabled"} />
       </div>
 
       <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
@@ -4133,7 +4142,7 @@ async function openGovernanceRoomsModal() {
     const pageItems = filtered.slice(start, start + PAGE_SIZE);
 
     metaEl.textContent = total
-      ? `Mostrando ${Math.min(total, start + 1)}–${Math.min(total, start + pageItems.length)} de ${total}`
+      ? `Mostrando ${Math.min(total, start + 1)}-${Math.min(total, start + pageItems.length)} de ${total}`
       : (access.okRead ? "Aún no hay salas. ¡Crea la primera!" : "Acceso restringido");
 
     pageInfoEl.textContent = `Página ${maxPage + 1 ? page + 1 : 0} de ${maxPage + 1}`;
@@ -4161,7 +4170,7 @@ async function openGovernanceRoomsModal() {
             ` : ''}
           </div>`;
         }).join("")
-      : `<div class="small muted" style="padding:8px 2px;">${access.okRead ? "No hay resultados." : "—"}</div>`;
+      : `<div class="small muted" style="padding:8px 2px;">${access.okRead ? "No hay resultados." : "-"}</div>`;
 
     listEl.querySelectorAll("[data-gov-open]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
@@ -4221,7 +4230,7 @@ async function openGovernanceRoomsModal() {
 
     createBtn.disabled = true;
     try {
-      if (statusEl) statusEl.textContent = "Creando sala…";
+      if (statusEl) statusEl.textContent = "Creando sala...";
 
       await apiCreateRoom("governance", name, 1, visibility, visibility === "password" ? password : "");
 
@@ -4244,7 +4253,7 @@ function openTopicsModal(){
 
   document.getElementById('daoModalTitle').textContent = 'Temas';
   document.getElementById('daoModalBody').innerHTML = `
-    <p class="muted">Elige un tema y se aplicará al selector de “Crear post”.</p>
+    <p class="muted">Elige un tema y se aplicará al selector de "Crear post".</p>
 
     ${groups.map(g => `
       <div class="topic-group">${esc(g.label)}</div>
@@ -4285,13 +4294,13 @@ function openFeedListModal(){
     </div>
 
     ${pageItems.map(p => `
-      
+
 <div class="sheet-item" data-open-post="${esc(p.id)}" style="cursor:pointer;">
   <div class="post-headrow">
     <div>
       <div class="t">${esc(p.title)}</div>
       <div class="post-author">${authorLinkHTML(p.author)}</div>
-      <div class="m">${esc(p.topic || 'Sin tema')} · ${esc(fmt(p.ts))}</div>
+      <div class="m">${esc(p.topic || t('dao.noTopic'))} · ${esc(fmt(p.ts))}</div>
     </div>
 
     <button class="kebab-btn" type="button" data-kebab="${esc(p.id)}" aria-label="Opciones">⋮</button>
@@ -4300,7 +4309,7 @@ function openFeedListModal(){
   </div>
 
   <div class="small muted" style="margin-top:6px;">
-    ${esc((p.body || '').slice(0,140))}${(p.body || '').length>140?'…':''}
+    ${esc((p.body || '').slice(0,140))}${(p.body || '').length>140?'...':''}
   </div>
 
         <div class="post-tags" style="margin-top:10px;">
@@ -4313,7 +4322,7 @@ function openFeedListModal(){
 
     <div style="margin-top:14px;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;">
       <button class="btn" type="button" data-feed-prev="1" ${FEED_MODAL_PAGE===0?'disabled':''}>◀ Anterior</button>
-      <div class="small muted">Mostrando ${Math.min(list.length, start+1)}–${Math.min(list.length, start + pageItems.length)} de ${list.length}</div>
+      <div class="small muted">Mostrando ${Math.min(list.length, start+1)}-${Math.min(list.length, start + pageItems.length)} de ${list.length}</div>
       <button class="btn" type="button" data-feed-next="1" ${FEED_MODAL_PAGE>=maxPage?'disabled':''}>Siguiente ▶</button>
     </div>
   `;
@@ -4412,7 +4421,7 @@ daoMain.querySelector('#openBackrooms2')?.addEventListener('click', openRoomsMod
     startCarouselAuto();
   });
 
-  
+
 // Click en la barra-indicador para saltar a un item
 document.addEventListener('click', async (e) => {
   const bar = e.target.closest('#carIndicator');
@@ -4463,7 +4472,7 @@ document.addEventListener('click', async (e) => {
     }
 
     try {
-      if (status) status.textContent = 'Publicando…';
+      if (status) status.textContent = 'Publicando...';
       const created = await API.createPost({ title, body, topic });
 
       const t = daoMain.querySelector('#postTitle');
@@ -4488,7 +4497,7 @@ document.addEventListener('click', async (e) => {
   });
 })();
 
-// ✅ Abrir post desde hash (#post-{id}) — permite navegar desde otros subdominios
+// ✅ Abrir post desde hash (#post-{id}) - permite navegar desde otros subdominios
 function openPostFromHash() {
   const m = location.hash.match(/^#post-(\d+)$/);
   if (m) {
