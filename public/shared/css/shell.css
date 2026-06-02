@@ -822,7 +822,8 @@ html.light {
 }
 
 .drawer .acc[data-acc="did"],
-.drawer .acc[data-acc="about"] {
+.drawer .acc[data-acc="about"],
+.drawer .acc[data-acc="services"] {
   background: var(--did-card);
   border: 1px solid var(--did-br);
   border-radius: 18px;
@@ -833,7 +834,8 @@ html.light {
 }
 
 .drawer .acc[data-acc="did"] .acc-h,
-.drawer .acc[data-acc="about"] .acc-h {
+.drawer .acc[data-acc="about"] .acc-h,
+.drawer .acc[data-acc="services"] .acc-h {
   background: var(--did-head);
   border: 0;
   color: var(--did-text);
@@ -847,12 +849,26 @@ html.light {
 #accDid .drawer-link.did-blue { background: linear-gradient(180deg, var(--did-a1), var(--did-a2)); border-color: var(--did-a-br); }
 #accDid .drawer-link.did-blue:hover { border-color: color-mix(in oklab, var(--did-a-br), rgba(255,255,255,.10) 30%); box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset, 0 0 14px var(--did-a-glow); }
 
+#accServices .small.muted { color: var(--did-muted); }
+#accServices .drawer-link { width: 100%; justify-content: center; cursor: pointer; user-select: none; text-decoration: none; color: var(--did-text); background: var(--did-card-2); border: 1px solid var(--did-br-soft); border-radius: 14px; box-shadow: 0 0 0 1px rgba(255,255,255,.04) inset; transition: transform .18s ease, box-shadow .18s ease, filter .18s ease, background .18s ease, border-color .18s ease; }
+#accServices .drawer-link:hover { transform: translateY(-1px); filter: saturate(112%) brightness(1.02); box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset, 0 0 12px rgba(0,0,0,.14); }
+#accServices .drawer-link.did-blue { background: linear-gradient(180deg, var(--did-a1), var(--did-a2)); border-color: var(--did-a-br); }
+#accServices .drawer-link.did-blue:hover { border-color: color-mix(in oklab, var(--did-a-br), rgba(255,255,255,.10) 30%); box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset, 0 0 14px var(--did-a-glow); }
+
 #accAbout .drawer-link.about-doc { width: 100%; justify-content: center; gap: 10px; margin-top: 10px; user-select: none; }
 #accAbout .small.muted { color: var(--did-muted); }
+#accAbout .drawer-link { width: 100%; justify-content: center; cursor: pointer; user-select: none; text-decoration: none; color: var(--did-text); background: var(--did-card-2); border: 1px solid var(--did-br-soft); border-radius: 14px; box-shadow: 0 0 0 1px rgba(255,255,255,.04) inset; transition: transform .18s ease, box-shadow .18s ease, filter .18s ease, background .18s ease, border-color .18s ease; }
+#accAbout .drawer-link:hover { transform: translateY(-1px); filter: saturate(112%) brightness(1.02); box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset, 0 0 12px rgba(0,0,0,.14); }
+#accAbout .drawer-link.did-blue { background: linear-gradient(180deg, var(--did-a1), var(--did-a2)); border-color: var(--did-a-br); }
+#accAbout .drawer-link.did-blue:hover { border-color: color-mix(in oklab, var(--did-a-br), rgba(255,255,255,.10) 30%); box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset, 0 0 14px var(--did-a-glow); }
 
 html.light #accAbout .small.muted { color: rgba(14,26,24,.70); }
-html.light .drawer .acc[data-acc="did"] { border: 1px solid rgba(13,185,166,.26); box-shadow: 0 0 0 1px rgba(255,255,255,.55) inset, 0 0 0 2px rgba(13,185,166,.10) inset; background: rgba(255,255,255,.44); }
-html.light .drawer .acc[data-acc="did"] .acc-h { background: rgba(255,255,255,.50); border-bottom: 1px solid rgba(13,185,166,.12); }
+html.light .drawer .acc[data-acc="did"],
+html.light .drawer .acc[data-acc="about"],
+html.light .drawer .acc[data-acc="services"] { border: 1px solid rgba(13,185,166,.26); box-shadow: 0 0 0 1px rgba(255,255,255,.55) inset, 0 0 0 2px rgba(13,185,166,.10) inset; background: rgba(255,255,255,.44); }
+html.light .drawer .acc[data-acc="did"] .acc-h,
+html.light .drawer .acc[data-acc="about"] .acc-h,
+html.light .drawer .acc[data-acc="services"] .acc-h { background: rgba(255,255,255,.50); border-bottom: 1px solid rgba(13,185,166,.12); }
 
 /* ===== WEB3 DISCLAIMER ===== */
 :root { --web3-disc-h: 22px; }
