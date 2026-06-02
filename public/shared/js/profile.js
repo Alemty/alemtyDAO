@@ -963,8 +963,7 @@ function renderDexTab(modal) {
         }
 
         const short = data.txHash?.slice(0, 14) + '...';
-        statusEl.innerHTML = t('profile.rewards.claimed') + ' — <a href="https://basescan.org/tx/${data.txHash}"
-          target="_blank" rel="noopener">${short} ↗</a>';
+        statusEl.innerHTML = `${t('profile.rewards.claimed')} — <a href="https://basescan.org/tx/${data.txHash}" target="_blank" rel="noopener">${short} ↗</a>`;
         claimBtn.textContent = t('profile.rewards.claimed');
 
         // Recargar stats
