@@ -93,6 +93,7 @@ const DICT = {
 
     // DAO page
     'dao.title': 'ORGANIZACIÓN AUTÓNOMA DESCENTRALIZADA',
+    'dao.subtitle': 'ORGANIZACIÓN AUTÓNOMA DESCENTRALIZADA',
     'dao.brand': 'dao.alemty.eth',
     'dao.proposals': 'Propuestas',
     'dao.proposal.new': 'Nueva propuesta',
@@ -117,6 +118,7 @@ const DICT = {
 
     // DEFI page
     'defi.title': 'TERMINAL DE TRADING',
+    'defi.subtitle': 'TERMINAL DE TRADING DEFI',
     'defi.brand': 'defi.alemty.eth',
     'defi.chart': 'Gráfico',
     'defi.swap': 'Intercambiar',
@@ -126,6 +128,7 @@ const DICT = {
 
     // DEX page
     'dex.title': 'INTERCAMBIADOR DESCENTRALIZADO',
+    'dex.subtitle': 'INTERCAMBIADOR DESCENTRALIZADO',
     'dex.brand': 'dex.alemty.eth',
     'dex.swap': 'Swap',
     'dex.swapDesc': 'Interno (Aura/ALEM) o Externo (ALEM/ETH en BASE).',
@@ -142,6 +145,7 @@ const DICT = {
 
     // IA page
     'ia.title': 'INTELIGENCIA ARTIFICIAL',
+    'ia.subtitleDisc': 'Inteligencia Artificial Descentralizada',
     'ia.brand': 'ia.alemty.eth',
     'ia.subtitle': '🤖 Centro de Control — Agentes, Automatizaciones, Foro, DEX, DEFI',
     'ia.agentsTitle': '🤖 Agentes Inteligentes',
@@ -263,6 +267,7 @@ const DICT = {
     'id.follow': 'Follow me',
 
     'dao.title': 'DECENTRALIZED AUTONOMOUS ORGANIZATION',
+    'dao.subtitle': 'DECENTRALIZED AUTONOMOUS ORGANIZATION',
     'dao.brand': 'dao.alemty.eth',
     'dao.proposals': 'Proposals',
     'dao.proposal.new': 'New proposal',
@@ -286,6 +291,7 @@ const DICT = {
     'dao.governance': 'Governance',
 
     'defi.title': 'TRADING TERMINAL',
+    'defi.subtitle': 'DEFI TRADING TERMINAL',
     'defi.brand': 'defi.alemty.eth',
     'defi.chart': 'Chart',
     'defi.swap': 'Swap',
@@ -294,6 +300,7 @@ const DICT = {
     'defi.connect': 'Connect wallet',
 
     'dex.title': 'DECENTRALIZED EXCHANGE',
+    'dex.subtitle': 'DECENTRALIZED EXCHANGE',
     'dex.brand': 'dex.alemty.eth',
     'dex.swap': 'Swap',
     'dex.swapDesc': 'Internal (Aura/ALEM) or External (ALEM/ETH on BASE).',
@@ -309,6 +316,7 @@ const DICT = {
     'dex.connect': 'Connect wallet',
 
     'ia.title': 'ARTIFICIAL INTELLIGENCE',
+    'ia.subtitleDisc': 'Decentralized Artificial Intelligence',
     'ia.brand': 'ia.alemty.eth',
     'ia.subtitle': '🤖 Control Center — Agents, Automations, Forum, DEX, DEFI',
     'ia.agentsTitle': '🤖 Intelligent Agents',
@@ -438,19 +446,57 @@ const FLAG_MX = `<svg viewBox="0 0 36 24" width="20" height="14" style="border-r
   <circle cx="18" cy="12" r="4" fill="#8b5e3c" opacity=".6"/>
 </svg>`;
 
-const FLAG_GB = `<svg viewBox="0 0 36 24" width="20" height="14" style="border-radius:2px;display:block;">
-  <rect width="36" height="24" fill="#012169"/>
-  <path d="M0 0l36 24M36 0L0 24" stroke="#fff" stroke-width="3"/>
-  <path d="M0 0l36 24M36 0L0 24" stroke="#c8102e" stroke-width="1.5"/>
-  <path d="M18 0v24M0 12h36" stroke="#fff" stroke-width="4"/>
-  <path d="M18 0v24M0 12h36" stroke="#c8102e" stroke-width="2"/>
+const FLAG_US = `<svg viewBox="0 0 36 24" width="20" height="14" style="border-radius:2px;display:block;">
+  <rect width="36" height="24" fill="#fff"/>
+  <rect width="36" height="1.85" fill="#b22234" y="0"/>
+  <rect width="36" height="1.85" fill="#b22234" y="3.7"/>
+  <rect width="36" height="1.85" fill="#b22234" y="7.4"/>
+  <rect width="36" height="1.85" fill="#b22234" y="11.1"/>
+  <rect width="36" height="1.85" fill="#b22234" y="14.8"/>
+  <rect width="36" height="1.85" fill="#b22234" y="18.5"/>
+  <rect width="14.4" height="12.95" fill="#3c3b6e" y="0"/>
+  <circle cx="2.4" cy="2.16" r=".35" fill="#fff"/>
+  <circle cx="4.8" cy="2.16" r=".35" fill="#fff"/>
+  <circle cx="7.2" cy="2.16" r=".35" fill="#fff"/>
+  <circle cx="9.6" cy="2.16" r=".35" fill="#fff"/>
+  <circle cx="12" cy="2.16" r=".35" fill="#fff"/>
+  <circle cx="3.6" cy="3.6" r=".35" fill="#fff"/>
+  <circle cx="6" cy="3.6" r=".35" fill="#fff"/>
+  <circle cx="8.4" cy="3.6" r=".35" fill="#fff"/>
+  <circle cx="10.8" cy="3.6" r=".35" fill="#fff"/>
+  <circle cx="13.2" cy="3.6" r=".35" fill="#fff"/>
+  <circle cx="2.4" cy="5.04" r=".35" fill="#fff"/>
+  <circle cx="4.8" cy="5.04" r=".35" fill="#fff"/>
+  <circle cx="7.2" cy="5.04" r=".35" fill="#fff"/>
+  <circle cx="9.6" cy="5.04" r=".35" fill="#fff"/>
+  <circle cx="12" cy="5.04" r=".35" fill="#fff"/>
+  <circle cx="3.6" cy="6.48" r=".35" fill="#fff"/>
+  <circle cx="6" cy="6.48" r=".35" fill="#fff"/>
+  <circle cx="8.4" cy="6.48" r=".35" fill="#fff"/>
+  <circle cx="10.8" cy="6.48" r=".35" fill="#fff"/>
+  <circle cx="13.2" cy="6.48" r=".35" fill="#fff"/>
+  <circle cx="2.4" cy="7.92" r=".35" fill="#fff"/>
+  <circle cx="4.8" cy="7.92" r=".35" fill="#fff"/>
+  <circle cx="7.2" cy="7.92" r=".35" fill="#fff"/>
+  <circle cx="9.6" cy="7.92" r=".35" fill="#fff"/>
+  <circle cx="12" cy="7.92" r=".35" fill="#fff"/>
+  <circle cx="3.6" cy="9.36" r=".35" fill="#fff"/>
+  <circle cx="6" cy="9.36" r=".35" fill="#fff"/>
+  <circle cx="8.4" cy="9.36" r=".35" fill="#fff"/>
+  <circle cx="10.8" cy="9.36" r=".35" fill="#fff"/>
+  <circle cx="13.2" cy="9.36" r=".35" fill="#fff"/>
+  <circle cx="2.4" cy="10.8" r=".35" fill="#fff"/>
+  <circle cx="4.8" cy="10.8" r=".35" fill="#fff"/>
+  <circle cx="7.2" cy="10.8" r=".35" fill="#fff"/>
+  <circle cx="9.6" cy="10.8" r=".35" fill="#fff"/>
+  <circle cx="12" cy="10.8" r=".35" fill="#fff"/>
 </svg>`;
 
 // ===== SVG FLAG BUTTON =====
 function flagSpan(lang) {
   const s = document.createElement('span');
   s.style.cssText = 'display:flex;align-items:center;justify-content:center;width:20px;height:14px;';
-  s.innerHTML = lang === 'es' ? FLAG_MX : FLAG_GB;
+  s.innerHTML = lang === 'es' ? FLAG_MX : FLAG_US;
   return s;
 }
 
