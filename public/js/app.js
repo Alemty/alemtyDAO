@@ -71,8 +71,9 @@ const LINKS = [
   { platform: 'Decentraland', desc: 'Mi Avatar del Metaverso', i18nKey: 'id.social.decentraland', url: 'https://decentraland.org/profile/accounts/0x6a202f991c4c1df079449be9847b1dac3f51854f', icon: 'assets/icons/decentraland.svg' }
 ]
 
-const cards = document.getElementById('cards')
-if (cards) {
+function renderSocialCards() {
+  const cards = document.getElementById('cards')
+  if (!cards) return
   cards.classList.add('cards-grid')
   cards.innerHTML = LINKS.map(l => {
     return `<a class="social-card" href="${l.url}" target="_blank" rel="noopener noreferrer" aria-label="${l.platform}">
@@ -81,6 +82,10 @@ if (cards) {
     </a>`
   }).join('')
 }
+renderSocialCards()
+
+// Re-render social cards on language change
+document.addEventListener('lang:changed', renderSocialCards)
 
 // ========== Book frame engaged hover ==========
 const bookFrame = document.querySelector('#pageIdentity .book-frame')
