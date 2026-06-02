@@ -3,6 +3,7 @@
 import { mountShell } from '../../shared/js/shell.js';
 import { getDid } from '../../shared/js/wallet.js';
 import { esc } from '../../shared/js/core.js';
+import { t, getLang } from '../../shared/js/i18n.js';
 
 /* =========================================================
    CONFIG
@@ -265,6 +266,13 @@ export function mountIA() {
 
   startActivityRefresh();
   startMetricsRefresh();
+
+  // Re-render al cambiar idioma
+  window.addEventListener('lang:changed', () => {
+    renderDashboard();
+    renderAgents();
+    renderAdminSection();
+  });
 }
 
 /* =========================================================
@@ -277,10 +285,10 @@ function renderDashboard() {
   // Métricas conectadas a documentación real y backend
   const scenesWithAR = OVR_LANDS.filter(l => l.scene).length;
   const metrics = [
-    { label: 'Agentes Activos', value: `${METRICS.agentsActive}`, sub: `de ${AGENTS.length} totales` },
-    { label: 'Total NFTs',     value: String(TOTAL_ASSETS), sub: `${ASSET_COLLECTIONS} colecciones · ${OVR_TOTAL} tierras` },
-    { label: 'Parcelas OVR',   value: String(OVR_TOTAL), sub: `${scenesWithAR} escenas AR activas` },
-    { label: 'AURA / ALEM',     value: 'Pendiente', sub: 'Minteo pendiente' }
+    { label: t('ia.metrics.active'), value: `${METRICS.agentsActive}`, sub: t('ia.metrics.ofTotal', `de ${AGENTS.length} totales`) },
+    { label: t('ia.metrics.totalNfts'), value: String(TOTAL_ASSETS), sub: `${ASSET_COLLECTIONS} ${t('ia.metrics.collections')} · ${OVR_TOTAL} ${t('ia.metrics.lands')}` },
+    { label: t('ia.metrics.parcels'), value: String(OVR_TOTAL), sub: `${scenesWithAR} ${t('ia.metrics.arScenes')}` },
+    { label: t('ia.metrics.aura'), value: t('ia.metrics.pending'), sub: t('ia.metrics.mintPending') }
   ];
 
   container.innerHTML = metrics.map(m => `
@@ -300,9 +308,10 @@ function renderAgents() {
   const badge = document.getElementById('agentCountBadge');
   if (!container) return;
 
-  if (badge) badge.textContent = `${AGENTS.length} activos`;
+  if (badge) badge.textContent = `${AGENTS.length} ${t('ia.agents.active')}`;
 
   const statusDot = (s) => s === 'online' ? '🟢' : s === 'busy' ? '🟡' : '⚪';
+  const statusLabel = (s) => s === 'online' ? t('ia.status.online') : s === 'busy' ? t('ia.status.busy') : t('ia.status.offline');
 
   container.innerHTML = AGENTS.map(a => `
     <div class="agent-card">
@@ -313,7 +322,7 @@ function renderAgents() {
           <div class="agent-role">${esc(a.role)}</div>
         </div>
         <span class="agent-status ${a.status}">
-          ${statusDot(a.status)} ${a.status === 'online' ? 'Online' : a.status === 'busy' ? 'Ocupado' : 'Offline'}
+          ${statusDot(a.status)} ${statusLabel(a.status)}
         </span>
       </div>
       <div class="agent-body">
@@ -340,9 +349,9 @@ function renderAgents() {
         </div>
         ` : ''}
         <div class="agent-actions">
-          <button class="btn-sm" data-agent="${a.id}" data-action="goto">🔗 Ir a ${a.subdomain}</button>
-          <button class="btn-sm" data-agent="${a.id}" data-action="restart">🔄 Reiniciar</button>
-          <button class="btn-sm primary" data-agent="${a.id}" data-action="config">⚙️ Configurar</button>
+          <button class="btn-sm" data-agent="${a.id}" data-action="goto">🔗 ${t('ia.actions.goto')} ${a.subdomain}</button>
+          <button class="btn-sm" data-agent="${a.id}" data-action="restart">🔄 ${t('ia.actions.restart')}</button>
+          <button class="btn-sm primary" data-agent="${a.id}" data-action="config">⚙️ ${t('ia.actions.config')}</button>
         </div>
       </div>
     </div>
@@ -388,8 +397,7 @@ function renderAdminSection() {
   if (!isAdmin) {
     container.innerHTML = `
       <div class="admin-restricted">
-        🔒 Panel de administración restringido.
-        Conecta con 0x6a20…1854f e inicia sesión SIWE para acceder.
+        🔒 ${t('ia.admin.restricted')}
       </div>
     `;
     return;
@@ -399,33 +407,33 @@ function renderAdminSection() {
     <div class="admin-panel">
       <div class="admin-head">
         <span class="admin-icon">🛡️</span>
-        <h3>Panel de Administración — Fundador</h3>
-        <span class="agent-status online">✅ Verificado</span>
+        <h3>${t('ia.admin.panelTitle')}</h3>
+        <span class="agent-status online">✅ ${t('ia.admin.verified')}</span>
       </div>
       <div class="admin-body">
         <div class="admin-controls">
-          <button class="ctrl-btn" data-admin="restart-all">🔄 Reiniciar todos los agentes</button>
-          <button class="ctrl-btn" data-admin="sync-pools">🔄 Sincronizar pools DEX</button>
-          <button class="ctrl-btn" data-admin="sync-ovr">🌍 Sincronizar ${OVR_TOTAL} OVRlands</button>
-          <button class="ctrl-btn danger" data-admin="emergency-stop">🛑 Parada de emergencia</button>
+          <button class="ctrl-btn" data-admin="restart-all">🔄 ${t('ia.admin.restartAll')}</button>
+          <button class="ctrl-btn" data-admin="sync-pools">🔄 ${t('ia.admin.syncPools')}</button>
+          <button class="ctrl-btn" data-admin="sync-ovr">🌍 ${t('ia.admin.syncOvr', `Sincronizar ${OVR_TOTAL} OVRlands`)}</button>
+          <button class="ctrl-btn danger" data-admin="emergency-stop">🛑 ${t('ia.admin.emergencyStop')}</button>
         </div>
         <div style="margin-top:12px;font-size:12px;opacity:.75;">
-          <strong>Admin:</strong> 0x6a20…1854f · Alejandro González
-          · <strong>${OVR_TOTAL}</strong> OVRlands activas · <strong>${OVR_LANDS.filter(l => l.scene).length}</strong> escenas AR
-          · <strong>${TOTAL_ASSETS}</strong> NFTs en <strong>${ASSET_COLLECTIONS}</strong> colecciones
+          <strong>${t('ia.admin.adminLabel')}:</strong> 0x6a20…1854f · Alejandro González
+          · <strong>${OVR_TOTAL}</strong> ${t('ia.admin.activeLands')} · <strong>${OVR_LANDS.filter(l => l.scene).length}</strong> ${t('ia.admin.arScenes')}
+          · <strong>${TOTAL_ASSETS}</strong> NFTs en <strong>${ASSET_COLLECTIONS}</strong> ${t('ia.admin.collections')}
         </div>
         <div style="margin-top:6px;display:flex;gap:10px;font-size:10px;flex-wrap:wrap;">
           <span style="background:rgba(0,230,118,.08);padding:2px 8px;border-radius:6px;border:1px solid rgba(0,230,118,.12);">
-            🗺️ ${OVR_TOTAL} tierras
+            🗺️ ${OVR_TOTAL} ${t('ia.admin.lands')}
           </span>
           <span style="background:rgba(0,163,255,.08);padding:2px 8px;border-radius:6px;border:1px solid rgba(0,163,255,.12);">
-            🧱 ${TOTAL_ASSETS} ladrillos
+            🧱 ${TOTAL_ASSETS} ${t('ia.admin.bricks')}
           </span>
           <span style="background:rgba(255,179,71,.08);padding:2px 8px;border-radius:6px;border:1px solid rgba(255,179,71,.12);">
-            📦 ${ASSET_COLLECTIONS} colecciones
+            📦 ${ASSET_COLLECTIONS} ${t('ia.admin.collections')}
           </span>
           <span style="background:rgba(255,77,106,.08);padding:2px 8px;border-radius:6px;border:1px solid rgba(255,77,106,.12);">
-            ⏳ AURA/ALEM pendientes
+            ⏳ ${t('ia.admin.pending')}
           </span>
         </div>
       </div>
@@ -453,23 +461,23 @@ function handleAgentAction(agentId, action) {
   }
 
   const msgs = {
-    restart: `🔄 Reiniciando agente "${agent.name}"...`,
-    logs: `📋 Abriendo logs de "${agent.name}"...`,
-    config: `⚙️ Abriendo configuración de "${agent.name}"...`
+    restart: `${t('ia.toast.restarting')} "${agent.name}"...`,
+    logs: `${t('ia.toast.logs')} "${agent.name}"...`,
+    config: `${t('ia.toast.configuring')} "${agent.name}"...`
   };
 
-  showToast(msgs[action] || `Acción: ${action} en ${agent.name}`);
+  showToast(msgs[action] || `${action} ${t('ia.toast.on')} ${agent.name}`);
 }
 
 function handleAdminAction(action) {
   const msgs = {
-    'restart-all':  '🔄 Reiniciando todos los agentes...',
-    'sync-pools':   '🔄 Sincronizando pools DEX con Rulebook §6...',
-    'sync-ovr':     `🌍 Sincronizando ${OVR_TOTAL} parcelas OVRlands con Over the Reality...`,
-    'emergency-stop': '🛑 ¡PARADA DE EMERGENCIA! (Constitución §Emergencias: fundador puede pausar)'
+    'restart-all':  t('ia.toast.restartAll'),
+    'sync-pools':   t('ia.toast.syncPools'),
+    'sync-ovr':     t('ia.toast.syncOvr'),
+    'emergency-stop': t('ia.toast.emergencyStop')
   };
 
-  showToast(msgs[action] || `Acción: ${action}`);
+  showToast(msgs[action] || `${action}: ${t('ia.toast.executing')}`);
 }
 
 /* =========================================================
@@ -512,22 +520,26 @@ function showToast(msg) {
 
 // Actividad cada 15 segundos
 function startActivityRefresh() {
+  const timeStatuses = () => [
+    t('ia.time.justNow'), t('ia.time.10s'), t('ia.time.30s'),
+    t('ia.time.1m'), t('ia.time.2m')
+  ];
   setInterval(() => {
     const times = document.querySelectorAll('.act-time');
-    const statuses = ['hace unos seg', 'hace 10 seg', 'hace 30 seg', 'hace 1 min', 'hace 2 min'];
+    const statuses = timeStatuses();
     times.forEach(t => {
       t.textContent = statuses[Math.floor(Math.random() * statuses.length)];
     });
 
     if (Math.random() > 0.5) {
       const newActions = [
-        { agent: 'AutoBot',        text: `Pinata upload: public/ → IPFS (nuevo CID)`, icon: '⚡', time: 'hace unos seg' },
-        { agent: 'OVR Assistant',  text: `Parcela OVR sincronizada — 24/24 lands activas en Polygon`, icon: '🌍', time: 'hace unos seg' },
-        { agent: 'AutoBot',        text: `Telegram: ${Math.floor(Math.random()*50+10)} notificaciones enviadas a comunidad`, icon: '⚡', time: 'hace unos seg' },
-        { agent: 'OVR Assistant',  text: `Escena AR preparada para OVRland — coordenadas (${Math.floor(Math.random()*180-90)},${Math.floor(Math.random()*360-180)})`, icon: '🌍', time: 'hace unos seg' },
-        { agent: 'AutoBot',        text: `Discord: webhook ok — commit ${Math.random().toString(16).slice(2,8)}`, icon: '⚡', time: 'hace unos seg' },
-        { agent: 'Governance Bot', text: `veALEMTY locks activos: ${Math.floor(Math.random()*5000+12000)} tokens bloqueados`, icon: '🏛️', time: 'hace unos seg' },
-        { agent: 'Pool Balancer',  text: `Rebalance automático — ratio ALEM/WETH optimizado`, icon: '🔄', time: 'hace unos seg' }
+        { agent: 'AutoBot',        text: `Pinata upload: public/ → IPFS (${t('ia.activity.newCid')})`, icon: '⚡', time: t('ia.time.justNow') },
+        { agent: 'OVR Assistant',  text: `${t('ia.activity.parcelSynced')} — 24/24 lands active on Polygon`, icon: '🌍', time: t('ia.time.justNow') },
+        { agent: 'AutoBot',        text: `Telegram: ${Math.floor(Math.random()*50+10)} ${t('ia.activity.notificationsSent')}`, icon: '⚡', time: t('ia.time.justNow') },
+        { agent: 'OVR Assistant',  text: `${t('ia.activity.arSceneReady')} (${Math.floor(Math.random()*180-90)},${Math.floor(Math.random()*360-180)})`, icon: '🌍', time: t('ia.time.justNow') },
+        { agent: 'AutoBot',        text: `Discord: webhook ok — commit ${Math.random().toString(16).slice(2,8)}`, icon: '⚡', time: t('ia.time.justNow') },
+        { agent: 'Governance Bot', text: `${t('ia.activity.veLocks')}: ${Math.floor(Math.random()*5000+12000)} tokens`, icon: '🏛️', time: t('ia.time.justNow') },
+        { agent: 'Pool Balancer',  text: t('ia.activity.autoRebalance'), icon: '🔄', time: t('ia.time.justNow') }
       ];
       const pick = newActions[Math.floor(Math.random() * newActions.length)];
       const feed = document.getElementById('iaActivity');
