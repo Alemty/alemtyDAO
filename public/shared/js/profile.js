@@ -887,26 +887,26 @@ function renderDexTab(modal) {
 
   // Rewards: AURA on-chain + pendiente de reclamar + futuros ($ALEM, bribes, fees)
   const rewards = {
-    aura: { label: '🔵 AURA por reclamar', value: String(auraReclamable), tooltip: 'AURA acumulado por interacciones (likes/points + farm) pendiente de recibir on-chain desde la wallet distribuidora' },
-    alem: { label: '🟡 $ALEM', value: '0', tooltip: 'Rewards de pool LP AURA/ALEM (próximamente)' },
-    bribes: { label: '💎 Bribes', value: '0', tooltip: 'Incentivos de voto en gauge (próximamente)' },
-    fees: { label: '💧 Fees LP', value: '0', tooltip: 'Comisiones acumuladas por proveer liquidez (próximamente)' },
+    aura: { label: t('profile.rewards.auraPending'), value: String(auraReclamable), tooltip: t('profile.rewards.auraTooltip') },
+    alem: { label: '🟡 $ALEM', value: '0', tooltip: t('profile.rewards.alemTooltip') },
+    bribes: { label: t('profile.rewards.bribes'), value: '0', tooltip: t('profile.rewards.bribesTooltip') },
+    fees: { label: t('profile.rewards.lpFees'), value: '0', tooltip: t('profile.rewards.lpFeesTooltip') },
   };
 
   const totalRewards = Object.values(rewards).reduce((sum, r) => sum + Number(r.value), 0);
 
   c.innerHTML = `
     <div class="pf-box">
-      <div class="h2">DEX · Tokenomics</div>
-      <p class="small muted">AURA on-chain vs pendiente de reclamar. El AURA se transfiere desde la wallet distribuidora del ecosistema.</p>
+      <div class="h2">${esc(t('profile.rewards.tokenomics'))}</div>
+      <p class="small muted">${esc(t('profile.rewards.description'))}</p>
 
       <div class="pf-rewards-summary">
         <div class="pf-stat-card">
-          <div class="small muted">AURA en tu wallet (on-chain)</div>
+          <div class="small muted">${esc(t('profile.rewards.onchain'))}</div>
           <div class="h1" style="font-size:22px;margin:4px 0;color:#6EC8FF;">${auraBalance}</div>
         </div>
         <div class="pf-stat-card">
-          <div class="small muted">AURA por reclamar (off-chain)</div>
+          <div class="small muted">${esc(t('profile.rewards.pending'))}</div>
           <div class="h1" style="font-size:22px;margin:4px 0;color:#a855f7;">${String(auraReclamable)}</div>
         </div>
       </div>
@@ -921,12 +921,12 @@ function renderDexTab(modal) {
       </div>
 
       <p class="small muted" style="margin-top:8px;font-size:10px;text-align:center;">
-        🔄 <strong>Flujo:</strong> Interacciones → AURA off-chain (${String(auraReclamable)}) 
-        → Reclaim → Wallet distribuidora te transfiere AURA → AURA on-chain (${auraBalance})
+        ${esc(t('profile.rewards.flow'))} (${String(auraReclamable)}) 
+        → ${esc(t('profile.rewards.reclaim'))} → ${esc(t('profile.rewards.flowEnd'))} (${auraBalance})
       </p>
 
       <button class="tab-btn" id="claimRewardsBtn" style="width:100%;margin-top:8px;padding:10px;font-weight:700;background:var(--accent,#00ffd5);color:#000;border:none;border-radius:8px;cursor:pointer;" ${totalRewards === 0 ? 'disabled' : ''}>
-        ${totalRewards === 0 ? '✨ No hay recompensas pendientes' : '⚡ Reclaim Rewards (todo)'}
+        ${totalRewards === 0 ? t('profile.rewards.none') : t('profile.rewards.claimAll')}
       </button>
       <div id="claimStatus" class="small muted" style="margin-top:8px;text-align:center;"></div>
     </div>
@@ -936,16 +936,16 @@ function renderDexTab(modal) {
   if (claimBtn && totalRewards > 0) {
     claimBtn.addEventListener('click', async () => {
       claimBtn.disabled = true;
-      claimBtn.textContent = '⏳ Reclamando...';
+      claimBtn.textContent = t('profile.rewards.claiming');
       const statusEl = c.querySelector('#claimStatus');
-      statusEl.textContent = 'El agente está procesando tu reclaim...';
+      statusEl.textContent = t('profile.rewards.agentProcessing');
 
       try {
         const token = getJWT();
         if (!token) {
-          statusEl.textContent = '❌ Conecta tu wallet primero.';
+          statusEl.textContent = t('profile.rewards.connectWalletFirst');
           claimBtn.disabled = false;
-          claimBtn.textContent = '⚡ Reclaim Rewards (todo)';
+          claimBtn.textContent = t('profile.rewards.claimAll');
           return;
         }
 
@@ -956,25 +956,25 @@ function renderDexTab(modal) {
         const data = await res.json();
 
         if (!data.ok) {
-          statusEl.textContent = '❌ ' + (data.error || 'Error al reclamar');
+          statusEl.textContent = '❌ ' + (data.error || t('profile.rewards.errorClaim'));
           claimBtn.disabled = false;
-          claimBtn.textContent = '⚡ Reclaim Rewards (todo)';
+          claimBtn.textContent = t('profile.rewards.claimAll');
           return;
         }
 
         const short = data.txHash?.slice(0, 14) + '...';
-        statusEl.innerHTML = `✅ Reclamado — <a href="https://basescan.org/tx/${data.txHash}"
-          target="_blank" rel="noopener">${short} ↗</a>`;
-        claimBtn.textContent = '✅ Reclamado';
+        statusEl.innerHTML = t('profile.rewards.claimed') + ' — <a href="https://basescan.org/tx/${data.txHash}"
+          target="_blank" rel="noopener">${short} ↗</a>';
+        claimBtn.textContent = t('profile.rewards.claimed');
 
         // Recargar stats
         __ME_STATS__ = await fetchMeStats();
         syncProfile();
 
       } catch (e) {
-        statusEl.textContent = '❌ Error: ' + (e.message || 'desconocido');
+        statusEl.textContent = t('profile.rewards.error') + (e.message || t('profile.rewards.unknown'));
         claimBtn.disabled = false;
-        claimBtn.textContent = '⚡ Reclaim Rewards (todo)';
+        claimBtn.textContent = t('profile.rewards.claimAll');
       }
     });
   } else if (claimBtn) {
@@ -1258,11 +1258,11 @@ function renderFarmTab(modal) {
   if (!c) return;
   const addr = getDid();
   if (!addr) {
-    c.innerHTML = `<div class="pf-box"><div class="h2">🎣 FARM</div><p class="muted">Conecta tu wallet para pescar AURA.</p></div>`;
+    c.innerHTML = `<div class="pf-box"><div class="h2">🎣 ${esc(t('profile.farm.title'))}</div><p class="muted">${esc(t('profile.farm.connectWallet'))}</p></div>`;
     return;
   }
 
-  c.innerHTML = `<div class="pf-box farm-container"><div style="padding:20px;text-align:center;opacity:.5;">🎣 Cargando...</div></div>`;
+  c.innerHTML = `<div class="pf-box farm-container"><div style="padding:20px;text-align:center;opacity:.5;">🎣 ${esc(t('common.loading'))}...</div></div>`;
 
   loadFarmStatus().then(status => {
     const canClaim = status?.canClaim !== false;
@@ -1275,10 +1275,10 @@ function renderFarmTab(modal) {
     c.innerHTML = `
       <div class="pf-box farm-container">
         <div class="h2" style="font-size:15px;display:flex;align-items:center;gap:8px;">
-          Farmeando AURA
-          <span class="farm-streak" id="farmStreak" style="font-size:11px;font-weight:400;opacity:.6;">Racha: ${streak} día${streak !== 1 ? 's' : ''}</span>
+          ${esc(t('profile.farm.farming'))}
+          <span class="farm-streak" id="farmStreak" style="font-size:11px;font-weight:400;opacity:.6;">${esc(t('profile.farm.streak'))}: ${streak} ${t('profile.farm.day')}${streak !== 1 ? t('profile.farm.days') : ''}</span>
         </div>
-        <div style="font-size:11px;opacity:.6;text-align:center;margin-bottom:2px;">Total acumulado: <strong style="color:var(--primary,#00ffd5);">${totalFarmed} AURA</strong></div>
+        <div style="font-size:11px;opacity:.6;text-align:center;margin-bottom:2px;">${esc(t('profile.farm.total'))}: <strong style="color:var(--primary,#00ffd5);">${totalFarmed} AURA</strong></div>
 
         <div style="position:relative;width:100%;max-width:360px;aspect-ratio:360/260;margin:6px auto;border-radius:14px;overflow:hidden;background:var(--bg-card,#0d1520);border:1px solid rgba(255,255,255,.08);">
           <canvas id="farmCanvas" width="360" height="260" style="display:block;width:100%;height:100%;position:absolute;inset:0;image-rendering:pixelated;"></canvas>
@@ -1287,17 +1287,17 @@ function renderFarmTab(modal) {
             <div id="farmResultIcon" style="font-size:48px;margin-bottom:6px;">🎁</div>
             <div id="farmResultTitle" style="font-size:18px;font-weight:700;"></div>
             <div id="farmResultSub" style="font-size:13px;opacity:.7;margin-top:4px;"></div>
-            <button id="farmCloseResult" class="tab-btn" style="margin-top:14px;font-size:12px;padding:6px 18px;">Cerrar</button>
+            <button id="farmCloseResult" class="tab-btn" style="margin-top:14px;font-size:12px;padding:6px 18px;">${esc(t('common.close'))}</button>
           </div>
         </div>
 
         <button id="farmBtn" class="tab-btn" style="width:100%;margin-top:6px;font-size:14px;padding:10px;${!canClaim?'opacity:.4;cursor:not-allowed;':''}" ${!canClaim?'disabled':''}>
-          ${canClaim ? 'Lanzar cebo' : 'Ya pescaste hoy'}
+          ${canClaim ? t('profile.farm.castBait') : t('profile.farm.fishedToday')}
         </button>
         <div id="farmTimer" style="font-size:11px;opacity:.5;text-align:center;margin-top:4px;"></div>
 
         <div class="farm-history" id="farmHistory" style="margin-top:10px;font-size:12px;opacity:.7;">
-          ${history.length === 0 ? 'Aún no has pescado nada.' : ''}
+          ${history.length === 0 ? t('profile.farm.noHistory') : ''}
         </div>
       </div>
     `;
@@ -1307,7 +1307,7 @@ function renderFarmTab(modal) {
     const btn = c.querySelector('#farmBtn');
     if (btn && canClaim) {
       btn.addEventListener('click', () => {
-        btn.disabled = true; btn.style.opacity = '.4'; btn.textContent = '🎣 Pesca en curso...';
+        btn.disabled = true; btn.style.opacity = '.4'; btn.textContent = '🎣 ' + t('profile.farm.fishing');
         startFarming(addr, c, localStreak);
       });
     }
