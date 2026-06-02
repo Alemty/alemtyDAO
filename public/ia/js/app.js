@@ -221,20 +221,27 @@ const AGENTS = [
 ];
 
 // ======== ACTIVIDAD RECIENTE (basada en eventos reales) ========
-let ACTIVITY_LOG = [
-  { agent: 'AutoBot',         text: 'Deploy IPFS exitoso — CID actualizado via Pinata workflow', icon: '⚡', time: 'hace 10 seg' },
-  { agent: 'OVR Assistant',  text: 'Parcelas OVR sincronizadas — 24 lands en 0x6a20…1854f', icon: '🌍', time: 'hace 30 seg' },
-  { agent: 'Foro Admin',     text: 'Aprobó propuesta #12 — Nuevo pool USDC/ETH (quórum 10% veALEM)', icon: '🗳️', time: 'hace 2 min' },
-  { agent: 'Pool Balancer',  text: 'Rebalanceó pool ALEM/WETH — ratio 60/40 según rulebook §6', icon: '⚖️', time: 'hace 3 min' },
-  { agent: 'AutoBot',         text: 'Telegram notification: deploy exitoso a main', icon: '⚡', time: 'hace 4 min' },
-  { agent: 'DEFI Oracle',    text: 'Actualizó chart ETH/USDC — $3,284.50 (feed Chainlink Base)', icon: '📊', time: 'hace 5 min' },
-  { agent: 'OVR Assistant',  text: 'Quest completada — 12 visitantes en parcela coordinada', icon: '🌍', time: 'hace 6 min' },
-  { agent: 'Governance Bot', text: 'Propuesta #14 — Nuevo treasury multisig (15 días votación)', icon: '🏛️', time: 'hace 8 min' },
-  { agent: 'AutoBot',         text: 'Discord webhook: PR mergeado → notificación a #general', icon: '⚡', time: 'hace 10 min' },
-  { agent: 'Foro Admin',     text: 'Moderó hilo — Spam eliminado (3 posts)', icon: '🗣️', time: 'hace 12 min' },
-  { agent: 'Pool Balancer',  text: 'Swap ejecutado: 5,000 USDC → ALEM (slippage < 1%)', icon: '🔄', time: 'hace 15 min' },
-  { agent: 'AutoBot',         text: 'Pinata upload: public/ → IPFS (nuevo CID inmutable)', icon: '⚡', time: 'hace 18 min' }
+const ACTIVITY_META = [
+  { agent: 'AutoBot',        key: 'ia.activity.log0', icon: '⚡' },
+  { agent: 'OVR Assistant',  key: 'ia.activity.log1', icon: '🌍' },
+  { agent: 'Foro Admin',     key: 'ia.activity.log2', icon: '🗳️' },
+  { agent: 'Pool Balancer',  key: 'ia.activity.log3', icon: '⚖️' },
+  { agent: 'AutoBot',        key: 'ia.activity.log4', icon: '⚡' },
+  { agent: 'DEFI Oracle',    key: 'ia.activity.log5', icon: '📊' },
+  { agent: 'OVR Assistant',  key: 'ia.activity.log6', icon: '🌍' },
+  { agent: 'Governance Bot', key: 'ia.activity.log7', icon: '🏛️' },
+  { agent: 'AutoBot',        key: 'ia.activity.log8', icon: '⚡' },
+  { agent: 'Foro Admin',     key: 'ia.activity.log9', icon: '🗣️' },
+  { agent: 'Pool Balancer',  key: 'ia.activity.log10', icon: '🔄' },
+  { agent: 'AutoBot',        key: 'ia.activity.log11', icon: '⚡' }
 ];
+
+let ACTIVITY_LOG = ACTIVITY_META.map(m => ({
+  agent: m.agent,
+  text: t(m.key),
+  icon: m.icon,
+  time: t('ia.time.justNow')
+}));
 
 /* =========================================================
    STATE
@@ -329,23 +336,64 @@ function renderAgents() {
         <div class="agent-stats">
           ${Object.entries(a.stats).map(([k, v]) => `
             <div class="agent-stat">
-              <span class="stat-label">${esc(k.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim())}</span>
+              <span class="stat-label">${esc(t('ia.stat.' + k, k.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim()))}</span>
               <span class="stat-value">${esc(v)}</span>
             </div>
           `).join('')}
         </div>
         ${a.counter ? `
         <div class="asset-counter">
-          ${a.counter.map((c, i) => `
+          ${a.counter.map((c, i) => {
+            const counterLabels = {
+              'Propuestas abiertas': 'ia.counter.openProposals',
+              'Open proposals': 'ia.counter.openProposals',
+              'Votaciones activas': 'ia.counter.activeVotes',
+              'Active votes': 'ia.counter.activeVotes',
+              'Miembros ayudados': 'ia.counter.helpedMembers',
+              'Members helped': 'ia.counter.helpedMembers',
+              'Pools activos': 'ia.counter.activePools',
+              'Active pools': 'ia.counter.activePools',
+              'Rebalances totales': 'ia.counter.totalRebalances',
+              'Total rebalances': 'ia.counter.totalRebalances',
+              'TVL gestionado': 'ia.counter.tvlManaged',
+              'TVL managed': 'ia.counter.tvlManaged',
+              'Charts actualizados': 'ia.counter.chartsUpdated',
+              'Charts updated': 'ia.counter.chartsUpdated',
+              'Feeds Chainlink': 'ia.counter.chainlinkFeeds',
+              'Chainlink feeds': 'ia.counter.chainlinkFeeds',
+              'APY promedio': 'ia.counter.avgApy',
+              'Avg APY': 'ia.counter.avgApy',
+              'Rey del protocolo': 'ia.counter.protocolKing',
+              'Protocol king': 'ia.counter.protocolKing',
+              'Príncipes activos': 'ia.counter.activePrinces',
+              'Active princes': 'ia.counter.activePrinces',
+              'Duques titulares': 'ia.counter.titularDukes',
+              'Titular dukes': 'ia.counter.titularDukes',
+              'Actions ejecutadas': 'ia.counter.executedActions',
+              'Executed actions': 'ia.counter.executedActions',
+              'Deploys IPFS': 'ia.counter.ipfsDeploys',
+              'IPFS deploys': 'ia.counter.ipfsDeploys',
+              'Canales activos': 'ia.counter.activeChannels',
+              'Active channels': 'ia.counter.activeChannels',
+              'Tierras OVR': 'ia.counter.ovrLands',
+              'OVR lands': 'ia.counter.ovrLands',
+              'NFTs totales': 'ia.counter.totalNfts',
+              'Total NFTs': 'ia.counter.totalNfts',
+              Colecciones: 'ia.counter.collections',
+              Collections: 'ia.counter.collections'
+            };
+            const ck = counterLabels[c.label] || null;
+            const translatedLabel = ck ? t(ck) : c.label;
+            return `
             <div class="asset-counter-group">
               <div class="asset-counter-icon">${c.icon}</div>
               <div class="asset-counter-body">
                 <div class="asset-counter-val">${esc(c.val)}</div>
-                <div class="asset-counter-label">${esc(c.label)}</div>
+                <div class="asset-counter-label">${esc(translatedLabel)}</div>
               </div>
             </div>
             ${i < a.counter.length - 1 ? '<div class="asset-counter-divider"></div>' : ''}
-          `).join('')}
+          `}).join('')}
         </div>
         ` : ''}
         <div class="agent-actions">
