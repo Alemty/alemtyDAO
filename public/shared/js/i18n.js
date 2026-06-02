@@ -173,6 +173,18 @@ const DICT = {
     'id.book.buy': 'Comprar',
     'id.book.buySub': 'Amazon',
     'id.follow': 'Sígueme',
+    'id.social.discord': 'Servidor oficial alemtyDAO',
+    'id.social.x': 'Mi Perfil en Twitter',
+    'id.social.telegram': 'Grupo alemtyDAO',
+    'id.social.github': 'Repositorio del proyecto',
+    'id.social.tiktok1': 'Escuela de Conocimiento Oculto (T2)',
+    'id.social.tiktok2': 'Tecnologías del Futuro (IA, Web3, Metaverso)',
+    'id.social.youtube': 'Escuela de Conocimiento Oculto',
+    'id.social.linkedin': 'Mi Carrera Profesional',
+    'id.social.instagram': 'Mi Perfil de Instagram',
+    'id.social.facebook': 'Alejandro Gutierrez Zavala',
+    'id.social.opensea': 'Galería de NFTs',
+    'id.social.decentraland': 'Mi Avatar del Metaverso',
 
     // DAO page
     'dao.title': 'ORGANIZACIÓN AUTÓNOMA DESCENTRALIZADA',
@@ -672,6 +684,18 @@ const DICT = {
     'id.book.buy': 'Buy',
     'id.book.buySub': 'Amazon',
     'id.follow': 'Follow me',
+    'id.social.discord': 'Official alemtyDAO Server',
+    'id.social.x': 'My Twitter Profile',
+    'id.social.telegram': 'alemtyDAO Group',
+    'id.social.github': 'Project Repository',
+    'id.social.tiktok1': 'School of Occult Knowledge (T2)',
+    'id.social.tiktok2': 'Future Technologies (AI, Web3, Metaverse)',
+    'id.social.youtube': 'School of Occult Knowledge',
+    'id.social.linkedin': 'My Professional Career',
+    'id.social.instagram': 'My Instagram Profile',
+    'id.social.facebook': 'Alejandro Gutierrez Zavala',
+    'id.social.opensea': 'NFT Gallery',
+    'id.social.decentraland': 'My Metaverse Avatar',
 
     'dao.title': 'DECENTRALIZED AUTONOMOUS ORGANIZATION',
     'dao.subtitle': 'DECENTRALIZED AUTONOMOUS ORGANIZATION',
@@ -1094,56 +1118,99 @@ function getDocTitle(lang) {
 
 // ===== FLAGS SVG (inline para evitar dependencia de emojis) =====
 const FLAG_MX = `<svg viewBox="0 0 36 24" width="20" height="14" style="border-radius:2px;display:block;">
-  <rect width="12" height="24" fill="#006847"/>
-  <rect x="12" width="12" height="24" fill="#fff"/>
-  <rect x="24" width="12" height="24" fill="#ce1126"/>
-  <circle cx="18" cy="12" r="4" fill="#8b5e3c" opacity=".6"/>
+  <defs>
+    <clipPath id="clipDiagMX">
+      <polygon points="0,0 36,16 36,24 0,8"/>
+    </clipPath>
+    <clipPath id="clipDiagES">
+      <polygon points="36,24 36,16 0,0 0,8"/>
+    </clipPath>
+  </defs>
+  <!-- Mitad México (superior-izquierda) -->
+  <g clip-path="url(#clipDiagMX)">
+    <rect x="0" width="12" height="24" fill="#006847"/>
+    <rect x="12" width="12" height="24" fill="#fff"/>
+    <rect x="24" width="12" height="24" fill="#ce1126"/>
+    <circle cx="18" cy="12" r="4" fill="#8b5e3c" opacity=".6"/>
+  </g>
+  <!-- Mitad España (inferior-derecha) -->
+  <g clip-path="url(#clipDiagES)">
+    <rect width="36" height="24" fill="#c60b1e"/>
+    <rect y="6" width="36" height="12" fill="#ffc400"/>
+    <circle cx="18" cy="12" r="3.5" fill="#c60b1e"/>
+  </g>
 </svg>`;
 
 const FLAG_US = `<svg viewBox="0 0 36 24" width="20" height="14" style="border-radius:2px;display:block;">
-  <rect width="36" height="24" fill="#fff"/>
-  <rect width="36" height="1.85" fill="#b22234" y="0"/>
-  <rect width="36" height="1.85" fill="#b22234" y="3.7"/>
-  <rect width="36" height="1.85" fill="#b22234" y="7.4"/>
-  <rect width="36" height="1.85" fill="#b22234" y="11.1"/>
-  <rect width="36" height="1.85" fill="#b22234" y="14.8"/>
-  <rect width="36" height="1.85" fill="#b22234" y="18.5"/>
-  <rect width="14.4" height="12.95" fill="#3c3b6e" y="0"/>
-  <circle cx="2.4" cy="2.16" r=".35" fill="#fff"/>
-  <circle cx="4.8" cy="2.16" r=".35" fill="#fff"/>
-  <circle cx="7.2" cy="2.16" r=".35" fill="#fff"/>
-  <circle cx="9.6" cy="2.16" r=".35" fill="#fff"/>
-  <circle cx="12" cy="2.16" r=".35" fill="#fff"/>
-  <circle cx="3.6" cy="3.6" r=".35" fill="#fff"/>
-  <circle cx="6" cy="3.6" r=".35" fill="#fff"/>
-  <circle cx="8.4" cy="3.6" r=".35" fill="#fff"/>
-  <circle cx="10.8" cy="3.6" r=".35" fill="#fff"/>
-  <circle cx="13.2" cy="3.6" r=".35" fill="#fff"/>
-  <circle cx="2.4" cy="5.04" r=".35" fill="#fff"/>
-  <circle cx="4.8" cy="5.04" r=".35" fill="#fff"/>
-  <circle cx="7.2" cy="5.04" r=".35" fill="#fff"/>
-  <circle cx="9.6" cy="5.04" r=".35" fill="#fff"/>
-  <circle cx="12" cy="5.04" r=".35" fill="#fff"/>
-  <circle cx="3.6" cy="6.48" r=".35" fill="#fff"/>
-  <circle cx="6" cy="6.48" r=".35" fill="#fff"/>
-  <circle cx="8.4" cy="6.48" r=".35" fill="#fff"/>
-  <circle cx="10.8" cy="6.48" r=".35" fill="#fff"/>
-  <circle cx="13.2" cy="6.48" r=".35" fill="#fff"/>
-  <circle cx="2.4" cy="7.92" r=".35" fill="#fff"/>
-  <circle cx="4.8" cy="7.92" r=".35" fill="#fff"/>
-  <circle cx="7.2" cy="7.92" r=".35" fill="#fff"/>
-  <circle cx="9.6" cy="7.92" r=".35" fill="#fff"/>
-  <circle cx="12" cy="7.92" r=".35" fill="#fff"/>
-  <circle cx="3.6" cy="9.36" r=".35" fill="#fff"/>
-  <circle cx="6" cy="9.36" r=".35" fill="#fff"/>
-  <circle cx="8.4" cy="9.36" r=".35" fill="#fff"/>
-  <circle cx="10.8" cy="9.36" r=".35" fill="#fff"/>
-  <circle cx="13.2" cy="9.36" r=".35" fill="#fff"/>
-  <circle cx="2.4" cy="10.8" r=".35" fill="#fff"/>
-  <circle cx="4.8" cy="10.8" r=".35" fill="#fff"/>
-  <circle cx="7.2" cy="10.8" r=".35" fill="#fff"/>
-  <circle cx="9.6" cy="10.8" r=".35" fill="#fff"/>
-  <circle cx="12" cy="10.8" r=".35" fill="#fff"/>
+  <defs>
+    <clipPath id="clipDiagUS">
+      <polygon points="0,0 36,16 36,24 0,8"/>
+    </clipPath>
+    <clipPath id="clipDiagGB">
+      <polygon points="36,24 36,16 0,0 0,8"/>
+    </clipPath>
+  </defs>
+  <!-- Mitad USA (superior-izquierda) -->
+  <g clip-path="url(#clipDiagUS)">
+    <rect width="36" height="24" fill="#fff"/>
+    <rect width="36" height="1.85" fill="#b22234" y="0"/>
+    <rect width="36" height="1.85" fill="#b22234" y="3.7"/>
+    <rect width="36" height="1.85" fill="#b22234" y="7.4"/>
+    <rect width="36" height="1.85" fill="#b22234" y="11.1"/>
+    <rect width="36" height="1.85" fill="#b22234" y="14.8"/>
+    <rect width="36" height="1.85" fill="#b22234" y="18.5"/>
+    <rect width="14.4" height="12.95" fill="#3c3b6e" y="0"/>
+    <circle cx="2.4" cy="2.16" r=".35" fill="#fff"/>
+    <circle cx="4.8" cy="2.16" r=".35" fill="#fff"/>
+    <circle cx="7.2" cy="2.16" r=".35" fill="#fff"/>
+    <circle cx="9.6" cy="2.16" r=".35" fill="#fff"/>
+    <circle cx="12" cy="2.16" r=".35" fill="#fff"/>
+    <circle cx="3.6" cy="3.6" r=".35" fill="#fff"/>
+    <circle cx="6" cy="3.6" r=".35" fill="#fff"/>
+    <circle cx="8.4" cy="3.6" r=".35" fill="#fff"/>
+    <circle cx="10.8" cy="3.6" r=".35" fill="#fff"/>
+    <circle cx="13.2" cy="3.6" r=".35" fill="#fff"/>
+    <circle cx="2.4" cy="5.04" r=".35" fill="#fff"/>
+    <circle cx="4.8" cy="5.04" r=".35" fill="#fff"/>
+    <circle cx="7.2" cy="5.04" r=".35" fill="#fff"/>
+    <circle cx="9.6" cy="5.04" r=".35" fill="#fff"/>
+    <circle cx="12" cy="5.04" r=".35" fill="#fff"/>
+    <circle cx="3.6" cy="6.48" r=".35" fill="#fff"/>
+    <circle cx="6" cy="6.48" r=".35" fill="#fff"/>
+    <circle cx="8.4" cy="6.48" r=".35" fill="#fff"/>
+    <circle cx="10.8" cy="6.48" r=".35" fill="#fff"/>
+    <circle cx="13.2" cy="6.48" r=".35" fill="#fff"/>
+    <circle cx="2.4" cy="7.92" r=".35" fill="#fff"/>
+    <circle cx="4.8" cy="7.92" r=".35" fill="#fff"/>
+    <circle cx="7.2" cy="7.92" r=".35" fill="#fff"/>
+    <circle cx="9.6" cy="7.92" r=".35" fill="#fff"/>
+    <circle cx="12" cy="7.92" r=".35" fill="#fff"/>
+    <circle cx="3.6" cy="9.36" r=".35" fill="#fff"/>
+    <circle cx="6" cy="9.36" r=".35" fill="#fff"/>
+    <circle cx="8.4" cy="9.36" r=".35" fill="#fff"/>
+    <circle cx="10.8" cy="9.36" r=".35" fill="#fff"/>
+    <circle cx="13.2" cy="9.36" r=".35" fill="#fff"/>
+    <circle cx="2.4" cy="10.8" r=".35" fill="#fff"/>
+    <circle cx="4.8" cy="10.8" r=".35" fill="#fff"/>
+    <circle cx="7.2" cy="10.8" r=".35" fill="#fff"/>
+    <circle cx="9.6" cy="10.8" r=".35" fill="#fff"/>
+    <circle cx="12" cy="10.8" r=".35" fill="#fff"/>
+  </g>
+  <!-- Mitad GB (inferior-derecha) -->
+  <g clip-path="url(#clipDiagGB)">
+    <rect width="36" height="24" fill="#012169"/>
+    <rect width="36" height="2.5" fill="#fff" y="0"/>
+    <rect width="36" height="2.5" fill="#fff" y="21.5"/>
+    <rect x="0" y="10.75" width="36" height="2.5" fill="#fff"/>
+    <rect x="0" width="36" height="4" fill="#fff" y="10"/>
+    <rect x="16" y="0" width="4" height="24" fill="#fff"/>
+    <rect x="0" y="10.75" width="36" height="2.5" fill="#c8102e"/>
+    <rect x="16.8" y="0" width="2.4" height="24" fill="#c8102e"/>
+    <rect width="36" height="1.5" fill="#c8102e" y="0"/>
+    <rect width="36" height="1.5" fill="#c8102e" y="22.5"/>
+    <rect x="0" y="11.25" width="36" height="1.5" fill="#fff"/>
+    <rect x="17.4" y="0" width="1.2" height="24" fill="#fff"/>
+  </g>
 </svg>`;
 
 // ===== SVG FLAG BUTTON =====

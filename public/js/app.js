@@ -56,18 +56,18 @@ document.addEventListener('keydown', (e) => {
 
 // ========== Social Links ==========
 const LINKS = [
-  { platform: 'Discord', desc: 'Servidor oficial alemtyDAO', url: 'https://discord.gg/72zNGfMp', icon: 'assets/icons/discord.svg' },
-  { platform: 'X', desc: 'Mi Perfil en Twitter', url: 'https://x.com/alemty_eth', icon: 'assets/icons/x.svg' },
-  { platform: 'Telegram', desc: 'Grupo alemtyDAO', url: 'https://t.me/alemtydao', icon: 'assets/icons/telegram.svg' },
-  { platform: 'GitHub', desc: 'Repositorio del proyecto', url: 'https://github.com/Alemty/alemtyDAO', icon: 'assets/icons/github.svg' },
-  { platform: 'TikTok', desc: 'Escuela de Conocimiento Oculto (T2)', url: 'https://www.tiktok.com/@alemtyv', icon: 'assets/icons/tiktok.svg' },
-  { platform: 'TikTok', desc: 'Tecnologías del Futuro (IA, Web3, Metaverso)', url: 'https://www.tiktok.com/@alemty.eth', icon: 'assets/icons/tiktok.svg' },
-  { platform: 'YouTube', desc: 'Escuela de Conocimiento Oculto', url: 'https://www.youtube.com/@AlemtyV', icon: 'assets/icons/youtube.svg' },
-  { platform: 'LinkedIn', desc: 'Mi Carrera Profesional', url: 'https://www.linkedin.com/in/alemty/', icon: 'assets/icons/linkedin.svg' },
-  { platform: 'Instagram', desc: 'Mi Perfil de Instagram', url: 'https://www.instagram.com/alemty01/', icon: 'assets/icons/instagram.svg' },
-  { platform: 'Facebook', desc: 'Alejandro Gutierrez Zavala', url: 'https://web.facebook.com/Alemty11/', icon: 'assets/icons/facebook.svg' },
-  { platform: 'OpenSea', desc: 'Galería de NFTs', url: 'https://opensea.io/es/0x6a202f991c4c1df079449be9847b1dac3f51854f', icon: 'assets/icons/opensea.svg' },
-  { platform: 'Decentraland', desc: 'Mi Avatar del Metaverso', url: 'https://decentraland.org/profile/accounts/0x6a202f991c4c1df079449be9847b1dac3f51854f', icon: 'assets/icons/decentraland.svg' }
+  { platform: 'Discord', desc: 'Servidor oficial alemtyDAO', i18nKey: 'id.social.discord', url: 'https://discord.gg/72zNGfMp', icon: 'assets/icons/discord.svg' },
+  { platform: 'X', desc: 'Mi Perfil en Twitter', i18nKey: 'id.social.x', url: 'https://x.com/alemty_eth', icon: 'assets/icons/x.svg' },
+  { platform: 'Telegram', desc: 'Grupo alemtyDAO', i18nKey: 'id.social.telegram', url: 'https://t.me/alemtydao', icon: 'assets/icons/telegram.svg' },
+  { platform: 'GitHub', desc: 'Repositorio del proyecto', i18nKey: 'id.social.github', url: 'https://github.com/Alemty/alemtyDAO', icon: 'assets/icons/github.svg' },
+  { platform: 'TikTok', desc: 'Escuela de Conocimiento Oculto (T2)', i18nKey: 'id.social.tiktok1', url: 'https://www.tiktok.com/@alemtyv', icon: 'assets/icons/tiktok.svg' },
+  { platform: 'TikTok', desc: 'Tecnologías del Futuro (IA, Web3, Metaverso)', i18nKey: 'id.social.tiktok2', url: 'https://www.tiktok.com/@alemty.eth', icon: 'assets/icons/tiktok.svg' },
+  { platform: 'YouTube', desc: 'Escuela de Conocimiento Oculto', i18nKey: 'id.social.youtube', url: 'https://www.youtube.com/@AlemtyV', icon: 'assets/icons/youtube.svg' },
+  { platform: 'LinkedIn', desc: 'Mi Carrera Profesional', i18nKey: 'id.social.linkedin', url: 'https://www.linkedin.com/in/alemty/', icon: 'assets/icons/linkedin.svg' },
+  { platform: 'Instagram', desc: 'Mi Perfil de Instagram', i18nKey: 'id.social.instagram', url: 'https://www.instagram.com/alemty01/', icon: 'assets/icons/instagram.svg' },
+  { platform: 'Facebook', desc: 'Alejandro Gutierrez Zavala', i18nKey: 'id.social.facebook', url: 'https://web.facebook.com/Alemty11/', icon: 'assets/icons/facebook.svg' },
+  { platform: 'OpenSea', desc: 'Galería de NFTs', i18nKey: 'id.social.opensea', url: 'https://opensea.io/es/0x6a202f991c4c1df079449be9847b1dac3f51854f', icon: 'assets/icons/opensea.svg' },
+  { platform: 'Decentraland', desc: 'Mi Avatar del Metaverso', i18nKey: 'id.social.decentraland', url: 'https://decentraland.org/profile/accounts/0x6a202f991c4c1df079449be9847b1dac3f51854f', icon: 'assets/icons/decentraland.svg' }
 ]
 
 const cards = document.getElementById('cards')
@@ -76,7 +76,7 @@ if (cards) {
   cards.innerHTML = LINKS.map(l => {
     return `<a class="social-card" href="${l.url}" target="_blank" rel="noopener noreferrer" aria-label="${l.platform}">
       <span class="icon-pane"><img class="ico" src="/${l.icon.replace(/^\/+/, '')}" alt="" loading="lazy"></span>
-      <span class="text-pane"><span class="platform">${l.platform}</span><span class="desc">${l.desc}</span></span>
+      <span class="text-pane"><span class="platform">${l.platform}</span><span class="desc">${typeof t === 'function' ? t(l.i18nKey, l.desc) : l.desc}</span></span>
     </a>`
   }).join('')
 }
