@@ -321,12 +321,12 @@ function initMiniTrade() {
     const to = toSel.value;
     const amt = Number(String(inEl.value || '0').replace(',', '.'));
     if (!Number.isFinite(amt) || amt <= 0 || from === to) {
-      statusEl.textContent = '❌ Selecciona tokens diferentes';
+      statusEl.textContent = 'Selecciona tokens diferentes';
       return;
     }
-    statusEl.textContent = '⏳ Ejecutando swap... (simulado)';
+    statusEl.textContent = 'Ejecutando swap... (simulado)';
     await new Promise(r => setTimeout(r, 1500));
-    statusEl.textContent = `✅ Swap exitoso: ${amt} ${from} → ${outEl.value} ${to}`;
+    statusEl.textContent = `Swap exitoso: ${amt} ${from} → ${outEl.value} ${to}`;
   });
 }
 
@@ -336,21 +336,21 @@ function initMiniTrade() {
 function initTradeControls() {
   $('slBtn')?.addEventListener('click', () => {
     const price = Number($('slPrice')?.value);
-    if (!price || price <= 0) { if ($('slStatus')) $('slStatus').textContent = '❌ Precio inválido'; return; }
-    if ($('slStatus')) $('slStatus').textContent = `✅ Stop Loss configurado en $${price}`;
+    if (!price || price <= 0) { if ($('slStatus')) $('slStatus').textContent = 'Precio inválido'; return; }
+    if ($('slStatus')) $('slStatus').textContent = `Stop Loss configurado en $${price}`;
   });
 
   $('tpBtn')?.addEventListener('click', () => {
     const price = Number($('tpPrice')?.value);
-    if (!price || price <= 0) { if ($('tpStatus')) $('tpStatus').textContent = '❌ Precio inválido'; return; }
-    if ($('tpStatus')) $('tpStatus').textContent = `✅ Take Profit configurado en $${price}`;
+    if (!price || price <= 0) { if ($('tpStatus')) $('tpStatus').textContent = 'Precio inválido'; return; }
+    if ($('tpStatus')) $('tpStatus').textContent = `Take Profit configurado en $${price}`;
   });
 
   $('schedBtn')?.addEventListener('click', () => {
     const dateVal = $('schedDate')?.value;
-    if (!dateVal) { if ($('schedStatus')) $('schedStatus').textContent = '❌ Selecciona fecha y hora'; return; }
+    if (!dateVal) { if ($('schedStatus')) $('schedStatus').textContent = 'Selecciona fecha y hora'; return; }
     const d = new Date(dateVal);
-    if ($('schedStatus')) $('schedStatus').textContent = `⏰ Trading programado para ${d.toLocaleString('es')}`;
+    if ($('schedStatus')) $('schedStatus').textContent = `Trading programado para ${d.toLocaleString('es')}`;
   });
 }
 
