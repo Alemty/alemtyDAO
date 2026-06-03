@@ -281,6 +281,7 @@ rooms.patch("/:name/settings", auth, async (c) => {
   if (!type) return c.json({ error: "Invalid room type" }, 400);
 
   const body = await c.req.json().catch(() => ({} as any));
+  const newName = String(body?.name || "").trim();
   const visibility = normalizeVis(body?.visibility);
   const password = String(body?.password || "").trim();
 
@@ -296,19 +297,29 @@ rooms.patch("/:name/settings", auth, async (c) => {
 
     if (!isFounder && !isOwner) return c.json({ error: "forbidden" }, 403);
 
-    if (visibility === "password" && !password) {
-      return c.json({ error: "password required" }, 400);
+    // ✅ Renombrar si se envió name
+    if (newName && newName !== name) {
+      if (newName.length < 3) return c.json({ error: "Name too short" }, 400);
+      await c.env.DB.prepare(`
+        UPDATE rooms SET name=? WHERE id=?
+      `).bind(newName, room.id).run();
     }
 
-    await c.env.DB.prepare(`
-      UPDATE rooms SET visibility=?, password_hash=? WHERE id=?
-    `).bind(
-      visibility,
-      visibility === "password" ? password : null,
-      room.id
-    ).run();
+    // ✅ Actualizar visibilidad/contraseña si se envió
+    if (body.visibility !== undefined) {
+      if (visibility === "password" && !password) {
+        return c.json({ error: "password required" }, 400);
+      }
+      await c.env.DB.prepare(`
+        UPDATE rooms SET visibility=?, password_hash=? WHERE id=?
+      `).bind(
+        visibility,
+        visibility === "password" ? password : null,
+        room.id
+      ).run();
+    }
 
-    return c.json({ ok: true, visibility });
+    return c.json({ ok: true, name: newName || name, visibility });
   } catch (err: any) {
     console.error("❌ rooms SETTINGS error:", err);
     return c.json({ error: "server error" }, 500);

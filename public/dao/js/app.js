@@ -1187,6 +1187,7 @@ if (item) {
       });
       if (!r.ok) { alert('Error al editar sala'); return; }
       // Recargar el modal
+      clearRoomsCache(roomType);
       if (roomType === 'governance') openGovernanceRoomsModal();
       else openRoomsModal();
     } catch { alert('Error de red'); }
@@ -1204,6 +1205,7 @@ if (item) {
         headers: authHeaders(),
       });
       if (!r.ok) { alert('Error al eliminar sala'); return; }
+      clearRoomsCache(roomType);
       if (roomType === 'governance') openGovernanceRoomsModal();
       else openRoomsModal();
     } catch { alert('Error de red'); }
@@ -3009,6 +3011,32 @@ async function apiCreateRoom(type, name, days = 1, visibility = "private", passw
 }
 
 
+// Rooms cache (evita fetch repetido)
+let _roomsCache_backroom = null;
+let _roomsCache_governance = null;
+let _roomsCacheTime = 0;
+const ROOMS_CACHE_TTL = 10_000; // 10s
+
+function clearRoomsCache(type) {
+  if (!type || type === "backroom") _roomsCache_backroom = null;
+  if (!type || type === "governance") _roomsCache_governance = null;
+}
+
+async function apiGetRoomsCached(type) {
+  const now = Date.now();
+  const cache = type === "backroom" ? _roomsCache_backroom : _roomsCache_governance;
+  if (cache && (now - _roomsCacheTime) < ROOMS_CACHE_TTL) return cache;
+
+  const rooms = await apiGetRooms(type);
+  if (Array.isArray(rooms)) {
+    if (type === "backroom") _roomsCache_backroom = rooms;
+    else _roomsCache_governance = rooms;
+    _roomsCacheTime = now;
+    return rooms;
+  }
+  return cache || []; // fallback a cache viejo o vacío
+}
+
 // Local storage helpers
 function loadRoomsLocal(key){
   const raw = loadJSON(key, null);
@@ -3416,6 +3444,7 @@ function setTab(id) {
             cfg.passwordHint = v === "password" ? p : "";
             saveRoomCfg(type, name, cfg);
 
+            clearRoomsCache(type);
             alert("Guardado ✅ (backend)");
             await openRoomModal({ type, name });
           };
@@ -3489,18 +3518,6 @@ function setTab(id) {
 // --- modal principal de backrooms ---
 function openRoomsModal() {
   // 1) Cargar salas: backend-first; si no, fallback local
-  const loadRooms = async () => {
-    let rooms = null;
-    try { rooms = await apiGetRooms("backroom"); } catch {}
-    if (Array.isArray(rooms)) return rooms;
-
-    const localNew = loadJSON(BACKROOMS_KEY, null);
-    if (Array.isArray(localNew)) return localNew;
-
-    const legacy = loadJSON(ROOMS_KEY, []);
-    return Array.isArray(legacy) ? legacy : [];
-  };
-
   (async () => {
     // ✅ Loading state rápido (UX)
     document.getElementById("daoModalTitle").textContent = "Backrooms";
@@ -3511,7 +3528,16 @@ function openRoomsModal() {
     `;
     openModal();
 
-    const rawRooms = await loadRooms();
+    let rawRooms = await apiGetRoomsCached("backroom");
+    if (!Array.isArray(rawRooms) || rawRooms.length === 0) {
+      const localNew = loadJSON(BACKROOMS_KEY, null);
+      if (Array.isArray(localNew) && localNew.length) rawRooms = localNew;
+      else {
+        const legacy = loadJSON(ROOMS_KEY, []);
+        if (Array.isArray(legacy) && legacy.length) rawRooms = legacy;
+        else rawRooms = [];
+      }
+    }
 
     // ✅ Normaliza: acepta strings legacy Y objetos nuevos (metadata)
     const roomsAll = (Array.isArray(rawRooms) ? rawRooms : [])
@@ -3747,11 +3773,11 @@ function openRoomsModal() {
 
         if (statusEl) statusEl.textContent = `Costo: ${cost} Aura · Creando sala...`;
 
-        // ✅ Usa tu helper actualizado
         await apiCreateRoom("backroom", name, safeDays, visibility, visibility === "password" ? password : "");
+        clearRoomsCache("backroom");
 
         if (statusEl) statusEl.textContent = "Sala creada ✅";
-        openRoomsModal(); // refresh modal
+        openRoomsModal();
       } catch (err) {
         if (statusEl) statusEl.textContent = err?.message || "Error creando sala.";
       } finally {
@@ -3833,13 +3859,25 @@ function isFounder(){
  * Backend recomendado:
  * GET /api/me -> { roles:[], nobleRank:'rey|principe|duque', veAlem:number, address, ens }
  */
-async function getGovernanceAccess() {
+/* =========================
+   Gobernanza — Cache de acceso (evita fetch repetido a /api/me)
+========================= */
+let _govAccessCache = null;
+let _govAccessCacheTime = 0;
+const GOV_CACHE_TTL = 30_000; // 30 segundos
+
+async function getGovernanceAccess(force = false) {
+  const now = Date.now();
+  if (!force && _govAccessCache && (now - _govAccessCacheTime) < GOV_CACHE_TTL) {
+    return _govAccessCache;
+  }
+
   // =========================
   // 1) Verificar JWT
   // =========================
   const jwt = getJWT();
   if (!jwt) {
-    return {
+    _govAccessCache = {
       okRead: false,
       okWrite: false,
       reason: "Necesitas SIWE (JWT) para acceder a gobernanza.",
@@ -3848,159 +3886,119 @@ async function getGovernanceAccess() {
       veAlem: 0,
       isFounder: false,
     };
+    _govAccessCacheTime = now;
+    return _govAccessCache;
   }
 
   // Helpers locales (UX dev)
   const localIsModerator = isLocalModerator();
-  const localNobleRank = getLocalNobleRank(); // 'rey'|'principe'|'duque'|''
+  const localNobleRank = getLocalNobleRank();
   const localVeAlem = getLocalVeAlem();
   const localIsNoble =
     (localNobleRank === "rey" || localNobleRank === "principe" || localNobleRank === "duque") &&
     Number(localVeAlem) > 0;
 
-  // Founder local: por address allowlist o ENS en localStorage
-  // (tu allowlist ya existe arriba como GOVERNANCE_FOUNDERS)
   const meAddr = String(getViewerAddress()).toLowerCase();
   const localEns = (getLocalEns?.() || "").toLowerCase();
   const localIsFounder =
-    (typeof GOVERNANCE_FOUNDERS !== "undefined" && GOVERNANCE_FOUNDERS.has(meAddr)) ||
-    localEns === "alemty.eth";
+    GOVERNANCE_FOUNDERS.has(meAddr) || localEns === "alemty.eth";
 
-  // Si eres founder por local, por UX ya puedes ver/escribir aunque backend /api/me esté caído
   const localOkRead = localIsFounder || localIsModerator || localIsNoble;
   const localOkWrite =
-    localIsFounder ||
-    localIsModerator ||
+    localIsFounder || localIsModerator ||
     (localIsNoble && (localNobleRank === "rey" || localNobleRank === "principe"));
 
   // =========================
-  // 2) Backend (FUENTE REAL)
+  // 2) Backend con timeout (FUENTE REAL)
   // =========================
   try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+
     const r = await fetch(`${API_BASE}/api/me`, {
       headers: authHeadersGet(),
       cache: "no-store",
+      signal: controller.signal,
     });
+    clearTimeout(timer);
 
-    // ✅ Si JWT realmente inválido/expirado: 401/403
     if (r.status === 401 || r.status === 403) {
       localStorage.removeItem("alemty.jwt");
-      return {
-        okRead: false,
-        okWrite: false,
+      _govAccessCache = {
+        okRead: false, okWrite: false,
         reason: "Sesión expirada. Inicia SIWE nuevamente.",
-        isModerator: false,
-        nobleRank: "",
-        veAlem: 0,
-        isFounder: false,
+        isModerator: false, nobleRank: "", veAlem: 0, isFounder: false,
       };
+      _govAccessCacheTime = now;
+      return _govAccessCache;
     }
 
-    // ✅ Si /api/me NO existe (404) o backend falla (>=500), NO borres JWT.
-    // Usa fallback local para no bloquear UI.
     if (!r.ok) {
-      console.warn("⚠️ /api/me no disponible. Usando fallback local. Status:", r.status);
-      return {
-        okRead: localOkRead,
-        okWrite: localOkWrite,
-        reason: localOkRead ? "" : "Backend /api/me no disponible aún (modo local).",
+      // Fallback local sin cachear por mucho tiempo
+      _govAccessCache = {
+        okRead: localOkRead, okWrite: localOkWrite,
+        reason: localOkRead ? "" : "Backend /api/me no disponible.",
         isModerator: localIsModerator,
         nobleRank: localIsFounder ? "founder" : (localIsNoble ? localNobleRank : ""),
-        veAlem: Number(localVeAlem) || 0,
-        isFounder: localIsFounder,
+        veAlem: Number(localVeAlem) || 0, isFounder: localIsFounder,
       };
+      _govAccessCacheTime = now - GOV_CACHE_TTL + 5000; // expira pronto
+      return _govAccessCache;
     }
 
     const data = await r.json().catch(() => ({}));
-
     const address = String(data?.address || "").toLowerCase();
     const ens = String(data?.ens || "").toLowerCase();
-
     const roles = Array.isArray(data?.roles)
-      ? data.roles.map((x) => String(x).toLowerCase())
-      : [];
+      ? data.roles.map((x) => String(x).toLowerCase()) : [];
 
-    const isModerator =
-      roles.includes("moderator") ||
-      roles.includes("mod") ||
-      roles.includes("admin");
-
-    // normalizar nobleza
-    const nobleRaw = String(data?.nobleRank || data?.noble || "").toLowerCase();
+    const isModerator = roles.includes("moderator") || roles.includes("mod") || roles.includes("admin");
+    const nobleRaw = String(data?.nobleRank || "").toLowerCase();
     const nobleRank = nobleRaw === "príncipe" ? "principe" : nobleRaw;
-
-    const veAlem = Number(data?.veAlem ?? data?.vealem ?? 0);
+    const veAlem = Number(data?.veAlem ?? 0);
     const veAlemOk = Number.isFinite(veAlem) && veAlem > 0;
 
-    // =========================
-    // 3) Founder (backend válido)
-    // =========================
-    const isFounderUser =
-      address === "0x6a202f991c4c1df079449be9847b1dac3f51854f" || ens === "alemty.eth";
+    const isFounderUser = address === "0x6a202f991c4c1df079449be9847b1dac3f51854f" || ens === "alemty.eth";
 
     if (isFounderUser) {
-      return {
-        okRead: true,
-        okWrite: true,
-        reason: "",
-        isModerator: false,
-        nobleRank: "founder",
-        veAlem,
-        isFounder: true,
-      };
+      _govAccessCache = { okRead: true, okWrite: true, reason: "", isModerator: false, nobleRank: "founder", veAlem, isFounder: true };
+      _govAccessCacheTime = now;
+      return _govAccessCache;
     }
 
-    // =========================
-    // 4) Nobleza válida
-    // =========================
-    const isNoble =
-      (nobleRank === "rey" || nobleRank === "principe" || nobleRank === "duque") &&
-      veAlemOk;
-
-    // =========================
-    // 5) Permisos
-    // =========================
+    const isNoble = (nobleRank === "rey" || nobleRank === "principe" || nobleRank === "duque") && veAlemOk;
     const okRead = isModerator || isNoble;
-    const okWrite =
-      isModerator || (isNoble && (nobleRank === "rey" || nobleRank === "principe"));
+    const okWrite = isModerator || (isNoble && (nobleRank === "rey" || nobleRank === "principe"));
 
-    return {
-      okRead,
-      okWrite,
-      reason: okRead
-        ? ""
-        : "Acceso restringido: requiere Moderación o Nobleza (Rey/Príncipe/Duque) con veALEM activo.",
-      isModerator,
-      nobleRank: isNoble ? nobleRank : "",
-      veAlem,
-      isFounder: false,
+    _govAccessCache = {
+      okRead, okWrite,
+      reason: okRead ? "" : "Acceso restringido: requiere Moderación o Nobleza (Rey/Príncipe/Duque) con veALEM activo.",
+      isModerator, nobleRank: isNoble ? nobleRank : "", veAlem, isFounder: false,
     };
-  } catch (err) {
-    // =========================
-    // 6) FALLBACK LOCAL (solo UX DEV)
-    // =========================
-    console.warn("Governance fallback local (fetch failed):", err);
+    _govAccessCacheTime = now;
+    return _govAccessCache;
 
-    return {
-      okRead: localOkRead,
-      okWrite: localOkWrite,
+  } catch (err) {
+    console.warn("Governance fallback local (fetch failed):", err);
+    _govAccessCache = {
+      okRead: localOkRead, okWrite: localOkWrite,
       reason: localOkRead ? "" : "Modo local (sin backend).",
       isModerator: localIsModerator,
       nobleRank: localIsFounder ? "founder" : (localIsNoble ? localNobleRank : ""),
-      veAlem: Number(localVeAlem) || 0,
-      isFounder: localIsFounder,
+      veAlem: Number(localVeAlem) || 0, isFounder: localIsFounder,
     };
+    _govAccessCacheTime = now;
+    return _govAccessCache;
   }
 }
 
 async function openGovernanceRoomsModal() {
-  // Rooms: backend-first → fallback local
-  let rawRooms = null;
-  try { rawRooms = await apiGetRooms("governance"); } catch {}
-  if (!Array.isArray(rawRooms)) rawRooms = loadJSON(GOV_ROOMS_KEY, []);
+  // Rooms: backend-first (cacheado) → fallback local
+  let rawRooms = await apiGetRoomsCached("governance");
+  if (!Array.isArray(rawRooms) || rawRooms.length === 0) rawRooms = loadJSON(GOV_ROOMS_KEY, []);
 
-  // Permisos (backend / fallback local)
-  const access = await getGovernanceAccess(); // okRead/okWrite/reason
+  // Permisos (cacheados 30s)
+  const access = await getGovernanceAccess();
 
   // Normaliza rooms (acepta strings legacy u objetos nuevos)
   const roomsAll = (Array.isArray(rawRooms) ? rawRooms : [])
@@ -4236,9 +4234,10 @@ async function openGovernanceRoomsModal() {
       if (statusEl) statusEl.textContent = "Creando sala...";
 
       await apiCreateRoom("governance", name, 1, visibility, visibility === "password" ? password : "");
+      clearRoomsCache("governance");
 
       if (statusEl) statusEl.textContent = "Sala creada ✅";
-      openGovernanceRoomsModal(); // refresh
+      openGovernanceRoomsModal();
     } catch (err) {
       if (statusEl) statusEl.textContent = err?.message || "Error creando sala.";
     } finally {
