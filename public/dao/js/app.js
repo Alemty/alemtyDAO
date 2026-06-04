@@ -2284,7 +2284,7 @@ function enhanceTopicPicker(){
   btn.id = 'topicPickerBtn';
   btn.type = 'button';
   btn.className = 'btn';
-  btn.textContent = '📚 ' + t('dao.chooseTopic');
+  btn.textContent = ' ' + t('dao.chooseTopic');
   btn.style.whiteSpace = 'nowrap';
 
   btn.addEventListener('click', () => {

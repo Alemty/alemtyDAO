@@ -446,7 +446,7 @@ export function mountShell() {
         </div>
       </div>
       <div class="small muted" style="border-top:1px solid var(--border);padding-top:10px;" data-i18n="services.admin">
-        🛡️ <strong>Panel de Administración</strong> — Control centralizado desde ia.alemty.eth.
+         <strong>Panel de Administración</strong> — Control centralizado desde ia.alemty.eth.
         Reinicio de agentes, sincronización de pools, actualización de OVRlands, parada de emergencia (Constitución §Emergencias).
       </div>
       <div class="small muted" data-i18n="services.portfolio">

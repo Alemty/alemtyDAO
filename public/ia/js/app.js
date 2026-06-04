@@ -126,9 +126,9 @@ const AGENTS = [
     address: '0x9EcF39431B104824E055Ac0605A89fB409dA99A8',
     stats: { posts: 142, replies: 389, modActions: 27, membersHelped: 56 },
     counter: [
-      { icon: '📫', val: '142', label: 'Propuestas abiertas' },
-      { icon: '🗳️', val: '8', label: 'Votaciones activas' },
-      { icon: '👥', val: '56', label: 'Miembros ayudados' },
+      { icon: '', val: '142', label: 'Propuestas' },
+      { icon: '', val: '8', label: 'Votaciones' },
+      { icon: '', val: '56', label: 'Miembros' },
     ],
     lastActive: 'hace 2 min',
     subdomain: 'dao',
@@ -142,9 +142,9 @@ const AGENTS = [
     address: '0x9EcF39431B104824E055Ac0605A89fB409dA99A8',
     stats: { rebalances: 1247, tvlManaged: '$284K', trades: 892, impermanentLoss: '0.82%' },
     counter: [
-      { icon: '💧', val: '4', label: 'Pools activos' },
-      { icon: '🔄', val: '1,247', label: 'Rebalances totales' },
-      { icon: '📈', val: '$284K', label: 'TVL gestionado' },
+      { icon: '', val: '2', label: 'Pools ' },
+      { icon: '', val: '1,247', label: 'Rebalances' },
+      { icon: '', val: '$284K', label: 'TVL gestionado' },
     ],
     lastActive: 'hace 30 seg',
     subdomain: 'dex',
@@ -158,9 +158,9 @@ const AGENTS = [
     address: '0x9EcF39431B104824E055Ac0605A89fB409dA99A8',
     stats: { chartsUpdated: 12456, poolsMonitored: 18, yieldOps: 63, apyAvg: '14.2%' },
     counter: [
-      { icon: '📊', val: '12,456', label: 'Charts actualizados' },
-      { icon: '🔗', val: '6', label: 'Feeds Chainlink' },
-      { icon: '💹', val: '14.2%', label: 'APY promedio' },
+      { icon: '', val: '12,456', label: 'Charts' },
+      { icon: '', val: '6', label: 'Feeds' },
+      { icon: '', val: '14.2%', label: 'APY promedio' },
     ],
     lastActive: 'hace 1 min',
     subdomain: 'defi',
@@ -174,9 +174,9 @@ const AGENTS = [
     address: '0x9EcF39431B104824E055Ac0605A89fB409dA99A8',
     stats: { proposals: 8, votesCast: 234, executed: 6, participation: '78%' },
     counter: [
-      { icon: '👑', val: '1', label: 'Rey del protocolo' },
-      { icon: '🤴', val: '3', label: 'Príncipes activos' },
-      { icon: '🏰', val: '5', label: 'Duques titulares' },
+      { icon: '👑', val: '1', label: 'Reyes' },
+      { icon: '🤴', val: '3', label: 'Príncipes' },
+      { icon: '🏰', val: '5', label: 'Duques' },
     ],
     lastActive: 'hace 5 min',
     subdomain: 'dao',
@@ -190,9 +190,9 @@ const AGENTS = [
     address: '0x9EcF39431B104824E055Ac0605A89fB409dA99A8',
     stats: { commits: 846, deploys: 312, telegramMsgs: 12560, discordMsgs: 28400 },
     counter: [
-      { icon: '🤖', val: '312', label: 'Actions ejecutadas' },
-      { icon: '🌐', val: '18', label: 'Deploys IPFS' },
-      { icon: '📢', val: '3', label: 'Canales activos' },
+      { icon: '', val: '312', label: 'Actions' },
+      { icon: '', val: '18', label: 'Deploys' },
+      { icon: '', val: '3', label: 'Canales' },
     ],
     lastActive: 'hace 10 seg',
     subdomain: 'dev',
@@ -211,8 +211,8 @@ const AGENTS = [
       visitors: 320
     },
     counter: [
-      { icon: '🗺️', val: String(OVR_TOTAL), label: 'Tierras OVR' },
-      { icon: '🧱', val: String(TOTAL_ASSETS), label: 'NFTs totales' },
+      { icon: '🗺️', val: String(OVR_TOTAL), label: 'Tierras' },
+      { icon: '🧱', val: String(TOTAL_ASSETS), label: 'NFTs' },
       { icon: '📦', val: String(ASSET_COLLECTIONS), label: 'Colecciones' },
     ],
     lastActive: 'hace 45 seg',
@@ -454,7 +454,7 @@ function renderAdminSection() {
   container.innerHTML = `
     <div class="admin-panel">
       <div class="admin-head">
-        <span class="admin-icon">🛡️</span>
+        <span class="admin-icon"></span>
         <h3>${t('ia.admin.panelTitle')}</h3>
         <span class="agent-status online">✅ ${t('ia.admin.verified')}</span>
       </div>
