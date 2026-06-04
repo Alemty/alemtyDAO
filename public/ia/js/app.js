@@ -461,7 +461,7 @@ function renderAdminSection() {
       <div class="admin-body">
         <div class="admin-controls">
           <button class="ctrl-btn" data-admin="restart-all">🔄 ${t('ia.admin.restartAll')}</button>
-          <button class="ctrl-btn" data-admin="sync-pools">🔄 ${t('ia.admin.syncPools')}</button>
+          <button class="ctrl-btn" data-admin="sync-pools">${t('ia.admin.syncPools')}</button>
           <button class="ctrl-btn" data-admin="sync-ovr">🌍 ${t('ia.admin.syncOvr', `Sincronizar ${OVR_TOTAL} OVRlands`)}</button>
           <button class="ctrl-btn danger" data-admin="emergency-stop">🛑 ${t('ia.admin.emergencyStop')}</button>
         </div>
@@ -478,7 +478,7 @@ function renderAdminSection() {
             🧱 ${TOTAL_ASSETS} ${t('ia.admin.bricks')}
           </span>
           <span style="background:rgba(255,179,71,.08);padding:2px 8px;border-radius:6px;border:1px solid rgba(255,179,71,.12);">
-            📦 ${ASSET_COLLECTIONS} ${t('ia.admin.collections')}
+            ${ASSET_COLLECTIONS} ${t('ia.admin.collections')}
           </span>
           <span style="background:rgba(255,77,106,.08);padding:2px 8px;border-radius:6px;border:1px solid rgba(255,77,106,.12);">
             ⏳ ${t('ia.admin.pending')}
@@ -629,3 +629,5 @@ if (document.readyState === 'loading') {
 } else {
   requestAnimationFrame(mountIA);
 }
+
+
