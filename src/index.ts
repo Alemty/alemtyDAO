@@ -801,22 +801,6 @@ app.get("/___debug", async (c) => {
 });
 
 /* =========================================================
-   LEGACY ROUTER (API EXTRA – NO TOCAR)
-========================================================= */
-app.all("/api/*", (c) => {
-  const legacy = router(c.req.raw);
-  if (legacy) return legacy;
-  return c.json({ error: "API route not found" }, 404);
-});
-
-/* =========================================================
-   FRONTEND SPA FALLBACK
-========================================================= */
-app.all("*", async (c) => {
-  return c.env.ASSETS.fetch(c.req.raw);
-});
-
-/* =========================================================
    DM (Direct Messages) — Chat tipo MSN
 ========================================================= */
 
@@ -1449,6 +1433,22 @@ app.post("/api/alem/withdraw", auth, async (c) => {
   } catch (e: any) {
     return c.json({ ok: false, error: e.message }, 500);
   }
+});
+
+/* =========================================================
+   LEGACY ROUTER (API EXTRA – NO TOCAR)
+========================================================= */
+app.all("/api/*", (c) => {
+  const legacy = router(c.req.raw);
+  if (legacy) return legacy;
+  return c.json({ error: "API route not found" }, 404);
+});
+
+/* =========================================================
+   FRONTEND SPA FALLBACK
+========================================================= */
+app.all("*", async (c) => {
+  return c.env.ASSETS.fetch(c.req.raw);
 });
 
 export default app;
