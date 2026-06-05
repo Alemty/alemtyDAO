@@ -155,13 +155,47 @@ Si se alcanza el cap, la emisión se pausa hasta que el cap suba o el circulante
 - AMM producto constante (x·y=k)
 - **Circuit breaker:** ALEM_out_día ≤ β · ALEM_pool, β=1% (DAO Tipo A)
 - **SwapFactor(K):** 1/(1+0.002K). La diferencia va a treasury.
+- **Liquidez Genesis:** Se asignan 3,000,000 ALEM de la reserva de liquidez al pool Aura↔ALEM. Del lado AURA se requieren 300,000,000 AURA (ratio 100:1). Esta liquidez inicial permite swaps de prueba sin impacto en precio.
 
 ---
 
 ## 7) ALEM — Token de gobernanza
 
-- Supply máximo: 1,000,000,000 ALEM.
+- Supply máximo: **1,000,000,000 ALEM** (1 billón).
 - Sin ICO / preventa.
+- Desplegado en `0x1a00ca0c79AAdB6cAeadf81509d80f40cb7d9580` (Base Mainnet).
+- Minter role: `0x6A202f991c4C1df079449BE9847b1DaC3F5f0502` (wallet fundador vía CDP).
+- Distribución delegada a `0x8ed91bc2777577f9e9694a60dff515da8d1d9f84` (wallet agente).
+
+### 7.0 Distribución inicial del supply
+
+El supply máximo se aloca en **dos fases**: Genesis (mint único inicial, ~1.5% del supply) y Emisión por Eventos (distribución dinámica ongoing). Esto permite arrancar pools, airdrop y gobernanza sin comprometer la emisión futura.
+
+#### Fase Genesis (15,000,000 ALEM = 1.5% del supply)
+
+| Categoría | % del supply | ALEM | Wallet destino | Propósito |
+|---|---:|---:|---|---|
+| **Airdrop Early Adopters** | 0.50% | 5,000,000 | Wallet agente → distribución manual | Onboarding de ~20 testers iniciales (~250,000 ALEM c/u) |
+| **Fundador** | 0.30% | 3,000,000 | `0x6A202f...` | Desarrollo continuo, firmar txs, gas, pruebas |
+| **Reserva de Liquidez** | 0.30% | 3,000,000 | Wallet agente (pool DEX) | Proveer liquidez pools Aura↔ALEM y ALEM/WETH en DEX |
+| **DAO Treasury** | 0.20% | 2,000,000 | Multisig DAO (futura) | Gobernanza, grants, propuestas aprobadas |
+| **Growth & Alianzas** | 0.20% | 2,000,000 | Wallet agente | Marketing, alianzas estratégicas, recompensas externas |
+| **Total Genesis** | **1.50%** | **15,000,000** | — | Mint único ejecutado por el minter |
+
+> **Nota:** El 98.5% restante del supply (985,000,000 ALEM) se emite exclusivamente por eventos calificados (§7.1). El minter solo puede emitir hasta MAX_SUPPLY.
+
+#### Emisión por Eventos (98.5% del supply)
+
+Los eventos calificados compiten por una porción del supply restante con decay progresivo:
+
+| Epoch (año aprox) | Años | % del supply emitible ese año | ALEM aprox |
+|---:|---:|---:|---:|
+| 1–52 (año 1) | 1 | 20% del remanente | ~197,000,000 |
+| 53–104 (año 2) | 2 | 15% del remanente | ~118,200,000 |
+| 105–156 (año 3) | 3 | 10% del remanente | ~66,900,000 |
+| 157+ | 4+ | 5% del remanente por año | decreciente |
+
+Esto garantiza emisión sostenible por **décadas** sin dilución abrupta.
 
 ### 7.1 Emisión: NO por likes/puntos
 Eventos calificados (alta señal, baja frecuencia):
