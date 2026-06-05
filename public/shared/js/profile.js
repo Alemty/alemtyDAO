@@ -640,17 +640,18 @@ export async function syncProfile() {
 
   const activeBtn = modal.querySelector("#pfTabs .tab-btn.active");
   const activeTab = activeBtn?.getAttribute("data-tab") || "estado";
-  renderTab(activeTab, modal);
+  renderTab(activeTab, modal).catch(() => {});
 }
 
-function renderTab(tab, modal) {
+async function renderTab(tab, modal) {
   const c = modal.querySelector("#pfContent");
   if (!c) return;
-  if (tab === "estado") return renderEstadoTab(modal);
-  if (tab === "actividad") return renderActividadTab(modal);
+  if (tab === "estado") { renderEstadoTab(modal); return; }
+  if (tab === "actividad") { renderActividadTab(modal); return; }
   if (tab === "dm") { renderDmTab(modal); return; }
   if (tab === "dex") {
-    return await renderDexTab(modal);
+    await renderDexTab(modal);
+    return;
   }
   if (tab === "farm") { renderFarmTab(modal); return; }
   if (tab === "tienda") { renderTiendaTab(modal); return; }
