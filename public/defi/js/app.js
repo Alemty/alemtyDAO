@@ -286,8 +286,8 @@ function initMiniTrade() {
   if (!fromSel || !toSel) return;
 
   const RATES = {
-    'AURA': { 'ALEM': 0.001, 'ETH': 0.00000035, 'USDC': 0.000012 },
-    'ALEM': { 'AURA': 1000, 'ETH': 0.00035, 'USDC': 13.84 },
+    'AURA': { 'ALEM': 0.01, 'ETH': 0.00000035, 'USDC': 0.000012 },
+    'ALEM': { 'AURA': 100, 'ETH': 0.00035, 'USDC': 13.84 },
     'ETH':  { 'AURA': 2857143, 'ALEM': 2857, 'USDC': 2874 },
     'USDC': { 'AURA': 83333, 'ALEM': 0.072, 'ETH': 0.000348 },
   };

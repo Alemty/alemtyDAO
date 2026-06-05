@@ -604,8 +604,26 @@ export async function syncProfile() {
       auraHint.innerHTML = '';
     }
   }
-  modal.querySelector("#pfAlem").textContent = addr ? "0" : "—";
-  modal.querySelector("#pfVeAlem").textContent = addr ? "0" : "—";
+
+  // Fetch ALEM on-chain status for profile header
+  let alemOnChain = 0;
+  let veAlemOnChain = 0;
+  try {
+    const token = getJWT();
+    if (addr && token) {
+      const alemRes = await fetch(API_BASE + '/api/alem/status', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const alemData = await alemRes.json();
+      if (alemData.ok) {
+        alemOnChain = alemData.alem?.onChain ?? 0;
+        veAlemOnChain = alemData.veSTAKE ?? 0;
+      }
+    }
+  } catch (_) {}
+
+  modal.querySelector("#pfAlem").textContent = addr ? String(alemOnChain) : "—";
+  modal.querySelector("#pfVeAlem").textContent = addr ? String(veAlemOnChain) : "—";
 
   const karmaValEl = modal.querySelector("#pfKarmaVal");
   const karmaToken = modal.querySelector("#pfKarmaToken");
@@ -632,7 +650,7 @@ function renderTab(tab, modal) {
   if (tab === "actividad") return renderActividadTab(modal);
   if (tab === "dm") { renderDmTab(modal); return; }
   if (tab === "dex") {
-    return renderDexTab(modal);
+    return await renderDexTab(modal);
   }
   if (tab === "farm") { renderFarmTab(modal); return; }
   if (tab === "tienda") { renderTiendaTab(modal); return; }
@@ -874,9 +892,9 @@ async function openPostInline(postId) {
 }
 
 /* ===============================
-   DEX TAB — Rewards + Claim
+   DEX TAB — Rewards + Claim + Pool Aura↔ALEM
 =============================== */
-function renderDexTab(modal) {
+async function renderDexTab(modal) {
   const c = modal.querySelector("#pfContent");
   if (!c) return;
   const addr = getDid();
@@ -885,29 +903,71 @@ function renderDexTab(modal) {
   const auraReclamable = s?.tokenomics?.auraReclamable ?? 0;
   const auraBalance = s?.tokenomics?.auraBalance ?? '0';
 
-  // Rewards: AURA on-chain + pendiente de reclamar + futuros ($ALEM, bribes, fees)
+  // Fetch ALEM status from backend
+  let alemOnChain = 0;
+  let alemReclamable = 0;
+  let veStake = 0;
+  let alemLocked = 0;
+  let alemLockUntil = 0;
+  let poolAura = '0';
+  let poolTotalSupply = '0';
+  let poolRate = '100';
+
+  try {
+    const token = getJWT();
+    if (token) {
+      const alemRes = await fetch(API_BASE + '/api/alem/status', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const alemData = await alemRes.json();
+      if (alemData.ok) {
+        alemOnChain = alemData.alem?.onChain ?? 0;
+        alemReclamable = alemData.alem?.reclamable ?? 0;
+        veStake = alemData.veSTAKE ?? 0;
+        alemLocked = alemData.lock?.amount ?? 0;
+        alemLockUntil = alemData.lock?.lockUntil ?? 0;
+      }
+    }
+
+    // Pool info
+    const poolRes = await fetch(API_BASE + '/api/alem/pool-info');
+    const poolData = await poolRes.json();
+    if (poolData.ok) {
+      poolAura = poolData.pool?.poolAura || '0';
+      poolTotalSupply = poolData.pool?.totalSupply || '0';
+      poolRate = poolData.pool?.rate || '100 AURA = 1 ALEM';
+    }
+  } catch (_) {}
+
+  // Rewards: AURA on-chain + pendiente + ALEM pendiente
   const rewards = {
     aura: { label: t('profile.rewards.auraPending'), value: String(auraReclamable), tooltip: t('profile.rewards.auraTooltip') },
-    alem: { label: '🟡 $ALEM', value: '0', tooltip: t('profile.rewards.alemTooltip') },
+    alem: { label: '$ALEM', value: String(alemReclamable), tooltip: 'ALEM pendiente de acuñar por eventos calificados' },
+    veAlem: { label: 'veALEM', value: String(veStake), tooltip: 'Poder de gobernanza por ALEM lockeado' },
     bribes: { label: t('profile.rewards.bribes'), value: '0', tooltip: t('profile.rewards.bribesTooltip') },
     fees: { label: t('profile.rewards.lpFees'), value: '0', tooltip: t('profile.rewards.lpFeesTooltip') },
   };
 
   const totalRewards = Object.values(rewards).reduce((sum, r) => sum + Number(r.value), 0);
+  const alemFormatted = alemLocked > 0 ? (alémLocked / 1e18).toFixed(2) : '0';
 
   c.innerHTML = `
     <div class="pf-box">
       <div class="h2">${esc(t('profile.rewards.tokenomics'))}</div>
       <p class="small muted">${esc(t('profile.rewards.description'))}</p>
 
-      <div class="pf-rewards-summary">
+      <div class="pf-rewards-summary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
         <div class="pf-stat-card">
-          <div class="small muted">${esc(t('profile.rewards.onchain'))}</div>
-          <div class="h1" style="font-size:22px;margin:4px 0;color:#6EC8FF;">${auraBalance}</div>
+          <div class="small muted">AURA on-chain</div>
+          <div class="h1" style="font-size:18px;margin:4px 0;color:#6EC8FF;">${auraBalance}</div>
         </div>
         <div class="pf-stat-card">
-          <div class="small muted">${esc(t('profile.rewards.pending'))}</div>
-          <div class="h1" style="font-size:22px;margin:4px 0;color:#a855f7;">${String(auraReclamable)}</div>
+          <div class="small muted">ALEM on-chain</div>
+          <div class="h1" style="font-size:18px;margin:4px 0;color:#00ffd5;">${String(alemOnChain)}</div>
+        </div>
+        <div class="pf-stat-card">
+          <div class="small muted">veALEM</div>
+          <div class="h1" style="font-size:18px;margin:4px 0;color:#ffa500;">${String(veStake)}</div>
         </div>
       </div>
 
@@ -920,6 +980,10 @@ function renderDexTab(modal) {
         `).join('')}
       </div>
 
+      <p class="small muted" style="margin-top:4px;font-size:10px;text-align:center;">
+        Pool: ${poolAura} AURA reserva · ${poolTotalSupply} ALEM supply · Rate: ${poolRate}
+      </p>
+
       <p class="small muted" style="margin-top:8px;font-size:10px;text-align:center;">
         ${esc(t('profile.rewards.flow'))} (${String(auraReclamable)}) 
         → ${esc(t('profile.rewards.reclaim'))} → ${esc(t('profile.rewards.flowEnd'))} (${auraBalance})
@@ -929,9 +993,114 @@ function renderDexTab(modal) {
         ${totalRewards === 0 ? t('profile.rewards.none') : t('profile.rewards.claimAll')}
       </button>
       <div id="claimStatus" class="small muted" style="margin-top:8px;text-align:center;"></div>
+
+      <!-- Internal Swap Aura↔ALEM -->
+      <div style="margin-top:16px;padding:12px;border:1px solid rgba(0,255,213,0.15);border-radius:16px;background:rgba(0,255,213,0.03);">
+        <div class="h3" style="margin:0 0 8px 0;">Pool Aura ↔ ALEM</div>
+        <p class="small muted" style="margin:0 0 8px 0;">1 ALEM = 100 AURA · Fee 0.2%</p>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="pfSwapFrom" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px;color:#fff;">
+            <option value="AURA">AURA</option>
+            <option value="ALEM">ALEM</option>
+          </select>
+          <span style="color:#666;">→</span>
+          <select id="pfSwapTo" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px;color:#fff;">
+            <option value="ALEM">ALEM</option>
+            <option value="AURA">AURA</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <input type="number" id="pfSwapAmount" placeholder="0.0" style="flex:2;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px;color:#fff;">
+          <input type="text" id="pfSwapOutput" placeholder="0.0" readonly style="flex:2;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px;color:#999;">
+        </div>
+        <button class="tab-btn" id="pfSwapBtn" style="width:100%;margin-top:8px;padding:8px;font-weight:600;background:rgba(0,255,213,0.1);color:#00ffd5;border:1px solid rgba(0,255,213,0.3);border-radius:8px;cursor:pointer;">
+          Swap
+        </button>
+        <div id="pfSwapStatus" class="small muted" style="margin-top:4px;text-align:center;"></div>
+      </div>
     </div>
   `;
 
+  // Swap Aura↔ALEM quote en vivo
+  const pfSwapFrom = c.querySelector('#pfSwapFrom');
+  const pfSwapTo = c.querySelector('#pfSwapTo');
+  const pfSwapAmount = c.querySelector('#pfSwapAmount');
+  const pfSwapOutput = c.querySelector('#pfSwapOutput');
+
+  function updateSwapQuote() {
+    const amt = Number(pfSwapAmount?.value || 0);
+    if (!Number.isFinite(amt) || amt <= 0) { if (pfSwapOutput) pfSwapOutput.value = '—'; return; }
+    const from = pfSwapFrom?.value || 'AURA';
+    if (from === 'AURA') {
+      pfSwapOutput.value = (amt / 100).toFixed(8) + ' ALEM';
+    } else {
+      pfSwapOutput.value = (amt * 100).toFixed(8) + ' AURA';
+    }
+  }
+  pfSwapFrom?.addEventListener('change', () => {
+    if (pfSwapTo) pfSwapTo.value = pfSwapFrom.value === 'AURA' ? 'ALEM' : 'AURA';
+    updateSwapQuote();
+  });
+  pfSwapAmount?.addEventListener('input', updateSwapQuote);
+
+  // Botón de swap
+  const pfSwapBtn = c.querySelector('#pfSwapBtn');
+  const pfSwapStatus = c.querySelector('#pfSwapStatus');
+  pfSwapBtn?.addEventListener('click', async () => {
+    const amt = Number(pfSwapAmount?.value || 0);
+    if (!Number.isFinite(amt) || amt <= 0) {
+      if (pfSwapStatus) pfSwapStatus.textContent = '❌ Ingresa cantidad';
+      return;
+    }
+    const from = pfSwapFrom?.value || 'AURA';
+    const kind = from === 'AURA' ? 'swap_in' : 'swap_out';
+    const decimals = 18;
+    const amountWei = BigInt(Math.floor(amt * 10**decimals)).toString();
+
+    pfSwapBtn.disabled = true;
+    pfSwapStatus.textContent = '⏳ Preparando swap...';
+
+    try {
+      const token = getJWT();
+      const res = await fetch(API_BASE + '/api/alem/swap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (token || '') },
+        body: JSON.stringify({ kind, amountWei })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        pfSwapStatus.textContent = '❌ ' + (data.error || 'Error');
+        pfSwapBtn.disabled = false;
+        return;
+      }
+
+      const outputReadable = (Number(data.outputAmount) / 1e18).toFixed(6);
+      pfSwapStatus.innerHTML = `Swap: ${amt} ${from} → ${outputReadable} ${data.to}<br><small style="color:#ffa500;">Firma en MetaMask</small>`;
+
+      // Enviar a MetaMask
+      if (window.ethereum) {
+        try {
+          const txParams = {
+            from: data.fromAddress,
+            to: kind === 'swap_in' ? data.auraContract : data.alemContract,
+            data: kind === 'swap_in' ? data.auraCalldata : data.alemCalldata,
+            value: '0x0'
+          };
+          const txHash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [txParams] });
+          pfSwapStatus.innerHTML = `✅ Swap enviado! <a href="https://basescan.org/tx/${txHash}" target="_blank" rel="noopener">${txHash.slice(0,14)}... ↗</a>`;
+        } catch (metaErr) {
+          pfSwapStatus.textContent = '❌ MetaMask: ' + (metaErr.message || 'Rechazado');
+        }
+      } else {
+        pfSwapStatus.innerHTML += '<br><small>Instala MetaMask</small>';
+      }
+    } catch (e) {
+      pfSwapStatus.textContent = '❌ Error: ' + (e.message || '');
+    }
+    pfSwapBtn.disabled = false;
+  });
+
+  // Claim button
   const claimBtn = c.querySelector('#claimRewardsBtn');
   if (claimBtn && totalRewards > 0) {
     claimBtn.addEventListener('click', async () => {

@@ -52,7 +52,10 @@ INSERT OR IGNORE INTO token_config(key, value) VALUES ('aura_per_like',  '1');
 INSERT OR IGNORE INTO token_config(key, value) VALUES ('aura_per_point', '1');
 
 -- relación interna Aura / ALEM (NO precio fiat)
-INSERT OR IGNORE INTO token_config(key, value) VALUES ('aura_per_alem', '1000');
+INSERT OR IGNORE INTO token_config(key, value) VALUES ('aura_per_alem', '100');
+
+-- relación interna Aura / ALEM (NO precio fiat)
+-- 1 ALEM = 100 AURA para sostenibilidad
 
 -- flags de control futuros
 INSERT OR IGNORE INTO token_config(key, value) VALUES ('alem_enabled', '0');
