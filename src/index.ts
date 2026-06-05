@@ -33,6 +33,8 @@ export type Bindings = {
   AURA_RPC_URL: string;
   MINTER_ADDRESS: string;
   DISTRIBUTOR_ADDRESS: string;
+  ALEM_CONTRACT: string;
+  ALEM_RPC_URL: string;
 };
 
 export type Vars = {
@@ -799,22 +801,6 @@ app.get("/___debug", async (c) => {
 });
 
 /* =========================================================
-   LEGACY ROUTER (API EXTRA – NO TOCAR)
-========================================================= */
-app.all("/api/*", (c) => {
-  const legacy = router(c.req.raw);
-  if (legacy) return legacy;
-  return c.json({ error: "API route not found" }, 404);
-});
-
-/* =========================================================
-   FRONTEND SPA FALLBACK
-========================================================= */
-app.all("*", async (c) => {
-  return c.env.ASSETS.fetch(c.req.raw);
-});
-
-/* =========================================================
    DM (Direct Messages) — Chat tipo MSN
 ========================================================= */
 
@@ -1027,6 +1013,442 @@ app.post("/api/market/sold/:id", auth, async (c) => {
 
   await c.env.DB.prepare("UPDATE marketplace SET sold = 1 WHERE id = ?").bind(id).run();
   return c.json({ ok: true });
+});
+
+/* =========================================================
+   ALEM — Endpoints del token de gobernanza
+   Pool Aura↔ALEM con ratio fijo 1 ALEM = 100 AURA
+   Contrato: 0x1a00ca0c79AAdB6cAeadf81509d80f40cb7d9580
+   Rulebook: §7 (emisión calificada), §8 (veSTAKE)
+========================================================= */
+
+// Helper: convertir AURA a ALEM (1 ALEM = 100 AURA)
+function auraToAlem(auraWei: bigint): bigint {
+  return auraWei / 100n;
+}
+
+function alemToAura(alemWei: bigint): bigint {
+  return alemWei * 100n;
+}
+
+// GET /api/alem/status — Estado completo de ALEM del usuario
+app.get("/api/alem/status", auth, async (c) => {
+  const address = c.get("address");
+  const alemContract = c.env.ALEM_CONTRACT;
+
+  // Leer on-chain: balanceOf del usuario, veSTAKE, lock info
+  let alemOnChain = '0';
+  let veStake = 0;
+  let alemLocked = 0;
+  let alemLockUntil = 0;
+
+  if (alemContract) {
+    const rpcUrls = [
+      c.env.ALEM_RPC_URL || 'https://mainnet.base.org',
+      'https://1rpc.io/base',
+      'https://base-rpc.publicnode.com',
+    ].filter(Boolean);
+
+    for (const rpcUrl of rpcUrls) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+
+        // balanceOf(address)
+        const balanceData = '0x70a08231' + address.slice(2).toLowerCase().padStart(64, '0');
+        const res = await fetch(rpcUrl, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: alemContract, data: balanceData }, 'latest'] }),
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+        if (res.ok) {
+          const json: any = await res.json();
+          if (json?.result && json.result !== '0x') {
+            alemOnChain = String(Number(BigInt(json.result) / 10n ** 16n / 100n));
+          }
+        }
+
+        // getVeSTAKE(address)
+        const veData = '0x2a3bfa2e' + address.slice(2).toLowerCase().padStart(64, '0');
+        const veRes = await fetch(rpcUrl, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_call', params: [{ to: alemContract, data: veData }, 'latest'] }),
+          signal: controller.signal
+        });
+        if (veRes.ok) {
+          const veJson: any = await veRes.json();
+          if (veJson?.result && veJson.result !== '0x') {
+            veStake = Number(BigInt(veJson.result) / 10n ** 16n / 100n);
+          }
+        }
+
+        // getLockInfo(address)
+        const lockData = '0xb25c1e87' + address.slice(2).toLowerCase().padStart(64, '0');
+        const lockRes = await fetch(rpcUrl, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_call', params: [{ to: alemContract, data: lockData }, 'latest'] }),
+          signal: controller.signal
+        });
+        if (lockRes.ok) {
+          const lockJson: any = await lockRes.json();
+          if (lockJson?.result && lockJson.result !== '0x') {
+            // Lock struct: amount, lockUntil, veSTAKE
+            const raw = lockJson.result.slice(2);
+            alemLocked = Number(BigInt('0x' + raw.slice(0, 64)) / 10n ** 16n / 100n);
+            alemLockUntil = Number(BigInt('0x' + raw.slice(64, 128)));
+          }
+        }
+        break;
+      } catch (_) {}
+    }
+  }
+
+  // Datos off-chain: reclamable pendiente
+  const statsRow: any = await c.env.DB.prepare(
+    "SELECT alem_reclamable, alem_claimed FROM user_stats WHERE address = ?"
+  ).bind(address).first();
+  const alemReclamable = Number(statsRow?.alem_reclamable ?? 0);
+  const alemClaimed = Number(statsRow?.alem_claimed ?? 0);
+
+  return c.json({
+    ok: true,
+    address,
+    alem: {
+      onChain: Number(alemOnChain),
+      reclamable: alemReclamable,
+      claimed: alemClaimed,
+    },
+    veSTAKE: veStake,
+    lock: {
+      amount: alemLocked,
+      lockUntil: alemLockUntil,
+      active: alemLocked > 0,
+    },
+  });
+});
+
+// POST /api/alem/swap — Swap AURA ↔ ALEM (pool interno, ratio 1:100)
+// Body: { kind: "swap_in" (AURA→ALEM) | "swap_out" (ALEM→AURA), amountWei: string }
+app.post("/api/alem/swap", auth, async (c) => {
+  const address = c.get("address");
+  const alemContract = c.env.ALEM_CONTRACT;
+  const body = await c.req.json().catch(() => ({} as any));
+  const kind = body.kind; // "swap_in" | "swap_out"
+  const amountWei = String(body.amountWei || "0");
+
+  if (!alemContract) {
+    return c.json({ ok: false, error: "ALEM_CONTRACT no configurado" }, 500);
+  }
+  if (!kind || !["swap_in", "swap_out"].includes(kind)) {
+    return c.json({ ok: false, error: "kind debe ser 'swap_in' o 'swap_out'" }, 400);
+  }
+  if (!amountWei || amountWei === '0') {
+    return c.json({ ok: false, error: "Se requiere amountWei" }, 400);
+  }
+
+  const amountBn = BigInt(amountWei);
+  if (amountBn <= 0n) {
+    return c.json({ ok: false, error: "amount debe ser > 0" }, 400);
+  }
+
+  const RATE = 100n; // 1 ALEM = 100 AURA
+
+  if (kind === "swap_in") {
+    // AURA → ALEM: el usuario quema AURA y recibe ALEM
+    // amountWei es en AURA
+    const alemAmount = amountBn / RATE;
+    if (alemAmount <= 0n) {
+      return c.json({ ok: false, error: "Cantidad demasiado pequeña, mínimo 100 AURA" }, 400);
+    }
+
+    // Construir transferFrom de AURA del usuario al contrato
+    // Nota: el usuario debe haber approve al minter primero
+    const auraSelector = '0x23b872dd'; // transferFrom(address,address,uint256)
+    const fromPadded = address.slice(2).toLowerCase().padStart(64, '0');
+    const toPadded = alemContract.slice(2).toLowerCase().padStart(64, '0');
+    const amtPadded = amountBn.toString(16).padStart(64, '0');
+    const auraData = auraSelector + fromPadded + toPadded + amtPadded;
+
+    return c.json({
+      ok: true,
+      swap: "swap_in",
+      from: "AURA",
+      to: "ALEM",
+      inputAmount: amountBn.toString(),
+      outputAmount: alemAmount.toString(),
+      rate: RATE.toString(),
+      // El frontend debe llamar approve del contrato AURA primero,
+      // luego eth_sendTransaction para el transferFrom
+      auraCalldata: auraData,
+      auraContract: c.env.AURA_CONTRACT,
+      alemContract,
+      fromAddress: address,
+      message: "Primero aprueba AURA (approve), luego llama a esta tx para quemar AURA y recibir ALEM."
+    });
+  } else {
+    // ALEM → AURA: el usuario quema ALEM y recibe AURA
+    // amountWei es en ALEM
+    const auraAmount = amountBn * RATE;
+
+    // Construir transfer de ALEM del usuario al contrato
+    const alemSelector = '0xa9059cbb'; // transfer(address,uint256)
+    const toPadded = alemContract.slice(2).toLowerCase().padStart(64, '0');
+    const amtPadded = amountBn.toString(16).padStart(64, '0');
+    const alemData = alemSelector + toPadded + amtPadded;
+
+    return c.json({
+      ok: true,
+      swap: "swap_out",
+      from: "ALEM",
+      to: "AURA",
+      inputAmount: amountBn.toString(),
+      outputAmount: auraAmount.toString(),
+      rate: RATE.toString(),
+      alemCalldata: alemData,
+      alemContract,
+      fromAddress: address,
+      message: "Firma esta tx para transferir ALEM al contrato y recibir AURA del pool."
+    });
+  }
+});
+
+// GET /api/alem/pool-info — Información del pool interno Aura↔ALEM
+app.get("/api/alem/pool-info", async (c) => {
+  const alemContract = c.env.ALEM_CONTRACT;
+  const auraContract = c.env.AURA_CONTRACT;
+
+  if (!alemContract || !auraContract) {
+    return c.json({ ok: false, error: "Contratos no configurados" }, 500);
+  }
+
+  const rpcUrl = 'https://1rpc.io/base';
+
+  try {
+    // Balance de AURA en el contrato ALEM (reserva)
+    const auraBalanceData = '0x70a08231' + alemContract.slice(2).toLowerCase().padStart(64, '0');
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 5000);
+
+    const [auraRes, alemRes, configRes] = await Promise.all([
+      fetch(rpcUrl, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: auraContract, data: auraBalanceData }, 'latest'] }),
+        signal: ac.signal
+      }),
+      fetch(rpcUrl, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_call', params: [{ to: alemContract, data: '0x18160ddd' }, 'latest'] }), // totalSupply()
+        signal: ac.signal
+      }),
+      c.env.DB.prepare("SELECT value FROM token_config WHERE key = 'aura_per_alem'").first()
+    ]);
+    clearTimeout(timer);
+
+    const auraJson: any = await auraRes.json();
+    const alemJson: any = await alemRes.json();
+
+    const poolAura = auraJson?.result && auraJson.result !== '0x'
+      ? String(Number(BigInt(auraJson.result) / 10n ** 16n / 100n)) : '0';
+    const totalSupply = alemJson?.result && alemJson.result !== '0x'
+      ? String(Number(BigInt(alemJson.result) / 10n ** 16n / 100n)) : '0';
+    const rate = String(configRes?.value || '100');
+
+    return c.json({
+      ok: true,
+      pool: {
+        name: 'Aura/ALEM',
+        kind: 'internal',
+        rate: `${rate} AURA = 1 ALEM`,
+        poolAura,
+        totalSupply,
+        fee: '0.2%',
+      }
+    });
+  } catch (e: any) {
+    return c.json({ ok: false, error: e.message }, 500);
+  }
+});
+
+// POST /api/alem/mint — Mintear ALEM por evento calificado (solo minter)
+app.post("/api/alem/mint", auth, async (c) => {
+  const caller = c.get("address");
+  const minterAddress = (c.env.MINTER_ADDRESS || '0x6A202f991c4C1df079449BE9847b1DaC3F51854f').toLowerCase();
+  const alemContract = c.env.ALEM_CONTRACT;
+  const rpcUrl = 'https://1rpc.io/base';
+
+  if (caller.toLowerCase() !== minterAddress) {
+    return c.json({ ok: false, error: "Solo la wallet minter puede acuñar ALEM" }, 403);
+  }
+  if (!alemContract) {
+    return c.json({ ok: false, error: "ALEM_CONTRACT no configurado" }, 500);
+  }
+
+  const body = await c.req.json().catch(() => ({} as any));
+  const to = body.to;
+  const amountWei = String(body.amountWei || "0");
+  const reason = String(body.reason || "qualified_event");
+
+  if (!to || !amountWei || amountWei === "0") {
+    return c.json({ ok: false, error: "Se requiere to y amountWei" }, 400);
+  }
+
+  // Construir mint(address,uint256,string)
+  const mintSelector = '0x40c10f19'; // mint(address,uint256)
+  const toPadded = to.slice(2).toLowerCase().padStart(64, '0');
+  const amtPadded = BigInt(amountWei).toString(16).padStart(64, '0');
+  const data = mintSelector + toPadded + amtPadded;
+
+  // Preparar tx para MetaMask
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 15000);
+  try {
+    const results = await Promise.all([
+      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionCount', params: [minterAddress, 'latest'] }), signal: ac.signal }),
+      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] }), signal: ac.signal }),
+      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] }), signal: ac.signal }),
+    ]);
+    clearTimeout(timer);
+
+    const [nonceData, gasPriceData, chainIdData]: any[] = await Promise.all(results.map(r => r.json()));
+
+    return c.json({
+      ok: true,
+      method: 'eth_sendTransaction',
+      params: [{
+        from: minterAddress,
+        to: alemContract,
+        data,
+        value: '0x0',
+        nonce: nonceData.result,
+        gasPrice: gasPriceData.result,
+        chainId: chainIdData.result,
+      }],
+      metadata: { to, amountWei, reason, alemContract },
+      message: `Firma para mintear ${(Number(amountWei)/1e18).toFixed(4)} ALEM a ${to.slice(0,10)}... por ${reason}`
+    });
+  } catch (e: any) {
+    return c.json({ ok: false, error: e.message }, 500);
+  }
+});
+
+// POST /api/alem/lock — Preparar tx de createLock para MetaMask
+app.post("/api/alem/lock", auth, async (c) => {
+  const address = c.get("address");
+  const alemContract = c.env.ALEM_CONTRACT;
+  const rpcUrl = 'https://1rpc.io/base';
+
+  if (!alemContract) return c.json({ ok: false, error: "ALEM_CONTRACT no configurado" }, 500);
+
+  const body = await c.req.json().catch(() => ({} as any));
+  const amountWei = String(body.amountWei || "0");
+  const durationDays = Number(body.durationDays || 0);
+
+  if (!amountWei || amountWei === "0") return c.json({ ok: false, error: "Se requiere amountWei" }, 400);
+  if (durationDays < 7 || durationDays > 365) return c.json({ ok: false, error: "durationDays debe estar entre 7 y 365" }, 400);
+
+  // approve first: approve(address,uint256) = 0x095ea7b3
+  // Luego createLock(uint256,uint256) = selector
+  const lockSelector = '0xfea2b9e3'; // createLock(uint256,uint256)
+  const amtPadded = BigInt(amountWei).toString(16).padStart(64, '0');
+  const durPadded = BigInt(durationDays).toString(16).padStart(64, '0');
+  const data = lockSelector + amtPadded + durPadded;
+
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 15000);
+  try {
+    const [nonceRes, gasRes, chainRes] = await Promise.all([
+      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionCount', params: [address, 'latest'] }), signal: ac.signal }),
+      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] }), signal: ac.signal }),
+      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] }), signal: ac.signal }),
+    ]);
+    clearTimeout(timer);
+
+    const [nonceData, gasData, chainData]: any[] = await Promise.all([nonceRes.json(), gasRes.json(), chainRes.json()]);
+
+    return c.json({
+      ok: true,
+      method: 'eth_sendTransaction',
+      params: [{
+        from: address,
+        to: alemContract,
+        data,
+        value: '0x0',
+        nonce: nonceData.result,
+        gasPrice: gasData.result,
+        chainId: chainData.result,
+      }],
+      metadata: {
+        amountWei,
+        amountReadable: (Number(amountWei)/1e18).toFixed(4),
+        durationDays,
+        alemContract,
+        estimatedVe: 'min(sqrt(ALEM) * days/30, 500000)'
+      },
+      message: "Firma para lockear ALEM y recibir veSTAKE. Primero debes hacer approve del contrato ALEM."
+    });
+  } catch (e: any) {
+    return c.json({ ok: false, error: e.message }, 500);
+  }
+});
+
+// POST /api/alem/withdraw — Preparar tx de withdrawLock para MetaMask
+app.post("/api/alem/withdraw", auth, async (c) => {
+  const address = c.get("address");
+  const alemContract = c.env.ALEM_CONTRACT;
+  const rpcUrl = 'https://1rpc.io/base';
+
+  if (!alemContract) return c.json({ ok: false, error: "ALEM_CONTRACT no configurado" }, 500);
+
+  const withdrawSelector = '0xf3fef3a3'; // withdrawLock()
+  const data = withdrawSelector;
+
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 15000);
+  try {
+    const [nonceRes, gasRes, chainRes] = await Promise.all([
+      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionCount', params: [address, 'latest'] }), signal: ac.signal }),
+      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] }), signal: ac.signal }),
+      fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_chainId', params: [] }), signal: ac.signal }),
+    ]);
+    clearTimeout(timer);
+
+    const [nonceData, gasData, chainData]: any[] = await Promise.all([nonceRes.json(), gasRes.json(), chainRes.json()]);
+
+    return c.json({
+      ok: true,
+      method: 'eth_sendTransaction',
+      params: [{
+        from: address,
+        to: alemContract,
+        data,
+        value: '0x0',
+        nonce: nonceData.result,
+        gasPrice: gasData.result,
+        chainId: chainData.result,
+      }],
+      metadata: { alemContract },
+      message: "Firma para retirar tu ALEM lockeado y liberar veSTAKE."
+    });
+  } catch (e: any) {
+    return c.json({ ok: false, error: e.message }, 500);
+  }
+});
+
+/* =========================================================
+   LEGACY ROUTER (API EXTRA – NO TOCAR)
+========================================================= */
+app.all("/api/*", (c) => {
+  const legacy = router(c.req.raw);
+  if (legacy) return legacy;
+  return c.json({ error: "API route not found" }, 404);
+});
+
+/* =========================================================
+   FRONTEND SPA FALLBACK
+========================================================= */
+app.all("*", async (c) => {
+  return c.env.ASSETS.fetch(c.req.raw);
 });
 
 export default app;

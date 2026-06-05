@@ -150,7 +150,8 @@ Si se alcanza el cap, la emisión se pausa hasta que el cap suba o el circulante
 
 ## 6) Pool interno Aura ↔ ALEM (AMM)
 
-- **Precio inicial:** 1,000 Aura = 1 ALEM (starting price)
+- **Precio inicial:** 1,000 Aura = 1 ALEM (starting price, legacy)
+- **Precio actual:** **100 AURA = 1 ALEM** (actualizado v0.8 para sostenibilidad)
 - AMM producto constante (x·y=k)
 - **Circuit breaker:** ALEM_out_día ≤ β · ALEM_pool, β=1% (DAO Tipo A)
 - **SwapFactor(K):** 1/(1+0.002K). La diferencia va a treasury.

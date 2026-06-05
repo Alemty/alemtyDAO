@@ -131,6 +131,54 @@ export function mountShell() {
         </div>
       </div>
 
+      <!-- Contratos on-chain -->
+      <div class="acc" data-acc="contracts">
+        <button class="acc-h" type="button" data-open="contracts" aria-expanded="false">
+          <span data-i18n="drawer.contracts">📜 Contratos</span><span class="chev">▾</span>
+        </button>
+        <div class="acc-p" id="accContracts">
+          <div class="small muted" style="margin:0 0 10px;">Tokens del ecosistema en <strong>Base Mainnet</strong>. Agrégalos a MetaMask para ver saldos.</div>
+
+          <div class="contract-item" style="margin-bottom:12px;padding:10px;background:rgba(255,255,255,0.03);border-radius:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <strong style="color:#6EC8FF;">AURA</strong>
+                <span class="small muted" style="display:block;font-size:10px;">Utility / gas social</span>
+              </div>
+              <button class="copy-btn" data-address="0x74f685da4d39e53e7df6e0970b84224ea0d00634"
+                style="background:rgba(110,200,255,0.1);border:1px solid rgba(110,200,255,0.2);color:#6EC8FF;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;"
+                onclick="addTokenToMetaMask(this.dataset.address, 'AURA', 18, '')">
+                + MetaMask
+              </button>
+            </div>
+            <div class="v code" style="font-size:10px;margin-top:4px;word-break:break-all;color:#888;">
+              0x74f685da4d39e53e7df6e0970b84224ea0d00634
+            </div>
+          </div>
+
+          <div class="contract-item" style="margin-bottom:12px;padding:10px;background:rgba(255,255,255,0.03);border-radius:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <strong style="color:#00ffd5;">ALEM</strong>
+                <span class="small muted" style="display:block;font-size:10px;">Gobernanza DAO (veSTAKE)</span>
+              </div>
+              <button class="copy-btn" data-address="0x1a00ca0c79AAdB6cAeadf81509d80f40cb7d9580"
+                style="background:rgba(0,255,213,0.1);border:1px solid rgba(0,255,213,0.2);color:#00ffd5;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;"
+                onclick="addTokenToMetaMask(this.dataset.address, 'ALEM', 18, '')">
+                + MetaMask
+              </button>
+            </div>
+            <div class="v code" style="font-size:10px;margin-top:4px;word-break:break-all;color:#888;">
+              0x1a00ca0c79AAdB6cAeadf81509d80f40cb7d9580
+            </div>
+          </div>
+
+          <div class="small muted" style="font-size:10px;text-align:center;margin-top:4px;">
+            Red: Base Mainnet (Chain ID: 8453)
+          </div>
+        </div>
+      </div>
+
       <!-- Servicios de la DAO -->
       <div class="acc" data-acc="services">
         <button class="acc-h" type="button" data-open="services" aria-expanded="false">
@@ -202,6 +250,23 @@ export function mountShell() {
     if (addr.length <= start + end) return addr;
     return `${addr.slice(0, start)}…${addr.slice(-end)}`;
   }
+
+  // Añadir token ERC-20 a MetaMask
+  window.addTokenToMetaMask = async function addTokenToMetaMask(address, symbol, decimals, image) {
+    if (!window.ethereum) { alert("MetaMask no está instalado."); return; }
+    try {
+      const wasAdded = await window.ethereum.request({
+        method: 'wallet_watchAsset',
+        params: { type: 'ERC20', options: { address, symbol, decimals, image } },
+      });
+      if (wasAdded) {
+        const btn = document.querySelector(`button[data-address="${address}"]`);
+        if (btn) { btn.textContent = '✓ Agregado'; btn.style.opacity = '0.6'; btn.disabled = true; }
+      }
+    } catch (err) {
+      if (err.code !== 4001) alert("Error al agregar token: " + (err.message || "Desconocido"));
+    }
+  };
 
   function syncDid() {
     const a = getDid();
