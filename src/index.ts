@@ -33,6 +33,8 @@ export type Bindings = {
   AURA_RPC_URL: string;
   MINTER_ADDRESS: string;
   DISTRIBUTOR_ADDRESS: string;
+  ALEM_CONTRACT: string;
+  ALEM_RPC_URL: string;
 };
 
 export type Vars = {
