@@ -717,6 +717,9 @@ function openFloatingKebabFromButton(btn) {
  * Si el menú ya está abierto para este botón, lo cierra (toggle).
  */
 function openFloatingKebab(btn, roomName, roomType) {
+  // No mostrar kebab si no hay sesión
+  if (!getJWT()) return;
+
   // Si este botón ya tiene un menú abierto asociado, cerrarlo (toggle)
   if (btn.dataset._fkId) {
     const existing = document.querySelector(`[data-fk-id="${btn.dataset._fkId}"]`);
@@ -3297,7 +3300,16 @@ function setTab(id) {
     tabContent.innerHTML = `
       <div class="sheet-item">
         <div class="t">📄 Propuestas</div>
-        <div class="small muted">Aquí irá listado de propuestas (fase siguiente).</div>
+        <div class="small muted">
+          Sistema de propuestas on-chain — próximamente.
+        </div>
+        <div style="margin-top:10px;padding:12px;border:1px dashed var(--border);border-radius:12px;text-align:center;">
+          <div class="small muted">🚧 En construcción</div>
+          <div class="small muted" style="margin-top:6px;">
+            Las propuestas se crearán como publicaciones especiales y requerirán
+            quórum de veALEM para votación ponderada.
+          </div>
+        </div>
       </div>
     `;
     return;
@@ -3307,7 +3319,16 @@ function setTab(id) {
     tabContent.innerHTML = `
       <div class="sheet-item">
         <div class="t">🗳️ Votaciones</div>
-        <div class="small muted">Aquí irá sistema de votación (fase siguiente).</div>
+        <div class="small muted">
+          Votación ponderada por veALEM — próximamente.
+        </div>
+        <div style="margin-top:10px;padding:12px;border:1px dashed var(--border);border-radius:12px;text-align:center;">
+          <div class="small muted">🚧 En construcción</div>
+          <div class="small muted" style="margin-top:6px;">
+            Cada propuesta tendrá período de votación con peso según
+            nobleza (Rey/Príncipe/Duque) y veALEM bloqueado.
+          </div>
+        </div>
       </div>
     `;
     return;
@@ -3317,7 +3338,16 @@ function setTab(id) {
     tabContent.innerHTML = `
       <div class="sheet-item">
         <div class="t">📌 Constitución</div>
-        <div class="small muted">Aquí irá la constitución / documentos (fase siguiente).</div>
+        <div class="small muted">
+          Documentos fundacionales — próximamente.
+        </div>
+        <div style="margin-top:10px;padding:12px;border:1px dashed var(--border);border-radius:12px;text-align:center;">
+          <div class="small muted">🚧 En construcción</div>
+          <div class="small muted" style="margin-top:6px;">
+            La constitución definirá reglas de gobernanza, derechos de
+            nobleza y mecanismos de consenso del DAO.
+          </div>
+        </div>
       </div>
     `;
     return;
@@ -3332,7 +3362,16 @@ function setTab(id) {
     tabContent.innerHTML = `
       <div class="sheet-item">
         <div class="t">🛡️ Moderación</div>
-        <div class="small muted">Lista de mods / permisos (fase siguiente).</div>
+        <div class="small muted">
+          Gestión de moderadores — próximamente.
+        </div>
+        <div style="margin-top:10px;padding:12px;border:1px dashed var(--border);border-radius:12px;text-align:center;">
+          <div class="small muted">🚧 En construcción</div>
+          <div class="small muted" style="margin-top:6px;">
+            Los moderadores podrán gestionar contenido, miembros y
+            ajustes de salas de gobernanza.
+          </div>
+        </div>
       </div>
     `;
     return;
@@ -3363,8 +3402,10 @@ function setTab(id) {
         <div class="sheet-item">
           <div class="t">Invitar (Address / ENS / DID)</div>
           <div class="small muted" style="margin-top:6px;">
-            Sin backend: genera SQL/comando para insertar en <code>room_members</code>.
+            Sin endpoint de invitación — genera comando manual para
+            <code>room_members</code>.
           </div>
+          <div style="margin-top:6px;font-size:11px;padding:2px 6px;border:1px dashed #888;border-radius:8px;color:#888;display:inline-block;">modo dev</div>
 
           <input id="inviteTarget" placeholder="0xABC... ó satoshi.eth ó miDID" style="margin-top:10px;" />
 
@@ -3885,6 +3926,7 @@ async function getGovernanceAccess(force = false) {
       nobleRank: "",
       veAlem: 0,
       isFounder: false,
+      backendMode: "local",
     };
     _govAccessCacheTime = now;
     return _govAccessCache;
@@ -3927,7 +3969,7 @@ async function getGovernanceAccess(force = false) {
       _govAccessCache = {
         okRead: false, okWrite: false,
         reason: "Sesión expirada. Inicia SIWE nuevamente.",
-        isModerator: false, nobleRank: "", veAlem: 0, isFounder: false,
+        isModerator: false, nobleRank: "", veAlem: 0, isFounder: false, backendMode: "local",
       };
       _govAccessCacheTime = now;
       return _govAccessCache;
@@ -3940,7 +3982,7 @@ async function getGovernanceAccess(force = false) {
         reason: localOkRead ? "" : "Backend /api/me no disponible.",
         isModerator: localIsModerator,
         nobleRank: localIsFounder ? "founder" : (localIsNoble ? localNobleRank : ""),
-        veAlem: Number(localVeAlem) || 0, isFounder: localIsFounder,
+        veAlem: Number(localVeAlem) || 0, isFounder: localIsFounder, backendMode: "local",
       };
       _govAccessCacheTime = now - GOV_CACHE_TTL + 5000; // expira pronto
       return _govAccessCache;
@@ -3953,6 +3995,11 @@ async function getGovernanceAccess(force = false) {
       ? data.roles.map((x) => String(x).toLowerCase()) : [];
 
     const isModerator = roles.includes("moderator") || roles.includes("mod") || roles.includes("admin");
+
+    // Detectar si backend devuelve valores placeholder (no implementados aún)
+    const backendHasRealData = data?.nobleRank || (Array.isArray(data?.roles) && data.roles.length > 0) || Number(data?.veAlem) > 0;
+    const backendMode = backendHasRealData ? "backend" : "local";
+
     const nobleRaw = String(data?.nobleRank || "").toLowerCase();
     const nobleRank = nobleRaw === "príncipe" ? "principe" : nobleRaw;
     const veAlem = Number(data?.veAlem ?? 0);
@@ -3961,7 +4008,7 @@ async function getGovernanceAccess(force = false) {
     const isFounderUser = address === "0x6a202f991c4c1df079449be9847b1dac3f51854f" || ens === "alemty.eth";
 
     if (isFounderUser) {
-      _govAccessCache = { okRead: true, okWrite: true, reason: "", isModerator: false, nobleRank: "founder", veAlem, isFounder: true };
+      _govAccessCache = { okRead: true, okWrite: true, reason: "", isModerator: false, nobleRank: "founder", veAlem, isFounder: true, backendMode };
       _govAccessCacheTime = now;
       return _govAccessCache;
     }
@@ -3973,7 +4020,7 @@ async function getGovernanceAccess(force = false) {
     _govAccessCache = {
       okRead, okWrite,
       reason: okRead ? "" : "Acceso restringido: requiere Moderación o Nobleza (Rey/Príncipe/Duque) con veALEM activo.",
-      isModerator, nobleRank: isNoble ? nobleRank : "", veAlem, isFounder: false,
+      isModerator, nobleRank: isNoble ? nobleRank : "", veAlem, isFounder: false, backendMode,
     };
     _govAccessCacheTime = now;
     return _govAccessCache;
@@ -3985,7 +4032,7 @@ async function getGovernanceAccess(force = false) {
       reason: localOkRead ? "" : "Modo local (sin backend).",
       isModerator: localIsModerator,
       nobleRank: localIsFounder ? "founder" : (localIsNoble ? localNobleRank : ""),
-      veAlem: Number(localVeAlem) || 0, isFounder: localIsFounder,
+      veAlem: Number(localVeAlem) || 0, isFounder: localIsFounder, backendMode: "local",
     };
     _govAccessCacheTime = now;
     return _govAccessCache;
@@ -4038,11 +4085,12 @@ async function openGovernanceRoomsModal() {
       <div class="m small muted">
         Propuestas y votaciones. (Acceso por roles / nobleza - backend lo enforceará).
       </div>
-      <div class="small muted" style="margin-top:8px;">
-        Estado: ${access.okRead ? "✅ Autorizado" : "⛔ Restringido"}
-        ${access.isFounder ? "· Founder" : ""}
-        ${access.isModerator ? "· Moderación" : ""}
-        ${access.nobleRank ? `· Nobleza: <b>${esc(access.nobleRank)}</b>` : ""}
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:6px;">
+        <span style="font-size:13px;">Estado: ${access.okRead ? "✅ Autorizado" : "⛔ Restringido"}</span>
+        ${access.isFounder ? '<span class="badge-founder">Founder</span>' : ""}
+        ${access.isModerator ? '<span class="badge-moderator">Mod</span>' : ""}
+        ${access.nobleRank ? `<span class="badge-noble">${esc(access.nobleRank)}</span>` : ""}
+        ${access.backendMode === "local" ? '<span style="font-size:11px;padding:2px 6px;border:1px dashed #888;border-radius:8px;color:#888;">local</span>' : ""}
       </div>
       ${!access.okRead ? `
         <div class="small muted" style="margin-top:8px;">
