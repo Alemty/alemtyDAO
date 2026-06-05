@@ -214,6 +214,9 @@ contract ALEMToken {
         return result;
     }
 
+    /// @notice Contador global de eventos calificados (epoch => count)
+    mapping(uint256 => uint256) public globalWeeklyEvents;
+
     /// @notice ALEM por evento calificado en el epoch actual (§7.3)
     function alemPerEvent() external view returns (uint256) {
         return _alembase();
@@ -221,7 +224,7 @@ contract ALEMToken {
 
     function _alembase() internal view returns (uint256) {
         uint256 epoch = currentEpoch();
-        uint256 N = userWeeklyEvents[address(0)]; // contador global de eventos
+        uint256 N = globalWeeklyEvents[epoch]; // contador global de eventos
         return (BASE_RATE * multFactor(N)) / 100;
     }
 
@@ -243,8 +246,7 @@ contract ALEMToken {
         if (userWeeklyEvents[to][epoch] >= WEEKLY_EVENT_CAP) revert WeeklyEventCapExceeded();
 
         userWeeklyEvents[to][epoch]++;
-        // Contador global (address(0) como acumulador)
-        userWeeklyEvents[address(0)][epoch]++;
+        globalWeeklyEvents[epoch]++;
 
         _totalSupply += amount;
         _balances[to] += amount;
