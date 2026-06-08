@@ -145,7 +145,7 @@ html.light .dao-root .car-card {
 html:not(.light) .dao-root .h2, html:not(.light) .dao-root .car-title { text-shadow: 0 0 18px rgba(0,0,0,.30), 0 0 14px rgba(0,255,213,.10); }
 html.light .dao-root .h1, html.light .dao-root .h2, html.light .dao-root .post-title, html.light .dao-root .car-title, html.light .dao-root .mini .t { text-shadow: none; color: var(--dao-title); }
 
-.dao-root .h1.dao-brand { display: inline-flex; align-items: baseline; flex-wrap: wrap; color: var(--dao-text) !important; text-shadow: none !important; }
+.dao-root .h1.dao-brand { display: inline-flex; align-items: baseline; flex-wrap: wrap; color: var(--dao-text) !important; text-shadow: none !important; font-size: clamp(1.6rem, 3.2vw, 2.2rem); }
 .dao-root .h1.dao-brand .dao-brand-em { color: var(--dao-title) !important; text-shadow: 0 0 16px rgba(0,255,213,.14); }
 .dao-root .h1.dao-brand .dao-brand-base { color: var(--dao-text) !important; text-shadow: none !important; }
 html.light .dao-root .h1.dao-brand .dao-brand-em { text-shadow: none !important; }

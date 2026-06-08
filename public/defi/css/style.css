@@ -3,11 +3,10 @@
    ========================================================== */
 
 .defi-root {
-  --defi-blue: #3b82f6;
+  --defi-emerald: #00ffd5;
+  --defi-azure: #00a3ff;
   --defi-green: #22c55e;
-  --defi-indigo: #6366f1;
-  --defi-purple: #a855f7;
-  --defi-pink: #ec4899;
+  --defi-danger: #ef4444;
   background: var(--bg);
   min-height: 100vh;
   position: relative;
@@ -18,16 +17,15 @@
   inset: 0; z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(800px 500px at 20% 10%, rgba(59,130,246,.12), transparent 60%),
-    radial-gradient(700px 400px at 80% 20%, rgba(168,85,247,.10), transparent 55%),
-    radial-gradient(600px 400px at 50% 80%, rgba(34,197,94,.08), transparent 50%),
+    radial-gradient(680px 420px at 18% 0%, rgba(0,255,213,.16), transparent 62%),
+    radial-gradient(540px 320px at 82% 18%, rgba(0,163,255,.13), transparent 60%),
     var(--bg);
 }
 html.light .defi-bg {
   background:
-    radial-gradient(800px 500px at 20% 10%, rgba(59,130,246,.18), transparent 60%),
-    radial-gradient(700px 400px at 80% 20%, rgba(168,85,247,.14), transparent 55%),
-    radial-gradient(600px 400px at 50% 80%, rgba(34,197,94,.10), transparent 50%),
+    radial-gradient(820px 500px at 18% -10%, rgba(0,255,213,.28), transparent 60%),
+    radial-gradient(720px 420px at 85% 15%, rgba(0,149,255,.22), transparent 62%),
+    radial-gradient(900px 500px at 50% 110%, rgba(255,255,255,.60), transparent 70%),
     var(--bg);
 }
 
@@ -41,6 +39,7 @@ html.light .defi-bg {
 /* ---------- BRAND ---------- */
 .defi-root .h1.defi-brand {
   font-weight: 1000;
+  font-size: clamp(1.6rem, 3.2vw, 2.2rem);
   letter-spacing: -0.02em;
   display: inline-flex;
   align-items: baseline;
@@ -68,9 +67,9 @@ html.light .defi-root .h1.defi-brand .defi-brand-em { color: var(--primary); tex
   letter-spacing: .1em;
   padding: 3px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(59,130,246,.25);
-  background: rgba(59,130,246,.08);
-  color: var(--defi-blue);
+  border: 1px solid rgba(0,255,213,.25);
+  background: rgba(0,255,213,.08);
+  color: var(--defi-emerald);
   text-transform: uppercase;
 }
 
@@ -120,8 +119,8 @@ html.light .defi-root .card {
   inset: -2px;
   pointer-events: none;
   border-radius: inherit;
-  background: radial-gradient(620px 300px at 15% 10%, rgba(59,130,246,.15), transparent 55%),
-              radial-gradient(520px 260px at 85% 90%, rgba(168,85,247,.12), transparent 60%);
+  background: radial-gradient(620px 300px at 15% 10%, rgba(0,255,213,.18), transparent 55%),
+              radial-gradient(520px 260px at 85% 90%, rgba(0,163,255,.15), transparent 60%);
   opacity: .65;
   filter: blur(16px);
 }
@@ -193,10 +192,10 @@ html.light .trading-tab.active { color: #0db9a6; }
 .tf-btn:hover { color: var(--text); background: rgba(255,255,255,.05); }
 .tf-btn.active {
   color: #fff;
-  background: rgba(59,130,246,.25);
-  border: 1px solid rgba(59,130,246,.35);
+  background: rgba(0,255,213,.18);
+  border: 1px solid rgba(0,255,213,0.3);
 }
-html.light .tf-btn.active { color: #1e40af; background: rgba(59,130,246,.12); border-color: rgba(59,130,246,.25); }
+html.light .tf-btn.active { color: #0db9a6; background: rgba(0,255,213,.12); border-color: rgba(0,255,213,.25); }
 
 /* Chart canvas area */
 .trading-chart-wrap {
@@ -374,8 +373,8 @@ html.light .ts-val { color: #1e293b; }
 }
 .defi-panel-btn:hover { opacity: .85; }
 .defi-panel-btn.primary {
-  background: linear-gradient(135deg, var(--defi-blue), var(--defi-purple));
-  color: #fff;
+  background: linear-gradient(135deg, var(--defi-emerald), var(--defi-azure));
+  color: #061018;
 }
 
 /* ----- Controls panel ----- */
