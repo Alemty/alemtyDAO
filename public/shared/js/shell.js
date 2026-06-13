@@ -125,7 +125,11 @@ export function mountShell() {
             <button class="drawer-link did-blue" id="disconnectBtn" type="button" data-i18n="drawer.logout">⛔ Cerrar Sesión</button>
           </div>
           <a class="drawer-link did-blue did-yt" id="tutorialLink" href="#" target="_blank" rel="noopener noreferrer" data-i18n="drawer.tutorial">
-            <img class="yt-ico" src="/assets/icons/youtube.svg" alt="" aria-hidden="true">
+            <svg class="yt-ico" viewBox="0 0 64 64" fill="none" aria-hidden="true" width="20" height="20">
+              <rect x="6" y="14" width="52" height="36" rx="12" fill="#FF0033"/>
+              <path d="M27 24.5v15l14-7.5-14-7.5Z" fill="#FFFFFF"/>
+              <path d="M14 22.5c.7-2.6 2.7-4.6 5.3-5.3C23 16.2 32 16.2 32 16.2s9 0 12.7 1c2.6.7 4.6 2.7 5.3 5.3 1 3.7 1 9.5 1 9.5s0 5.8-1 9.5c-.7 2.6-2.7 4.6-5.3 5.3-3.7 1-12.7 1-12.7 1s-9 0-12.7-1c-2.6-.7-4.6-2.7-5.3-5.3-1-3.7-1-9.5-1-9.5s0-5.8 1-9.5Z" fill="#FFFFFF" opacity=".18"/>
+            </svg>
             Tutorial de registro en Metamask
           </a>
         </div>
@@ -137,7 +141,7 @@ export function mountShell() {
           <span data-i18n="drawer.contracts">📜 Contratos</span><span class="chev">▾</span>
         </button>
         <div class="acc-p" id="accContracts">
-          <div class="small muted" style="margin:0 0 10px;" data-i18n="drawer.contractsDesc">Tokens del ecosistema en <strong>Base Mainnet</strong>. Agrégalos a MetaMask para ver saldos.</div>
+          <div class="small muted" style="margin:0 0 10px;" data-i18n="drawer.contractsDesc">Tokens del ecosistema en Base Mainnet. Agrégalos a MetaMask para ver saldos.</div>
 
           <div class="contract-item" style="margin-bottom:12px;padding:10px;background:rgba(255,255,255,0.03);border-radius:12px;">
             <div style="display:flex;justify-content:space-between;align-items:center;">
