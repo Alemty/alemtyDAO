@@ -528,7 +528,7 @@ export function buildProfileModal() {
               <div class="token token-dharma"><span class="lbl" data-i18n="profile.dharma">Dharma</span><span class="val" id="pfDharma">—</span></div>
               <div class="token token-aura" data-i18n="attr:title" title="AURA on-chain — balance real en el contrato ERC-20 en Base Mainnet. Se incrementa cuando reclamas rewards en la pestaña DEX."><span class="lbl" data-i18n="profile.auraOnChain">AURA on-chain</span><span class="val" id="pfAura">—</span></div>
               <div class="token token-karma" id="pfKarmaToken"><span class="lbl" data-i18n="profile.karma">Karma</span><span class="val" id="pfKarmaVal">—</span></div>
-              <div class="token token-alem"><span class="lbl">$ALEM</span><span class="val" id="pfAlem">—</span></div>
+              <div class="token token-alem" data-i18n="attr:title" title="$ALEM on-chain — balance real en el contrato ERC-20 en Base Mainnet. Se acuña por eventos calificados (posts, misiones, voto, liquidez)."><span class="lbl">$ALEM</span><span class="val" id="pfAlem">—</span></div>
               <div class="token token-vealem"><span class="lbl" data-i18n="profile.veAlem">veALEM</span><span class="val" id="pfVeAlem">—</span></div>
               <div class="token token-aura-reclaim" id="pfAuraHint"></div>
             </div>

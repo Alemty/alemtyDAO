@@ -1041,66 +1041,98 @@ app.get("/api/alem/status", auth, async (c) => {
   let veStake = 0;
   let alemLocked = 0;
   let alemLockUntil = 0;
+  let alemCacheUpdatedAt = 0;
 
+  // PRIMERO: leer caché de D1 (rápido, no falla)
+  try {
+    const cachedRow: any = await c.env.DB.prepare(
+      "SELECT alem_balance, alem_ve, alem_locked, alem_lock_until, updated_at FROM user_stats WHERE address = ?"
+    ).bind(address).first();
+    if (cachedRow) {
+      alemCacheUpdatedAt = Number(cachedRow.updated_at || 0);
+      const cachedBalance = Number(cachedRow.alem_balance || 0);
+      if (cachedBalance > 0) {
+        alemOnChain = String(cachedBalance);
+        veStake = Number(cachedRow.alem_ve || 0);
+        alemLocked = Number(cachedRow.alem_locked || 0);
+        alemLockUntil = Number(cachedRow.alem_lock_until || 0);
+      }
+    }
+  } catch (_) {}
+
+  // Consultar on-chain via RPC SOLO si caché expirado (>60s) o es 0
   if (alemContract) {
-    const rpcUrls = [
-      c.env.ALEM_RPC_URL || 'https://mainnet.base.org',
-      'https://1rpc.io/base',
-      'https://base-rpc.publicnode.com',
-    ].filter(Boolean);
+    const now = Math.floor(Date.now() / 1000);
+    const cacheExpired = (now - alemCacheUpdatedAt) > 60;
+    const shouldQueryRpc = Number(alemOnChain) === 0 || cacheExpired;
 
-    for (const rpcUrl of rpcUrls) {
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
+    if (shouldQueryRpc) {
+      const rpcUrls = [
+        c.env.ALEM_RPC_URL || 'https://mainnet.base.org',
+        'https://1rpc.io/base',
+        'https://base-rpc.publicnode.com',
+      ].filter(Boolean);
 
-        // balanceOf(address)
-        const balanceData = '0x70a08231' + address.slice(2).toLowerCase().padStart(64, '0');
-        const res = await fetch(rpcUrl, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: alemContract, data: balanceData }, 'latest'] }),
-          signal: controller.signal
-        });
-        clearTimeout(timeout);
-        if (res.ok) {
-          const json: any = await res.json();
-          if (json?.result && json.result !== '0x') {
-            alemOnChain = String(Number(BigInt(json.result) / 10n ** 16n / 100n));
+      for (const rpcUrl of rpcUrls) {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 5000);
+
+          // balanceOf(address)
+          const balanceData = '0x70a08231' + address.slice(2).toLowerCase().padStart(64, '0');
+          const res = await fetch(rpcUrl, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: alemContract, data: balanceData }, 'latest'] }),
+            signal: controller.signal
+          });
+          clearTimeout(timeout);
+          if (res.ok) {
+            const json: any = await res.json();
+            if (json?.result && json.result !== '0x') {
+              alemOnChain = String(Number(BigInt(json.result) / 10n ** 16n / 100n));
+            }
           }
-        }
 
-        // getVeSTAKE(address)
-        const veData = '0x2a3bfa2e' + address.slice(2).toLowerCase().padStart(64, '0');
-        const veRes = await fetch(rpcUrl, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_call', params: [{ to: alemContract, data: veData }, 'latest'] }),
-          signal: controller.signal
-        });
-        if (veRes.ok) {
-          const veJson: any = await veRes.json();
-          if (veJson?.result && veJson.result !== '0x') {
-            veStake = Number(BigInt(veJson.result) / 10n ** 16n / 100n);
+          // getVeSTAKE(address)
+          const veData = '0x2a3bfa2e' + address.slice(2).toLowerCase().padStart(64, '0');
+          const veRes = await fetch(rpcUrl, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_call', params: [{ to: alemContract, data: veData }, 'latest'] }),
+            signal: controller.signal
+          });
+          if (veRes.ok) {
+            const veJson: any = await veRes.json();
+            if (veJson?.result && veJson.result !== '0x') {
+              veStake = Number(BigInt(veJson.result) / 10n ** 16n / 100n);
+            }
           }
-        }
 
-        // getLockInfo(address)
-        const lockData = '0xb25c1e87' + address.slice(2).toLowerCase().padStart(64, '0');
-        const lockRes = await fetch(rpcUrl, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_call', params: [{ to: alemContract, data: lockData }, 'latest'] }),
-          signal: controller.signal
-        });
-        if (lockRes.ok) {
-          const lockJson: any = await lockRes.json();
-          if (lockJson?.result && lockJson.result !== '0x') {
-            // Lock struct: amount, lockUntil, veSTAKE
-            const raw = lockJson.result.slice(2);
-            alemLocked = Number(BigInt('0x' + raw.slice(0, 64)) / 10n ** 16n / 100n);
-            alemLockUntil = Number(BigInt('0x' + raw.slice(64, 128)));
+          // getLockInfo(address)
+          const lockData = '0xb25c1e87' + address.slice(2).toLowerCase().padStart(64, '0');
+          const lockRes = await fetch(rpcUrl, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_call', params: [{ to: alemContract, data: lockData }, 'latest'] }),
+            signal: controller.signal
+          });
+          if (lockRes.ok) {
+            const lockJson: any = await lockRes.json();
+            if (lockJson?.result && lockJson.result !== '0x') {
+              const raw = lockJson.result.slice(2);
+              alemLocked = Number(BigInt('0x' + raw.slice(0, 64)) / 10n ** 16n / 100n);
+              alemLockUntil = Number(BigInt('0x' + raw.slice(64, 128)));
+            }
           }
-        }
-        break;
-      } catch (_) {}
+
+          // Guardar en caché D1 si obtuvimos datos on-chain válidos
+          if (Number(alemOnChain) > 0) {
+            const now = Math.floor(Date.now() / 1000);
+            await c.env.DB.prepare(
+              "UPDATE user_stats SET alem_balance = ?, alem_ve = ?, alem_locked = ?, alem_lock_until = ?, updated_at = ? WHERE address = ?"
+            ).bind(Number(alemOnChain), veStake, alemLocked, alemLockUntil, now, address).run();
+          }
+          break;
+        } catch (_) {}
+      }
     }
   }
 
